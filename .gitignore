@@ -1,0 +1,7 @@
+# Ignore everything in the 'emacs' directory
+/emacs/*
+
+# But don't ignore these files and directories
+!/emacs/init.el
+!/emacs/early-init.el
+!/emacs/lisp/
