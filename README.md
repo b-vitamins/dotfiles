@@ -1,2 +1,5 @@
 # .config
-Screaming silence hides; Bespeckles infinite worlds; Chaos tamed, reborn
+
+> Screaming silence hides  
+> Bespeckled infinite worlds  
+> Chaos tamed, reborn  
