@@ -40,6 +40,7 @@
 ;; https://github.com/protesilaos/dotfiles/blob/master/emacs/.emacs.d/early-init.el
 ;; 
 (setq gc-cons-threshold 100000000)
+(setq package-enable-at-startup nil)
 
 (defvar emacs-gc-cons-threshold gc-cons-threshold
   "Default value of `gc-cons-threshold' before startup.")
@@ -121,7 +122,7 @@ If ENABLE is non-nil, enable MODE; otherwise disable it."
 (setq default-frame-alist
       '((width . 120)
         (height . 34)
-        (alpha . (90 . 90))
+        (alpha . (95 . 95))
         (vertical-scroll-bars . nil)
         (horizontal-scroll-bars . nil)
         (tool-bar-lines . 0)
