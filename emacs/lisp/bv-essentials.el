@@ -30,48 +30,55 @@
 
 ;;; Code:
 
-(require 'windmove)
-(require 'lsp)
+(defvar-local bv-straight-bootstrap-retries 3
+  "Default number of retries for bootstrapping straight.el.")
 
-(defun bv-not-guix ()
-  "Check if running on a non-GNU Guix OS."
+(defun bv-bootstrap-straight (&optional retries)
+  "Bootstrap straight.el with optional RETRIES on failure."
+  (interactive "P")
+  (unless (featurep 'straight)
+    (defvar bootstrap-version)
+    (let ((bootstrap-file
+           (expand-file-name "straight/repos/straight.el/bootstrap.el"
+                             (or (bound-and-true-p straight-base-dir) user-emacs-directory)))
+          (bootstrap-version 7)
+          (attempt 1)
+          ;; Use the provided RETRIES value or the default stored in `bv-straight-bootstrap-retries`.
+          (max-attempts (if retries (prefix-numeric-value retries) bv-straight-bootstrap-retries)))
+      (while (and (not (file-exists-p bootstrap-file))
+                  (<= attempt max-attempts))
+        (message "Attempting to bootstrap straight.el (Attempt %d/%d)..." attempt max-attempts)
+        (condition-case err
+            (with-current-buffer
+                (url-retrieve-synchronously
+                 "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+                 'silent 'inhibit-cookies)
+              (goto-char (point-max))
+              (eval-print-last-sexp))
+          (error
+           (message "Failed to bootstrap straight.el: %s" err)
+           (setq attempt (1+ attempt))
+           (when (< attempt max-attempts)
+             (message "Retrying in 5 seconds...")
+             (sleep-for 5)))))
+      (if (file-exists-p bootstrap-file)
+          (progn
+            (load bootstrap-file nil 'nomessage)
+            (message "Successfully bootstrapped straight.el."))
+        (when (= attempt (1+ max-attempts))
+          (error "Failed to bootstrap straight.el after %d attempts" max-attempts))))))
+
+(defun bv-guix-p ()
+  "Return t if running on a GNU Guix OS, nil otherwise."
   (let ((os-release "/etc/os-release"))
     (if (and (file-readable-p os-release)
              (string-match-p "ID=guix" (with-temp-buffer
                                          (insert-file-contents os-release)
                                          (buffer-string))))
-        nil
-      t)))
+        t
+      nil)))
 
-(defun bv-windmove-nw (&optional arg)
-  "Select the window in the northwest direction from the current one.
-With a prefix ARG, move ARG windows at a time."
-  (interactive "P")
-  (windmove-do-window-select 'left (and arg (prefix-numeric-value arg)))
-  (windmove-do-window-select 'up (and arg (prefix-numeric-value arg))))
-
-(defun bv-windmove-ne (&optional arg)
-  "Select the window in the northeast direction from the current one.
-With a prefix ARG, move ARG windows at a time."
-  (interactive "P")
-  (windmove-do-window-select 'right (and arg (prefix-numeric-value arg)))
-  (windmove-do-window-select 'up (and arg (prefix-numeric-value arg))))
-
-(defun bv-windmove-sw (&optional arg)
-  "Select the window in the southwest direction from the current one.
-With a prefix ARG, move ARG windows at a time."
-  (interactive "P")
-  (windmove-do-window-select 'left (and arg (prefix-numeric-value arg)))
-  (windmove-do-window-select 'down (and arg (prefix-numeric-value arg))))
-
-(defun bv-windmove-se (&optional arg)
-  "Select the window in the southeast direction from the current one.
-With a prefix ARG, move ARG windows at a time."
-  (interactive "P")
-  (windmove-do-window-select 'right (and arg (prefix-numeric-value arg)))
-  (windmove-do-window-select 'down (and arg (prefix-numeric-value arg))))
-
-;; Borrowed from Bastien Guerry <bzg@bzg.fr>
+;; Borrowed with modification from Bastien Guerry <bzg@bzg.fr>
 ;; https://bzg.fr/en/emacs-strip-tease/
 ;;
 (defvar-local hide-mode-line nil
@@ -92,39 +99,16 @@ With a prefix ARG, move ARG windows at a time."
               mode-line-format nil)
         (force-mode-line-update)
         (redraw-display)
+        ;; Simplified message for enabling the mode
         (when (called-interactively-p 'interactive)
-          (run-with-idle-timer
-           0 nil 'message
-           (concat "Hidden Mode Line Mode enabled.  "
-                   "Use M-x hidden-mode-line-mode to make the mode-line appear."))))
+          (message "hidden-mode-line-mode enabled.")))
     (setq mode-line-format hide-mode-line
           hide-mode-line nil)
     (force-mode-line-update)
-    (redraw-display)))
-
-(defun bv-lsp-copy-diagnostic-at-point ()
-  "Copy the lsp-ui diagnostic message at point to the clipboard."
-  (interactive)
-  (let ((diagnostics (lsp-diagnostics))
-        (current-point (point))
-        (message-to-copy nil))
-    (maphash
-     (lambda (file diagnostic-data)
-       (when (string= (buffer-file-name) file)
-         (dolist (diag (gethash "publishDiagnostics" diagnostic-data))
-           (let* ((range (gethash "range" diag))
-                  (start (gethash "start" range))
-                  (end (gethash "end" range))
-                  (start-point (lsp-point-to-position start))
-                  (end-point (lsp-point-to-position end)))
-             (when (and (>= current-point start-point) (<= current-point end-point))
-               (setq message-to-copy (gethash "message" diag)))))))
-     diagnostics)
-    (if message-to-copy
-        (progn
-          (kill-new message-to-copy)
-          (message "Diagnostic message copied to clipboard."))
-      (message "No diagnostic message at point."))))
+    (redraw-display)
+    ;; Simplified message for disabling the mode
+    (when (called-interactively-p 'interactive)
+      (message "hidden-mode-line-mode disabled."))))
 
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
