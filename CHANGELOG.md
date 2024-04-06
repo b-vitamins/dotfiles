@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `adaptive-wrap`, `smartparens`, `nerd-icons`, `olivetti`, `which-key`, `vertico`, `orderless`, `marginalia`.
 - Configuration for `cycle-buffer.el`.
 - Macro `:local-or-package` to `emacs/lisp/bv-setup.el`.
 - Package file for `cycle-buffer.el` by Vladimir Alexiev to `emacs/lisp`.
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  refactored `:straight-if` to fallback to `straight.el` in case of package unavailability on a Guix system.
 -  refactored methods `cycle-buffer` and `cycle-buffer-show` in `cycle-buffer.el`.
 - `emacs/init.el` improved with better error handling for `setup.el`.
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
