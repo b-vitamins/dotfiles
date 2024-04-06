@@ -82,14 +82,17 @@ the feature prefix."
 ;;
 (setup-define :straight-if
   (lambda (recipe condition)
-    `(if ,condition
-         (straight-use-package ',recipe)
-       nil))
+    (let ((pkg (if (consp recipe) (car recipe) recipe))) ;; Extract package name from recipe if it's a list
+      `(if ,condition
+           (straight-use-package ',recipe)
+         ;; If the condition fails, check if the package is installed or the feature is loaded.
+         (unless (or (package-installed-p ',pkg) (featurep ',pkg))
+           ;; If not installed or loaded, then use straight.el as a fallback.
+           (straight-use-package ',recipe)))))
   :documentation
-  "Install RECIPE with `straight-use-package' when CONDITION is met.
-If CONDITION is false, stop evaluating the body.  This macro can
-be used as HEAD, and will replace itself with the RECIPE's
-package.  This macro is not repeatable."
+  "Conditionally install RECIPE with `straight-use-package' if CONDITION is met.
+If CONDITION is false, it checks if the package (or feature) PKG is installed or loaded, and if not, installs it using straight.el.
+This macro can be used as a HEAD in setup blocks and replaces itself with the RECIPE's package. This macro is not repeatable."
   :repeatable nil
   :indent 1
   :shorthand (lambda (sexp)
