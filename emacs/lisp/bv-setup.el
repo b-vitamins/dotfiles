@@ -98,5 +98,15 @@ package.  This macro is not repeatable."
 
 (declare-function :straight-if "ext:setup" t)
 
+(setup-define :load-after
+    (lambda (&rest features)
+      (let ((body `(require ',(setup-get 'feature))))
+        (dolist (feature (nreverse features))
+          (setq body `(with-eval-after-load ',feature ,body)))
+        body))
+  :documentation "Load the current feature after FEATURES.")
+
+(declare-function :load-after "ext:setup" t)
+
 (provide 'bv-setup)
 ;;; bv-setup.el ends here
