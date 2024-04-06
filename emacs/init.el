@@ -65,13 +65,13 @@
       (straight-use-package 'setup)
     (error
      (setq install-success nil)
-     (message "Failed to install `setup.el`: %s" err)))
+     (message "Failed to install setup.el: %s" err)))
   (if install-success
       (progn
         (require 'setup)
         (require 'bv-setup)
-        (message "`setup.el` loaded successfully."))
-    (message "Proceeding without `setup.el`.")))
+        (message "setup.el loaded successfully."))
+    (message "Proceeding without setup.el.")))
 
 (setup whoami
   (:set-default user-full-name "Ayan Das"
@@ -147,8 +147,7 @@
    async-shell-command-buffer 'confirm-kill-process
    ;; Sets the display width of a tab character to 2 spaces, improving readability.
    tab-width 2
-   ;; Disables the use of tabs for indentation, using spaces instead for consistent formatting across different editors.
-   indent-tabs-mode nil)
+)
   
   (:set ;; Disables the startup screen for a cleaner launch experience.
    inhibit-startup-screen t
@@ -165,7 +164,9 @@
   ;; Sets UTF-8 as the default coding system for file I/O, supporting a wide range of characters globally.
   (set-default-coding-systems 'utf-8)
   ;; Configures the Emacs environment to use UTF-8, enhancing support for international text standards.
-  (set-language-environment "UTF-8"))
+  (set-language-environment "UTF-8")
+   ;; Disables the use of tabs for indentation, using spaces instead for consistent formatting across different editors.
+  (indent-tabs-mode 1))
 
 (setup display-line-numbers
   (:hook-into prog-mode
@@ -232,6 +233,13 @@
               js2-mode
               org-mode))
 
+(setup (:straight-if adaptive-wrap bv-not-guix-p)
+  (:require adaptive-wrap)
+  (adaptive-wrap-prefix-mode))
+
+(setup (:straight-if smartparens bv-not-guix-p)
+  (:hook-into prog-mode))
+
 (if (and (member "Iosevka Comfy" (font-family-list))
          (member "DejaVu Sans" (font-family-list)))
     (progn
@@ -247,6 +255,9 @@
                           :font "DejaVu Sans"
                           :height 120))
   (message "Required fonts not available, falling back to defaults"))
+
+(setup (:straight-if nerd-icons bv-not-guix-p)
+  (:require nerd-icons))
 
 (setup (:straight-if no-littering bv-not-guix-p)
   (:require no-littering)
@@ -308,6 +319,55 @@
            aw-minibuffer-flag t)
   (:global "M-o" ace-window)
   (ace-window-display-mode 1))
+
+(setup (:straight-if olivetti bv-not-guix-p)
+  (:option* body-width 130)
+  (:require olivetti)
+  (:global "C-c C-h" olivetti-mode))
+
+(setup (:straight-if which-key bv-not-guix-p)
+  (require 'which-key)
+  (:option* idle-delay 1.5
+	        side-window-location 'right
+	        popup-type 'side-window
+	        side-window-max-width 0.40
+	        max-description-length 75
+	        max-display-columns 1
+	        sort-order 'which-key-local-then-key-order
+	        use-C-h-commands t
+	        show-remaining-keys t)
+  (which-key-mode))
+
+(setup (:straight-if vertico bv-not-guix-p)
+  (:require vertico)
+  (:option* count 25
+	        cycle t
+	        resize t
+	        grid-lookahead 200)
+  (vertico-mode))
+
+(setup (:straight-if orderless bv-not-guix-p)
+  (:require orderless)
+  (:option
+   completion-styles '(orderless partial-completion basic)
+   completion-category-defaults nil
+   completion-category-overrides '((file (styles partial-completion))
+                                   (command (styles))
+                                   (variable (styles))
+                                   (symbol (styles)))
+   orderless-component-separator 'orderless-escapable-split-on-space
+   orderless-matching-styles '(orderless-literal
+                               orderless-prefixes
+                               orderless-initialism
+                               orderless-regexp)))
+
+(setup (:straight-if marginalia bv-not-guix-p)
+  (:option* annotators '(marginalia-annotators-heavy
+                         marginalia-annotators-light
+                         nil)
+            max-relative-age 0
+            align 'left)
+  (marginalia-mode))
 
 (provide 'init)
 ;;; init.el ends here
