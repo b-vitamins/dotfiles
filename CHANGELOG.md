@@ -8,22 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Package file for `cycle-buffer.el` by Vladimir Alexiev to `emacs/lisp`.
+- Configuration for `mjolnir-mode`, `windmove`, `windsize`, `ace-window`.
+- Configuration for `emacs-guix`.
+- `Iosevka Comfy` as default and fixed-pitch face, `DejaVu Sans` as variable-pitch face.
+- Macro `:load-after` to `emacs/lisp/bv-setup.el`.
 - `.gitignore` file to manage ignored files within the `emacs` directory.
-- Conditional configuration for `doom-themes`, `doom-modeline`, `rainbow-delimiters`, `rainbow-mode`, and `no-littering` based on system check (`bv-guix-p`).
-- Introduced the use of a variable (`bv-not-guix-p`) to simplify system dependent conditional configuration.
-- Setup blocks for `display-line-numbers`, `recentf`, and `display-time-format`.
-- Default preferences configuration for improved Emacs experience.
-- `emacs/lisp/bv-setup.el` file for custom Emacs setup functions and macros based on `setup.el`.
-- Definitions for user information (`whoami`) and essential keybindings (`bv-essentials`).
-- Added macros `:set`, `:set-default`, `:straight-if`, and `:option*`.
-- `setup.el` loading via `straight.el` in `init.el`.
+- Configuration for `doom-themes`, `doom-modeline`, `rainbow-delimiters`, `rainbow-mode`, and `no-littering`.
+- Variable `bv-not-guix-p` to simplify system dependent conditional configuration.
+- Configuration for `display-line-numbers`, `recentf`, and `display-time-format`.
+- Configuration for default preferences for improved Emacs experience.
+- `setup.el` based custom macros to `emacs/lisp/bv-setup.el` for configuring Emacs.
+- Configuration for user information (`whoami`) and essential keybindings (`bv-essentials`).
+- Macros `:set`, `:set-default`, `:straight-if`, and `:option*` to `emacs/lisp/bv-setup.el`.
+- load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
-- `init.el` improved with better error handling for `setup.el`.
-- `bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
+- `emacs/init.el` improved with better error handling for `setup.el`.
+- `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
-- Several functions from `emacs/lisp/bv-essentials.el` (`bv-windmove-nw`, `bv-windmove-ne`, `bv-windmove-sw`, `bv-windmove-se`, `bv-lsp-copy-diagnostic-at-point`) in anticipation of their inclusion elsewhere in the future.
+- Windmove related functions (`bv-windmove-nw`, `bv-windmove-ne`, `bv-windmove-sw`, `bv-windmove-se`, `bv-lsp-copy-diagnostic-at-point`) from `emacs/lisp/bv-essentials.el`
 
 
 ## [0.1.0] - 2024-04-06
