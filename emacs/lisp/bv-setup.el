@@ -108,5 +108,19 @@ package.  This macro is not repeatable."
 
 (declare-function :load-after "ext:setup" t)
 
+(setup-define :local-or-package
+  (lambda (feature-or-package)
+    `(unless (locate-file ,(symbol-name feature-or-package)
+			  load-path
+			  (get-load-suffixes))
+       (:package ',feature-or-package)))
+  :documentation "Install PACKAGE if it is not available locally.
+This macro can be used as NAME, and it will replace itself with
+the first PACKAGE."
+  :repeatable t
+  :shorthand #'cadr)
+
+(declare-function :load-or-package "ext:setup" t)
+
 (provide 'bv-setup)
 ;;; bv-setup.el ends here
