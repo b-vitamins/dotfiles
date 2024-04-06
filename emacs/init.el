@@ -75,7 +75,7 @@
 
 (setup whoami
   (:set-default user-full-name "Ayan Das"
-                user-mail-address "ayand@iisc.ac.in"))
+                user-mail-address "bvits@riseup.net"))
 
 (setup bv-essentials
   (:global "C-c h" 'hidden-mode-line-mode))
@@ -144,7 +144,11 @@
    ;; Enables pruning of the native compilation cache to manage disk space usage efficiently.
    native-compile-prune-cache t
    ;; Configures behavior for async shell commands, preventing accidental process termination.
-   async-shell-command-buffer 'confirm-kill-process)
+   async-shell-command-buffer 'confirm-kill-process
+   ;; Sets the display width of a tab character to 2 spaces, improving readability.
+   tab-width 2
+   ;; Disables the use of tabs for indentation, using spaces instead for consistent formatting across different editors.
+   indent-tabs-mode nil)
   
   (:set ;; Disables the startup screen for a cleaner launch experience.
    inhibit-startup-screen t
@@ -157,7 +161,11 @@
    ;; Sets the syntax highlighting support mode to JIT Lock mode, enabling just-in-time syntax highlighting for improved performance.
    font-lock-support-mode 'jit-lock-mode
    ;; Enables maximum decoration for syntax highlighting, ensuring rich visual feedback in code.
-   font-lock-maximum-decoration t))
+   font-lock-maximum-decoration t)
+  ;; Sets UTF-8 as the default coding system for file I/O, supporting a wide range of characters globally.
+  (set-default-coding-systems 'utf-8)
+  ;; Configures the Emacs environment to use UTF-8, enhancing support for international text standards.
+  (set-language-environment "UTF-8"))
 
 (setup display-line-numbers
   (:hook-into prog-mode
@@ -224,6 +232,22 @@
               js2-mode
               org-mode))
 
+(if (and (member "Iosevka Comfy" (font-family-list))
+         (member "DejaVu Sans" (font-family-list)))
+    (progn
+      (set-face-attribute 'default nil
+                          :font "Iosevka Comfy"
+                          :weight 'regular
+                          :height 110)
+      (set-face-attribute 'fixed-pitch nil
+                          :font "Iosevka Comfy"
+                          :weight 'light
+                          :height 110)
+      (set-face-attribute 'variable-pitch nil
+                          :font "DejaVu Sans"
+                          :height 120))
+  (message "Required fonts not available, falling back to defaults"))
+
 (setup (:straight-if no-littering bv-not-guix-p)
   (:require no-littering)
   (:option*
@@ -244,6 +268,41 @@
      (convert-standard-filename
       (expand-file-name "var/eln-cache/" user-emacs-directory))))
   (load custom-file t))
+
+(setup (:and (not bv-not-guix-p) guix)
+  (:load-after geiser-mode)
+  (:require guix)
+  (:option* guile-program "guile"))
+
+(setup (:straight-if (mjolnir-mode :type git :host github :repo "b-vitamins/mjolnir-mode") bv-not-guix-p)
+  (mjolnir-mode)
+  (:global "M-n" mjolnir-cycle-window-forward
+           "M-p" mjolnir-cycle-window-backward
+           "C-c u" mjolnir-toggle-fixed-window))
+
+(setup windmove
+  (:require windmove)
+  (:option* wrap-around t)
+  (:global "S-<down>" windmove-down
+           "S-<up>" windmove-up
+           "S-<right>" windmove-right
+           "S-<left>" windmove-left))
+
+(setup (:straight-if (windsize :type git :flavor melpa :host github :repo "grammati/windsize") bv-not-guix-p)
+  (:require windsize)
+  (:option* cols 2
+            rows 2)
+  (:global "S-M-<left>" windsize-left
+           "S-M-<right>" windsize-right
+           "S-M-<up>" windsize-up
+           "S-M-<down>" windsize-down))
+
+(setup (:straight-if (ace-window :type git :flavor melpa :host github :repo "abo-abo/ace-window") bv-not-guix-p)
+  (:option aw-scope 'frame
+           aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
+           aw-minibuffer-flag t)
+  (:global "M-o" ace-window)
+  (ace-window-display-mode 1))
 
 (provide 'init)
 ;;; init.el ends here
