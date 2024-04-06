@@ -280,6 +280,11 @@
            "M-p" mjolnir-cycle-window-backward
            "C-c u" mjolnir-toggle-fixed-window))
 
+(setup (:local-or-package cycle-buffer)
+  (:require cycle-buffer)
+  (:global "M-N" cycle-buffer
+           "M-P" cycle-buffer-backward))
+
 (setup windmove
   (:require windmove)
   (:option* wrap-around t)
