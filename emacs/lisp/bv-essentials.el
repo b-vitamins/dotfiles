@@ -136,11 +136,7 @@
     (when (or dejavu-available iosevka-available)
       (dolist (face '(org-block org-table org-formula org-code org-verbatim
                      org-special-keyword org-meta-line org-checkbox))
-        (set-face-attribute face nil :inherit 'fixed-pitch)))
-    ;; Log setup completion
-    (message "org-faces setup (%s for titles, %s for content) succesfully"
-             (if dejavu-available "DejaVu Sans" "default")
-             (if iosevka-available "Iosevka Comfy" "default"))))
+        (set-face-attribute face nil :inherit 'fixed-pitch)))))
 
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
