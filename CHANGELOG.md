@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `org-fragtog` and `nerd-icon`.
 - Configuration for `corfu`.
 - Configuration for `savehist`.
 - Confirmation messages to each setup block.
