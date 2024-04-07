@@ -70,15 +70,8 @@
       (progn
         (require 'setup)
         (require 'bv-setup)
-        (message "setup.el loaded successfully."))
-    (message "Proceeding without setup.el.")))
-
-(setup whoami
-  (:set-default user-full-name "Ayan Das"
-                user-mail-address "bvits@riseup.net"))
-
-(setup bv-essentials
-  (:global "C-c h" 'hidden-mode-line-mode))
+        (message "setup.el loaded successfully"))
+    (message "Proceeding without setup.el")))
 
 (setup default-preferences
   ;; Basic preferences to improve user experience and workflow.
@@ -147,7 +140,7 @@
    async-shell-command-buffer 'confirm-kill-process
    ;; Sets the display width of a tab character to 2 spaces, improving readability.
    tab-width 2
-)
+   )
   
   (:set ;; Disables the startup screen for a cleaner launch experience.
    inhibit-startup-screen t
@@ -165,80 +158,9 @@
   (set-default-coding-systems 'utf-8)
   ;; Configures the Emacs environment to use UTF-8, enhancing support for international text standards.
   (set-language-environment "UTF-8")
-   ;; Disables the use of tabs for indentation, using spaces instead for consistent formatting across different editors.
-  (indent-tabs-mode 1))
-
-(setup display-line-numbers
-  (:hook-into prog-mode
-              lisp-mode
-              scheme-mode
-              haskell-mode
-              rust-mode
-              rust-ts-mode)
-  (global-visual-line-mode t))
-
-(setup recentf
-  (:require recentf)
-  (:option* max-saved-items 500
-            max-menu-items 25)
-  (recentf-mode 1))
-
-(setup display-time-format
-  (:option display-time-format "%d %b %H:%M:%S"
-           display-time-24hr-format t
-           display-time-interval 1
-           display-time-day-and-date t)
-  (display-time))
-
-(defvar bv-not-guix-p (if (bv-guix-p) nil t))
-
-(setup (:straight-if doom-themes bv-not-guix-p)
-  (load-theme 'doom-one t))
-
-(setup (:straight-if doom-modeline bv-not-guix-p)
-  (:require doom-modeline)
-  (:hook-into after-init-hook
-              after-change-major-mode-hook)
-  (:option*
-   height 10
-   bar-width 2
-   icon (display-graphic-p)
-   major-mode-icon (display-graphic-p)
-   major-mode-color-icon (display-graphic-p)
-   buffer-state-icon (display-graphic-p)
-   buffer-modification-icon (display-graphic-p)
-   buffer-name t
-   minor-modes t
-   time t
-   mu4e t
-   buffer-encoding nil
-   buffer-file-name-style 'truncate-except-project
-   checker-simple-format nil
-   number-limit 99
-   vcs-max-length 12
-   env-enable-python t
-   env-enable-perl t
-   env-enable-rust t
-   env-python-executable "python"
-   env-perl-executable "perl"
-   env-rust-executable "rustc")
-  (doom-modeline-mode 1))
-
-(setup (:straight-if rainbow-delimiters bv-not-guix-p)
-  (:hook-into prog-mode))
-
-(setup (:straight-if rainbow-mode bv-not-guix-p)
-  (:hook-into web-mode
-              typescript-mode
-              js2-mode
-              org-mode))
-
-(setup (:straight-if adaptive-wrap bv-not-guix-p)
-  (:require adaptive-wrap)
-  (adaptive-wrap-prefix-mode))
-
-(setup (:straight-if smartparens bv-not-guix-p)
-  (:hook-into prog-mode))
+  ;; Disables the use of tabs for indentation, using spaces instead for consistent formatting across different editors.
+  (indent-tabs-mode 1)
+  (message "default-preferences setup successfully"))
 
 (if (and (member "Iosevka Comfy" (font-family-list))
          (member "DejaVu Sans" (font-family-list)))
@@ -256,8 +178,101 @@
                           :height 120))
   (message "Required fonts not available, falling back to defaults"))
 
+(setup whoami
+  (:set-default user-full-name "Ayan Das"
+                user-mail-address "bvits@riseup.net")
+  (message "whoami setup successfully"))
+
+(setup bv-essentials
+  (:global "C-c h" 'hidden-mode-line-mode)
+  (message "bv-essentials setup successfully"))
+
+(setup display-line-numbers
+  (:hook-into prog-mode
+              lisp-mode
+              scheme-mode
+              haskell-mode
+              rust-mode
+              rust-ts-mode)
+  (message "display-line-numbers loaded successfully")
+  (global-visual-line-mode t)
+  (message "global-visual-line-mode enabled"))
+
+(setup recentf
+  (:require recentf)
+  (:option* max-saved-items 500
+            max-menu-items 25)
+  (recentf-mode 1)
+  (message "recentf setup successfully"))
+
+(setup display-time-format
+  (:option display-time-format "%d %b %H:%M:%S"
+           display-time-24hr-format t
+           display-time-interval 1
+           display-time-day-and-date t)
+  (display-time)
+  (message "display-time-format setup successfully"))
+
+(defvar bv-not-guix-p (if (bv-guix-p) nil t))
+
+(setup (:straight-if doom-themes bv-not-guix-p)
+  (load-theme 'doom-one t)
+  (message "doom-themes setup successfully"))
+
+(setup (:straight-if doom-modeline bv-not-guix-p)
+  (:require doom-modeline)
+  (:hook-into after-init-hook
+              after-change-major-mode-hook)
+  (:option*
+   height 10
+   bar-width 2
+   icon (display-graphic-p)
+   major-mode-icon (display-graphic-p)
+   major-mode-color-icon (display-graphic-p)
+   buffer-state-icon (display-graphic-p)
+   buffer-modification-icon (display-graphic-p)
+   buffer-name t
+   minor-modes nil
+   time t
+   mu4e t
+   buffer-encoding nil
+   buffer-file-name-style 'truncate-except-project
+   checker-simple-format nil
+   number-limit 99
+   vcs-max-length 12
+   env-enable-python t
+   env-enable-perl t
+   env-enable-rust t
+   env-python-executable "python"
+   env-perl-executable "perl"
+   env-rust-executable "rustc")
+  (doom-modeline-mode 1)
+  (message "doom-modeline setup successfully"))
+
+(setup (:straight-if rainbow-delimiters bv-not-guix-p)
+  (:hook-into prog-mode)
+  (message "rainbow-delimiters setup successfully"))
+
+(setup (:straight-if rainbow-mode bv-not-guix-p)
+  (:hook-into web-mode
+              typescript-mode
+              js2-mode
+              org-mode)
+  (message "rainbow-mode setup successfully"))
+
+(setup (:straight-if adaptive-wrap bv-not-guix-p)
+  (:require adaptive-wrap)
+  (adaptive-wrap-prefix-mode)
+  (message "adaptive-wrap setup successfully"))
+
+(setup (:straight-if smartparens bv-not-guix-p)
+  (:hook-into prog-mode)
+  (message "smartparens setup successfully"))
+
+
 (setup (:straight-if nerd-icons bv-not-guix-p)
-  (:require nerd-icons))
+  (:require nerd-icons)
+  (message "nerd-icons setup successfully"))
 
 (setup (:straight-if no-littering bv-not-guix-p)
   (:require no-littering)
@@ -278,23 +293,27 @@
     (startup-redirect-eln-cache
      (convert-standard-filename
       (expand-file-name "var/eln-cache/" user-emacs-directory))))
-  (load custom-file t))
+  (load custom-file t)
+  (message "no-littering setup successfully"))
 
 (setup (:and (not bv-not-guix-p) guix)
   (:load-after geiser-mode)
   (:require guix)
-  (:option* guile-program "guile"))
+  (:option* guile-program "guile")
+  (message "guix setup successfully"))
 
 (setup (:straight-if (mjolnir-mode :type git :host github :repo "b-vitamins/mjolnir-mode") bv-not-guix-p)
   (mjolnir-mode)
   (:global "M-n" mjolnir-cycle-window-forward
            "M-p" mjolnir-cycle-window-backward
-           "C-c u" mjolnir-toggle-fixed-window))
+           "C-c u" mjolnir-toggle-fixed-window)
+  (message "mjolnir-mode setup successfully"))
 
 (setup (:local-or-package cycle-buffer)
   (:require cycle-buffer)
   (:global "M-N" cycle-buffer
-           "M-P" cycle-buffer-backward))
+           "M-P" cycle-buffer-backward)
+  (message "cycle-buffer setup successfully"))
 
 (setup windmove
   (:require windmove)
@@ -302,7 +321,8 @@
   (:global "S-<down>" windmove-down
            "S-<up>" windmove-up
            "S-<right>" windmove-right
-           "S-<left>" windmove-left))
+           "S-<left>" windmove-left)
+  (message "windmove setup successfully"))
 
 (setup (:straight-if (windsize :type git :flavor melpa :host github :repo "grammati/windsize") bv-not-guix-p)
   (:require windsize)
@@ -311,40 +331,152 @@
   (:global "S-M-<left>" windsize-left
            "S-M-<right>" windsize-right
            "S-M-<up>" windsize-up
-           "S-M-<down>" windsize-down))
+           "S-M-<down>" windsize-down)
+  (message "windsize setup successfully"))
 
 (setup (:straight-if (ace-window :type git :flavor melpa :host github :repo "abo-abo/ace-window") bv-not-guix-p)
   (:option aw-scope 'frame
            aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
            aw-minibuffer-flag t)
   (:global "M-o" ace-window)
-  (ace-window-display-mode 1))
+  (ace-window-display-mode 1)
+  (message "ace-window setup successfully"))
 
 (setup (:straight-if olivetti bv-not-guix-p)
   (:option* body-width 130)
   (:require olivetti)
-  (:global "C-c C-h" olivetti-mode))
+  (:global "C-c C-h" olivetti-mode)
+  (message "olivetti setup successfully"))
 
 (setup (:straight-if which-key bv-not-guix-p)
-  (require 'which-key)
+  (:require which-key)
   (:option* idle-delay 1.5
-	        side-window-location 'right
-	        popup-type 'side-window
-	        side-window-max-width 0.40
-	        max-description-length 75
-	        max-display-columns 1
-	        sort-order 'which-key-local-then-key-order
-	        use-C-h-commands t
-	        show-remaining-keys t)
-  (which-key-mode))
+            side-window-location 'right
+            popup-type 'side-window
+            side-window-max-width 0.40
+            max-description-length 75
+            max-display-columns 1
+            sort-order 'which-key-local-then-key-order
+            use-C-h-commands t
+            show-remaining-keys t)
+  (which-key-mode)
+  (message "which-key setup successfully"))
+
+(setup org
+  (:require org ox-latex)
+
+  ;; Mode Enhancements
+  (org-indent-mode 1)
+  (variable-pitch-mode 1)
+  (auto-fill-mode 0)
+  (visual-line-mode 1)
+  (org-display-inline-images)
+
+  ;; Hooks
+  (:hook (lambda () (add-hook 'before-save-hook 'org-update-all-dblocks t t)))
+  (add-hook 'org-babel-post-tangle-hook #'bv/zap-newline-at-eob)
+  (add-hook 'org-export-before-processing-functions 'bv-auto-insert-bibliography)
+  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
+  (add-hook 'org-mode-hook 'bv-org-buffer-default-face)
+
+  ;; Startup and Display Options
+  (:option* require-final-newline nil
+            startup-folded 'overview
+            startup-with-latex-preview nil
+            startup-with-inline-images t
+            startup-align-all-tables t
+            startup-indented t)
+
+  ;; Visuals and UI Enhancements
+  (:option* hide-leading-stars t
+            hide-block-startup nil
+            hide-emphasis-markers nil
+            pretty-entities nil
+            fontify-quote-and-verse-blocks t)
+
+  ;; Source Code Blocks and Babel
+  (:option* src-fontify-natively t
+            src-tab-acts-natively t
+            src-preserve-indentation nil
+            edit-src-content-indentation 2
+            confirm-babel-evaluate nil
+            src-window-setup 'split-window-below)
+
+  ;; Babel Configurations for Source Code Execution
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((C . t) (shell . t) (haskell . t) (latex . t) (lisp . t)
+     (scheme . t) (julia . t) (gnuplot . t) (lua . t) (ruby . t)
+     (python . t) (emacs-lisp . t) (dot . t) (maxima . t) (org . t)))
+
+  ;; Agenda and Task Management
+  (:option* agenda-files '("~/slipbox/main.org")
+            agenda-skip-deadline-prewarning-if-scheduled nil
+            agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline
+            agenda-columns-add-appointments-to-effort-sum t
+            agenda-include-diary t
+            agenda-todo-list-sublevels nil
+            agenda-start-with-clockreport-mode t
+            deadline-warning-days 1
+            clock-total-time-cell-format "*%s*")
+
+  ;; Logging and Archiving
+  (:option* log-done 'time
+            export-kill-after-export t)
+
+  ;; LaTeX Configuration
+  (:option* latex-default-class "article"
+            latex-compiler "lualatex"
+            latex-pdf-process '("lualatex -shell-escape -interaction nonstopmode %f"
+                                "biber %b"
+                                "lualatex -shell-escape -interaction nonstopmode %f"
+                                "lualatex -shell-escape -interaction nonstopmode %f")
+            latex-create-formula-image-program 'imagemagick
+            format-latex-options (plist-put org-format-latex-options :scale 1.4)
+            preview-latex-image-directory "~/slipbox/.latex-previews/"
+            preview-latex-default-process 'imagemagick
+            highlight-latex-and-related (quote (native latex script entities)))
+
+  ;; Habit Tracking
+  (:option* modules '(org-habit)
+            habit-preceding-days 30
+            habit-graph-column 40)
+
+  ;; LaTeX and Image Export Settings
+  (:push-to org-preview-latex-process-alist
+            (:elements
+             (imagemagick
+              :programs ("lualatex" "convert")
+              :description "pdf > png"
+              :message "you need to install lualatex and imagemagick."
+              :use-xcolor t
+              :image-input-type "pdf"
+              :image-output-type "png"
+              :image-size-adjust (1.0 . 1.0)
+              :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
+              :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
+
+  ;; Keybindings
+  (:unbind "C-c C-o")
+  (:global "C-c l" org-store-link
+           "C-c a" org-agenda
+           "C-c c" org-capture)
+  (message "org-mode setup successfully"))
+
+(setup org-faces
+  (:load-after org)
+  (:also-load org-indent)
+  (:when-loaded
+    (bv-setup-org-fonts)))
 
 (setup (:straight-if vertico bv-not-guix-p)
   (:require vertico)
   (:option* count 25
-	        cycle t
-	        resize t
-	        grid-lookahead 200)
-  (vertico-mode))
+            cycle t
+            resize t
+            grid-lookahead 200)
+  (vertico-mode)
+  (message "vertico setup successfully"))
 
 (setup (:straight-if orderless bv-not-guix-p)
   (:require orderless)
@@ -359,7 +491,8 @@
    orderless-matching-styles '(orderless-literal
                                orderless-prefixes
                                orderless-initialism
-                               orderless-regexp)))
+                               orderless-regexp))
+  (message "orderless setup successfully"))
 
 (setup (:straight-if marginalia bv-not-guix-p)
   (:option* annotators '(marginalia-annotators-heavy
@@ -367,7 +500,8 @@
                          nil)
             max-relative-age 0
             align 'left)
-  (marginalia-mode))
+  (marginalia-mode)
+  (message "marginalia setup successfully"))
 
 (provide 'init)
 ;;; init.el ends here
