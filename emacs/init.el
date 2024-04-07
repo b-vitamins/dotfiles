@@ -70,7 +70,7 @@
       (progn
         (require 'setup)
         (require 'bv-setup)
-        (message "setup.el loaded successfully"))
+        (message "Successfully loaded setup.el"))
     (message "Proceeding without setup.el")))
 
 (setup default-preferences
@@ -196,7 +196,7 @@
               rust-ts-mode)
   (message "Successfully setup display-line-numbers")
   (global-visual-line-mode t)
-  (message "Enabled global-visual-line-mode"))
+  (message "Successfully enabled global-visual-line-mode"))
 
 (setup display-time-format
   (:option display-time-format "%d %b %H:%M:%S"
@@ -472,7 +472,13 @@
   (:load-after org)
   (:also-load org-indent)
   (:when-loaded
-    (bv-setup-org-fonts)))
+    (bv-setup-org-fonts))
+  (message "Successfully setup org-faces"))
+
+(setup (:straight-if org-fragtog bv-not-guix-p)
+  (:load-after org)
+  (:option org-fragtog-mode t)
+  (message "Successfully setup org-fragtog"))
 
 (setup (:straight-if vertico bv-not-guix-p)
   (:require vertico)
@@ -497,7 +503,7 @@
                                orderless-prefixes
                                orderless-initialism
                                orderless-regexp))
-  (message "Succesfully setup orderless"))
+  (message "Successfully setup orderless"))
 
 (setup (:straight-if marginalia bv-not-guix-p)
   (:option* annotators '(marginalia-annotators-heavy
@@ -506,7 +512,7 @@
             max-relative-age 0
             align 'left)
   (marginalia-mode)
-  (message "Succesfully setup marginalia"))
+  (message "Successfully setup marginalia"))
 
 (setup (:straight-if consult bv-not-guix-p)
   (:require consult)
@@ -536,7 +542,7 @@
   (:with-map global-map
     (:unbind "C-x C-<right>")
     (:unbind "C-x C-<left>"))
-  (message "Succesfully setup consult"))
+  (message "Successfully setup consult"))
 
 (setup (:straight-if corfu bv-not-guix-p)
   (:load-after savehist-mode)
@@ -567,7 +573,16 @@
            "<return>" corfu-insert))
 
   (global-corfu-mode)
-  (message "Succesfully setup corfu"))
+  (message "Successfully setup corfu"))
+
+(setup (:straight-if kind-icon bv-not-guix-p)
+  (:load-after corfu nerd-icons)
+  (:require kind-icon)
+  (:option*
+   default-face 'corfu-default
+   use-icons t
+   blend-background nil)
+  (message "Successfully setup kind-icon"))
 
 (provide 'init)
 ;;; init.el ends here
