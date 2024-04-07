@@ -110,5 +110,37 @@
     (when (called-interactively-p 'interactive)
       (message "hidden-mode-line-mode disabled."))))
 
+(defun bv-setup-org-fonts ()
+  "Configure font settings for Org-mode, checking font availability."
+  (let ((dejavu-available (member "DejaVu Sans" (font-family-list)))
+        (iosevka-available (member "Iosevka Comfy" (font-family-list))))
+    ;; Set the document title font if DejaVu Sans is available
+    (when dejavu-available
+      (set-face-attribute 'org-document-title nil
+                          :font "DejaVu Sans" :height 1.0))
+    ;; Set heading fonts if Iosevka Comfy is available
+    (when iosevka-available
+      (dolist (face '((org-level-1 . 1.2)
+                      (org-level-2 . 1.15)
+                      (org-level-3 . 1.1)
+                      (org-level-4 . 1.1)
+                      (org-level-5 . 1.1)
+                      (org-level-6 . 1.1)
+                      (org-level-7 . 1.1)
+                      (org-level-8 . 1.1)))
+        (set-face-attribute (car face) nil
+                            :font "Iosevka Comfy"
+                            :weight 'normal
+                            :height (* 1.0 (cdr face)))))
+    ;; Set fixed-pitch attributes for specific elements if either font is available
+    (when (or dejavu-available iosevka-available)
+      (dolist (face '(org-block org-table org-formula org-code org-verbatim
+                     org-special-keyword org-meta-line org-checkbox))
+        (set-face-attribute face nil :inherit 'fixed-pitch)))
+    ;; Log setup completion
+    (message "org-faces setup (%s for titles, %s for content) succesfully"
+             (if dejavu-available "DejaVu Sans" "default")
+             (if iosevka-available "Iosevka Comfy" "default"))))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
