@@ -125,5 +125,24 @@ the first PACKAGE."
 
 (declare-function :load-or-package "ext:setup" t)
 
+(setup-define :push-to
+  (lambda (list elements)
+    (let (bodies)
+      (dolist (el (if (listp elements) elements (list elements)))
+        (cond
+         ((symbolp el)
+          (when (not (keywordp el))
+            (push `(push ',el ,list) bodies)))
+         ((listp el)
+          (push `(push ',el ,list) bodies))
+         ((stringp el)
+          (push `(push ,el ,list) bodies))))
+      (macroexp-progn (nreverse bodies))))
+  :documentation "Push each of the elements onto the given list."
+  :debug '(sexp [&or ([&rest sexp]) sexp])
+  :repeatable t)
+
+(declare-function :push-to "ext:setup" t)
+
 (provide 'bv-setup)
 ;;; bv-setup.el ends here
