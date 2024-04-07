@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `corfu`.
 - Configuration for `savehist`.
 - Confirmation messages to each setup block.
 - Configuration for `org-mode` and `org-faces`.
