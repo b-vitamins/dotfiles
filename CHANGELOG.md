@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `savehist`.
+- Confirmation messages to each setup block.
 - Configuration for `org-mode` and `org-faces`.
 - Function `bv-setup-org-fonts` to `emacs/lisp/bv-essentials.el`.
 - Macro `:push-to` to `emacs/lisp/bv-setup.el`.
@@ -30,9 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
--  added confirmation messages to each setup block.
--  refactored `:straight-if` to fallback to `straight.el` in case of package unavailability on a Guix system.
--  refactored methods `cycle-buffer` and `cycle-buffer-show` in `cycle-buffer.el`.
+-  Improved confirmation messages.
+-  Refactor `:straight-if` to fallback to `straight.el` in case of package unavailability on a Guix system.
+-  Refactor methods `cycle-buffer` and `cycle-buffer-show` in `cycle-buffer.el`.
 - `emacs/init.el` improved with better error handling for `setup.el`.
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
