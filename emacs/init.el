@@ -144,7 +144,7 @@
   
   (:set ;; Disables the startup screen for a cleaner launch experience.
    inhibit-startup-screen t
-   ;; Customizes the startup echo area message for a personalized touch or branding.
+   ;; Customizes the startup echo area message.
    inhibit-startup-echo-area-message "Welcome to Emacs!"
    ;; Enables fitting windows to the buffer horizontally, allowing for more flexible window sizing.
    fit-window-to-buffer-horizontally t
@@ -160,7 +160,7 @@
   (set-language-environment "UTF-8")
   ;; Disables the use of tabs for indentation, using spaces instead for consistent formatting across different editors.
   (indent-tabs-mode 1)
-  (message "default-preferences setup successfully"))
+  (message "Successfully setup default preferences"))
 
 (if (and (member "Iosevka Comfy" (font-family-list))
          (member "DejaVu Sans" (font-family-list)))
@@ -181,11 +181,11 @@
 (setup whoami
   (:set-default user-full-name "Ayan Das"
                 user-mail-address "bvits@riseup.net")
-  (message "whoami setup successfully"))
+  (message "Successfully setup whoami"))
 
 (setup bv-essentials
   (:global "C-c h" 'hidden-mode-line-mode)
-  (message "bv-essentials setup successfully"))
+  (message "Successfully setup bv-essentials"))
 
 (setup display-line-numbers
   (:hook-into prog-mode
@@ -194,16 +194,9 @@
               haskell-mode
               rust-mode
               rust-ts-mode)
-  (message "display-line-numbers loaded successfully")
+  (message "Successfully setup display-line-numbers")
   (global-visual-line-mode t)
-  (message "global-visual-line-mode enabled"))
-
-(setup recentf
-  (:require recentf)
-  (:option* max-saved-items 500
-            max-menu-items 25)
-  (recentf-mode 1)
-  (message "recentf setup successfully"))
+  (message "Enabled global-visual-line-mode"))
 
 (setup display-time-format
   (:option display-time-format "%d %b %H:%M:%S"
@@ -211,13 +204,25 @@
            display-time-interval 1
            display-time-day-and-date t)
   (display-time)
-  (message "display-time-format setup successfully"))
+  (message "Successfully setup display-time-format"))
+
+(setup recentf
+  (:require recentf)
+  (:option* max-saved-items 500
+            max-menu-items 25)
+  (recentf-mode 1)
+  (message "Successfully setup recentf"))
 
 (defvar bv-not-guix-p (if (bv-guix-p) nil t))
 
+(setup (:straight-if savehist bv-not-guix-p)
+  (:require savehist)
+  (setq history-length 1000)
+  (savehist-mode))
+
 (setup (:straight-if doom-themes bv-not-guix-p)
   (load-theme 'doom-one t)
-  (message "doom-themes setup successfully"))
+  (message "Successfully setup doom-themes"))
 
 (setup (:straight-if doom-modeline bv-not-guix-p)
   (:require doom-modeline)
@@ -247,32 +252,32 @@
    env-perl-executable "perl"
    env-rust-executable "rustc")
   (doom-modeline-mode 1)
-  (message "doom-modeline setup successfully"))
+  (message "Successfully setup doom-modeline"))
 
 (setup (:straight-if rainbow-delimiters bv-not-guix-p)
   (:hook-into prog-mode)
-  (message "rainbow-delimiters setup successfully"))
+  (message "Successfully setup rainbow-delimiters"))
 
 (setup (:straight-if rainbow-mode bv-not-guix-p)
   (:hook-into web-mode
               typescript-mode
               js2-mode
               org-mode)
-  (message "rainbow-mode setup successfully"))
+  (message "Successfully setup rainbow-mode"))
 
 (setup (:straight-if adaptive-wrap bv-not-guix-p)
   (:require adaptive-wrap)
   (adaptive-wrap-prefix-mode)
-  (message "adaptive-wrap setup successfully"))
+  (message "Successfully setup adaptive-wrap"))
 
 (setup (:straight-if smartparens bv-not-guix-p)
   (:hook-into prog-mode)
-  (message "smartparens setup successfully"))
+  (message "Successfully setup smartparens"))
 
 
 (setup (:straight-if nerd-icons bv-not-guix-p)
   (:require nerd-icons)
-  (message "nerd-icons setup successfully"))
+  (message "Successfully setup nerd-icons"))
 
 (setup (:straight-if no-littering bv-not-guix-p)
   (:require no-littering)
@@ -294,26 +299,26 @@
      (convert-standard-filename
       (expand-file-name "var/eln-cache/" user-emacs-directory))))
   (load custom-file t)
-  (message "no-littering setup successfully"))
+  (message "Successfully setup no-littering"))
 
 (setup (:and (not bv-not-guix-p) guix)
   (:load-after geiser-mode)
   (:require guix)
   (:option* guile-program "guile")
-  (message "guix setup successfully"))
+  (message "Successfully setup guix"))
 
 (setup (:straight-if (mjolnir-mode :type git :host github :repo "b-vitamins/mjolnir-mode") bv-not-guix-p)
   (mjolnir-mode)
   (:global "M-n" mjolnir-cycle-window-forward
            "M-p" mjolnir-cycle-window-backward
            "C-c u" mjolnir-toggle-fixed-window)
-  (message "mjolnir-mode setup successfully"))
+  (message "Successfully setup mjolnir-mode"))
 
 (setup (:local-or-package cycle-buffer)
   (:require cycle-buffer)
   (:global "M-N" cycle-buffer
            "M-P" cycle-buffer-backward)
-  (message "cycle-buffer setup successfully"))
+  (message "Successfully setup cycle-buffer"))
 
 (setup windmove
   (:require windmove)
@@ -322,7 +327,7 @@
            "S-<up>" windmove-up
            "S-<right>" windmove-right
            "S-<left>" windmove-left)
-  (message "windmove setup successfully"))
+  (message "Successfully setup windmove"))
 
 (setup (:straight-if (windsize :type git :flavor melpa :host github :repo "grammati/windsize") bv-not-guix-p)
   (:require windsize)
@@ -332,7 +337,7 @@
            "S-M-<right>" windsize-right
            "S-M-<up>" windsize-up
            "S-M-<down>" windsize-down)
-  (message "windsize setup successfully"))
+  (message "Successfully setup windsize"))
 
 (setup (:straight-if (ace-window :type git :flavor melpa :host github :repo "abo-abo/ace-window") bv-not-guix-p)
   (:option aw-scope 'frame
@@ -340,13 +345,13 @@
            aw-minibuffer-flag t)
   (:global "M-o" ace-window)
   (ace-window-display-mode 1)
-  (message "ace-window setup successfully"))
+  (message "Successfully setup ace-window"))
 
 (setup (:straight-if olivetti bv-not-guix-p)
   (:option* body-width 130)
   (:require olivetti)
   (:global "C-c C-h" olivetti-mode)
-  (message "olivetti setup successfully"))
+  (message "Successfully setup olivetti-mode"))
 
 (setup (:straight-if which-key bv-not-guix-p)
   (:require which-key)
@@ -360,7 +365,7 @@
             use-C-h-commands t
             show-remaining-keys t)
   (which-key-mode)
-  (message "which-key setup successfully"))
+  (message "Successfully setup which-key"))
 
 (setup org
   (:require org ox-latex)
@@ -461,7 +466,7 @@
   (:global "C-c l" org-store-link
            "C-c a" org-agenda
            "C-c c" org-capture)
-  (message "org-mode setup successfully"))
+  (message "Successfully setup org-mode"))
 
 (setup org-faces
   (:load-after org)
@@ -476,7 +481,7 @@
             resize t
             grid-lookahead 200)
   (vertico-mode)
-  (message "vertico setup successfully"))
+  (message "Successfully setup vertico"))
 
 (setup (:straight-if orderless bv-not-guix-p)
   (:require orderless)
@@ -492,7 +497,7 @@
                                orderless-prefixes
                                orderless-initialism
                                orderless-regexp))
-  (message "orderless setup successfully"))
+  (message "Succesfully setup orderless"))
 
 (setup (:straight-if marginalia bv-not-guix-p)
   (:option* annotators '(marginalia-annotators-heavy
@@ -501,7 +506,37 @@
             max-relative-age 0
             align 'left)
   (marginalia-mode)
-  (message "marginalia setup successfully"))
+  (message "Succesfully setup marginalia"))
+
+(setup (:straight-if consult bv-not-guix-p)
+  (:require consult)
+  (:load-after doom-modeline)
+  (:global [remap switch-to-buffer] #'consult-buffer
+           [remap goto-line] #'consult-goto-line
+           [remap imenu] #'consult-imenu
+           [remap project-switch-to-buffer] #'consult-project-buffer
+           [remap recentf-open-files] #'consult-recent-file
+           "M-s g" (if (executable-find "rg")
+                       #'consult-ripgrep
+                     #'consult-grep)
+           "M-s d" consult-find
+           "C-s" consult-line
+           "C-x C-r" consult-recent-file
+           "M-s m" consult-mark
+           "M-s o" consult-outline
+           "M-s f" consult-flymake)
+
+  (:option xref-show-xrefs-function #'consult-xref
+           xref-show-definitions-function #'consult-xref
+	         completion-in-region-function #'consult-completion-in-region)
+
+  (:with-map minibuffer-local-map
+    (:bind "C-r" consult-history))
+
+  (:with-map global-map
+    (:unbind "C-x C-<right>")
+    (:unbind "C-x C-<left>"))
+  (message "Succesfully setup consult"))
 
 (provide 'init)
 ;;; init.el ends here
