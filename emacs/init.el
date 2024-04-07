@@ -538,5 +538,36 @@
     (:unbind "C-x C-<left>"))
   (message "Succesfully setup consult"))
 
+(setup (:straight-if corfu bv-not-guix-p)
+  (:load-after savehist-mode)
+  (:require corfu)
+
+  (:option tab-always-indent t
+           completion-category-overrides '((file (styles . (partial-completion))))
+           completion-cycle-threshold nil)
+
+  (:option* auto t
+            auto-prefix 2
+            auto-delay 0.10
+            max-width 80
+            count 10
+            scroll-margin 10
+            cycle nil
+            quit-at-boundary nil
+            separator ?\s
+            quit-no-match 'separator
+            preview-current 'insert
+            preselect-first nil
+            echo-documentation nil)
+
+  (:with-map corfu-map
+    (:bind "C-n" corfu-next
+           "C-p" corfu-previous
+           "C-g" corfu-quit
+           "<return>" corfu-insert))
+
+  (global-corfu-mode)
+  (message "Succesfully setup corfu"))
+
 (provide 'init)
 ;;; init.el ends here
