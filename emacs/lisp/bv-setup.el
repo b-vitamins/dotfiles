@@ -1,4 +1,4 @@
-;;; init.el --- Emacs configuration file -*- lexical-binding: t -*-
+;;; bv-setup.el --- Emacs configuration file -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2024 Ayan Das <bvits@riseup.net>
 
