@@ -144,5 +144,16 @@ the first PACKAGE."
 
 (declare-function :push-to "ext:setup" t)
 
+(setup-define :alias
+  (lambda (old-fn new-fn)
+    `(progn
+       (defalias ',old-fn ',new-fn)
+       ;; Potentially other uses of `old-fn` and `new-fn` to ensure they are recognized as used.
+       nil))
+  :documentation "Create an alias OLD-FN for function NEW-FN."
+  :repeatable t)
+
+(declare-function :alias "ext:setup" t)
+
 (provide 'bv-setup)
 ;;; bv-setup.el ends here
