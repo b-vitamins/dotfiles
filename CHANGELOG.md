@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `bv-latex` in the `Org` setup block.
+- New Lisp module `emacs/lisp/bv-latex.el`.
+- Macro `:alias` to `emacs/lisp/bv-setup.el`.
 - Configuration for `org-fragtog` and `nerd-icon`.
 - Configuration for `corfu`.
 - Configuration for `savehist`.
@@ -34,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  Variable `org-preview-latex-image-directory` set to `~/.local/latex-previews` instead of `"~/slipbox/.latex-previews/"`
 -  Improved confirmation messages.
 -  Refactor `:straight-if` to fallback to `straight.el` in case of package unavailability on a Guix system.
 -  Refactor methods `cycle-buffer` and `cycle-buffer-show` in `cycle-buffer.el`.
@@ -41,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
-- Windmove related functions (`bv-windmove-nw`, `bv-windmove-ne`, `bv-windmove-sw`, `bv-windmove-se`, `bv-lsp-copy-diagnostic-at-point`) from `emacs/lisp/bv-essentials.el`
+- Hooks involving non-existent functions `bv/zap-newline-at-eob`, `bv-auto-insert-bibliography`, `bv-org-buffer-default-face` in the `Org` setup block.
+- Windmove related functions (`bv-windmove-nw`, `bv-windmove-ne`, `bv-windmove-sw`, `bv-windmove-se`, `bv-lsp-copy-diagnostic-at-point`) from `emacs/lisp/bv-essentials.el`.
 
 
 ## [0.1.0] - 2024-04-06
