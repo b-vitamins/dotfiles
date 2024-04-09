@@ -1,7 +1,14 @@
-# This file contains LaTeX headers and Org settings
-# that more often than not I want in any given Org file.
-# This solution is courtesy of EFLS (https://emacs.stackexchange.com/users/17462/efls).
+# This file includes LaTeX headers and Org settings commonly used across my Org
+# files. The approach to consolidate settings in this file was inspired by user
+# EFLS from Emacs Stack Exchange. For details, see:
 # Question: https://emacs.stackexchange.com/questions/41697/reducing-latex-header-clutter-at-the-top-of-my-org-files
+# User Profile: https://emacs.stackexchange.com/users/17462/efls
+#
+# To apply these settings, add the following line to any Org file:
+#     #+SETUPFILE: .config/emacs/setup/setupfile.org
+# This inclusion allows the settings to be applied automatically, and any
+# setting here can be overridden locally within an individual Org file if needed.
+
 
 #+STARTUP: overview hideblocks hidestars indent latexpreview
 #+OPTIONS: toc:nil todo:nil ^:{}
