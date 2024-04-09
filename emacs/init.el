@@ -379,10 +379,7 @@
 
   ;; Hooks
   (:hook (lambda () (add-hook 'before-save-hook 'org-update-all-dblocks t t)))
-  (add-hook 'org-babel-post-tangle-hook #'bv/zap-newline-at-eob)
-  (add-hook 'org-export-before-processing-functions 'bv-auto-insert-bibliography)
   (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
-  (add-hook 'org-mode-hook 'bv-org-buffer-default-face)
 
   ;; Startup and Display Options
   (:option* require-final-newline nil
@@ -438,14 +435,29 @@
                                 "lualatex -shell-escape -interaction nonstopmode %f")
             latex-create-formula-image-program 'imagemagick
             format-latex-options (plist-put org-format-latex-options :scale 1.4)
-            preview-latex-image-directory "~/slipbox/.latex-previews/"
+            preview-latex-image-directory "~/.local/latex-previews/"
             preview-latex-default-process 'imagemagick
             highlight-latex-and-related (quote (native latex script entities)))
 
-  ;; Habit Tracking
-  (:option* modules '(org-habit)
-            habit-preceding-days 30
-            habit-graph-column 40)
+  ;; `bv-latex' holds a customized workflow that helps with PAIN (PDF is all I need),
+  ;; among other things.
+  ;;
+  ;; I rarely deal with any latex machinery directly (Org mode FTW).
+  ;; During these "Quick, need PDF to share with comrades..." rare events,
+  ;; `bv-org-latex-compile' acts as an analgesic. As opposed to `org-latex-compile':
+  ;;
+  ;; 1. It compiles documents in a temporary directory (/tmp), retaining
+  ;;    only the final PDF. Think "no-littering" for tex.
+  ;;
+  ;; 2. Given that I often create graphics via ad-hoc, disposable scripts located
+  ;;    in non-standard directories, `bv-fix-graphics-paths' automatically
+  ;;    canonicalizes all relative graphic paths. This ensures that compilations
+  ;;    performed offsite are hassle-free, without the need to shuffle images
+  ;;    around the filesystem.
+  ;;
+  (:require bv-latex)
+  (:option bv-latex-output-dir "~/slipbox/out")
+  (:alias org-latex-compile bv-org-latex-compile)
 
   ;; LaTeX and Image Export Settings
   (:push-to org-preview-latex-process-alist
@@ -460,6 +472,11 @@
               :image-size-adjust (1.0 . 1.0)
               :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
               :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
+
+  ;; Habit Tracking
+  (:option* modules '(org-habit)
+            habit-preceding-days 30
+            habit-graph-column 40)
 
   ;; Keybindings
   (:unbind "C-c C-o")
