@@ -1,0 +1,42 @@
+# This file contains LaTeX headers and Org settings
+# that more often than not I want in any given Org file.
+# This solution is courtesy of EFLS (https://emacs.stackexchange.com/users/17462/efls).
+# Question: https://emacs.stackexchange.com/questions/41697/reducing-latex-header-clutter-at-the-top-of-my-org-files
+
+#+STARTUP: overview hideblocks hidestars indent latexpreview
+#+OPTIONS: toc:nil todo:nil ^:{}
+
+# Document Layout and Fonts
+#+LATEX_HEADER: \usepackage[margin=0.9in]{geometry}  % Page margins
+#+LATEX_HEADER: \usepackage{tgpagella}              % Font selection
+#+LATEX_HEADER: \usepackage{mathpazo}               % Math font
+#+LATEX_HEADER: \usepackage{microtype}              % Improves text appearance
+
+# Math and Science Packages
+#+LATEX_HEADER: \usepackage{amsmath}                % Advanced math extensions
+#+LATEX_HEADER: \usepackage{amsfonts}               % Math fonts
+#+LATEX_HEADER: \usepackage{amssymb}                % Math symbols
+#+LATEX_HEADER: \usepackage{mathtools}              % Math tools extensions for amsmath
+#+LATEX_HEADER: \usepackage{siunitx}                % A modern interface for units in LaTeX
+
+# Figures and Plots
+#+LATEX_HEADER: \usepackage{graphicx}               % Enhanced support for graphics
+#+LATEX_HEADER: \usepackage{subcaption}             % Support for subcaptions
+#+LATEX_HEADER: \usepackage{tikz}                   % Creation of diagrams
+#+LATEX_HEADER: \usepackage{pgfplots}               % Creates normal/logarithmic plots
+#+LATEX_HEADER: \pgfplotsset{compat=newest}
+#+LATEX_HEADER: \usetikzlibrary{arrows.meta, calc, positioning, shapes.geometric, babel}
+#+LATEX_HEADER: \usepgfplotslibrary{fillbetween}    % Allows filling between named plots
+
+# Theorems and Definitions
+#+LATEX_HEADER: \newtheorem{definition}{Definition}[section]
+#+LATEX_HEADER: \newtheorem{corollary}{Corollary}[section]
+
+# Cross-referencing and Hyperlinks
+#+LATEX_HEADER: \usepackage{hyperref}               % Extensive support for hyperlinks
+#+LATEX_HEADER: \usepackage{cleveref}               % Intelligent cross-referencing
+
+# Bibliography Management
+#+LATEX_HEADER: \usepackage[backend=biber]{biblatex}
+#+LATEX_HEADER: \addbibresource{~/slipbox/bibs/working.bib}
+#+bibliography: ~/slipbox/bibs/working.bib
