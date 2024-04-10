@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `all-the-icons`, `embark`, `embark-consult`, `org-cite`, `citar`, and `org-roam`.
+- Macro `:delay` to `emacs/lisp/bv-setup.el`.
+- New Lisp module `emacs/lisp/bv-org-roam.el`.
 - Configuration for `bv-latex` in the `Org` setup block.
 - New Lisp module `emacs/lisp/bv-latex.el`.
 - Macro `:alias` to `emacs/lisp/bv-setup.el`.
