@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- A `setupfile.org` under `emacs/setup/setupfile.org` holding sane defaults for headers.
 - Configuration for `all-the-icons`, `embark`, `embark-consult`, `org-cite`, `citar`, and `org-roam`.
 - Macro `:delay` to `emacs/lisp/bv-setup.el`.
 - New Lisp module `emacs/lisp/bv-org-roam.el`.
@@ -40,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  Updated `emacs/setup/setupfile.org` to include header declaration for definition, lemma, theorem, corollary, etc.
 -  Variable `org-preview-latex-image-directory` set to `~/.local/latex-previews` instead of `"~/slipbox/.latex-previews/"`
 -  Improved confirmation messages.
 -  Refactor `:straight-if` to fallback to `straight.el` in case of package unavailability on a Guix system.
