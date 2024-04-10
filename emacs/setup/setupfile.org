@@ -24,6 +24,8 @@
 #+LATEX_HEADER: \usepackage{amsfonts}               % Math fonts
 #+LATEX_HEADER: \usepackage{amssymb}                % Math symbols
 #+LATEX_HEADER: \usepackage{mathtools}              % Math tools extensions for amsmath
+#+LATEX_HEADER: \usepackage{mathrsfs}               % Provides a \mathscr command
+#+LATEX_HEADER: \usepackage{amsthm}                 % Theorem-like structures.
 #+LATEX_HEADER: \usepackage{siunitx}                % A modern interface for units in LaTeX
 
 # Figures and Plots
@@ -35,9 +37,20 @@
 #+LATEX_HEADER: \usetikzlibrary{arrows.meta, calc, positioning, shapes.geometric, babel}
 #+LATEX_HEADER: \usepgfplotslibrary{fillbetween}    % Allows filling between named plots
 
-# Theorems and Definitions
-#+LATEX_HEADER: \newtheorem{definition}{Definition}[section]
-#+LATEX_HEADER: \newtheorem{corollary}{Corollary}[section]
+# Definitions, theorems, corollaries, and friends
+#+LATEX_HEADER: \usepackage[english]{babel}
+#+LATEX_HEADER: \usepackage[hidelinks]{hyperref}
+#+LATEX_HEADER: \newtheorem{definition}{Definition}
+#+LATEX_HEADER: \newtheorem{lemma}[theorem]{Lemma}
+#+LATEX_HEADER: \newtheorem{theorem}{Theorem}
+#+LATEX_HEADER: \newtheorem{corollary}{Corollary}
+#+LATEX_HEADER: \usepackage{tabularx}
+#+LATEX_HEADER: \newtheorem*{remark}{Remark}
+
+# Some operators
+#+LATEX_HEADER: \DeclareMathOperator{\sech}{sech}
+#+LATEX_HEADER: \DeclareMathOperator{\sgn}{sgn}
+#+LATEX_HEADER: \DeclareMathOperator{\tr}{Tr}
 
 # Cross-referencing and Hyperlinks
 #+LATEX_HEADER: \usepackage{hyperref}               % Extensive support for hyperlinks
