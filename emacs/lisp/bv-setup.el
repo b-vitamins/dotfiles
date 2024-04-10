@@ -155,5 +155,14 @@ the first PACKAGE."
 
 (declare-function :alias "ext:setup" t)
 
+(setup-define :delay
+  (lambda (&rest time)
+    `(run-with-idle-timer ,(or (car time) 1)
+                          nil ;; Don't repeat
+                          (lambda () (require ',(setup-get 'feature)))))
+  :documentation "Delay loading the feature until a certain amount of idle time has passed.")
+
+(declare-function :delay "ext:setup" t)
+
 (provide 'bv-setup)
 ;;; bv-setup.el ends here
