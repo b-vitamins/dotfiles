@@ -601,5 +601,157 @@
    blend-background nil)
   (message "Successfully setup kind-icon"))
 
+(setup (:straight-if all-the-icons bv-not-guix-p)
+  (:require all-the-icons)
+  (message "Successfully setup all-the-icon"))
+
+(setup (:straight-if embark bv-not-guix-p)
+  (:require embark)
+  (:option prefix-help-command #'embark-prefix-help-command)
+  (:push-to display-buffer-alist
+            (:elements
+             ("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+              nil
+              (window-parameters (mode-line-format . none)))))
+  (:global "C-<return>" embark-act
+           "C-c ;" embark-dwim
+           "C-h B" embark-bindings)
+  (message "Successfully setup embark"))
+
+(setup (:straight-if embark-consult bv-not-guix-p)
+  (:load-after consult)
+  (:require embark-consult)
+  (:with-feature embark-collect-mode
+    (:hook consult-preview-at-point-mode))
+  (message "Successfully setup embark"))
+
+(defconst bv-bibliography (list "~/slipbox/bibs/working.bib"))
+(defconst bv-library '("~/library/papers/"))
+(defconst bv-notes '("~/slipbox/notes"))
+
+(setup oc
+  (:require oc-biblatex)
+  (:require oc-csl)
+  (setq org-cite-global-bibliography bv-bibliography
+        org-cite-insert-processor 'citar
+        org-cite-follow-processor 'citar
+        org-cite-activate-processor 'citar
+        org-cite-export-processors '((latex biblatex)
+                                     (t csl)))
+  (:global "C-c ]" org-cite-insert))
+  
+(setup (:straight-if citar bv-not-guix-p)
+  (:load-after org)
+  (:load-after embark)
+
+  (:require all-the-icons)
+  (:require citar)
+
+  (defvar citar-indicator-files-icons
+    (citar-indicator-create
+     :symbol (all-the-icons-faicon
+              "file-o"
+              :face 'all-the-icons-green
+              :v-adjust -0.1)
+     :function #'citar-has-files
+     :padding "  "
+     :tag "has:files"))
+
+  (defvar citar-indicator-links-icons
+    (citar-indicator-create
+     :symbol (all-the-icons-octicon
+              "link"
+              :face 'all-the-icons-orange
+              :v-adjust 0.01)
+     :function #'citar-has-links
+     :padding "  "
+     :tag "has:links"))
+
+  (defvar citar-indicator-notes-icons
+    (citar-indicator-create
+     :symbol (all-the-icons-material
+              "speaker_notes"
+              :face 'all-the-icons-blue
+              :v-adjust -0.3)
+     :function #'citar-has-notes
+     :padding "  "
+     :tag "has:notes"))
+
+  (defvar citar-indicator-cited-icons
+    (citar-indicator-create
+     :symbol (all-the-icons-faicon
+              "circle-o"
+              :face 'all-the-icon-green)
+     :function #'citar-is-cited
+     :padding "  "
+     :tag "is:cited"))
+
+  (:option citar-indicators
+           (list citar-indicator-files-icons
+                 citar-indicator-links-icons
+                 citar-indicator-notes-icons))
+
+  (:option* bibliography bv-bibliography
+            library-paths bv-library
+            notes-paths bv-notes
+            bibliography org-cite-global-bibliography
+            file-extensions '("pdf" "org" "md")
+            templates
+            '((main . "${author editor:60}    ${date year issued:4}   ${title:150}")
+              (suffix . "${=type=:12} ${tags keywords:*}")
+              (preview . "${author editor} (${year issued date}) ${title}, ${journal journaltitle publisher container-title collection-title}.\n")
+              (note . "Notes on ${author editor}, ${title}"))
+            at-point-function 'embark-act)
+
+  (:with-mode org-mode
+    (:hook citar-capf-setup))
+
+  (:with-mode LaTeX-mode
+    (:hook citar-capf-setup))
+
+ (:global
+   "C-C C-o C-i" citar-insert-citation
+   "C-C C-o C-e" citar-insert-edit
+   "C-C C-o C-f" citar-open
+   "C-C C-o C-o" citar-open-files
+   "C-C C-o C-n" citar-open-notes
+   "C-C C-o C-b" citar-open-entry
+   "C-C C-o C-d" citar-org-delete-citation
+   "C-C C-o C-x" citar-export-local-bib-file)
+
+  (:require citar-org)
+  (message "Successfully setup citar"))
+
+(setup (:straight-if org-roam bv-not-guix-p)
+  (:delay 30)
+  (:load-after org)
+  (:load-after consult)
+  (:load-after marginalia)
+  (:when-loaded (org-roam-complete-everywhere))
+  (:option*
+   v2-ack t
+   directory "~/slipbox/slipbox"
+   database-connector 'sqlite-builtin
+   db-extra-links-elements '(keyword node-property)
+   mode-sections '((org-roam-backlinks-section :unique t)
+                   org-roam-reflinks-section)
+   link-title-format "R:%s"
+   tag-sources '(all-directories)
+   tag-sort t
+   tag-context-lines 5)
+  (:when-loaded (org-roam-db-autosync-mode))
+
+  (:require bv-org-roam)
+  (:option org-roam-capture-templates bv-org-roam-capture-templates)
+  (:option* node-display-template bv-org-roam-node-display-template
+            org-roam-node-annotation-function bv-org-roam-node-annotation-function)
+
+  (:global
+   "C-c n f" org-roam-node-find
+   "C-c n g" org-roam-graph
+   "C-c n i" org-roam-node-insert
+   "C-c n c" org-roam-capture)
+  (message "Successfully setup org-roam"))
+
 (provide 'init)
 ;;; init.el ends here
