@@ -709,7 +709,7 @@
   (:with-mode LaTeX-mode
     (:hook citar-capf-setup))
 
- (:global
+  (:global
    "C-C C-o C-i" citar-insert-citation
    "C-C C-o C-e" citar-insert-edit
    "C-C C-o C-f" citar-open
@@ -720,6 +720,7 @@
    "C-C C-o C-x" citar-export-local-bib-file)
 
   (:require citar-org)
+  (citar-embark-mode)
   (message "Successfully setup citar"))
 
 (setup (:straight-if org-roam bv-not-guix-p)
