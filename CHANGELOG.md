@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `yasnippet`.
 - A shell script `setup.sh` under repo root, to be executed post clone.
 - A shell script `update-snippets.sh` under `emacs/scripts` to pull snippets from various snippet-repos.
 - Configuration for `oauth2`, `pinentry`, `epa-file`, `auth-source`, `password-store`.
@@ -47,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  Changed permission to make `./setup.sh` executable.
 -  Enabled `citar-embark-mode` in the `citar` setup block.
 -  Updated `emacs/setup/setupfile.org` to include header declaration for definition, lemma, theorem, corollary, etc.
 -  Variable `org-preview-latex-image-directory` set to `~/.local/latex-previews` instead of `"~/slipbox/.latex-previews/"`
