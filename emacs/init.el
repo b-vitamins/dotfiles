@@ -831,5 +831,31 @@
   (dired-rainbow-define-chmod executable-unix "#38c172" "-.*x.*")
   (message "Successfully setup dired-rainbow"))
 
+(setup (:straight-if oauth2 bv-not-guix-p)
+  (message "Successfully setup oauth2"))
+
+(setup (:straight-if pinentry bv-not-guix-p)
+  (:require pinentry)
+  (message "Successfully setup pinentry"))
+
+(setup epa-file
+  (:require epa-file)
+  (message "Successfully setup epa-file"))
+
+(setup (:straight-if auth-source bv-not-guix-p)
+  (:require auth-source)
+  (:push-to auth-sources
+            (:elements "~/.password-store/.authinfo.gpg"))
+  (message "Successfully setup auth-source"))
+
+(setup (:straight-if password-store bv-not-guix-p)
+  (:load-after auth-source-pass)
+  (:option password-store-password-length 20)
+  (:global
+   "C-M-<return> p c" password-store-copy
+   "C-M-<return> p i" password-store-insert
+   "C-M-<return> p g" password-store-generate)
+  (message "Successfully setup password-store"))
+
 (provide 'init)
 ;;; init.el ends here
