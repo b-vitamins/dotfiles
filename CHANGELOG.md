@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `lsp-mode`, `lsp-ui`.
 - Configuration for `nerd-icons-dired`, `nerd-icons-corfu`, `nerd-icons-ibuffer`, `nerd-icons-completion`.
 - Configuration for `geiser` and `geiser-guile`.
 - Configuration for `yasnippet`.
