@@ -962,6 +962,10 @@
   (:hook-into scheme-mode)
   (message "Successfully setup flycheck-guile"))
 
+(setup (:straight-if flycheck-package bv-not-guix-p)
+  (:hook-into elisp-mode)
+  (message "Successfully setup flycheck-package"))
+
 (setup (:straight-if
         (flycheck-cpplint :type git :flavor melpa :host github :repo "flycheck/flycheck-google-cpplint")
         bv-not-guix-p)
