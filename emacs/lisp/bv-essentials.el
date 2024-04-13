@@ -30,6 +30,8 @@
 
 ;;; Code:
 
+(require 'flycheck)
+
 (defvar-local bv-straight-bootstrap-retries 3
   "Default number of retries for bootstrapping straight.el.")
 
@@ -137,6 +139,23 @@
       (dolist (face '(org-block org-table org-formula org-code org-verbatim
                      org-special-keyword org-meta-line org-checkbox))
         (set-face-attribute face nil :inherit 'fixed-pitch)))))
+
+(defun bv-copy-flycheck-overlay-at-point-to-kill-ring ()
+    "Copy the Flycheck overlay messages at point to the kill ring."
+    (interactive)
+    (let ((overlays (flycheck-overlays-at (point))))
+      (if overlays
+          (let ((overlay-msgs (mapconcat
+                               (lambda (ov)
+                                 (let ((help-echo (overlay-get ov 'help-echo))
+                                       (pos (point)))
+                                   (if (functionp help-echo)
+                                       (funcall help-echo nil ov pos)
+                                     help-echo)))
+                               overlays "\n")))
+            (kill-new overlay-msgs)
+            (message "Copied Flycheck messages to kill ring."))
+        (message "No Flycheck messages at point."))))
 
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
