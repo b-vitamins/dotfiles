@@ -857,5 +857,15 @@
    "C-M-<return> p g" password-store-generate)
   (message "Successfully setup password-store"))
 
+(setup (:straight-if yasnippet bv-not-guix-p)
+  (:load-after org-mode)
+  (:with-feature yas-minor-mode
+    (:hook-into prog-mode-hook org-mode-hook))
+  (:option yas-snippet-dirs
+           (list (expand-file-name "snippets" user-emacs-directory)))
+  (:require yasnippet)
+  (yas-reload-all)
+  (message "Successfully setup yasnippets"))
+
 (provide 'init)
 ;;; init.el ends here
