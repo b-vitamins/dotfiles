@@ -945,7 +945,7 @@
   (message "Successfully setup flycheck"))
 
 (setup (:straight-if flycheck-inline bv-not-guix-p)
-  (:load-after flycheck-mode)
+  (:load-after flycheck)
   (:hook-into flycheck-mode)
   (global-flycheck-inline-mode)
   (message "Successfully setup flycheck-inline"))
