@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  Add success messages for `geiser` and `geiser-guile` setup blocks.
 -  Changed permission to make `./setup.sh` executable.
 -  Enabled `citar-embark-mode` in the `citar` setup block.
 -  Updated `emacs/setup/setupfile.org` to include header declaration for definition, lemma, theorem, corollary, etc.
