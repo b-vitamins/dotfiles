@@ -936,7 +936,7 @@
   (message "Successfully setup lsp-ui"))
 
 (setup (:straight-if flycheck bv-not-guix-p)
-  (:load-after lsp-mode)
+  (:load-after lsp-mode lsp-ui)
   (:hook-into lsp-mode)
   (:require flycheck)
   (:with-map flycheck-mode-map
@@ -950,27 +950,31 @@
   (global-flycheck-inline-mode)
   (message "Successfully setup flycheck-inline"))
 
-(setup (:straight-if flycheck-haskell bv-not-guix-p)
-  (:hook-into haskell-mode)
-  (message "Successfully setup flycheck-haskell"))
-
-(setup (:straight-if flycheck-rust bv-not-guix-p)
-  (:hook-into rust-mode)
-  (message "Successfully setup flycheck-rust"))
-
 (setup (:straight-if flycheck-guile bv-not-guix-p)
-  (:hook-into scheme-mode)
+  (:load-after flycheck flycheck-inline)
+  (:require flycheck-guile)
   (message "Successfully setup flycheck-guile"))
 
 (setup (:straight-if flycheck-package bv-not-guix-p)
-  (:hook-into elisp-mode)
+  (:load-after flycheck flycheck-inline)
+  (:require flycheck-package)
+  (:with-feature flycheck-mode-hook
+    (:hook flycheck-package-setup))
   (message "Successfully setup flycheck-package"))
 
-(setup (:straight-if
-        (flycheck-cpplint :type git :flavor melpa :host github :repo "flycheck/flycheck-google-cpplint")
-        bv-not-guix-p)
-  (:hook-into c++-mode)
-  (message "Successfully setup flycheck-cpplint"))
+(setup (:straight-if flycheck-rust bv-not-guix-p)
+  (:load-after flycheck flycheck-inline)
+  (:require flycheck-rust)
+  (:with-feature flycheck-mode-hook
+    (:hook flycheck-rust-setup))
+  (message "Successfully setup flycheck-rust"))
+
+(setup (:straight-if flycheck-haskell bv-not-guix-p)
+  (:load-after flycheck flycheck-inline)
+  (:require flycheck-haskell)
+  (:with-feature flycheck-mode-hook
+    (:hook flycheck-haskell-setup))
+  (message "Successfully setup flycheck-haskell"))
 
 (setup (:straight-if rustic bv-not-guix-p)
   (:require rustic)
