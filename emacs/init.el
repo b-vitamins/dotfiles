@@ -900,11 +900,13 @@
   (message "Successfully setup yasnippets"))
 
 (setup (:straight-if geiser bv-not-guix-p)
-  (setq geiser-default-implementation 'guile)
-  (:require geiser))
+  (:option geiser-default-implementation 'guile)
+  (:require geiser)
+  (message "Successfully setup geiser"))
 
 (setup (:straight-if geiser-guile bv-not-guix-p)
-  (:require geiser-guile))
+  (:require geiser-guile)
+  (message "Successfully setup geiser-guile"))
 
 (setup (:straight-if lsp-mode bv-not-guix-p)
   (:hook-into rust-mode
