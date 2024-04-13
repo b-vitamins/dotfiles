@@ -55,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  Change key-bindings for `lsp-mode` to use `:global` macro.
+-  Add key-bindings for `lsp-mode` using `:bind` macro.
 -  Replace `(:load-after flycheck-mode)` with `(:load-after flycheck)` in `flycheck-inline` setup block.
 -  Hook `flycheck-package-setup`, `flycheck-rust-setup`, `flycheck-haskell-setup` to `flycheck-mode-hook`.
 -  Add `:require` macro eval to `flycheck-guile`, `flycheck-package`, `flycheck-rust`, `flycheck-haskell`.
