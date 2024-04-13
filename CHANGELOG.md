@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `flycheck`, `flycheck-inline`, `flycheck-haskell`, `flycheck-rust`, `flycheck-guile`, `flycheck-cpplint`.
+- Add function `bv-copy-flycheck-overlay-at-point-to-kill-ring` to `lisp/bv-essentials.el` for use with `flycheck`.
 - Configuration for `lsp-mode`, `lsp-ui`.
 - Configuration for `nerd-icons-dired`, `nerd-icons-corfu`, `nerd-icons-ibuffer`, `nerd-icons-completion`.
 - Configuration for `geiser` and `geiser-guile`.
