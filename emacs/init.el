@@ -776,5 +776,14 @@
   (:require org-roam-ui)
   (message "Successfully setup org-roam-ui"))
 
+(setup (:straight-if pdf-tools bv-not-guix-p)
+  (:with-feature pdf-view-mode
+    (:hook pdf-view-themed-minor-mode))
+  (:option pdf-view-use-imagemagick t)
+  (:require pdf-tools)
+  (pdf-tools-install)
+  (pdf-loader-install)
+  (message "Successfully setup pdf-tools"))
+
 (provide 'init)
 ;;; init.el ends here
