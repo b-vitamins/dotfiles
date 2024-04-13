@@ -1000,6 +1000,9 @@
   (:require lsp-jedi)
   (message "Successfully setup lsp-jedi"))
 
+(setup (:straight-if blacken bv-not-guix-p)
+  (:require blacken))
+
 (setup (:straight-if rust-mode bv-not-guix-p)
   (:require rust-mode)
   (message "Successfully setup rust-mode"))
