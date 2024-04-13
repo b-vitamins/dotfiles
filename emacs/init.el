@@ -918,6 +918,15 @@
               c++-mode
               c-mode
               web-mode)
+  (:bind
+   "C-M-<return> l d" xref-find-definitions
+   "C-M-<return> l r" xref-find-references
+   "C-M-<return> l n" lsp-ui-find-next-reference
+   "C-M-<return> l p" lsp-ui-find-prev-reference
+   "C-M-<return> l s" counsel-imenu
+   "C-M-<return> l e" lsp-ui-flycheck-list
+   "C-M-<return> l S" lsp-ui-sideline-mode
+   "C-M-<return> l X" lsp-execute-code-action)
   (:require lsp-mode)
   (lsp)
   (message "Successfully setup lsp-mode"))
