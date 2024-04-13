@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `oauth2`, `pinentry`, `epa-file`, `auth-source`, `password-store`.
 - Configuration for `dired`, `dired-hacks`, `dired-rainbow`.
 - Configuration for `pdf-tools`.
 - Configuration for `websocket`, `simple-httpd`, `org-roam-ui`.
