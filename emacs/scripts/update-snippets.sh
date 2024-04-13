@@ -1,55 +1,57 @@
 #!/bin/sh
 
-# Get the full path to the directory where this script is located
+# Base directory for snippets relative to the script's directory
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-# Set the base directory for snippets relative to the script's directory
-base_directory="$script_dir/../snippets"
+LOCAL_BASE_DIR="$script_dir/../snippets"
 
-# List of repositories and their branches. Format: "url branch"
-repositories=(
-    "https://github.com/b-vitamins/latex-snippets.git master"
+# Temporary directory for cloning
+TEMP_DIR="/tmp/snippets"
+
+# Define repositories and their respective directories to sync
+REPOS=(
+    "https://github.com/b-vitamins/latex-snippets.git master org-mode"
 )
 
-# Define the modes you expect to manage as snippets (add more as needed)
-modes=("org-mode")
+# Function to clone, pull, and copy snippets
+update_snippets() {
+    local repo_url=$1
+    local branch=$2
+    shift 2 # Remove the first two arguments (repo URL and branch)
+    local modes=("$@")
 
-# Function to pull or add a specific mode's snippets from a given repository
-pull_mode_snippets() {
-    local repo_details="$1"
-    local mode=$2
-    local repo_url=$(echo $repo_details | cut -d ' ' -f 1)
-    local branch=$(echo $repo_details | cut -d ' ' -f 2)
-    local target_directory="$base_directory/$mode"
-
-    # Ensure the target directory exists
-    if [ ! -d "$target_directory" ]; then
-        echo "Creating directory $target_directory"
-        mkdir -p "$target_directory"
+    # Clone or pull the repository into the temp directory
+    local repo_name=$(basename "$repo_url" .git)
+    local repo_path="$TEMP_DIR/$repo_name"
+    if [ ! -d "$repo_path" ]; then
+        git clone --branch "$branch" "$repo_url" "$repo_path"
+    else
+        (cd "$repo_path" && git pull origin "$branch")
     fi
 
-    # Clean any untracked files and directories to avoid conflicts
-    git clean -fdx
-
-    # Stash any existing changes, including untracked files
-    git stash push --include-untracked -m "Stash changes before subtree operation"
-
-    # Attempt to add the subtree if it does not exist
-    echo "Attempting to add subtree for $mode..."
-    git subtree add --prefix="$target_directory" $repo_url $branch --squash --prefix="$mode" 2>/dev/null
-
-    # Always attempt to pull updates
-    echo "Pulling updates for $mode from $repo_url branch $branch into $target_directory..."
-    git subtree pull --prefix="$target_directory" $repo_url $branch --squash --prefix="$mode"
-
-    # Pop the stashed changes
-    git stash pop
+    # Copy each specified mode directory
+    for mode in "${modes[@]}"; do
+        local source_path="$repo_path/$mode"
+        local dest_path="$LOCAL_BASE_DIR/$mode"
+        mkdir -p "$dest_path"
+        
+        # Copy contents using cp, updating existing files
+        find "$source_path" -type f | while read file; do
+            local dest_file="${dest_path}/${file#$source_path/}"
+            cp -a "$file" "$dest_file"
+        done
+    done
 }
 
-# Loop through all repositories and modes, then pull updates
-for repo_details in "${repositories[@]}"; do
-    for mode in "${modes[@]}"; do
-        pull_mode_snippets "$repo_details" $mode
-    done
+# Prepare the temporary directory
+mkdir -p "$TEMP_DIR"
+
+# Process each repository
+for repo in "${REPOS[@]}"; do
+    IFS=' ' read -r repo_url branch modes <<< "$repo"
+    update_snippets $repo_url $branch ${modes}
 done
 
-echo "All snippets have been updated."
+# Cleanup the temporary directory
+rm -rf "$TEMP_DIR"
+
+echo "All specified snippet modes have been updated."
