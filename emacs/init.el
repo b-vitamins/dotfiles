@@ -935,5 +935,38 @@
   (lsp-ui-mode)
   (message "Successfully setup lsp-ui"))
 
+(setup (:straight-if flycheck bv-not-guix-p)
+  (:load-after lsp-mode)
+  (:hook-into lsp-mode)
+  (:require flycheck)
+  (:with-map flycheck-mode-map
+    (:bind "C-;" bv-copy-flycheck-overlay-at-point-to-kill-ring))
+  (global-flycheck-mode)
+  (message "Successfully setup flycheck"))
+
+(setup (:straight-if flycheck-inline bv-not-guix-p)
+  (:load-after flycheck-mode)
+  (:hook-into flycheck-mode)
+  (global-flycheck-inline-mode)
+  (message "Successfully setup flycheck-inline"))
+
+(setup (:straight-if flycheck-haskell bv-not-guix-p)
+  (:hook-into haskell-mode)
+  (message "Successfully setup flycheck-haskell"))
+
+(setup (:straight-if flycheck-rust bv-not-guix-p)
+  (:hook-into rust-mode)
+  (message "Successfully setup flycheck-rust"))
+
+(setup (:straight-if flycheck-guile bv-not-guix-p)
+  (:hook-into scheme-mode)
+  (message "Successfully setup flycheck-guile"))
+
+(setup (:straight-if
+        (flycheck-cpplint :type git :flavor melpa :host github :repo "flycheck/flycheck-google-cpplint")
+        bv-not-guix-p)
+  (:hook-into c++-mode)
+  (message "Successfully setup flycheck-cpplint"))
+
 (provide 'init)
 ;;; init.el ends here
