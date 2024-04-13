@@ -867,5 +867,12 @@
   (yas-reload-all)
   (message "Successfully setup yasnippets"))
 
+(setup (:straight-if geiser bv-not-guix-p)
+  (setq geiser-default-implementation 'guile)
+  (:require geiser))
+
+(setup (:straight-if geiser-guile bv-not-guix-p)
+  (:require geiser-guile))
+
 (provide 'init)
 ;;; init.el ends here
