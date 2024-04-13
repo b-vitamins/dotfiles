@@ -754,5 +754,27 @@
    "C-c n c" org-roam-capture)
   (message "Successfully setup org-roam"))
 
+(setup (:straight-if websocket bv-not-guix-p)
+  (:option* debug t
+            websocket-callback-debug-on-error t))
+
+(setup (:straight-if simple-httpd bv-not-guix-p))
+
+(setup (:straight-if org-roam-ui bv-not-guix-p)
+  (:load-after org-roam)
+  (:option*
+   sync-theme t
+   follow t
+   update-on-save t
+   port 35901
+   ws-socket 9998
+   sync-theme nil
+   open-on-start nil)
+  (:require websocket)
+  (:require f)
+  (:require simple-httpd)
+  (:require org-roam-ui)
+  (message "Successfully setup org-roam-ui"))
+
 (provide 'init)
 ;;; init.el ends here
