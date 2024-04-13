@@ -968,5 +968,9 @@
   (:hook-into c++-mode)
   (message "Successfully setup flycheck-cpplint"))
 
+(setup (:straight-if rustic bv-not-guix-p)
+  (:require rustic)
+  (message "Successfully setup rustic"))
+
 (provide 'init)
 ;;; init.el ends here
