@@ -914,6 +914,7 @@
               python-mode
               haskell-mode
               perl-mode
+              lua-mode
               julia-mode
               c++-mode
               c-mode
@@ -988,6 +989,51 @@
 (setup (:straight-if rustic bv-not-guix-p)
   (:require rustic)
   (message "Successfully setup rustic"))
+
+(setup python-mode
+  (:option py-python-command "python3"
+           python-shell-interpreter "python3")
+  (message "Successfully setup python-mode"))
+
+(setup (:straight-if rust-mode bv-not-guix-p)
+  (:require rust-mode)
+  (message "Successfully setup rust-mode"))
+
+(setup (:straight-if haskell-mode bv-not-guix-p)
+  (:require haskell-mode)
+  (message "Successfully setup haskell-mode"))
+
+(setup (:straight-if gnuplot-mode bv-not-guix-p)
+  (:require gnuplot)
+  (message "Successfully setup gnuplot-mode"))
+
+(setup (:straight-if lua-mode bv-not-guix-p)
+  (:require lua-mode)
+  (message "Successfully setup lua-mode"))
+
+(setup (:straight-if json-mode bv-not-guix-p)
+  (:require json-mode)
+  (message "Successfully setup json-mode"))
+
+(setup (:straight-if dockerfile-mode bv-not-guix-p)
+  (:require dockerfile-mode)
+  (message "Successfully setup dockerfile-mode"))
+
+(setup (:straight-if yaml-mode bv-not-guix-p)
+  (:require yaml-mode)
+  (message "Successfully setup yaml-mode"))
+
+(setup (:straight-if toml-mode bv-not-guix-p)
+  (:require toml-mode)
+  (message "Successfully setup toml-mode"))
+
+(setup (:straight-if julia-mode bv-not-guix-p)
+  (:require julia-mode)
+  (message "Successfully setup julia-mode"))
+
+(setup (:straight-if cmake-mode bv-not-guix-p)
+  (:require cmake-mode)
+  (message "Successfully setup cmake-mode"))
 
 (provide 'init)
 ;;; init.el ends here
