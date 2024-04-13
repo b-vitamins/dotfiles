@@ -906,5 +906,32 @@
 (setup (:straight-if geiser-guile bv-not-guix-p)
   (:require geiser-guile))
 
+(setup (:straight-if lsp-mode bv-not-guix-p)
+  (:hook-into rust-mode
+              lisp-mode
+              python-mode
+              haskell-mode
+              perl-mode
+              julia-mode
+              c++-mode
+              c-mode
+              web-mode)
+  (:require lsp-mode)
+  (lsp)
+  (message "Successfully setup lsp-mode"))
+
+(setup (:straight-if lsp-ui bv-not-guix-p)
+  (:option* doc-position 'right
+            flycheck-enable t
+            sideline-enable t
+            doc-enable t
+            imenu-enable t
+            peek-enable t
+            peek-always-show t
+            peek-show-directory t)
+  (:require lsp-ui)
+  (lsp-ui-mode)
+  (message "Successfully setup lsp-ui"))
+
 (provide 'init)
 ;;; init.el ends here
