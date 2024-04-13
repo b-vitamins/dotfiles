@@ -918,7 +918,7 @@
               c++-mode
               c-mode
               web-mode)
-  (:bind
+  (:global
    "C-M-<return> l d" xref-find-definitions
    "C-M-<return> l r" xref-find-references
    "C-M-<return> l n" lsp-ui-find-next-reference
