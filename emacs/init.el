@@ -995,6 +995,11 @@
            python-shell-interpreter "python3")
   (message "Successfully setup python-mode"))
 
+(setup (:straight-if lsp-jedi bv-not-guix-p)
+  (:load-after lsp-mode lsp-ui)
+  (:require lsp-jedi)
+  (message "Successfully setup lsp-jedi"))
+
 (setup (:straight-if rust-mode bv-not-guix-p)
   (:require rust-mode)
   (message "Successfully setup rust-mode"))
