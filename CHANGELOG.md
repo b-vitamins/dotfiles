@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `websocket`, `simple-httpd`, `org-roam-ui`.
 - A `setupfile.org` under `emacs/setup/setupfile.org` holding sane defaults for headers.
 - Configuration for `all-the-icons`, `embark`, `embark-consult`, `org-cite`, `citar`, and `org-roam`.
 - Macro `:delay` to `emacs/lisp/bv-setup.el`.
