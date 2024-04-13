@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `flycheck-package`.
 - Configuration for `rustic`.
 - Configuration for `flycheck`, `flycheck-inline`, `flycheck-haskell`, `flycheck-rust`, `flycheck-guile`, `flycheck-cpplint`.
 - Add function `bv-copy-flycheck-overlay-at-point-to-kill-ring` to `lisp/bv-essentials.el` for use with `flycheck`.
@@ -54,6 +55,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  Replace `(:load-after flycheck-mode)` with `(:load-after flycheck)` in `flycheck-inline` setup block.
+-  Hook `flycheck-package-setup`, `flycheck-rust-setup`, `flycheck-haskell-setup` to `flycheck-mode-hook`.
+-  Add `:require` macro eval to `flycheck-guile`, `flycheck-package`, `flycheck-rust`, `flycheck-haskell`.
+-  Add `(:load-after flycheck flycheck-inline)` macro eval to `flycheck-guile`, `flycheck-package`, `flycheck-rust`, `flycheck-haskell`.
 -  Add success messages for `geiser` and `geiser-guile` setup blocks.
 -  Changed permission to make `./setup.sh` executable.
 -  Enabled `citar-embark-mode` in the `citar` setup block.
@@ -66,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+- `flycheck-cpplint` package.
 - Hooks involving non-existent functions `bv/zap-newline-at-eob`, `bv-auto-insert-bibliography`, `bv-org-buffer-default-face` in the `Org` setup block.
 - Windmove related functions (`bv-windmove-nw`, `bv-windmove-ne`, `bv-windmove-sw`, `bv-windmove-se`, `bv-lsp-copy-diagnostic-at-point`) from `emacs/lisp/bv-essentials.el`.
 
