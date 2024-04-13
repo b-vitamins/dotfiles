@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `python-mode`, `rust-mode`, `haskell-mode`, `gnuplot-mode`, `lua-mode`, `json-mode`, `dockerfile-mode`, `yaml-mode`, `toml-mode`, `julia-mode`, `cmake-mode`.
 - Configuration for `flycheck-package`.
 - Configuration for `rustic`.
 - Configuration for `flycheck`, `flycheck-inline`, `flycheck-haskell`, `flycheck-rust`, `flycheck-guile`, `flycheck-cpplint`.
