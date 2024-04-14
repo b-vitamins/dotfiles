@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `emacs-manifest.scm`, `texlive-manifest.scm`, `python-manifest.scm`, and `perl-manifest.scm` under `guix/manifests`.
+- Guix channels in `guix/channels.scm` and associated signing-keys under `guix/keys`.
+- Guix operating-system declaration in `guix/config.scm`
 - `alacritty.toml` configuration file under `alacritty` folder.
 - `.zshrc` configuration file and `lscolors.sh` under `zsh` folder.
 - Configuration for `god-mode`.
@@ -65,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  path for `reconfigure` alias in `zsh/.zshrc`.
 -  `alacritty` window dimension.
 -  `.gitignore` to track `zsh/.zshrc` and `zsh/lscolors.sh`.
 -  Change key-bindings for `lsp-mode` to use `:global` macro.
