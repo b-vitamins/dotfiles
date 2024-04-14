@@ -990,9 +990,10 @@
   (message "Successfully setup flycheck-haskell"))
 
 (setup python-mode
+  (:set-default python-indent 4
+            py-indent-offset 4)
   (:option py-python-command "python3"
            python-shell-interpreter "python3")
-	(:bind "C-c b" bv-blacken-buffer)
   (message "Successfully setup python-mode"))
 
 (setup (:straight-if lsp-jedi bv-not-guix-p)
