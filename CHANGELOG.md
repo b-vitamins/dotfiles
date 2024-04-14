@@ -8,8 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration for `god-mode`.
 - Configure `python-indent` and `py-indent-offset` variables.
-- Add keybinding for `bv-blacken-buffer` in `python-mode`.
+- Add key-binding for `bv-blacken-buffer` in `python-mode`.
 - Add function `bv-blacken-buffer` to `lisp/bv-essentials.el` for use in `python-mode`.
 - Clock-report customization in org-agenda using variables `org-agenda-clockreport-parameter-plist`, and `org-agenda-clock-report-header`.
 - Configuration for `blacken`.
