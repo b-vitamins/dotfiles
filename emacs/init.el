@@ -439,6 +439,7 @@
             hide-block-startup nil
             hide-emphasis-markers nil
             pretty-entities nil
+            pretty-entities-include-sub-superscripts nil
             fontify-quote-and-verse-blocks t)
 
   ;; Source Code Blocks and Babel
@@ -464,6 +465,8 @@
             agenda-include-diary t
             agenda-todo-list-sublevels nil
             agenda-start-with-clockreport-mode t
+            agenda-clock-report-header "Clock Table"
+            agenda-clockreport-parameter-plist '(:maxlevel 0 :filetitle t :compact t :stepskip0 t :fileskip0 t)
             deadline-warning-days 1
             clock-total-time-cell-format "*%s*")
 
@@ -986,10 +989,6 @@
     (:hook flycheck-haskell-setup))
   (message "Successfully setup flycheck-haskell"))
 
-(setup (:straight-if rustic bv-not-guix-p)
-  (:require rustic)
-  (message "Successfully setup rustic"))
-
 (setup python-mode
   (:option py-python-command "python3"
            python-shell-interpreter "python3")
@@ -1006,6 +1005,10 @@
 (setup (:straight-if rust-mode bv-not-guix-p)
   (:require rust-mode)
   (message "Successfully setup rust-mode"))
+
+(setup (:straight-if rustic bv-not-guix-p)
+  (:require rustic)
+  (message "Successfully setup rustic"))
 
 (setup (:straight-if haskell-mode bv-not-guix-p)
   (:require haskell-mode)
