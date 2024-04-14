@@ -1,4 +1,4 @@
-# .config
+# dotfiles
 
 > Screaming silence hides  
 > Bespeckled infinite worlds  
