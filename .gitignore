@@ -7,3 +7,10 @@
 !/emacs/lisp/
 !/emacs/setup/
 !/emacs/scripts/
+
+# Ignore everything in the 'zsh' directory
+/zsh/*
+
+# But don't ignore these files and directories
+!/zsh/.zshrc
+!/zsh/lscolors.sh
