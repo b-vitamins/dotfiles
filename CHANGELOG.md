@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Clock-report customization in org-agenda using variables `org-agenda-clockreport-parameter-plist`, and `org-agenda-clock-report-header`.
+- Configuration for `blacken`.
+- Configuration for `lsp-jedi`.
 - Configuration for `python-mode`, `rust-mode`, `haskell-mode`, `gnuplot-mode`, `lua-mode`, `json-mode`, `dockerfile-mode`, `yaml-mode`, `toml-mode`, `julia-mode`, `cmake-mode`.
 - Configuration for `flycheck-package`.
 - Configuration for `rustic`.
