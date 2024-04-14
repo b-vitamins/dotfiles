@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `alacritty.toml` configuration file under `alacritty` folder.
 - `.zshrc` configuration file and `lscolors.sh` under `zsh` folder.
 - Configuration for `god-mode`.
 - Configure `python-indent` and `py-indent-offset` variables.
