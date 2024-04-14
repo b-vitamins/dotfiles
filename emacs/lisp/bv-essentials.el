@@ -31,6 +31,7 @@
 ;;; Code:
 
 (require 'flycheck)
+(require 'god-mode)
 
 (defvar-local bv-straight-bootstrap-retries 3
   "Default number of retries for bootstrapping straight.el.")
@@ -169,6 +170,41 @@ Ensures that `black' is installed and available."
             (message "Buffer has been blackened to 80 columns and reloaded."))
         (message "Error: `black` is not installed or not in the executable path."))
     (message "No file is associated with this buffer.")))
+
+(defun bv-god-mode-update-cursor-type ()
+  "Update the cursor type based on the current mode.
+Use a `box cursor when in `god-local-mode' or when
+the buffer is read-only, and a `bar cursor otherwise."
+  (setq cursor-type (if (or god-local-mode buffer-read-only) 'box 'bar)))
+
+(defun bv-god-mode-update-mode-line ()
+  "Update the mode line appearance based on `god-local-mode'.
+When `god-local-mode` is active, set the mode line to a
+distinct color to indicate the mode.  Revert to default colors otherwise."
+  (cond
+   (god-local-mode
+    (set-face-attribute 'mode-line nil
+                        :foreground "white"
+                        :background "#2c6083")
+    (set-face-attribute 'mode-line-inactive nil
+                        :foreground "white"
+                        :background "#1a1a1a"))
+   (t
+    (set-face-attribute 'mode-line nil
+                        :foreground 'unspecified
+                        :background "#141414")
+    (set-face-attribute 'mode-line-inactive nil
+                        :foreground "white"
+                        :background "#1a1a1a"))))
+
+(defun bv-god-mode-self-insert ()
+  "Handle self-insert operations differently based on context.
+In `org-mode` at the beginning of a line, delegate to `org-self-insert-command`.
+Use `god-mode-self-insert` in other cases."
+  (interactive)
+  (if (and (bolp) (eq major-mode 'org-mode))
+      (call-interactively 'org-self-insert-command)
+    (call-interactively 'god-mode-self-insert)))
 
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
