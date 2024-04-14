@@ -36,7 +36,7 @@ alias diff='diff --color=auto'
 alias env='pretty_env'
 alias e='emacs -nw'
 alias zshrc="emacs -nw $zsh_dir/.zshrc"
-alias reconfigure='sudo guix system reconfigure $zsh_dir/config.scm'
+alias reconfigure='sudo guix system reconfigure $zsh_dir/../guix/config.scm'
 
 setopt NO_BEEP
 setopt EXTENDED_GLOB
