@@ -1,0 +1,13 @@
+# Emacs-Lisp files
+*.el linguist-language=Emacs Lisp
+
+# Scheme files
+*.scm linguist-language=Scheme
+*.ss linguist-language=Scheme
+
+# Shell scripts
+*.sh linguist-language=Shell
+
+# Ensure that shell scripts are treated as executable
+*.sh eol=lf diff=astextplain
+*.sh linguist-detectable=true
