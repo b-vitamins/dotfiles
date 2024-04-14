@@ -992,15 +992,13 @@
 (setup python-mode
   (:option py-python-command "python3"
            python-shell-interpreter "python3")
+	(:bind "C-c b" bv-blacken-buffer)
   (message "Successfully setup python-mode"))
 
 (setup (:straight-if lsp-jedi bv-not-guix-p)
   (:load-after lsp-mode lsp-ui)
   (:require lsp-jedi)
   (message "Successfully setup lsp-jedi"))
-
-(setup (:straight-if blacken bv-not-guix-p)
-  (:require blacken))
 
 (setup (:straight-if rust-mode bv-not-guix-p)
   (:require rust-mode)
