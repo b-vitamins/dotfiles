@@ -34,7 +34,7 @@ TERM = "xterm-256color"
 
 # Font settings
 [font]
-size = 12.5
+size = 12.0
 
 [font.bold]
 family = "Iosevka Comfy"
@@ -110,5 +110,5 @@ startup_mode = "Windowed"
 padding = { x = 5, y = 3 }
 
 [window.dimensions]
-columns = 120
-lines = 30
+columns = 100
+lines = 25
