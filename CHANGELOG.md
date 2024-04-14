@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configure `python-indent` and `py-indent-offset` variables.
+- Add keybinding for `bv-blacken-buffer` in `python-mode`.
+- Add function `bv-blacken-buffer` to `lisp/bv-essentials.el` for use in `python-mode`.
 - Clock-report customization in org-agenda using variables `org-agenda-clockreport-parameter-plist`, and `org-agenda-clock-report-header`.
 - Configuration for `blacken`.
 - Configuration for `lsp-jedi`.
@@ -77,6 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+-  `C-c b` key-binding for `bv-blacken-buffer` from `python-mode-map`.
+- `blacken` package.
 - `flycheck-cpplint` package.
 - Hooks involving non-existent functions `bv/zap-newline-at-eob`, `bv-auto-insert-bibliography`, `bv-org-buffer-default-face` in the `Org` setup block.
 - Windmove related functions (`bv-windmove-nw`, `bv-windmove-ne`, `bv-windmove-sw`, `bv-windmove-se`, `bv-lsp-copy-diagnostic-at-point`) from `emacs/lisp/bv-essentials.el`.
