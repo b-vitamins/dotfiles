@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  `alacritty` window dimension.
 -  `.gitignore` to track `zsh/.zshrc` and `zsh/lscolors.sh`.
 -  Change key-bindings for `lsp-mode` to use `:global` macro.
 -  Add key-bindings for `lsp-mode` using `:bind` macro.
