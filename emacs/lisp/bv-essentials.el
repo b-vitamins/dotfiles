@@ -157,5 +157,18 @@
             (message "Copied Flycheck messages to kill ring."))
         (message "No Flycheck messages at point."))))
 
+(defun bv-blacken-buffer ()
+  "Run `black` on the current file with a line length of 80 and reload the buffer.
+Ensures that `black` is installed and available."
+  (interactive)
+  (if (buffer-file-name)
+      (if (executable-find "black")
+          (let ((file (buffer-file-name)))
+            (shell-command (format "black --line-length 80 %s" (shell-quote-argument file)))
+            (revert-buffer t t t)  ; Revert the buffer without confirmation
+            (message "Buffer has been blackened to 80 columns and reloaded."))
+        (message "Error: `black` is not installed or not in the executable path."))
+    (message "No file is associated with this buffer.")))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
