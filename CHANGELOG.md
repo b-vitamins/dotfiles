@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `.zshrc` configuration file and `lscolors.sh` under `zsh` folder.
 - Configuration for `god-mode`.
 - Configure `python-indent` and `py-indent-offset` variables.
 - Add key-binding for `bv-blacken-buffer` in `python-mode`.
@@ -63,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+-  `.gitignore` to track `zsh/.zshrc` and `zsh/lscolors.sh`.
 -  Change key-bindings for `lsp-mode` to use `:global` macro.
 -  Add key-bindings for `lsp-mode` using `:bind` macro.
 -  Replace `(:load-after flycheck-mode)` with `(:load-after flycheck)` in `flycheck-inline` setup block.
