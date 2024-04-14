@@ -158,8 +158,8 @@
         (message "No Flycheck messages at point."))))
 
 (defun bv-blacken-buffer ()
-  "Run `black` on the current file with a line length of 80 and reload the buffer.
-Ensures that `black` is installed and available."
+  "Run `black' on the current file with a line length of 80 and reload the buffer.
+Ensures that `black' is installed and available."
   (interactive)
   (if (buffer-file-name)
       (if (executable-find "black")
