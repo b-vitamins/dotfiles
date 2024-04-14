@@ -1045,5 +1045,30 @@
   (:require cmake-mode)
   (message "Successfully setup cmake-mode"))
 
+(setup (:straight-if god-mode bv-not-guix-p)
+  (:option* exempt-predicates nil
+            enable-function-key-translation nil)
+  (:require god-mode)
+  (:require god-mode-isearch)
+  (:with-map isearch-mode-map
+    (:bind "C-q" god-mode-isearch-activate))
+  (:with-map god-mode-isearch-map
+    (:bind "C-q" god-mode-isearch-disable))
+  (:with-map god-local-mode-map
+    (:bind "." repeat
+           "[" backward-paragraph
+           "]" forward-paragraph
+           [remap self-insert-command] bv-god-mode-self-insert))
+  (:with-mode post-command
+    (:hook bv-god-mode-update-cursor-type
+           bv-god-mode-update-mode-line))
+  (:global "C-q" god-mode
+           "C-`" god-local-mode
+           "C-x C-1" delete-other-windows
+           "C-x C-2" split-window-below
+           "C-x C-3" split-window-right
+           "C-x C-0" delete-window)
+  (message "Successfully setup god-mode"))
+
 (provide 'init)
 ;;; init.el ends here
