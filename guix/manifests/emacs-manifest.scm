@@ -2,7 +2,7 @@
 	     (gnu packages emacs-xyz)
              (myguix packages emacs-pqrs))
 
-(specifications->manifest '("emacs-pgtk"
+(specifications->manifest '("my-emacs"
 			    "emacs-modus-themes"
 			    "emacs-doom-themes"
 			    "emacs-doom-modeline"
