@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add more packages to `guix/manifests/python-manifest.scm`.
+- Add more fonts to `guix/manifests/fonts-manifest.scm`.
 - Add system-wide packages `bluez`, `bluez-alsa`, `nss-certs`, `coreutils`, `gvfs`, `alacritty`, `firefox`, `git`, `gnome-tweaks`, `gnome-boxes`, `vlc`, `mpv`, `yt-dlp`, `font-dejavu`, `font-iosevka-comfy`, `font-config`, `imagemagick`, and `ffmpeg` to `guix/config.scm`.
 - Add services `bluetooth-service-type`, `bitmask-service-type`, `docker-service-type`, `libvirt-services-type`, `rasdaemon-service-type`, `earlyoom-service-type`, `spice-vdagent-service-type`, `inputattach-service-type`, `nftables-service-type`, `syncthing-service-type`, `pam-limits-service-type` to `guix/config.scm`.
 - `emacs-manifest.scm`, `texlive-manifest.scm`, `python-manifest.scm`, and `perl-manifest.scm` under `guix/manifests`.
