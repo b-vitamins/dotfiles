@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add `zsh/zshrc` and `zsh/zprofile` with zsh configuration.
 - Add gnome configurations for setting keybindings, user directories, power settings, and default apps using `gsettings`, `dconf`, and `xdg-utils`.
 - Add `emacs-init.sh` to `emacs/scripts` - copies all files and folders under `emacs` directory from the dotfiles repository to `.config` of the local. As a prelude, deletes `.emacs.d` directory and its contents when they exist, so that `.config/emacs` is understood as the place for all emacs configuration.
 - Add `style.sh` to `guix/scripts` - invokes `guix style` on all scheme files under the `guix` directory.
@@ -81,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Modified `.gitignore` to start tracking `zsh/zshrc` and `zsh/zprofile`.
 - Modified `%desktop-services` to 1) authorize substitute fetches from `https://substitutes.nonguix.org`, 2) add `bluez-alsa` to the dbus, 3) configure gdm to use wayland.
 -  A new Guix operating-system declaration in `guix/config.scm`. Change is non-increment for all practical purposes. 
 -  Moved all `nerd-icons` packages to the very end as a hack to make `nerd-icons-completion-mode` actually show icons during completions. Ideally, should have figured out the package interaction causing the icons to not show up. Will do a more principled fix later.
@@ -106,6 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+-  `zsh/.zshrc` file.
 -  `amdgpu` and `radeon` from `modprobe.blacklist` kernel parameters in `guix/config.scm`.
 -  `C-c b` key-binding for `bv-blacken-buffer` from `python-mode-map`.
 - `blacken` package.
