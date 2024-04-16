@@ -12,5 +12,6 @@
 /zsh/*
 
 # But don't ignore these files and directories
-!/zsh/.zshrc
+!/zsh/zshrc
+!/zsh/zprofile
 !/zsh/lscolors.sh
