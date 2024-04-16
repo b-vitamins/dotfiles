@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add `zsh-init.sh` to `zsh/scripts` - copies all files under `zsh` directory from the dotfile repository to `.config/zsh` of the local. Then creates `~/.zshrc` and `.zprofile` which source `.config/zsh/zshrc` and `.config/zsh/zprofile` respectively.
 - Add `zsh/zshrc` and `zsh/zprofile` with zsh configuration.
 - Add gnome configurations for setting keybindings, user directories, power settings, and default apps using `gsettings`, `dconf`, and `xdg-utils`.
 - Add `emacs-init.sh` to `emacs/scripts` - copies all files and folders under `emacs` directory from the dotfiles repository to `.config` of the local. As a prelude, deletes `.emacs.d` directory and its contents when they exist, so that `.config/emacs` is understood as the place for all emacs configuration.
