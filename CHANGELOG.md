@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add `emacs-init.sh` to `emacs/scripts` - copies all files and folders under `emacs` directory from the dotfiles repository to `.config` of the local. As a prelude, deletes `.emacs.d` directory and its contents when they exist, so that `.config/emacs` is understood as the place for all emacs configuration.
 - Add `style.sh` to `guix/scripts` - invokes `guix style` on all scheme files under the `guix` directory.
 - Add `profile-init.sh` to `guix/scripts` - loops through the manifests under `guix/manifests` and calls `guix package` by chaining the manifest files using multiple `-m` optional arguments to create a new profile containing *all* the packages contained in *all* the manifests.
-- Add `guix-init.sh` to `guix/scripts` - copies all `guix` directory from the dotfiles repository to `.config` of the local and triggers a `guix pull` subject to some conditions.
+- Add `guix-init.sh` to `guix/scripts` - copies all files and folders in the `guix` directory from the dotfiles repository to `.config` of the local and triggers a `guix pull` subject to some conditions.
 - Add `production-manifest.scm` to `guix/manifests`. It holds several applications and tools for professional audio, video, print production workflows.
 - Add `desktop-manifest.scm` to `guix/manifests`. It holds several commonly used "desktop" applications.
 - Add `development-manifest.scm` to `guix/manifests`. It holds several compilers, interpreters, frameworks, and toolchains common to software development workflows.
