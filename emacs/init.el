@@ -274,42 +274,9 @@
   (:hook-into prog-mode)
   (message "Successfully setup smartparens"))
 
-
-(setup (:straight-if nerd-icons bv-not-guix-p)
-  (:require nerd-icons)
-  (message "Successfully setup nerd-icons"))
-
-(setup (:straight-if nerd-icons-dired bv-not-guix-p)
-  (:load-after dired nerd-icons)
-  (:require nerd-icons-dired)
-  (:with-mode dired
-    (:hook nerd-icons-dired-mode))
-  (message "Successfully setup nerd-icons-dired"))
-
-(setup (:straight-if nerd-icons-corfu bv-not-guix-p)
-  (:load-after corfu nerd-icons)
-  (:require corfu nerd-icons-corfu)
-  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
-  (message "Successfully setup nerd-icons-corfu"))
-
-(setup (:straight-if nerd-icons-ibuffer bv-not-guix-p)
-  (:load-after nerd-icons)
-  (:option* ibuffer-icon t
-            ibuffer-color-icon t
-            ibuffer-icon-size 1.0
-            ibuffer-human-readable-size t)
-  (:require nerd-icons-ibuffer)
-  (:with-mode ibuffer
-    (:hook nerd-icons-ibuffer-mode))
-  (message "Successfully setup nerd-icons-ibuffer"))
-
-(setup (:straight-if nerd-icons-completion bv-not-guix-p)
-  (:load-after nerd-icons marginalia)
-  (:require nerd-icons-completion)
-  (nerd-icons-completion-mode)
-  (:with-mode marginalia
-    (:hook nerd-icons-completion-marginalia-setup))
-  (message "Successfully setup nerd-icons-completion"))
+(setup (:straight-if all-the-icons bv-not-guix-p)
+  (:require all-the-icons)
+  (message "Successfully setup all-the-icons"))
 
 (setup (:straight-if kind-icon bv-not-guix-p)
   (:load-after corfu nerd-icons)
@@ -319,10 +286,6 @@
    use-icons t
    blend-background nil)
   (message "Successfully setup kind-icon"))
-
-(setup (:straight-if all-the-icons bv-not-guix-p)
-  (:require all-the-icons)
-  (message "Successfully setup all-the-icons"))
 
 (setup (:straight-if no-littering bv-not-guix-p)
   (:require no-littering)
@@ -766,7 +729,7 @@
   (:when-loaded (org-roam-complete-everywhere))
   (:option*
    v2-ack t
-   directory "~/slipbox/slipbox"
+   directory "~/slipbox"
    database-connector 'sqlite-builtin
    db-extra-links-elements '(keyword node-property)
    mode-sections '((org-roam-backlinks-section :unique t)
@@ -1069,6 +1032,41 @@
            "C-x C-3" split-window-right
            "C-x C-0" delete-window)
   (message "Successfully setup god-mode"))
+
+(setup (:straight-if nerd-icons bv-not-guix-p)
+  (:require nerd-icons)
+  (message "Successfully setup nerd-icons"))
+
+(setup (:straight-if nerd-icons-dired bv-not-guix-p)
+  (:load-after dired nerd-icons)
+  (:require nerd-icons-dired)
+  (:with-mode dired
+    (:hook nerd-icons-dired-mode))
+  (message "Successfully setup nerd-icons-dired"))
+
+(setup (:straight-if nerd-icons-corfu bv-not-guix-p)
+  (:load-after corfu nerd-icons)
+  (:require corfu nerd-icons-corfu)
+  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
+  (message "Successfully setup nerd-icons-corfu"))
+
+(setup (:straight-if nerd-icons-ibuffer bv-not-guix-p)
+  (:load-after nerd-icons)
+  (:option* ibuffer-icon t
+            ibuffer-color-icon t
+            ibuffer-icon-size 1.0
+            ibuffer-human-readable-size t)
+  (:require nerd-icons-ibuffer)
+  (:with-mode ibuffer
+    (:hook nerd-icons-ibuffer-mode))
+  (message "Successfully setup nerd-icons-ibuffer"))
+
+(setup (:straight-if nerd-icons-completion bv-not-guix-p)
+  (:require nerd-icons-completion)
+  (nerd-icons-completion-mode)
+  (:with-mode marginalia
+    (:hook nerd-icons-completion-marginalia-setup))
+  (message "Successfully setup nerd-icons-completion"))
 
 (provide 'init)
 ;;; init.el ends here
