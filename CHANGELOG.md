@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add system-wide packages `bluez`, `bluez-alsa`, `nss-certs`, `coreutils`, `gvfs`, `alacritty`, `firefox`, `git`, `gnome-tweaks`, `gnome-boxes`, `vlc`, `mpv`, `yt-dlp`, `font-dejavu`, `font-iosevka-comfy`, `font-config`, `imagemagick`, and `ffmpeg` to `guix/config.scm`.
+- Add services `bluetooth-service-type`, `bitmask-service-type`, `docker-service-type`, `libvirt-services-type`, `rasdaemon-service-type`, `earlyoom-service-type`, `spice-vdagent-service-type`, `inputattach-service-type`, `nftables-service-type`, `syncthing-service-type`, `pam-limits-service-type` to `guix/config.scm`.
 - `emacs-manifest.scm`, `texlive-manifest.scm`, `python-manifest.scm`, and `perl-manifest.scm` under `guix/manifests`.
 - Guix channels in `guix/channels.scm` and associated signing-keys under `guix/keys`.
 - Guix operating-system declaration in `guix/config.scm`
@@ -68,7 +70,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
--  path for `reconfigure` alias in `zsh/.zshrc`.
+- Modified `%desktop-services` to 1) authorize substitute fetches from `https://substitutes.nonguix.org`, 2) add `bluez-alsa` to the dbus, 3) configure gdm to use wayland.
+-  A new Guix operating-system declaration in `guix/config.scm`. Change is non-increment for all practical purposes. 
+-  Moved all `nerd-icons` packages to the very end as a hack to make `nerd-icons-completion-mode` actually show icons during completions. Ideally, should have figured out the package interaction causing the icons to not show up. Will do a more principled fix later.
+-  Path for `org-roam-directory` in `emacs/init.el`.
+-  Path for `reconfigure` alias in `zsh/.zshrc`.
 -  `alacritty` window dimension.
 -  `.gitignore` to track `zsh/.zshrc` and `zsh/lscolors.sh`.
 -  Change key-bindings for `lsp-mode` to use `:global` macro.
@@ -89,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+-  `amdgpu` and `radeon` from `modprobe.blacklist` kernel parameters in `guix/config.scm`.
 -  `C-c b` key-binding for `bv-blacken-buffer` from `python-mode-map`.
 - `blacken` package.
 - `flycheck-cpplint` package.
