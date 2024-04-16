@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add `production-manifest.scm` to `guix/manifests`. It holds several applications and tools for professional audio, video, print production workflows.
+- Add `desktop-manifest.scm` to `guix/manifests`. It holds several commonly used "desktop" applications.
+- Add `development-manifest.scm` to `guix/manifests`. It holds several compilers, interpreters, frameworks, and toolchains common to software development workflows.
+- Add `core-manifest.scm` to `guix/manifests`. It holds many commonly used basic packages.
 - Add more packages to `guix/manifests/python-manifest.scm`.
 - Add more fonts to `guix/manifests/fonts-manifest.scm`.
 - Add system-wide packages `bluez`, `bluez-alsa`, `nss-certs`, `coreutils`, `gvfs`, `alacritty`, `firefox`, `git`, `gnome-tweaks`, `gnome-boxes`, `vlc`, `mpv`, `yt-dlp`, `font-dejavu`, `font-iosevka-comfy`, `font-config`, `imagemagick`, and `ffmpeg` to `guix/config.scm`.
