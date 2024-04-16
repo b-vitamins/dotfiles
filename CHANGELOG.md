@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add gnome configurations for setting keybindings, user directories, power settings, and default apps using `gsettings`, `dconf`, and `xdg-utils`.
 - Add `emacs-init.sh` to `emacs/scripts` - copies all files and folders under `emacs` directory from the dotfiles repository to `.config` of the local. As a prelude, deletes `.emacs.d` directory and its contents when they exist, so that `.config/emacs` is understood as the place for all emacs configuration.
 - Add `style.sh` to `guix/scripts` - invokes `guix style` on all scheme files under the `guix` directory.
 - Add `profile-init.sh` to `guix/scripts` - loops through the manifests under `guix/manifests` and calls `guix package` by chaining the manifest files using multiple `-m` optional arguments to create a new profile containing *all* the packages contained in *all* the manifests.
