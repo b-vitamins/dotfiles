@@ -222,6 +222,7 @@
 
 (setup (:straight-if doom-themes bv-not-guix-p)
   (load-theme 'doom-solarized-light t)
+	(bv-store-default-mode-line-colors)
   (message "Successfully setup doom-themes"))
 
 (setup (:straight-if doom-modeline bv-not-guix-p)
@@ -1022,9 +1023,9 @@
            "[" backward-paragraph
            "]" forward-paragraph
            [remap self-insert-command] bv-god-mode-self-insert))
-  (:with-mode post-command
-    (:hook bv-god-mode-update-cursor-type
-           bv-god-mode-update-mode-line))
+	(:with-mode post-command
+		(:hook bv-god-mode-update-cursor-type
+					 bv-god-mode-update-mode-line))
   (:global "C-q" god-mode
            "C-`" god-local-mode
            "C-x C-1" delete-other-windows
