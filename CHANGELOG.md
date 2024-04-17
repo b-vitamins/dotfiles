@@ -87,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Set `org-return-follows-link` to `t` in org-mode setup block.
 - `corfu-auto-delay` to 0.30.
 - face size for org headings.
 - `bv-god-mode-update-mode-line` in `bv-essentials.el` to use `bv-default-mode-line-foreground`, `bv-default-mode-line-background`, `bv-default-mode-line-inactive-foreground`, and `bv-default-mode-line-inactive-background`.
