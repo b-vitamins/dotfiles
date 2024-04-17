@@ -114,10 +114,8 @@ If ENABLE is non-nil, enable MODE; otherwise disable it."
 ;; dimensions, transparency, scroll bars, tool bar, menu bar, background,
 ;; and foreground colors. Frame transparency is set to 90%. Vertical and horizontal
 ;; scroll bars, tool bar, and menu bar are disabled to maximize screen real
-;; estate. The background color is set to a dark shade (#282c34) the foreground color
-;; is set to a light shade (#bbc2cf) to mirror the `doom-one` theme that will soon be loaded.
-;; The left and right fringes are set to 0 to remove them entirely, blending them
-;; with the background color.
+;; estate. The left and right fringes are set to 0 to remove them entirely,
+;; blending them with the background color.
 ;;
 (setq default-frame-alist
       '((width . 120)
@@ -127,8 +125,6 @@ If ENABLE is non-nil, enable MODE; otherwise disable it."
         (horizontal-scroll-bars . nil)
         (tool-bar-lines . 0)
         (menu-bar-lines . 0)
-        (background-color . "#282c34")
-        (foreground-color . "#bbc2cf")
         (left-fringe . 0)
         (right-fringe . 0)
         (undecorated . t)))
