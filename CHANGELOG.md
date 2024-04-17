@@ -114,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+- Hardcoded `background-color` and `foreground-color` in `default-frame-alist`.
 -  `zsh/.zshrc` file.
 -  `amdgpu` and `radeon` from `modprobe.blacklist` kernel parameters in `guix/config.scm`.
 -  `C-c b` key-binding for `bv-blacken-buffer` from `python-mode-map`.
