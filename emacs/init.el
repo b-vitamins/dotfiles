@@ -404,7 +404,8 @@
             hide-emphasis-markers nil
             pretty-entities nil
             pretty-entities-include-sub-superscripts nil
-            fontify-quote-and-verse-blocks t)
+            fontify-quote-and-verse-blocks t
+						return-follows-link t)
 
   ;; Source Code Blocks and Babel
   (:option* src-fontify-natively t
