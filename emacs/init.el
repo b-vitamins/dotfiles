@@ -356,7 +356,7 @@
   (message "Successfully setup ace-window"))
 
 (setup (:straight-if olivetti bv-not-guix-p)
-  (:option* body-width 130)
+  (:option* body-width 100)
   (:require olivetti)
   (:global "C-c C-h" olivetti-mode)
   (message "Successfully setup olivetti-mode"))
@@ -421,7 +421,7 @@
      (python . t) (emacs-lisp . t) (dot . t) (maxima . t) (org . t)))
 
   ;; Agenda and Task Management
-  (:option* agenda-files '("~/slipbox/main.org")
+  (:option* agenda-files '("~/main.org" "~/slipbox")
             agenda-skip-deadline-prewarning-if-scheduled nil
             agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline
             agenda-columns-add-appointments-to-effort-sum t
@@ -437,6 +437,20 @@
   (:option* log-done 'time
             export-kill-after-export t)
 
+  ;; LaTeX and Image Export Settings
+  (:push-to org-preview-latex-process-alist
+            (:elements
+             (imagemagick
+              :programs ("lualatex" "convert")
+              :description "pdf > png"
+              :message "you need to install lualatex and imagemagick."
+              :use-xcolor t
+              :image-input-type "pdf"
+              :image-output-type "png"
+              :image-size-adjust (1.0 . 1.0)
+              :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
+              :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
+
   ;; LaTeX Configuration
   (:option* latex-default-class "article"
             latex-compiler "lualatex"
@@ -445,7 +459,7 @@
                                 "lualatex -shell-escape -interaction nonstopmode %f"
                                 "lualatex -shell-escape -interaction nonstopmode %f")
             latex-create-formula-image-program 'imagemagick
-            format-latex-options (plist-put org-format-latex-options :scale 1.4)
+            format-latex-options (plist-put org-format-latex-options :scale 4.0)
             preview-latex-image-directory "~/.local/latex-previews/"
             preview-latex-default-process 'imagemagick
             highlight-latex-and-related (quote (native latex script entities)))
@@ -470,20 +484,6 @@
   (:option bv-latex-output-dir "~/slipbox/out")
   (:alias org-latex-compile bv-org-latex-compile)
 
-  ;; LaTeX and Image Export Settings
-  (:push-to org-preview-latex-process-alist
-            (:elements
-             (imagemagick
-              :programs ("lualatex" "convert")
-              :description "pdf > png"
-              :message "you need to install lualatex and imagemagick."
-              :use-xcolor t
-              :image-input-type "pdf"
-              :image-output-type "png"
-              :image-size-adjust (1.0 . 1.0)
-              :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
-              :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
-
   ;; Habit Tracking
   (:option* modules '(org-habit)
             habit-preceding-days 30
@@ -505,7 +505,7 @@
 
 (setup (:straight-if org-fragtog bv-not-guix-p)
   (:load-after org)
-  (:option org-fragtog-mode t)
+	(:hook-into org-mode-hook)
   (message "Successfully setup org-fragtog"))
 
 (setup (:straight-if vertico bv-not-guix-p)
