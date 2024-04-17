@@ -2,7 +2,7 @@
 
 # Base directory for snippets relative to the script's directory
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-LOCAL_BASE_DIR="$script_dir/../snippets"
+LOCAL_BASE_DIR="$HOME/.config/emacs/snippets"
 
 # Temporary directory for cloning
 TEMP_DIR="/tmp/snippets"
