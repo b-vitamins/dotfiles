@@ -84,8 +84,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
-- Modified `.gitignore` to start tracking `zsh/zshrc` and `zsh/zprofile`.
-- Modified `%desktop-services` to 1) authorize substitute fetches from `https://substitutes.nonguix.org`, 2) add `bluez-alsa` to the dbus, 3) configure gdm to use wayland.
+- `olivetti-body-width` set to 100.
+- `org-agenda-files` set to `~/main.org` and all of `~/slipbox`.
+-  Use `:hook-into` in `org-fragtog` setup block to hook `org-fragtog-mode` to `org-mode-hook`.
+-  `:scale` parameter of `org-format-latex-options` to 4.0.
+-  Modified `.gitignore` to start tracking `zsh/zshrc` and `zsh/zprofile`.
+-  Modified `%desktop-services` to 1) authorize substitute fetches from `https://substitutes.nonguix.org`, 2) add `bluez-alsa` to the dbus, 3) configure gdm to use wayland.
 -  A new Guix operating-system declaration in `guix/config.scm`. Change is non-increment for all practical purposes. 
 -  Moved all `nerd-icons` packages to the very end as a hack to make `nerd-icons-completion-mode` actually show icons during completions. Ideally, should have figured out the package interaction causing the icons to not show up. Will do a more principled fix later.
 -  Path for `org-roam-directory` in `emacs/init.el`.
