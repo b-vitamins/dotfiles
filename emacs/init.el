@@ -387,8 +387,8 @@
   (org-display-inline-images)
 
   ;; Hooks
-  (:hook (lambda () (add-hook 'before-save-hook 'org-update-all-dblocks t t)))
-  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
+	(:with-mode org-babel-post-tangle
+		(:hook bv-zap-newline-at-eob))
 
   ;; Startup and Display Options
   (:option* require-final-newline nil
