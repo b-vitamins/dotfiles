@@ -226,5 +226,14 @@ Use `god-mode-self-insert` in other cases."
       (call-interactively 'org-self-insert-command)
     (call-interactively 'god-mode-self-insert)))
 
+(defun bv-zap-newline-at-eob ()
+	"Delete the last newline character at the end of the buffer, if present.
+If `make-backup-files' is enabled, this function will disable it temporarily."
+	(let ((make-backup-files nil))
+		(goto-char (point-max))
+		(when (equal (char-before) ?\n)
+			(delete-char -1)
+			(save-buffer))))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
