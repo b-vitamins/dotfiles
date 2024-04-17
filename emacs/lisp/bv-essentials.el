@@ -36,6 +36,26 @@
 (defvar-local bv-straight-bootstrap-retries 3
   "Default number of retries for bootstrapping straight.el.")
 
+;; Define global variables to store the default mode line settings
+(defvar bv-default-mode-line-foreground nil
+	"Default foreground color of the mode line.")
+
+(defvar bv-default-mode-line-background nil
+"Default background color of the mode line.")
+
+(defvar bv-default-mode-line-inactive-foreground nil
+	"Default foreground color of the inactive mode line.")
+
+(defvar bv-default-mode-line-inactive-background nil
+"Default background color of the inactive mode line.")
+
+(defun bv-store-default-mode-line-colors ()
+	"Save default mode line faces for later use."
+  (setq bv-default-mode-line-foreground (face-foreground 'mode-line))
+  (setq bv-default-mode-line-background (face-background 'mode-line))
+  (setq bv-default-mode-line-inactive-foreground (face-foreground 'mode-line-inactive))
+  (setq bv-default-mode-line-inactive-background (face-background 'mode-line-inactive)))
+
 (defun bv-bootstrap-straight (&optional retries)
   "Bootstrap straight.el with optional RETRIES on failure."
   (interactive "P")
@@ -179,23 +199,23 @@ the buffer is read-only, and a `bar cursor otherwise."
 
 (defun bv-god-mode-update-mode-line ()
   "Update the mode line appearance based on `god-local-mode'.
-When `god-local-mode` is active, set the mode line to a
-distinct color to indicate the mode.  Revert to default colors otherwise."
+When `god-local-mode' is active, set distinct colors.
+Otherwise, revert to theme defaults stored in global variables."
   (cond
-   (god-local-mode
+	 (god-local-mode
     (set-face-attribute 'mode-line nil
-                        :foreground "white"
-                        :background "#2c6083")
+                        :foreground "#303030"
+                        :background "#fffff5")
     (set-face-attribute 'mode-line-inactive nil
-                        :foreground "white"
-                        :background "#1a1a1a"))
+                        :foreground "#383838"
+                        :background "#fffff2"))
    (t
     (set-face-attribute 'mode-line nil
-                        :foreground 'unspecified
-                        :background "#141414")
+                        :foreground bv-default-mode-line-foreground
+                        :background bv-default-mode-line-background)
     (set-face-attribute 'mode-line-inactive nil
-                        :foreground "white"
-                        :background "#1a1a1a"))))
+                        :foreground bv-default-mode-line-inactive-foreground
+                        :background bv-default-mode-line-inactive-background))))
 
 (defun bv-god-mode-self-insert ()
   "Handle self-insert operations differently based on context.
