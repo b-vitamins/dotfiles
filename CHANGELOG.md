@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add evaluation of `bv-store-default-mode-line-colors` inside doom-themes setup block.
+- Add function `bv-store-default-mode-line-colors` to `bv-essentials.el`, invoked inside the `doom-emacs` setup block to populate `bv-default-mode-line-foreground`, `bv-default-mode-line-background`, `bv-default-mode-line-inactive-foreground`, and `bv-default-mode-line-inactive-background`.
+- Add variables `bv-default-mode-line-foreground`, `bv-default-mode-line-background`, `bv-default-mode-line-inactive-foreground`, and `bv-default-mode-line-inactive-background` to `bv-essentials.el`.
 - Add `alacritty-init.sh` to `alacritty/scripts` - copies `alacritty/alacritty.toml` to `.config/alacritty`.
 - Add `zsh-init.sh` to `zsh/scripts` - copies all files under `zsh` directory from the dotfile repository to `.config/zsh` of the local. Then creates `~/.zshrc` and `.zprofile` which source `.config/zsh/zshrc` and `.config/zsh/zprofile` respectively.
 - Add `zsh/zshrc` and `zsh/zprofile` with zsh configuration.
@@ -84,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- `bv-god-mode-update-mode-line` in `bv-essentials.el` to use `bv-default-mode-line-foreground`, `bv-default-mode-line-background`, `bv-default-mode-line-inactive-foreground`, and `bv-default-mode-line-inactive-background`.
 - `olivetti-body-width` set to 100.
 - `org-agenda-files` set to `~/main.org` and all of `~/slipbox`.
 -  Use `:hook-into` in `org-fragtog` setup block to hook `org-fragtog-mode` to `org-mode-hook`.
