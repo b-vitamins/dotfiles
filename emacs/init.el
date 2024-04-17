@@ -221,7 +221,7 @@
   (savehist-mode))
 
 (setup (:straight-if doom-themes bv-not-guix-p)
-  (load-theme 'doom-solarized-light t)
+  (load-theme 'doom-one-light t)
 	(bv-store-default-mode-line-colors)
   (message "Successfully setup doom-themes"))
 
@@ -583,7 +583,7 @@
 
   (:option* auto t
             auto-prefix 2
-            auto-delay 0.10
+            auto-delay 0.30
             max-width 80
             count 10
             scroll-margin 10
