@@ -221,7 +221,7 @@
   (savehist-mode))
 
 (setup (:straight-if doom-themes bv-not-guix-p)
-  (load-theme 'doom-one t)
+  (load-theme 'doom-solarized-light t)
   (message "Successfully setup doom-themes"))
 
 (setup (:straight-if doom-modeline bv-not-guix-p)
