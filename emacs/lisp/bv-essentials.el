@@ -143,14 +143,14 @@
                           :font "DejaVu Sans" :height 1.0))
     ;; Set heading fonts if Iosevka Comfy is available
     (when iosevka-available
-      (dolist (face '((org-level-1 . 1.2)
-                      (org-level-2 . 1.15)
-                      (org-level-3 . 1.1)
-                      (org-level-4 . 1.1)
-                      (org-level-5 . 1.1)
-                      (org-level-6 . 1.1)
-                      (org-level-7 . 1.1)
-                      (org-level-8 . 1.1)))
+      (dolist (face '((org-level-1 . 1.1)
+                      (org-level-2 . 1.05)
+                      (org-level-3 . 1.0)
+                      (org-level-4 . 1.0)
+                      (org-level-5 . 1.0)
+                      (org-level-6 . 1.0)
+                      (org-level-7 . 1.0)
+                      (org-level-8 . 1.0)))
         (set-face-attribute (car face) nil
                             :font "Iosevka Comfy"
                             :weight 'normal
