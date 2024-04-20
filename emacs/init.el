@@ -423,7 +423,7 @@
      (python . t) (emacs-lisp . t) (dot . t) (maxima . t) (org . t)))
 
   ;; Agenda and Task Management
-  (:option* agenda-files '("~/main.org" "~/slipbox")
+  (:option* agenda-files '("~/main.org" "~/slipbox/notes")
             agenda-skip-deadline-prewarning-if-scheduled nil
             agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline
             agenda-columns-add-appointments-to-effort-sum t
