@@ -34,7 +34,8 @@
 #+LATEX_HEADER: \usepackage{tikz}                   % Creation of diagrams
 #+LATEX_HEADER: \usepackage{pgfplots}               % Creates normal/logarithmic plots
 #+LATEX_HEADER: \pgfplotsset{compat=newest}
-#+LATEX_HEADER: \usetikzlibrary{arrows.meta, calc, angle, positioning, shapes.geometric, babel, quotes}
+#+LATEX_HEADER: \usetikzlibrary{calc, angle, positioning, babel, quotes, patterns}
+#+LATEX_HEADER: \usetikzlibrary{arrows.meta, shapes.geometric, decorations.pathreplacing}
 #+LATEX_HEADER: \usepgfplotslibrary{fillbetween}    % Allows filling between named plots
 
 # Definitions, theorems, corollaries, and friends
