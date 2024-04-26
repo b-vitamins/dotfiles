@@ -58,77 +58,77 @@ Some of the options can be changed using the variable
   (when (and overlays (fboundp 'clear-image-cache)) (clear-image-cache))
   (unless (eq processing-type 'verbatim)
     (let* ((math-regexp "\\$\\|\\\\[([]\\|^[ \t]*\\\\begin{[A-Za-z0-9*]+}")
-	   (cnt 0)
-	   checkdir-flag)
+					 (cnt 0)
+					 checkdir-flag)
       (goto-char (or beg (point-min)))
       ;; Optimize overlay creation: (info "(elisp) Managing Overlays").
       (when (and overlays (memq processing-type '(dvipng imagemagick)))
-	(overlay-recenter (or end (point-max))))
+				(overlay-recenter (or end (point-max))))
       (cond
        ((eq processing-type 'mathjax)
-	;; Prepare for MathJax processing.
+				;; Prepare for MathJax processing.
         (while (re-search-forward math-regexp end t)
-	  (unless (and overlays
-		       (eq (get-char-property (point) 'org-overlay-type)
-			   'org-latex-overlay))
-	    (let* ((context (org-element-context))
-		   (type (org-element-type context)))
-	      (when (memq type '(latex-environment latex-fragment))
-	        (let ((block-type (eq type 'latex-environment))
-		      (value (org-element-property :value context))
-		      (beg (org-element-property :begin context))
-		      (end (save-excursion
-			     (goto-char (org-element-property :end context))
-			     (skip-chars-backward " \r\t\n")
-			     (point))))
+					(unless (and overlays
+											 (eq (get-char-property (point) 'org-overlay-type)
+													 'org-latex-overlay))
+						(let* ((context (org-element-context))
+									 (type (org-element-type context)))
+							(when (memq type '(latex-environment latex-fragment))
+								(let ((block-type (eq type 'latex-environment))
+											(value (org-element-property :value context))
+											(beg (org-element-property :begin context))
+											(end (save-excursion
+														 (goto-char (org-element-property :end context))
+														 (skip-chars-backward " \r\t\n")
+														 (point))))
                   (if (not (string-match "\\`\\$\\$?" value))
-	              (goto-char end)
-	            (delete-region beg end)
-	            (if (string= (match-string 0 value) "$$")
-	                (insert "\\[" (substring value 2 -2) "\\]")
-	              (insert "\\(" (substring value 1 -1) "\\)")))))))))
+											(goto-char end)
+										(delete-region beg end)
+										(if (string= (match-string 0 value) "$$")
+												(insert "\\[" (substring value 2 -2) "\\]")
+											(insert "\\(" (substring value 1 -1) "\\)")))))))))
        ((eq processing-type 'html)
         (while (re-search-forward math-regexp end t)
-	  (unless (and overlays
-		       (eq (get-char-property (point) 'org-overlay-type)
-			   'org-latex-overlay))
-	    (let* ((context (org-element-context))
-		   (type (org-element-type context)))
-	      (when (memq type '(latex-environment latex-fragment))
-	        (let ((block-type (eq type 'latex-environment))
-		      (value (org-element-property :value context))
-		      (beg (org-element-property :begin context))
-		      (end (save-excursion
-			     (goto-char (org-element-property :end context))
-			     (skip-chars-backward " \r\t\n")
-			     (point))))
+					(unless (and overlays
+											 (eq (get-char-property (point) 'org-overlay-type)
+													 'org-latex-overlay))
+						(let* ((context (org-element-context))
+									 (type (org-element-type context)))
+							(when (memq type '(latex-environment latex-fragment))
+								(let ((block-type (eq type 'latex-environment))
+											(value (org-element-property :value context))
+											(beg (org-element-property :begin context))
+											(end (save-excursion
+														 (goto-char (org-element-property :end context))
+														 (skip-chars-backward " \r\t\n")
+														 (point))))
                   (goto-char beg)
-	          (delete-region beg end)
-	          (insert (org-format-latex-as-html value))))))))
+									(delete-region beg end)
+									(insert (org-format-latex-as-html value))))))))
        ((eq processing-type 'mathml)
-	(while (re-search-forward math-regexp end t)
-	  (unless (and overlays
-		       (eq (get-char-property (point) 'org-overlay-type)
-			   'org-latex-overlay))
-	    (let* ((context (org-element-context))
-		   (type (org-element-type context)))
-	      (when (memq type '(latex-environment latex-fragment))
-	        (let ((block-type (eq type 'latex-environment))
-		      (value (org-element-property :value context))
-		      (beg (org-element-property :begin context))
-		      (end (save-excursion
-			     (goto-char (org-element-property :end context))
-			     (skip-chars-backward " \r\t\n")
-			     (point))))
+				(while (re-search-forward math-regexp end t)
+					(unless (and overlays
+											 (eq (get-char-property (point) 'org-overlay-type)
+													 'org-latex-overlay))
+						(let* ((context (org-element-context))
+									 (type (org-element-type context)))
+							(when (memq type '(latex-environment latex-fragment))
+								(let ((block-type (eq type 'latex-environment))
+											(value (org-element-property :value context))
+											(beg (org-element-property :begin context))
+											(end (save-excursion
+														 (goto-char (org-element-property :end context))
+														 (skip-chars-backward " \r\t\n")
+														 (point))))
                   ;; Process to MathML.
-		  (unless (org-format-latex-mathml-available-p)
-		    (user-error "LaTeX to MathML converter not configured"))
-		  (cl-incf cnt)
-		  (when msg (message msg cnt))
-		  (goto-char beg)
-		  (delete-region beg end)
-		  (insert (org-format-latex-as-mathml
-			   value block-type prefix dir))))))))
+									(unless (org-format-latex-mathml-available-p)
+										(user-error "LaTeX to MathML converter not configured"))
+									(cl-incf cnt)
+									(when msg (message msg cnt))
+									(goto-char beg)
+									(delete-region beg end)
+									(insert (org-format-latex-as-mathml
+													 value block-type prefix dir))))))))
        ((eq processing-type 'imagemagick)
         (user-error "Imagemagick based previews are currently not supported.\nPlease customize `org-preview-latex-default-process'."))
        ((assq processing-type org-preview-latex-process-alist)
@@ -138,8 +138,8 @@ Some of the options can be changed using the variable
                (start-time (current-time))
                (num-overlays)
                (fg
-		(let ((color (plist-get org-format-latex-options
-					:foreground)))
+								(let ((color (plist-get org-format-latex-options
+																				:foreground)))
                   (if forbuffer
                       (cond
                        ((eq color 'auto)
@@ -149,8 +149,8 @@ Some of the options can be changed using the variable
                        (t color))
                     color)))
                (bg
-		(let ((color (plist-get org-format-latex-options
-					:background)))
+								(let ((color (plist-get org-format-latex-options
+																				:background)))
                   (if forbuffer
                       (cond
                        ((eq color 'auto)
@@ -161,20 +161,20 @@ Some of the options can be changed using the variable
                     color)))
                (image-output-type (or (plist-get processing-info :image-output-type) "png"))
                (image-input-type (or (plist-get processing-info :image-input-type) "dvi"))
-	       (absprefix (expand-file-name prefix dir))
+							 (absprefix (expand-file-name prefix dir))
                (options
-		(org-combine-plists
-		 org-format-latex-options
-		 `(:foreground ,fg :background ,bg)))
+								(org-combine-plists
+								 org-format-latex-options
+								 `(:foreground ,fg :background ,bg)))
                (math-text)
                (math-locations)
                (math-hashes))
           
           (unless checkdir-flag ; Ensure the directory exists.
-	    (setq checkdir-flag t)
-	    (let ((todir (file-name-directory absprefix)))
-	      (unless (file-directory-p todir)
-		(make-directory todir t))))
+						(setq checkdir-flag t)
+						(let ((todir (file-name-directory absprefix)))
+							(unless (file-directory-p todir)
+								(make-directory todir t))))
 
           (save-excursion
             (while (re-search-forward math-regexp end t)
@@ -192,11 +192,11 @@ Some of the options can be changed using the variable
                                         (skip-chars-backward " \r\t\n")
                                         (point)))
                            (hash (sha1 (prin1-to-string
-				        (list org-format-latex-header
-					      org-latex-default-packages-alist
-					      org-latex-packages-alist
-					      org-format-latex-options
-					      forbuffer value fg bg)))))
+																				(list org-format-latex-header
+																							org-latex-default-packages-alist
+																							org-latex-packages-alist
+																							org-format-latex-options
+																							forbuffer value fg bg)))))
                       (push value math-text)
                       (push (cons block-beg block-end) math-locations)
                       (push hash math-hashes)))))))
@@ -224,20 +224,20 @@ Some of the options can be changed using the variable
                             for movefile = (format "%s_%s.%s" absprefix hash image-output-type)
                             do (copy-file image-file movefile 'replace)
                             do (if overlays
-		                   (progn
-		                     (dolist (o (overlays-in block-beg block-end))
-		                       (when (eq (overlay-get o 'org-overlay-type)
-		        	                 'org-latex-overlay)
-		                         (delete-overlay o)))
-		                     (org--make-preview-overlay block-beg block-end movefile image-output-type)
-		                     (goto-char block-end))
-		                 (delete-region block-beg block-end)
-		                 (insert
-		                  (org-add-props link
-		                      (list 'org-latex-src
-		        	            (replace-regexp-in-string "\"" "" value)
-		        	            'org-latex-src-embed-type
-		        	            (if block-type 'paragraph 'character)))))
+																	 (progn
+																		 (dolist (o (overlays-in block-beg block-end))
+																			 (when (eq (overlay-get o 'org-overlay-type)
+		        																		 'org-latex-overlay)
+																				 (delete-overlay o)))
+																		 (org--make-preview-overlay block-beg block-end movefile image-output-type)
+																		 (goto-char block-end))
+																 (delete-region block-beg block-end)
+																 (insert
+																	(org-add-props link
+																			(list 'org-latex-src
+		        																(replace-regexp-in-string "\"" "" value)
+		        																'org-latex-src-embed-type
+		        																(if block-type 'paragraph 'character)))))
                             finally do (goto-char loc))))
                (unless (process-live-p proc)
                  (mapc #'delete-file (file-expand-wildcards (concat texfilebase "*." image-output-type) 'full))
@@ -248,8 +248,8 @@ Some of the options can be changed using the variable
                    (insert (format "Previews: %d, Process: %S\n\n"
                                    num-overlays processing-type)))))))))
        (t
-	(error "Unknown conversion process %s for LaTeX fragments"
-	       processing-type))))))
+				(error "Unknown conversion process %s for LaTeX fragments"
+							 processing-type))))))
 
 (defun org-preview-create-formula-image
     (string options buffer &optional processing-type start-time)
@@ -261,46 +261,46 @@ Some of the options can be changed using the variable
          (programs (plist-get processing-info :programs))
          (error-message (or (plist-get processing-info :message) ""))
          (image-input-type (plist-get processing-info :image-input-type))
-	 (image-output-type (plist-get processing-info :image-output-type))
-	 (post-clean (or (plist-get processing-info :post-clean)
-			 '(".dvi" ".xdv" ".pdf" ".tex" ".aux" ".log"
-			   ".svg" ".png" ".jpg" ".jpeg" ".out")))
-	 (latex-header
-	  (or (plist-get processing-info :latex-header)
-	      (org-latex-make-preamble
-	       (org-export-get-environment (org-export-get-backend 'latex))
-	       org-format-latex-header
-	       'snippet)))
+				 (image-output-type (plist-get processing-info :image-output-type))
+				 (post-clean (or (plist-get processing-info :post-clean)
+												 '(".dvi" ".xdv" ".pdf" ".tex" ".aux" ".log"
+													 ".svg" ".png" ".jpg" ".jpeg" ".out")))
+				 (latex-header
+					(or (plist-get processing-info :latex-header)
+							(org-latex-make-preamble
+							 (org-export-get-environment (org-export-get-backend 'latex))
+							 org-format-latex-header
+							 'snippet)))
          (latex-compiler (plist-get processing-info :latex-compiler))
-	 (tmpdir temporary-file-directory)
-	 (texfilebase (make-temp-name
-		       (expand-file-name "orgtex" tmpdir)))
-	 (texfile (concat texfilebase ".tex"))
-	 (image-size-adjust (or (plist-get processing-info :image-size-adjust)
-				'(1.0 . 1.0)))
-	 (scale (* (if buffer (car image-size-adjust) (cdr image-size-adjust))
-		   (or (plist-get options (if buffer :scale :html-scale)) 1.0)))
-	 (dpi (* scale (if buffer (org--get-display-dpi) 140.0)))
-	 (fg (or (plist-get options (if buffer :foreground :html-foreground))
-		 "Black"))
-	 (bg (or (plist-get options (if buffer :background :html-background))
-		 "Transparent"))
-	 (image-converter
+				 (tmpdir temporary-file-directory)
+				 (texfilebase (make-temp-name
+											 (expand-file-name "orgtex" tmpdir)))
+				 (texfile (concat texfilebase ".tex"))
+				 (image-size-adjust (or (plist-get processing-info :image-size-adjust)
+																'(1.0 . 1.0)))
+				 (scale (* (if buffer (car image-size-adjust) (cdr image-size-adjust))
+									 (or (plist-get options (if buffer :scale :html-scale)) 1.0)))
+				 (dpi (* scale (if buffer (org--get-display-dpi) 140.0)))
+				 (fg (or (plist-get options (if buffer :foreground :html-foreground))
+								 "Black"))
+				 (bg (or (plist-get options (if buffer :background :html-background))
+								 "Transparent"))
+				 (image-converter
           (or (and (string= bg "Transparent")
                    (plist-get processing-info :transparent-image-converter))
               (plist-get processing-info :image-converter)))
          (log-buf (get-buffer-create "*Org Preview LaTeX Output*"))
-	 (resize-mini-windows nil))
+				 (resize-mini-windows nil))
     
     (dolist (program programs)
       (org-check-external-command program error-message))
     (if (eq fg 'default)
-	(setq fg (org-latex-color :foreground))
+				(setq fg (org-latex-color :foreground))
       (setq fg (org-latex-color-format fg)))
     (setq bg (cond
-	      ((eq bg 'default) (org-latex-color :background))
-	      ((string= bg "Transparent") nil)
-	      (t (org-latex-color-format bg))))
+							((eq bg 'default) (org-latex-color :background))
+							((string= bg "Transparent") nil)
+							(t (org-latex-color-format bg))))
     ;; Remove TeX \par at end of snippet to avoid trailing space.
     (if (string-suffix-p string "\n")
         (aset string (1- (length string)) ?%)
@@ -309,15 +309,15 @@ Some of the options can be changed using the variable
     (with-temp-file texfile
       (insert latex-header)
       (insert "\n\\begin{document}\n"
-	      "\\definecolor{fg}{rgb}{" fg "}%\n"
-	      (if bg
-		  (concat "\\definecolor{bg}{rgb}{" bg "}%\n"
-			  "\n\\pagecolor{bg}%\n")
-		"")
-	      "\n{\\color{fg}\n"
-	      string
-	      "\n}\n"
-	      "\n\\end{document}\n"))
+							"\\definecolor{fg}{rgb}{" fg "}%\n"
+							(if bg
+									(concat "\\definecolor{bg}{rgb}{" bg "}%\n"
+													"\n\\pagecolor{bg}%\n")
+								"")
+							"\n{\\color{fg}\n"
+							string
+							"\n}\n"
+							"\n\\end{document}\n"))
 
     (let* (;; (latex-compiler
            ;;  (car '("latex -interaction nonstopmode -output-directory %o")))
@@ -328,13 +328,13 @@ Some of the options can be changed using the variable
            (base-name (file-name-base texfile))
            (out-dir (or (file-name-directory texfile) "./"))
            (spec `((?D . ,(shell-quote-argument (format "%s" dpi)))
-	           (?S . ,(shell-quote-argument (format "%s" (/ dpi 140.0))))
+									 (?S . ,(shell-quote-argument (format "%s" (/ dpi 140.0))))
                    (?b . ,(shell-quote-argument base-name))
                    (?B . ,(shell-quote-argument texfilebase))
-		   (?f . ,(shell-quote-argument texfile))
-		   (?F . ,(shell-quote-argument (file-truename texfile)))
-		   (?o . ,(shell-quote-argument out-dir))
-		   (?O . ,(shell-quote-argument (expand-file-name
+									 (?f . ,(shell-quote-argument texfile))
+									 (?F . ,(shell-quote-argument (file-truename texfile)))
+									 (?o . ,(shell-quote-argument out-dir))
+									 (?O . ,(shell-quote-argument (expand-file-name
                                                  (concat base-name "." image-input-type) out-dir)))
                    (?c . ,(shell-quote-argument (concat "rgb " (replace-regexp-in-string "," " " fg))))
                    (?g . ,(shell-quote-argument (concat "rgb " (replace-regexp-in-string "," " " bg)))))))
@@ -428,24 +428,24 @@ Some of the options can be changed using the variable
            (plist-put dvisvgm-proc
                       :image-converter
                       '("dvisvgm --page=1- -n -b min -c %S -o %B-%%9p.svg %O"))))
-          ;; (map-put! org-preview-latex-process-alist 'dvisvgm dvisvgm-proc)
-          
-          (advice-add 'org-format-latex :override #'org-preview-format-latex))
+        ;; (map-put! org-preview-latex-process-alist 'dvisvgm dvisvgm-proc)
+        
+        (advice-add 'org-format-latex :override #'org-preview-format-latex))
     ;; Turning the mode off
     
     (let ((dvipng-proc (alist-get 'dvipng org-preview-latex-process-alist)))
-          (setq
-           dvipng-proc
-           (plist-put dvipng-proc :latex-compiler
-                      org-preview--dvipng-latex-compiler)
-           dvipng-proc
-           (plist-put dvipng-proc :image-converter
-                      org-preview--dvipng-image-converter)
-           dvipng-proc
-           (plist-put dvipng-proc :transparent-image-converter
-                      org-preview--dvipng-transparent-image-compiler))
-          ;; (map-put! org-preview-latex-process-alist 'dvipng dvipng-proc)
-          )
+      (setq
+       dvipng-proc
+       (plist-put dvipng-proc :latex-compiler
+                  org-preview--dvipng-latex-compiler)
+       dvipng-proc
+       (plist-put dvipng-proc :image-converter
+                  org-preview--dvipng-image-converter)
+       dvipng-proc
+       (plist-put dvipng-proc :transparent-image-converter
+                  org-preview--dvipng-transparent-image-compiler))
+      ;; (map-put! org-preview-latex-process-alist 'dvipng dvipng-proc)
+      )
     (let ((dvisvgm-proc (alist-get 'dvisvgm org-preview-latex-process-alist)))
       (setq
        dvisvgm-proc
