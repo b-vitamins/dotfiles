@@ -135,6 +135,10 @@ MSG, if non-nil, specifies a message to display during processing."
 							(insert (org-format-latex-as-mathml
 											 value block-type prefix dir)))))))))
 
+(defun org-preview-process-imagemagick ()
+  "Raise an error to indicate that ImageMagick based previews are not supported."
+  (user-error "Imagemagick based previews are currently not supported.\nPlease customize `org-preview-latex-default-process'"))
+
 (defun org-preview-format-latex
     (prefix &optional beg end dir overlays msg forbuffer processing-type)
   "Replace LaTeX fragments with links to an image.
@@ -167,8 +171,8 @@ Some of the options can be changed using the variable
 				(org-preview-process-html end overlays))
        ((eq processing-type 'mathml)
 				(org-preview-process-mathml prefix end overlays dir msg))
-       ((eq processing-type 'imagemagick)
-        (user-error "Imagemagick based previews are currently not supported.\nPlease customize `org-preview-latex-default-process'."))
+			 ((eq processing-type 'imagemagick)
+				(org-preview-process-imagemagick))
        ((assq processing-type org-preview-latex-process-alist)
         (let* ((processing-info
                 (cdr (assq processing-type org-preview-latex-process-alist)))
