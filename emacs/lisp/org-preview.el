@@ -31,10 +31,13 @@
 (defvar org-preview--log-buf "*Org Preview Log*")
 
 (defsubst org-preview-report (msg start-time)
-  (when org-preview--debug-msg 
-    (with-current-buffer (get-buffer-create org-preview--log-buf)
-      (insert (format "%.4f:    " (time-to-seconds (time-since start-time)))
-              msg "\n"))))
+  "Log MSG with elapsed time since START-TIME to `org-preview--log-buf'.
+Only logs if `org-preview--debug-msg` is non-nil."
+  (when org-preview--debug-msg
+    (let ((time-elapsed (format-time-string "%H:%M:%S" (time-since start-time) t)))
+      (with-current-buffer (get-buffer-create org-preview--log-buf)
+        (goto-char (point-max))
+        (insert (format "%s: %s\n" time-elapsed msg))))))
 
 (defun org-preview-format-latex
     (prefix &optional beg end dir overlays msg forbuffer processing-type)
