@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add `org-preview.el` (fast, async, latex preview) to `emacs/lisp` for further hacking.
 - Add function `bv-zap-newline-at-eob` to `emacs/lisp/bv-essentials.el` for use during tangling yasnippet snippets. Hooked it to `org-babel-post-tangle-hook`.
 - Add `angle` and `quotes` to `usetikzlibrary` import in the latex headers in `emacs/setup/setupfile.org`.
 - Add evaluation of `bv-store-default-mode-line-colors` inside doom-themes setup block.
