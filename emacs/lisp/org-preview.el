@@ -39,6 +39,36 @@ Only logs if `org-preview--debug-msg` is non-nil."
         (goto-char (point-max))
         (insert (format "%s: %s\n" time-elapsed msg))))))
 
+(defun org-preview-process-mathjax (&optional end overlays)
+  "Process LaTeX fragments using MathJax until END.
+
+Optional parameter END specifies the end of the region within which
+to search for LaTeX fragments.  If nil, the function processes until
+the end of the buffer.
+
+OVERLAYS, when non-nil, specifies that images should be displayed on
+top of the LaTeX source instead of replacing it."
+  (let ((math-regexp "\\$\\|\\\\[([]\\|^[ \t]*\\\\begin{[A-Za-z0-9*]+}"))
+		(while (re-search-forward math-regexp end t)
+			(unless (and overlays
+									 (eq (get-char-property (point) 'org-overlay-type)
+											 'org-latex-overlay))
+				(let* ((context (org-element-context))
+							 (type (org-element-type context)))
+					(when (memq type '(latex-environment latex-fragment))
+						(let ((value (org-element-property :value context))
+									(beg (org-element-property :begin context))
+									(end (save-excursion
+												 (goto-char (org-element-property :end context))
+												 (skip-chars-backward " \r\t\n")
+												 (point))))
+							(if (not (string-match "\\`\\$\\$?" value))
+									(goto-char end)
+								(delete-region beg end)
+								(if (string= (match-string 0 value) "$$")
+										(insert "\\[" (substring value 2 -2) "\\]")
+									(insert "\\(" (substring value 1 -1) "\\)"))))))))))
+
 (defun org-preview-format-latex
     (prefix &optional beg end dir overlays msg forbuffer processing-type)
   "Replace LaTeX fragments with links to an image.
@@ -66,27 +96,7 @@ Some of the options can be changed using the variable
 				(overlay-recenter (or end (point-max))))
       (cond
        ((eq processing-type 'mathjax)
-				;; Prepare for MathJax processing.
-        (while (re-search-forward math-regexp end t)
-					(unless (and overlays
-											 (eq (get-char-property (point) 'org-overlay-type)
-													 'org-latex-overlay))
-						(let* ((context (org-element-context))
-									 (type (org-element-type context)))
-							(when (memq type '(latex-environment latex-fragment))
-								(let ((block-type (eq type 'latex-environment))
-											(value (org-element-property :value context))
-											(beg (org-element-property :begin context))
-											(end (save-excursion
-														 (goto-char (org-element-property :end context))
-														 (skip-chars-backward " \r\t\n")
-														 (point))))
-                  (if (not (string-match "\\`\\$\\$?" value))
-											(goto-char end)
-										(delete-region beg end)
-										(if (string= (match-string 0 value) "$$")
-												(insert "\\[" (substring value 2 -2) "\\]")
-											(insert "\\(" (substring value 1 -1) "\\)")))))))))
+				(org-preview-process-mathjax end overlays))
        ((eq processing-type 'html)
         (while (re-search-forward math-regexp end t)
 					(unless (and overlays
