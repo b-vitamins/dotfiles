@@ -25,6 +25,7 @@
 ;;; Code:
 
 (require 'org)
+(require 'org-element)
 
 (defvar org-preview--debug-msg t)
 (defvar org-preview--log-buf "*Org Preview Log*")
