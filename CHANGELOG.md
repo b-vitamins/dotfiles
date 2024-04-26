@@ -90,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Refactored `org-preview-format-latex` to improve code maintainability by extracting MathML processing into the new `org-preview-process-mathml` function. This modularization helps in isolating MathML-specific processing, facilitating easier modifications and maintenance.
 - Refactored `org-preview-format-latex` to further enhance code maintainability by extracting HTML processing into the new `org-preview-process-html` function. This extraction continues to simplify the main function and clearly separates HTML processing logic, facilitating easier modifications and debugging.
 - Refactored `org-preview-format-latex` to improve code maintainability by extracting MathJax processing into the new `org-preview-process-mathjax` function. This change simplifies the main function and isolates MathJax-specific logic, enhancing clarity and ease of updates.
 - Improved the logging format in `org-preview-report` to use human-readable timestamps (HH:MM:SS) for better readability and debugging.
