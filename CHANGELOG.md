@@ -90,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Refactored `org-preview-format-latex` to improve code maintainability by extracting MathJax processing into the new `org-preview-process-mathjax` function. This change simplifies the main function and isolates MathJax-specific logic, enhancing clarity and ease of updates.
 - Improved the logging format in `org-preview-report` to use human-readable timestamps (HH:MM:SS) for better readability and debugging.
 - Fix `LOCAL_BASE_DIR` path in `emacs/scripts/update-snippets.sh` shell script.
 - Set `org-return-follows-link` to `t` in org-mode setup block.
