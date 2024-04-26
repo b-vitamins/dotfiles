@@ -96,6 +96,45 @@ top of the LaTeX source instead of replacing it."
 							(delete-region beg end)
 							(insert (org-format-latex-as-html value)))))))))
 
+(defun org-preview-process-mathml (prefix &optional end overlays dir msg)
+  "Process LaTeX fragments using MathML until END.
+
+PREFIX specifies a base directory or filename prefix for any files generated.
+Optional parameter END specifies the end of the region within which
+to search for LaTeX fragments.  If nil, the function processes until
+the end of the buffer.
+
+OVERLAYS, when non-nil, specifies that images should be displayed on
+top of the LaTeX source instead of replacing it.
+
+DIR is an optional directory path to store generated files.
+
+MSG, if non-nil, specifies a message to display during processing."
+  (let ((math-regexp "\\$\\|\\\\[([]\\|^[ \t]*\\\\begin{[A-Za-z0-9*]+}")
+				(cnt 0))
+    (while (re-search-forward math-regexp end t)
+			(unless (and overlays
+									 (eq (get-char-property (point) 'org-overlay-type)
+											 'org-latex-overlay))
+				(let* ((context (org-element-context))
+							 (type (org-element-type context)))
+					(when (memq type '(latex-environment latex-fragment))
+						(let ((block-type (eq type 'latex-environment))
+									(value (org-element-property :value context))
+									(beg (org-element-property :begin context))
+									(end (save-excursion
+												 (goto-char (org-element-property :end context))
+												 (skip-chars-backward " \r\t\n")
+												 (point))))
+							(unless (org-format-latex-mathml-available-p)
+								(user-error "LaTeX to MathML converter not configured"))
+							(cl-incf cnt)
+							(when msg (message msg cnt))
+							(goto-char beg)
+							(delete-region beg end)
+							(insert (org-format-latex-as-mathml
+											 value block-type prefix dir)))))))))
+
 (defun org-preview-format-latex
     (prefix &optional beg end dir overlays msg forbuffer processing-type)
   "Replace LaTeX fragments with links to an image.
@@ -127,29 +166,7 @@ Some of the options can be changed using the variable
        ((eq processing-type 'html)
 				(org-preview-process-html end overlays))
        ((eq processing-type 'mathml)
-				(while (re-search-forward math-regexp end t)
-					(unless (and overlays
-											 (eq (get-char-property (point) 'org-overlay-type)
-													 'org-latex-overlay))
-						(let* ((context (org-element-context))
-									 (type (org-element-type context)))
-							(when (memq type '(latex-environment latex-fragment))
-								(let ((block-type (eq type 'latex-environment))
-											(value (org-element-property :value context))
-											(beg (org-element-property :begin context))
-											(end (save-excursion
-														 (goto-char (org-element-property :end context))
-														 (skip-chars-backward " \r\t\n")
-														 (point))))
-                  ;; Process to MathML.
-									(unless (org-format-latex-mathml-available-p)
-										(user-error "LaTeX to MathML converter not configured"))
-									(cl-incf cnt)
-									(when msg (message msg cnt))
-									(goto-char beg)
-									(delete-region beg end)
-									(insert (org-format-latex-as-mathml
-													 value block-type prefix dir))))))))
+				(org-preview-process-mathml prefix end overlays dir msg))
        ((eq processing-type 'imagemagick)
         (user-error "Imagemagick based previews are currently not supported.\nPlease customize `org-preview-latex-default-process'."))
        ((assq processing-type org-preview-latex-process-alist)
