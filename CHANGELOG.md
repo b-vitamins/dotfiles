@@ -90,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Improved the logging format in `org-preview-report` to use human-readable timestamps (HH:MM:SS) for better readability and debugging.
 - Fix `LOCAL_BASE_DIR` path in `emacs/scripts/update-snippets.sh` shell script.
 - Set `org-return-follows-link` to `t` in org-mode setup block.
 - `corfu-auto-delay` to 0.30.
