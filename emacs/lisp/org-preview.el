@@ -69,6 +69,33 @@ top of the LaTeX source instead of replacing it."
 										(insert "\\[" (substring value 2 -2) "\\]")
 									(insert "\\(" (substring value 1 -1) "\\)"))))))))))
 
+(defun org-preview-process-html (&optional end overlays)
+  "Process LaTeX fragments using HTML until END.
+
+Optional parameter END specifies the end of the region within which
+to search for LaTeX fragments.  If nil, the function processes until
+the end of the buffer.
+
+OVERLAYS, when non-nil, specifies that images should be displayed on
+top of the LaTeX source instead of replacing it."
+  (let ((math-regexp "\\$\\|\\\\[([]\\|^[ \t]*\\\\begin{[A-Za-z0-9*]+}"))
+    (while (re-search-forward math-regexp end t)
+      (unless (and overlays
+                   (eq (get-char-property (point) 'org-overlay-type)
+                       'org-latex-overlay))
+        (let* ((context (org-element-context))
+               (type (org-element-type context)))
+          (when (memq type '(latex-environment latex-fragment))
+            (let ((value (org-element-property :value context))
+									(beg (org-element-property :begin context))
+									(end (save-excursion
+												 (goto-char (org-element-property :end context))
+												 (skip-chars-backward " \r\t\n")
+												 (point))))
+              (goto-char beg)
+							(delete-region beg end)
+							(insert (org-format-latex-as-html value)))))))))
+
 (defun org-preview-format-latex
     (prefix &optional beg end dir overlays msg forbuffer processing-type)
   "Replace LaTeX fragments with links to an image.
@@ -98,23 +125,7 @@ Some of the options can be changed using the variable
        ((eq processing-type 'mathjax)
 				(org-preview-process-mathjax end overlays))
        ((eq processing-type 'html)
-        (while (re-search-forward math-regexp end t)
-					(unless (and overlays
-											 (eq (get-char-property (point) 'org-overlay-type)
-													 'org-latex-overlay))
-						(let* ((context (org-element-context))
-									 (type (org-element-type context)))
-							(when (memq type '(latex-environment latex-fragment))
-								(let ((block-type (eq type 'latex-environment))
-											(value (org-element-property :value context))
-											(beg (org-element-property :begin context))
-											(end (save-excursion
-														 (goto-char (org-element-property :end context))
-														 (skip-chars-backward " \r\t\n")
-														 (point))))
-                  (goto-char beg)
-									(delete-region beg end)
-									(insert (org-format-latex-as-html value))))))))
+				(org-preview-process-html end overlays))
        ((eq processing-type 'mathml)
 				(while (re-search-forward math-regexp end t)
 					(unless (and overlays
