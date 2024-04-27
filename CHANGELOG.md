@@ -103,6 +103,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Reorganized keybindings in `init.el` to enhance accessibility and resolve key conflicts:
+  - Unbound `C-c C-e` and `C-c C-f` to free up key prefixes for more intuitive bindings.
+  - Added new global keybindings for quick delimiter insertion including parentheses, braces, brackets, and quotes.
+  - Implemented robust file and buffer management shortcuts, facilitating easier navigation and organization of multiple files.
+  - Enhanced code evaluation shortcuts for Emacs Lisp and integrated efficient search functionalities with grep.
+  - Organized text manipulation and visual toggle keybindings to improve editing workflows and interface clarity.
+  - Updated Olivetti mode toggle to `C-c C-c` from `C-c C-h` to optimize keybinding layout and avoid conflicts.
 - Added check for empty string in the function `org-preview-create-formula-image` in file `emacs/lisp/org-preview.el` to prevent `aset` errors.
 - Refined the handling of LaTeX fragment processing in `org-preview.el` to define critical variables such as `link`, `value`, and `block-type` within their operational scope. This update ensures more reliable and accurate rendering of LaTeX fragments in the buffer, particularly in complex documents with multiple types of content.
 - Improved the organization of `org-preview.el` by rearranging variable and function declarations to enhance code readability and structure. Variables related to process compilers and converters are now grouped at the beginning of the file.
