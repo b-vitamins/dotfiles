@@ -47,7 +47,6 @@
 #+LATEX_HEADER: \newtheorem{definition}{Definition}
 #+LATEX_HEADER: \newtheorem{lemma}[theorem]{Lemma}
 #+LATEX_HEADER: \newtheorem{theorem}{Theorem}
-#+LATEX_HEADER: \newtheorem{proof}{Proof}
 #+LATEX_HEADER: \newtheorem{corollary}{Corollary}
 #+LATEX_HEADER: \newtheorem*{remark}{Remark}
 
