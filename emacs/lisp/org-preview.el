@@ -536,7 +536,7 @@ how images are processed.
          (post-clean (get-post-clean-items processing-info))
          (latex-header (get-latex-header processing-info))
          (latex-compiler (plist-get processing-info :latex-compiler))
-         (tmpdir temporary-file-directory)
+				 (tmpdir (file-name-as-directory temporary-file-directory))
          (texfilebase (make-temp-name (expand-file-name "orgtex" tmpdir)))
          (texfile (concat texfilebase ".tex"))
          (config (get-image-properties processing-info options buffer))
