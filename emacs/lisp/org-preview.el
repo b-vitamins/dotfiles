@@ -423,97 +423,127 @@ Styling based on LATEX-HEADER, FG, and BG is also applied."
 						"\n}\n"
 						"\n\\end{document}\n")))
 
-(defun org-preview-create-formula-image
-    (string options buffer &optional processing-type start-time)
+(defun initiate-processing-steps (texfilebase texfile dpi fg bg image-input-type latex-compiler image-converter start-time log-buf processing-type post-clean)
+  "Initiate the LaTeX and image conversion processes for the given parameters.
+This function creates and manages processes for compiling LaTeX
+and converting the output to images.
+
+Arguments:
+- TEXFILEBASE: Base name for the temporary LaTeX and image files.
+- TEXFILE: Full path to the temporary LaTeX file.
+- DPI: Dots per inch setting for image generation.
+- FG: Foreground color for the LaTeX document.
+- BG: Background color for the LaTeX document.
+- IMAGE-INPUT-TYPE: Type of the input file for image conversion.
+- LATEX-COMPILER: Command used to compile the LaTeX file.
+- IMAGE-CONVERTER: Command used to convert the LaTeX output to images.
+- START-TIME: Time when the process was initiated, used for logging.
+- LOG-BUF: Buffer used for logging output of the processes.
+- PROCESSING-TYPE: Type of processing to be applied, affects
+how images are processed.
+- POST-CLEAN: List of items to be cleaned up post preview creation."
+  (let* ((tex-process)
+         (image-process)
+         (base-name (file-name-base texfile))
+         (out-dir (or (file-name-directory texfile) "./"))
+         (spec `((?D . ,(shell-quote-argument (format "%s" dpi)))
+								 (?S . ,(shell-quote-argument (format "%s" (/ dpi 140.0))))
+                 (?b . ,(shell-quote-argument base-name))
+                 (?B . ,(shell-quote-argument texfilebase))
+								 (?f . ,(shell-quote-argument texfile))
+								 (?F . ,(shell-quote-argument (file-truename texfile)))
+								 (?o . ,(shell-quote-argument out-dir))
+								 (?O . ,(shell-quote-argument (expand-file-name
+                                               (concat base-name "." image-input-type) out-dir)))
+                 (?c . ,(shell-quote-argument (concat "rgb " (replace-regexp-in-string "," " " fg))))
+                 (?g . ,(shell-quote-argument (concat "rgb " (replace-regexp-in-string "," " " bg)))))))
+    (when org-preview--debug-msg
+      (org-preview-report "Preprocessing" start-time))
+    (setq tex-process
+          (make-process :name (format "Org-Preview-%s" (file-name-base texfile))
+                        :buffer log-buf
+                        :command (split-string-shell-command (format-spec (car latex-compiler) spec))
+                        :sentinel (lambda (proc signal)
+                                    (unless (process-live-p proc)
+                                      (org-preview-report "Tex process" start-time)
+                                      (dolist (e (delete (concat "." image-input-type) post-clean))
+                                        (when (file-exists-p (concat texfilebase e))
+                                          (delete-file (concat texfilebase e))))
+                                      (org-preview-report "Tex cleanup" start-time)))))
+    (process-send-string tex-process
+                         (format-spec
+"\\PassOptionsToPackage{noconfig,active,tightpage,auctex}{preview}\\AtBeginDocument{\\ifx\\ifPreview\\undefined\\RequirePackage[displaymath,floats,graphics,textmath,sections,footnotes]{preview}[2004/11/05]\\fi}\\input\\detokenize{%f}\n"
+                          spec))
+    (when (equal processing-type 'dvisvgm)
+      (while (process-live-p tex-process)
+        (accept-process-output tex-process)))
+    (setq image-process
+          (make-process :name (format "Org-Convert-%s-%s"
+                                      (file-name-base texfile)
+                                      (symbol-name processing-type))
+                        :buffer (format "*Org Convert %s %s*"
+                                        (file-name-base texfile)
+                                        (symbol-name processing-type))
+                        :command (split-string-shell-command (format-spec (car image-converter) spec))))
+		(list texfilebase tex-process image-process)))
+
+(defun org-preview-create-formula-image (string options buffer &optional processing-type start-time)
+  "Create image from STRING according to specified OPTIONS and BUFFER settings.
+
+This function generates an image from LaTeX code by:
+
+1. Preparing LaTeX and image conversion configurations based on
+PROCESSING-TYPE, which defaults to org-preview-latex-default-process.
+
+2. Compiling LaTeX into a document using prepared settings and
+converting the output to an image format.
+
+Arguments:
+- STRING: LaTeX string to be converted into an image.
+- OPTIONS: A plist containing options for foreground, background,
+scale, and other LaTeX settings.
+- BUFFER: Boolean indicating whether the settings should consider
+buffer-specific properties (like DPI).
+- PROCESSING-TYPE: Type of processing to be applied, affects
+how images are processed.
+- START-TIME: Time when the process was initiated, used for logging."
   (let* ((processing-type (or processing-type org-preview-latex-default-process))
          (processing-info (cdr (assq processing-type org-preview-latex-process-alist)))
          (programs (plist-get processing-info :programs))
          (error-message (or (plist-get processing-info :message) ""))
          (image-input-type (plist-get processing-info :image-input-type))
-				 (image-output-type (plist-get processing-info :image-output-type))
          (post-clean (get-post-clean-items processing-info))
          (latex-header (get-latex-header processing-info))
          (latex-compiler (plist-get processing-info :latex-compiler))
-				 (tmpdir temporary-file-directory)
-				 (texfilebase (make-temp-name (expand-file-name "orgtex" tmpdir)))
-				 (texfile (concat texfilebase ".tex"))
+         (tmpdir temporary-file-directory)
+         (texfilebase (make-temp-name (expand-file-name "orgtex" tmpdir)))
+         (texfile (concat texfilebase ".tex"))
          (config (get-image-properties processing-info options buffer))
          (dpi (car config))
          (fg (nth 1 config))
          (bg (nth 2 config))
          (image-converter (get-image-converter processing-info bg))
          (log-buf (get-buffer-create "*Org Preview LaTeX Output*"))
-				 (resize-mini-windows nil))
-    
+         (resize-mini-windows nil))
+
     (dolist (program programs)
       (org-check-external-command program error-message))
 
     (if (eq fg 'default)
-				(setq fg (org-latex-color :foreground))
+        (setq fg (org-latex-color :foreground))
       (setq fg (org-latex-color-format fg)))
 
     (setq bg (cond
-							((eq bg 'default) (org-latex-color :background))
-							((string= bg "Transparent") nil)
-							(t (org-latex-color-format bg))))
+              ((eq bg 'default) (org-latex-color :background))
+              ((string= bg "Transparent") nil)
+              (t (org-latex-color-format bg))))
 
-    ;; Remove TeX \par at end of snippet to avoid trailing space.
     (if (string-suffix-p string "\n")
         (aset string (1- (length string)) ?%)
       (setq string (concat string "%")))
 
     (create-texfile texfile string latex-header fg bg)
-
-    (let* (;; (latex-compiler
-           ;;  (car '("latex -interaction nonstopmode -output-directory %o")))
-           ;; (image-converter (car '("dvipng --follow -bg %g -fg %c -D %D -T tight -o %B-%%09d.png %O")))
-           ;; (image-converter (car '("dvisvgm --page=1- -n -b min -c %S -o %B-%%9p.svg %O")))
-           (tex-process)
-           (image-process)
-           (base-name (file-name-base texfile))
-           (out-dir (or (file-name-directory texfile) "./"))
-           (spec `((?D . ,(shell-quote-argument (format "%s" dpi)))
-									 (?S . ,(shell-quote-argument (format "%s" (/ dpi 140.0))))
-                   (?b . ,(shell-quote-argument base-name))
-                   (?B . ,(shell-quote-argument texfilebase))
-									 (?f . ,(shell-quote-argument texfile))
-									 (?F . ,(shell-quote-argument (file-truename texfile)))
-									 (?o . ,(shell-quote-argument out-dir))
-									 (?O . ,(shell-quote-argument (expand-file-name
-                                                 (concat base-name "." image-input-type) out-dir)))
-                   (?c . ,(shell-quote-argument (concat "rgb " (replace-regexp-in-string "," " " fg))))
-                   (?g . ,(shell-quote-argument (concat "rgb " (replace-regexp-in-string "," " " bg)))))))
-      (when org-preview--debug-msg
-        (org-preview-report "Preprocessing" start-time))
-      (setq tex-process
-            (make-process :name (format "Org-Preview-%s" (file-name-base texfile))
-                          :buffer log-buf
-                          :command (split-string-shell-command (format-spec (car latex-compiler) spec))
-                          :sentinel (lambda (proc signal)
-                                      (unless (process-live-p proc)
-                                        (org-preview-report "Tex process" start-time)
-                                        (dolist (e (delete (concat "." image-input-type) post-clean))
-                                          (when (file-exists-p (concat texfilebase e))
-                                            (delete-file (concat texfilebase e))))
-                                        (org-preview-report "Tex cleanup" start-time)))))
-      (process-send-string tex-process
-                           (format-spec
-                            "\\PassOptionsToPackage{noconfig,active,tightpage,auctex}{preview}\\AtBeginDocument{\\ifx\\ifPreview\\undefined\\RequirePackage[displaymath,floats,graphics,textmath,sections,footnotes]{preview}[2004/11/05]\\fi}\\input\\detokenize{%f}\n"
-                            spec))
-      (when (equal processing-type 'dvisvgm)
-        (while (process-live-p tex-process)
-          (accept-process-output tex-process)))
-      (setq image-process
-            (make-process :name (format "Org-Convert-%s-%s"
-                                        (file-name-base texfile)
-                                        (symbol-name processing-type))
-                          :buffer (format "*Org Convert %s %s*"
-                                          (file-name-base texfile)
-                                          (symbol-name processing-type))
-                          :command (split-string-shell-command (format-spec (car image-converter) spec))))
-      (list texfilebase tex-process image-process))))
-
-
+    (initiate-processing-steps texfilebase texfile dpi fg bg image-input-type latex-compiler image-converter start-time log-buf processing-type post-clean)))
 
 ;; Ignore the rest of this file. It's some glue to turn this feature into a
 ;; minor-mode without messing up the User's state.
