@@ -90,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Refined the handling of LaTeX fragment processing in `org-preview.el` to define critical variables such as `link`, `value`, and `block-type` within their operational scope. This update ensures more reliable and accurate rendering of LaTeX fragments in the buffer, particularly in complex documents with multiple types of content.
 - Improved the organization of `org-preview.el` by rearranging variable and function declarations to enhance code readability and structure. Variables related to process compilers and converters are now grouped at the beginning of the file.
 - Introduced `initiate-processing-steps` in `org-preview.el` to handle the initiation of LaTeX compilation and image conversion processes. This new function reduces code complexity in `org-preview-create-formula-image` by consolidating process initiation into `initiate-processing-steps`.
 - Refactored the LaTeX file creation process in `org-preview.el` by introducing `create-texfile`, a new function that simplifies the generation of LaTeX files.
