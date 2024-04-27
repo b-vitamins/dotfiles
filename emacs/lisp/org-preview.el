@@ -3,8 +3,8 @@
 ;; Copyright (C) 2024  Ayan Das
 ;; Copyright (C) 2022  Karthik Chikmagalur
 
-;; Author: Karthik Chikmagalur <karthikchikmagalur@gmail.com>
-;;         Ayan Das <bvits@riseup.net>
+;; Authors: Karthik Chikmagalur <karthikchikmagalur@gmail.com>
+;;          Ayan Das <bvits@riseup.net>
 ;; Keywords: tex, extensions, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -23,6 +23,25 @@
 ;;; Commentary:
 
 ;; To use this package, turn on `org-preview-mode'.
+
+;; TODOs for org-preview.el
+;; [X] Basic equation numbering in previews
+;; [X] Basic color matching (Match default foreground/background of the theme)
+;; [X] Async support for dvisvgm.  (Only supports dvipng right now).
+;; [ ] Async support for imagemagick.
+;; [-] Code organization, refactor into task-specific functions?
+;; [ ] Add image caching.
+;; [ ] Async method (process sentinels vs org-async vs custom macro)
+;; [ ] Equation ↔ Image mismatch handling
+;; [ ] Overlay placement mismatch handling (async problem)
+;; [ ] Scale matching
+;; [ ] Advanced color matching (Match colors at point)
+;; [ ] Formula ↔ Text baseline alignment (for png, svg)
+;; [ ] Preamble precompilation
+;; [ ] Automatic preview toggle on cursor movement
+;; [ ] [Advanced] Consistent equation numbering by section in previews.
+;; [ ] Try one TeX run + multiple image-converter processes (more overhead, but threading!)
+;; [ ] Fix Org’s code verbosity with macros from Emacs 26+ (when-let, pcase-let, etc)
 
 ;;; Code:
 
