@@ -164,5 +164,11 @@ the first PACKAGE."
 
 (declare-function :delay "ext:setup" t)
 
+(setup-define :quit
+  #'setup-quit
+  :documentation "Unconditionally abort the evaluation of the current body.")
+
+(declare-function :quit "ext:setup" t)
+
 (provide 'bv-setup)
 ;;; bv-setup.el ends here
