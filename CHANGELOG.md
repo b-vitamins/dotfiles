@@ -105,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Updated Olivetti mode toggle to `C-c o` from `C-c C-c`, since the latter is severely overloaded in `org-mode`.
 - Released `M-{` from `org-mode-map` for use as a global binding to `bv-insert-open-brace`, which is used for bypassing smartparens to insert unpaired delimiters.
 - Created two separate file opening functions for each of emacs init file, the guix config file, and the zshrc file in `bv-file-navigation.el` - one opens the live version, the other opens the one in the repo under version control.
 - Removed `:unbind` macro call in the `bv-essentials` setup block since it tries to operate on bv-essentials-mode-map which does not exist.
