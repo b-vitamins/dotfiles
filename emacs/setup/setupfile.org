@@ -27,6 +27,7 @@
 #+LATEX_HEADER: \usepackage{mathrsfs}               % Provides a \mathscr command
 #+LATEX_HEADER: \usepackage{amsthm}                 % Theorem-like structures.
 #+LATEX_HEADER: \usepackage{siunitx}                % A modern interface for units in LaTeX
+#+LATEX_HEADER: \usepackage{tabularx}
 
 # Figures and Plots
 #+LATEX_HEADER: \usepackage{graphicx}               % Enhanced support for graphics
@@ -41,11 +42,13 @@
 # Definitions, theorems, corollaries, and friends
 #+LATEX_HEADER: \usepackage[english]{babel}
 #+LATEX_HEADER: \usepackage[hidelinks]{hyperref}
+#+LATEX_HEADER: \newtheorem{axiom}{Axiom}
+#+LATEX_HEADER: \newtheorem{postulate}{Postulate}
 #+LATEX_HEADER: \newtheorem{definition}{Definition}
 #+LATEX_HEADER: \newtheorem{lemma}[theorem]{Lemma}
 #+LATEX_HEADER: \newtheorem{theorem}{Theorem}
+#+LATEX_HEADER: \newtheorem{proof}{Proof}
 #+LATEX_HEADER: \newtheorem{corollary}{Corollary}
-#+LATEX_HEADER: \usepackage{tabularx}
 #+LATEX_HEADER: \newtheorem*{remark}{Remark}
 
 # Some operators
