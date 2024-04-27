@@ -26,11 +26,17 @@
 
 ;;; Code:
 
+(require 'map)
 (require 'org)
 (require 'org-element)
 
 (defvar org-preview--debug-msg t)
 (defvar org-preview--log-buf "*Org Preview Log*")
+(defvar org-preview--dvipng-latex-compiler nil)
+(defvar org-preview--dvipng-image-converter nil)
+(defvar org-preview--dvipng-transparent-image-compiler nil)
+(defvar org-preview--dvisvgm-latex-compiler nil)
+(defvar org-preview--dvisvgm-image-converter nil)
 
 (defsubst org-preview-report (msg start-time)
   "Log MSG with elapsed time since START-TIME to `org-preview--log-buf'.
@@ -40,6 +46,15 @@ Only logs if `org-preview--debug-msg` is non-nil."
       (with-current-buffer (get-buffer-create org-preview--log-buf)
         (goto-char (point-max))
         (insert (format "%s: %s\n" time-elapsed msg))))))
+
+(defsubst org-preview--get (&rest keys)
+  "Retrieve nested elements from `org-preview-latex-process-alist' using KEYS.
+KEYS are a sequence of keys used to access nested values within the alist.
+This function navigates through the nested association list
+`org-preview-latex-process-alist' by sequentially accessing each key
+in KEYS.  It returns the value found at the nested depth, or nil
+if any key in the sequence does not match."
+  (map-nested-elt org-preview-latex-process-alist keys))
 
 (defun org-preview-process-mathjax (&optional end overlays)
   "Process LaTeX fragments using MathJax until END.
@@ -545,19 +560,6 @@ how images are processed.
     (create-texfile texfile string latex-header fg bg)
     (initiate-processing-steps texfilebase texfile dpi fg bg image-input-type latex-compiler image-converter start-time log-buf processing-type post-clean)))
 
-;; Ignore the rest of this file. It's some glue to turn this feature into a
-;; minor-mode without messing up the User's state.
-
-(require 'map)
-(defvar org-preview--dvipng-latex-compiler nil)
-(defvar org-preview--dvipng-image-converter nil)
-(defvar org-preview--dvipng-transparent-image-compiler nil)
-(defvar org-preview--dvisvgm-latex-compiler nil)
-(defvar org-preview--dvisvgm-image-converter nil)
-
-(defsubst org-preview--get (&rest keys)
-  (map-nested-elt org-preview-latex-process-alist keys))
-
 (define-minor-mode org-preview-mode
   "Asynchronous and batched (much, much faster) LaTeX previews for Org-mode."
   :global t
@@ -565,7 +567,6 @@ how images are processed.
   :lighter nil
   :group 'org
   (if org-preview-mode
-      ;; Turning the mode on
       (progn
         (setq org-preview--dvipng-latex-compiler
               (org-preview--get 'dvipng :latex-compiler))
@@ -591,7 +592,6 @@ how images are processed.
            (plist-put dvipng-proc
                       :transparent-image-converter
                       '("dvipng --follow -D %D -T tight -bg Transparent -fg %c -o %B-%%09d.png %O")))
-          ;; (map-put! org-preview-latex-process-alist 'dvipng dvipng-proc)
           )
         (let ((dvisvgm-proc (alist-get 'dvisvgm org-preview-latex-process-alist)))
           (setq
@@ -603,11 +603,7 @@ how images are processed.
            (plist-put dvisvgm-proc
                       :image-converter
                       '("dvisvgm --page=1- -n -b min -c %S -o %B-%%9p.svg %O"))))
-        ;; (map-put! org-preview-latex-process-alist 'dvisvgm dvisvgm-proc)
-        
         (advice-add 'org-format-latex :override #'org-preview-format-latex))
-    ;; Turning the mode off
-    
     (let ((dvipng-proc (alist-get 'dvipng org-preview-latex-process-alist)))
       (setq
        dvipng-proc
@@ -619,7 +615,6 @@ how images are processed.
        dvipng-proc
        (plist-put dvipng-proc :transparent-image-converter
                   org-preview--dvipng-transparent-image-compiler))
-      ;; (map-put! org-preview-latex-process-alist 'dvipng dvipng-proc)
       )
     (let ((dvisvgm-proc (alist-get 'dvisvgm org-preview-latex-process-alist)))
       (setq
@@ -629,7 +624,6 @@ how images are processed.
        dvisvgm-proc
        (plist-put dvisvgm-proc :image-converter
                   org-preview--dvisvgm-image-converter))
-      ;; (map-put! org-preview-latex-process-alist 'dvisvgm dvisvgm-proc)
       )
     (advice-remove 'org-format-latex #'org-preview-format-latex)))
 
