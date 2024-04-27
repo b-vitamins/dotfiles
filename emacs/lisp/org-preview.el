@@ -559,7 +559,8 @@ how images are processed.
               ((string= bg "Transparent") nil)
               (t (org-latex-color-format bg))))
 
-    (if (string-suffix-p string "\n")
+		(if (and (not (string-empty-p string))
+             (string-suffix-p string "\n"))
         (aset string (1- (length string)) ?%)
       (setq string (concat string "%")))
 
