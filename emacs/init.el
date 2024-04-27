@@ -239,9 +239,12 @@
    "<f1>" 'bv-open-my-main-org
    "<f2>" 'bv-open-my-snippets-org
    "<f3>" 'bv-open-my-working-bib
-   "<f4>" 'bv-open-my-init-el
-   "<f5>" 'bv-open-my-config-scm
-   "<f6>" 'bv-open-my-zshrc))
+   "<f4>" 'bv-open-my-cold-init-el
+   "<f5>" 'bv-open-my-cold-config-scm
+   "<f6>" 'bv-open-my-cold-zshrc
+   "<f7>" 'bv-open-my-hot-zshrc
+   "<f8>" 'bv-open-my-hot-config-scm
+   "<f9>" 'bv-open-my-hot-init-el))
 
 (setup display-line-numbers
   (:hook-into prog-mode
