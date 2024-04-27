@@ -189,7 +189,17 @@
   (message "Successfully setup whoami"))
 
 (setup bv-essentials
-  (:global "C-c h" 'hidden-mode-line-mode)
+	(:global
+   "C-c h" 'hidden-mode-line-mode
+   "M-(" 'bv-insert-open-paren
+   "M-)" 'bv-insert-close-paren
+   "M-{" 'bv-insert-open-brace
+   "M-}" 'bv-insert-close-brace
+   "M-[" 'bv-insert-open-bracket
+   "M-]" 'bv-insert-close-bracket
+   "M-'" 'bv-insert-single-quote
+   "M-\"" 'bv-insert-double-quote
+   "M-`" 'bv-insert-backtick)
   (message "Successfully setup bv-essentials"))
 
 (setup display-line-numbers
