@@ -271,5 +271,52 @@ If `make-backup-files' is enabled, this function will disable it temporarily."
                   (kill-buffer)))))
         (message "Operation cancelled.")))))
 
+(defun bv-open-file-in-window (filename &optional direction focus ratio)
+  "Open FILENAME from the current window in the specified DIRECTION.
+Optional arguments include DIRECTION for window placement (`left or `right),
+FOCUS to determine if focus should switch to the new window, and RATIO for
+width of the new window relative to the frame width (default is 2/5, or 0.4)."
+  (interactive
+   (list (read-file-name "Open file in window: ")
+         (intern (completing-read "Direction (left or right): " '("left" "right")
+                                  nil t "right"))
+         (y-or-n-p "Switch to the new window? ")
+         (or (read-number "Window width ratio (default 2/5): " 0.4) 0.4)))
+  (unless (file-exists-p filename)
+    (error "The file does not exist"))
+  (let ((buffer-new (find-file-noselect filename))
+        (current-window (selected-window))
+        (total-width (frame-width))
+        (side (if (eq direction 'right) 'right 'left)))
+    (dolist (window (window-list))
+      (unless (eq window current-window)
+        (delete-window window)))
+    (let* ((new-width (round (* total-width ratio)))
+           (split-side (- total-width new-width))
+           (new-window (split-window current-window split-side side)))
+      (set-window-buffer new-window buffer-new)
+      (when focus
+        (select-window new-window)))))
+
+(defun bv-open-file-left-jump (filename)
+  "Open FILENAME in a new window to the left and jump to it."
+  (interactive "FOpen file on left and jump: ")
+  (bv-open-file-in-window filename 'left t 0.4))
+
+(defun bv-open-file-left-stay (filename)
+  "Open FILENAME in a new window to the left without changing focus."
+  (interactive "FOpen file on left and stay: ")
+  (bv-open-file-in-window filename 'left nil 0.4))
+
+(defun bv-open-file-right-jump (filename)
+  "Open FILENAME in a new window to the right and jump to it."
+  (interactive "FOpen file on right and jump: ")
+  (bv-open-file-in-window filename 'right t 0.4))
+
+(defun bv-open-file-right-stay (filename)
+  "Open FILENAME in a new window to the right without changing focus."
+  (interactive "FOpen file on right and stay: ")
+  (bv-open-file-in-window filename 'right nil 0.4))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
