@@ -560,7 +560,10 @@
             habit-graph-column 40)
 
   ;; Keybindings
-  (:unbind "C-c C-o")
+  (:unbind
+	 "C-c C-o"
+	 "M-{" ;; clashes with bv-insert-open-brace
+	 )
   (:global "C-c l" org-store-link
            "C-c a" org-agenda
            "C-c c" org-capture)
