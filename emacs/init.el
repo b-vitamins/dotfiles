@@ -275,7 +275,8 @@
   (message "Successfully setup adaptive-wrap"))
 
 (setup (:straight-if smartparens bv-not-guix-p)
-  (:hook-into prog-mode)
+  (:hook-into prog-mode
+							org-mode)
   (message "Successfully setup smartparens"))
 
 (setup (:straight-if all-the-icons bv-not-guix-p)
