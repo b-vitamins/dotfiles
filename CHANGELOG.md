@@ -90,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Enhanced the modularity of `org-preview.el` by extracting configuration and utility functionalities into separate functions (`get-latex-header`, `get-image-properties`, `get-post-clean-items`, and `get-image-converter`). This refactoring aims to simplify `org-preview-create-formula-image`.
 - Continued refactoring of LaTeX processing in `org-preview.el` by further modularizing `org-preview-process-generic`. Introduced `set-tex-process-sentinels` and `set-image-process-sentinels` to handle specific aspects of process completion and error management. This division enhances the clarity and maintainability of the code, ensuring each component is responsible for a distinct part of the processing logic.
 - Extensively refactored LaTeX processing in `org-preview.el` by introducing multiple utility functions:
   - `org-preview-ensure-directory`: Ensures necessary directories are created and existing.
