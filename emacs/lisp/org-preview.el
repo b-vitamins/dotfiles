@@ -407,6 +407,22 @@ Files with these extensions must be deleted post preview creation."
            (plist-get processing-info :transparent-image-converter))
       (plist-get processing-info :image-converter)))
 
+(defun create-texfile (texfile string latex-header fg bg)
+  "Create a LaTeX file named TEXFILE with specified STRING.
+Styling based on LATEX-HEADER, FG, and BG is also applied."
+  (with-temp-file texfile
+    (insert latex-header)
+    (insert "\n\\begin{document}\n"
+						"\\definecolor{fg}{rgb}{" fg "}%\n"
+						(if bg
+								(concat "\\definecolor{bg}{rgb}{" bg "}%\n"
+												"\n\\pagecolor{bg}%\n")
+							"")
+						"\n{\\color{fg}\n"
+						string
+						"\n}\n"
+						"\n\\end{document}\n")))
+
 (defun org-preview-create-formula-image
     (string options buffer &optional processing-type start-time)
   (let* ((processing-type (or processing-type org-preview-latex-default-process))
@@ -431,30 +447,22 @@ Files with these extensions must be deleted post preview creation."
     
     (dolist (program programs)
       (org-check-external-command program error-message))
+
     (if (eq fg 'default)
 				(setq fg (org-latex-color :foreground))
       (setq fg (org-latex-color-format fg)))
+
     (setq bg (cond
 							((eq bg 'default) (org-latex-color :background))
 							((string= bg "Transparent") nil)
 							(t (org-latex-color-format bg))))
+
     ;; Remove TeX \par at end of snippet to avoid trailing space.
     (if (string-suffix-p string "\n")
         (aset string (1- (length string)) ?%)
       (setq string (concat string "%")))
 
-    (with-temp-file texfile
-      (insert latex-header)
-      (insert "\n\\begin{document}\n"
-							"\\definecolor{fg}{rgb}{" fg "}%\n"
-							(if bg
-									(concat "\\definecolor{bg}{rgb}{" bg "}%\n"
-													"\n\\pagecolor{bg}%\n")
-								"")
-							"\n{\\color{fg}\n"
-							string
-							"\n}\n"
-							"\n\\end{document}\n"))
+    (create-texfile texfile string latex-header fg bg)
 
     (let* (;; (latex-compiler
            ;;  (car '("latex -interaction nonstopmode -output-directory %o")))
