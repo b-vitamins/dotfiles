@@ -23,10 +23,10 @@
 ;; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;;
-;; “People sometimes ask me if it is a sin in the Church of Emacs to use vi.
-;; Using a free version of vi is not a sin; it is a penance.  So happy hacking.”
-;;                                                    - Richard Stallman
+
+;; This module provides functions to open files in new windows with specific directions
+;; and focus settings.  It includes customizable paths for frequently accessed files
+;; and macros to easily create specific file opening functions.
 
 ;;; Code:
 
@@ -35,16 +35,6 @@
   "Customizable file paths for bv-open-file functions."
   :group 'files
   :prefix "bv-")
-
-(defcustom bv-init-el-path "~/projects/dotfiles/emacs/init.el"
-  "Path to the Emacs init file."
-  :type 'string
-  :group 'bv-file-paths)
-
-(defcustom bv-config-scm-path "~/projects/dotfiles/guix/config.scm"
-  "Path to the Guix configuration file."
-  :type 'string
-  :group 'bv-file-paths)
 
 (defcustom bv-main-org-path "~/main.org"
   "Path to the main Org file."
@@ -56,17 +46,42 @@
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-zshrc-path "~/projects/dotfiles/zsh/zshrc"
-  "Path to the Zsh configuration file."
-  :type 'string
-  :group 'bv-file-paths)
-
 (defcustom bv-working-bib-path "~/slipbox/bibliographies/working.bib"
   "Path to the working bibliography file."
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-file-open-width-ratio 0.4
+(defcustom bv-cold-init-el-path "~/projects/dotfiles/emacs/init.el"
+  "Path to the Emacs init file."
+  :type 'string
+  :group 'bv-file-paths)
+
+(defcustom bv-hot-init-el-path "~/.config/emacs/init.el"
+  "Path to the Emacs init file."
+  :type 'string
+  :group 'bv-file-paths)
+
+(defcustom bv-cold-config-scm-path "~/projects/dotfiles/guix/config.scm"
+  "Path to the Guix configuration file."
+  :type 'string
+  :group 'bv-file-paths)
+
+(defcustom bv-hot-config-scm-path "~/.config/guix/config.scm"
+  "Path to the Guix configuration file."
+  :type 'string
+  :group 'bv-file-paths)
+
+(defcustom bv-cold-zshrc-path "~/projects/dotfiles/zsh/zshrc"
+  "Path to the Zsh configuration file."
+  :type 'string
+  :group 'bv-file-paths)
+
+(defcustom bv-hot-zshrc-path "~/.config/zsh/zshrc"
+  "Path to the Zsh configuration file."
+  :type 'string
+  :group 'bv-file-paths)
+
+(defcustom bv-file-open-width-ratio 0.45
   "Width ratio for opening files in a new window, relative to the frame width."
   :type 'float
   :group 'bv-file-paths)
@@ -132,12 +147,15 @@ A width ratio specified by `bv-file-open-width-ratio' is used by default."
                 (if (eq ,direction 'left) "left" "right")
                 (if ,focus "with" "without")))))
 
-(bv-define-open-file-function bv-open-my-init-el bv-init-el-path 'right t)
-(bv-define-open-file-function bv-open-my-config-scm bv-config-scm-path 'right t)
 (bv-define-open-file-function bv-open-my-main-org bv-main-org-path 'right t)
 (bv-define-open-file-function bv-open-my-snippets-org bv-snippets-org-path 'right t)
-(bv-define-open-file-function bv-open-my-zshrc bv-zshrc-path 'right t)
 (bv-define-open-file-function bv-open-my-working-bib bv-working-bib-path 'right t)
+(bv-define-open-file-function bv-open-my-cold-init-el bv-cold-init-el-path 'right t)
+(bv-define-open-file-function bv-open-my-hot-init-el bv-hot-init-el-path 'right t)
+(bv-define-open-file-function bv-open-my-cold-config-scm bv-cold-config-scm-path 'right t)
+(bv-define-open-file-function bv-open-my-hot-config-scm bv-hot-config-scm-path 'right t)
+(bv-define-open-file-function bv-open-my-cold-zshrc bv-cold-zshrc-path 'right t)
+(bv-define-open-file-function bv-open-my-hot-zshrc bv-hot-zshrc-path 'right t)
 
 (provide 'bv-file-navigation)
 ;;; bv-file-navigation.el ends here
