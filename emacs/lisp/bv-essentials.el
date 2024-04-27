@@ -252,5 +252,24 @@ If `make-backup-files' is enabled, this function will disable it temporarily."
 (bv-define-insert-delimiter bv-insert-double-quote "\"")
 (bv-define-insert-delimiter bv-insert-backtick "`")
 
+(defun bv-move-to-trash ()
+  "Move the current file to ~/trash and kill the buffer."
+  (interactive)
+  (let ((filename (buffer-file-name))
+        (trash-dir (expand-file-name "~/trash")))
+    (when filename
+      (if (yes-or-no-p (format "Really move file '%s' to trash? " filename))
+          (progn
+            (unless (file-directory-p trash-dir)
+              (make-directory trash-dir t))
+            (let ((new-location (expand-file-name (file-name-nondirectory filename) trash-dir)))
+              (if (file-exists-p new-location)
+                  (message "A file with the same name already exists in the trash.")
+                (progn
+                  (rename-file filename new-location)
+                  (message "Moved file to trash: %s" new-location)
+                  (kill-buffer)))))
+        (message "Operation cancelled.")))))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
