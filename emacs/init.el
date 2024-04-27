@@ -209,8 +209,8 @@
 	 )
   ;; Text manipulation keybindings
   (:global
-   "C-c C-r" 'replace-string
-   "C-c C-q" 'query-replace
+   "C-c r" 'replace-string
+   "C-c q" 'query-replace
 	 )
   ;; Visual toggles and utility keybindings
   (:global
@@ -419,7 +419,7 @@
 (setup (:straight-if olivetti bv-not-guix-p)
   (:option* body-width 100)
   (:require olivetti)
-  (:global "C-c C-c" olivetti-mode)
+  (:global "C-c o" olivetti-mode)
   (message "Successfully setup olivetti-mode"))
 
 (setup (:straight-if which-key bv-not-guix-p)
