@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add macro `bv-define-insert-delimiter` to `emacs/lisp/bv-essentials.el` and use it to define several functions for inserted unpaired versions of pairing delimiters.
 - Add axiom, postulate, proof environments to `setupfile.org` in `emacs/setup`.
 - Hook `smartparens-mode` to `org-mode`.
 - Set default value of `left-margin-width` and `right-margin-width` to 2 column.
