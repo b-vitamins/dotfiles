@@ -466,10 +466,10 @@
                                 "biber %b"
                                 "lualatex -shell-escape -interaction nonstopmode %f"
                                 "lualatex -shell-escape -interaction nonstopmode %f")
-            latex-create-formula-image-program 'dvipng
+            latex-create-formula-image-program 'imagemagick
             format-latex-options (plist-put org-format-latex-options :scale 4.0)
             preview-latex-image-directory "~/.local/latex-previews/"
-            preview-latex-default-process 'dvipng
+            preview-latex-default-process 'imagemagick
             highlight-latex-and-related (quote (native latex script entities)))
 
   ;; `bv-latex' holds a customized workflow that helps with PAIN (PDF is all I need),
@@ -499,7 +499,6 @@
 	;; It will be built into Org, probably in the 9.7 release.
   ;;
 	(:require org-preview)
-	(org-preview-mode)
 
   ;; Habit Tracking
   (:option* modules '(org-habit)
