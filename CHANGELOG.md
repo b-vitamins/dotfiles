@@ -105,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Created two separate file opening functions for each of emacs init file, the guix config file, and the zshrc file in `bv-file-navigation.el` - one opens the live version, the other opens the one in the repo under version control.
 - Removed `:unbind` macro call in the `bv-essentials` setup block since it tries to operate on bv-essentials-mode-map which does not exist.
 - Renamed various file opening functions in `bv-file-navigation.el` that started with `open-my-<filename>` to `bv-open-my-<filename>`.
 - Moved `bv-open-file-in-window`, `bv-open-file-left-jump`, `bv-open-file-left-stay`, `bv-open-file-right-jump`, `bv-open-file-right-stay` to a dedicated `bv-file-navigation.el` module.
