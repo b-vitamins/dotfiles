@@ -90,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Improved the organization of `org-preview.el` by rearranging variable and function declarations to enhance code readability and structure. Variables related to process compilers and converters are now grouped at the beginning of the file.
 - Introduced `initiate-processing-steps` in `org-preview.el` to handle the initiation of LaTeX compilation and image conversion processes. This new function reduces code complexity in `org-preview-create-formula-image` by consolidating process initiation into `initiate-processing-steps`.
 - Refactored the LaTeX file creation process in `org-preview.el` by introducing `create-texfile`, a new function that simplifies the generation of LaTeX files.
 - Enhanced the modularity of `org-preview.el` by extracting configuration and utility functionalities into separate functions (`get-latex-header`, `get-image-properties`, `get-post-clean-items`, and `get-image-converter`). This refactoring aims to simplify `org-preview-create-formula-image`.
