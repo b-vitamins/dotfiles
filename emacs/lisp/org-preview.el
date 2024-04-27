@@ -292,12 +292,18 @@ and replaces or overlays them in the buffer.
 														 (org--make-preview-overlay block-beg block-end movefile image-output-type)
 														 (goto-char block-end))
 												 (delete-region block-beg block-end)
-												 (insert
-													(org-add-props link
-															(list 'org-latex-src
-		        												(replace-regexp-in-string "\"" "" value)
-		        												'org-latex-src-embed-type
-		        												(if block-type 'paragraph 'character)))))
+												 (let* ((context (org-element-context))
+																(type (org-element-type context))
+																(block-type (eq type 'latex-environment))
+																(value (org-element-property :value context))
+																(sep (and block-type "\n\n"))
+																(link (concat sep "[[file:" movefile "]]" sep)))
+													 (insert
+														(org-add-props link
+																(list 'org-latex-src
+		        													(replace-regexp-in-string "\"" "" value)
+		        													'org-latex-src-embed-type
+		        													(if block-type 'paragraph 'character))))))
                     finally do (goto-char loc))))
        (unless (process-live-p proc)
          (mapc #'delete-file (file-expand-wildcards (concat texfilebase "*." image-output-type) 'full))
