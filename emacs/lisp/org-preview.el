@@ -209,6 +209,88 @@ process to be suitable for buffer-specific settings."
                 (push hash math-hashes)))))))
     (list math-text math-locations math-hashes)))
 
+(defun set-tex-process-sentinels (tex-process start-time)
+  "Set sentinels for TEX-PROCESS to handle its completion.
+The sentinel logs a success message if TEX-PROCESS completes
+without errors, or logs an error and reports it if any issues
+occur during processing.
+
+TEX-PROCESS is the process object for the LaTeX processing.
+START-TIME should be the time at which TEX-PROCESS was initiated."
+  (set-process-sentinel
+   tex-process
+   (lambda (proc signal)
+     (when (not (process-live-p proc))
+       (if (string-match-p "finished" signal)
+           (message "LaTeX processing completed successfully.")
+         (progn
+           (message "Error in LaTeX processing.")
+           (org-preview-report "LaTeX processing error" start-time)))))))
+
+(defun set-image-process-sentinels (texfilebase image-process absprefix start-time fragments &optional processing-type overlays)
+	"Set sentinels for IMAGE-PROCESS to handle its completion.
+TEXFILEBASE is the base directory used for storing the image files.
+IMAGE-PROCESS is the process object for the image creation.
+ABSPREFIX is the absolute path prefix used for image file locations.
+START-TIME is the time at which processing started, used for reporting.
+FRAGMENTS contains LaTeX fragments' text, their locations, and hashes.
+PROCESSING-TYPE is an optional argument how images are processed,
+affecting image output types.
+OVERLAYS, if non-nil, enables overlay handling rather than replacing text.
+
+When IMAGE-PROCESS completes:
+- It checks for image files generated, copies them to new locations,
+and replaces or overlays them in the buffer.
+- Logs processing details if debugging is enabled.
+- Cleans up generated image files."
+	(let*
+			((processing-info (cdr (assq processing-type org-preview-latex-process-alist)))
+       (image-output-type (or (plist-get processing-info :image-output-type) "png"))
+       (image-input-type (or (plist-get processing-info :image-input-type) "dvi"))
+       (math-locations (cadr fragments))
+       (math-hashes (caddr fragments))
+			 (num-overlays (length math-locations)))
+		(set-process-sentinel
+     image-process
+     (lambda (proc signal)
+       (when org-preview--debug-msg
+         (unless (process-live-p proc)
+           (org-preview-report "DVI processing" start-time)))
+       (when (string= signal "finished\n")
+         (let ((images (file-expand-wildcards
+                        (concat texfilebase "*." image-output-type)
+                        'full)))
+           (cl-loop with loc = (point)
+                    for hash in (nreverse math-hashes)
+                    for (block-beg . block-end) in (nreverse math-locations)
+                    for image-file in images
+                    for movefile = (format "%s_%s.%s" absprefix hash image-output-type)
+                    do (copy-file image-file movefile 'replace)
+                    do (if overlays
+													 (progn
+														 (dolist (o (overlays-in block-beg block-end))
+															 (when (eq (overlay-get o 'org-overlay-type)
+		        														 'org-latex-overlay)
+																 (delete-overlay o)))
+														 (org--make-preview-overlay block-beg block-end movefile image-output-type)
+														 (goto-char block-end))
+												 (delete-region block-beg block-end)
+												 (insert
+													(org-add-props link
+															(list 'org-latex-src
+		        												(replace-regexp-in-string "\"" "" value)
+		        												'org-latex-src-embed-type
+		        												(if block-type 'paragraph 'character)))))
+                    finally do (goto-char loc))))
+       (unless (process-live-p proc)
+         (mapc #'delete-file (file-expand-wildcards (concat texfilebase "*." image-output-type) 'full))
+         (delete-file (concat texfilebase "." image-input-type)))
+       (when org-preview--debug-msg
+         (org-preview-report "Overlay placement" start-time)
+         (with-current-buffer org-preview--log-buf
+           (insert (format "Previews: %d, Process: %S\n\n"
+                           num-overlays processing-type))))))))
+
 (defun org-preview-process-generic (prefix &optional end dir forbuffer processing-type checkdir-flag overlays)
   "Process LaTeX fragments generically using PROCESSING-TYPE up to END.
 
@@ -239,16 +321,9 @@ instead of replacing it."
   (let* ((face (face-at-point))
          (fg (determine-color :foreground face forbuffer))
          (bg (determine-color :background face forbuffer))
-				 (options (org-combine-plists org-format-latex-options
-																			`(:foreground ,fg :background ,bg)))
-				 (processing-info (cdr (assq processing-type org-preview-latex-process-alist)))
-				 (image-output-type (or (plist-get processing-info :image-output-type) "png"))
-				 (image-input-type (or (plist-get processing-info :image-input-type) "dvi"))
+				 (options (prepare-options fg bg))
          (fragments (collect-latex-fragments end overlays))
          (math-text (car fragments))
-				 (math-locations (cadr fragments))
-				 (math-hashes (caddr fragments))
-				 (num-overlays (length math-locations))
          (start-time (current-time))
          (absprefix (expand-file-name prefix dir)))
 
@@ -256,46 +331,8 @@ instead of replacing it."
                  (org-preview-create-formula-image
                   (mapconcat #'identity (nreverse math-text) "\n\n")
                   options forbuffer processing-type start-time)))
-      (set-process-sentinel
-       image-process
-       (lambda (proc signal)
-         (when org-preview--debug-msg
-           (unless (process-live-p proc)
-             (org-preview-report "DVI processing" start-time)))
-         (when (string= signal "finished\n")
-           (let ((images (file-expand-wildcards
-                          (concat texfilebase "*." image-output-type)
-                          'full)))
-             (cl-loop with loc = (point)
-                      for hash in (nreverse math-hashes)
-                      for (block-beg . block-end) in (nreverse math-locations)
-                      for image-file in images
-                      for movefile = (format "%s_%s.%s" absprefix hash image-output-type)
-                      do (copy-file image-file movefile 'replace)
-                      do (if overlays
-														 (progn
-															 (dolist (o (overlays-in block-beg block-end))
-																 (when (eq (overlay-get o 'org-overlay-type)
-		        															 'org-latex-overlay)
-																	 (delete-overlay o)))
-															 (org--make-preview-overlay block-beg block-end movefile image-output-type)
-															 (goto-char block-end))
-													 (delete-region block-beg block-end)
-													 (insert
-														(org-add-props link
-																(list 'org-latex-src
-		        													(replace-regexp-in-string "\"" "" value)
-		        													'org-latex-src-embed-type
-		        													(if block-type 'paragraph 'character)))))
-                      finally do (goto-char loc))))
-         (unless (process-live-p proc)
-           (mapc #'delete-file (file-expand-wildcards (concat texfilebase "*." image-output-type) 'full))
-           (delete-file (concat texfilebase "." image-input-type)))
-         (when org-preview--debug-msg
-           (org-preview-report "Overlay placement" start-time)
-           (with-current-buffer org-preview--log-buf
-             (insert (format "Previews: %d, Process: %S\n\n"
-                             num-overlays processing-type)))))))))
+      (set-tex-process-sentinels tex-process start-time)
+      (set-image-process-sentinels texfilebase image-process absprefix start-time fragments processing-type overlays))))
 
 (defun org-preview-format-latex
     (prefix &optional beg end dir overlays msg forbuffer processing-type checkdir-flag)
