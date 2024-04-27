@@ -373,32 +373,17 @@ useful in batch operations or when multiple calls are made in succession."
 			(org-preview-process-generic prefix end dir forbuffer processing-type checkdir-flag overlays))
      (t (error "Unknown conversion process %s for LaTeX fragments" processing-type)))))
 
-(defun org-preview-create-formula-image
-    (string options buffer &optional processing-type start-time)
-  
-  (let* ((processing-type (or processing-type
-                              org-preview-latex-default-process))
-         (processing-info
-          (cdr (assq processing-type org-preview-latex-process-alist)))
-         (programs (plist-get processing-info :programs))
-         (error-message (or (plist-get processing-info :message) ""))
-         (image-input-type (plist-get processing-info :image-input-type))
-				 (image-output-type (plist-get processing-info :image-output-type))
-				 (post-clean (or (plist-get processing-info :post-clean)
-												 '(".dvi" ".xdv" ".pdf" ".tex" ".aux" ".log"
-													 ".svg" ".png" ".jpg" ".jpeg" ".out")))
-				 (latex-header
-					(or (plist-get processing-info :latex-header)
-							(org-latex-make-preamble
-							 (org-export-get-environment (org-export-get-backend 'latex))
-							 org-format-latex-header
-							 'snippet)))
-         (latex-compiler (plist-get processing-info :latex-compiler))
-				 (tmpdir temporary-file-directory)
-				 (texfilebase (make-temp-name
-											 (expand-file-name "orgtex" tmpdir)))
-				 (texfile (concat texfilebase ".tex"))
-				 (image-size-adjust (or (plist-get processing-info :image-size-adjust)
+(defun get-latex-header (processing-info)
+  "Use PROCESSING-INFO to retrieve and return the latex header."
+	(or (plist-get processing-info :latex-header)
+			(org-latex-make-preamble
+			 (org-export-get-environment (org-export-get-backend 'latex))
+			 org-format-latex-header
+			 'snippet)))
+
+(defun get-image-properties (processing-info options buffer)
+  "Setup and return image properties based on PROCESSING-INFO, OPTIONS and BUFFER."
+  (let* ((image-size-adjust (or (plist-get processing-info :image-size-adjust)
 																'(1.0 . 1.0)))
 				 (scale (* (if buffer (car image-size-adjust) (cdr image-size-adjust))
 									 (or (plist-get options (if buffer :scale :html-scale)) 1.0)))
@@ -406,11 +391,41 @@ useful in batch operations or when multiple calls are made in succession."
 				 (fg (or (plist-get options (if buffer :foreground :html-foreground))
 								 "Black"))
 				 (bg (or (plist-get options (if buffer :background :html-background))
-								 "Transparent"))
-				 (image-converter
-          (or (and (string= bg "Transparent")
-                   (plist-get processing-info :transparent-image-converter))
-              (plist-get processing-info :image-converter)))
+								 "Transparent")))
+    (list dpi fg bg)))
+
+(defun get-post-clean-items (processing-info)
+  "Use PROCESSING-INFO to retrieve and return file extensions.
+Files with these extensions must be deleted post preview creation."
+	(or (plist-get processing-info :post-clean)
+			'(".dvi" ".xdv" ".pdf" ".tex" ".aux" ".log"
+				".svg" ".png" ".jpg" ".jpeg" ".out")))
+
+(defun get-image-converter (processing-info background)
+  "Use PROCESSING-INFO and BACKGROUND face to return the image converter."
+	(or (and (string= background "Transparent")
+           (plist-get processing-info :transparent-image-converter))
+      (plist-get processing-info :image-converter)))
+
+(defun org-preview-create-formula-image
+    (string options buffer &optional processing-type start-time)
+  (let* ((processing-type (or processing-type org-preview-latex-default-process))
+         (processing-info (cdr (assq processing-type org-preview-latex-process-alist)))
+         (programs (plist-get processing-info :programs))
+         (error-message (or (plist-get processing-info :message) ""))
+         (image-input-type (plist-get processing-info :image-input-type))
+				 (image-output-type (plist-get processing-info :image-output-type))
+         (post-clean (get-post-clean-items processing-info))
+         (latex-header (get-latex-header processing-info))
+         (latex-compiler (plist-get processing-info :latex-compiler))
+				 (tmpdir temporary-file-directory)
+				 (texfilebase (make-temp-name (expand-file-name "orgtex" tmpdir)))
+				 (texfile (concat texfilebase ".tex"))
+         (config (get-image-properties processing-info options buffer))
+         (dpi (car config))
+         (fg (nth 1 config))
+         (bg (nth 2 config))
+         (image-converter (get-image-converter processing-info bg))
          (log-buf (get-buffer-create "*Org Preview LaTeX Output*"))
 				 (resize-mini-windows nil))
     
