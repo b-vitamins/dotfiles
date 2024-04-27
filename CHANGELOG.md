@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add axiom, postulate, proof environments to `setupfile.org` in `emacs/setup`.
 - Hook `smartparens-mode` to `org-mode`.
 - Set default value of `left-margin-width` and `right-margin-width` to 2 column.
 - Add `org-preview.el` (fast, async, latex preview) to `emacs/lisp` for further hacking.
