@@ -189,10 +189,6 @@
   (message "Successfully setup whoami"))
 
 (setup bv-essentials
-  (:unbind
-	 "C-c C-e"  ;; elisp-eval-region-or-buffer
-	 "C-c C-f"  ;; elisp-byte-compile-file
-	 )
   ;; Delimiter insertion keybindings
   (:global
    "M-(" 'bv-insert-open-paren
