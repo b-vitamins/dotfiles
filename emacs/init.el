@@ -205,14 +205,6 @@
    "M-\"" 'bv-insert-double-quote
    "M-`" 'bv-insert-backtick
 	 )
-  ;; File and buffer management keybindings
-  (:global
-   "C-c C-d" 'bv-move-to-trash
-	 "C-c C-f l j" 'bv-open-file-left-jump    ; Open left and jump
-   "C-c C-f l s" 'bv-open-file-left-stay    ; Open left and stay
-   "C-c C-f r j" 'bv-open-file-right-jump   ; Open right and jump
-   "C-c C-f r s" 'bv-open-file-right-stay   ; Open right and stay
-	)
   ;; Code evaluation and search keybindings
   (:global
    "C-c C-e C-b" 'eval-buffer
@@ -232,9 +224,28 @@
 	 )
   ;; General utility keybindings
   (:global
+   "C-c C-d" 'bv-move-to-trash
    "C-c C-h" 'hidden-mode-line-mode)
   ;; Success message after setup
   (message "Successfully setup bv-essentials"))
+
+(setup bv-file-navigation
+  (:require bv-file-navigation)
+  ;; File and buffer management keybindings
+  (:global
+	 "C-c C-f l j" 'bv-open-file-left-jump    ; Open left and jump
+   "C-c C-f l s" 'bv-open-file-left-stay    ; Open left and stay
+   "C-c C-f r j" 'bv-open-file-right-jump   ; Open right and jump
+   "C-c C-f r s" 'bv-open-file-right-stay   ; Open right and stay
+	 )
+	;; Frequently visited files
+  (:global
+   "<f1>" 'bv-open-my-main-org
+   "<f2>" 'bv-open-my-snippets-org
+   "<f3>" 'bv-open-my-working-bib
+   "<f4>" 'bv-open-my-init-el
+   "<f5>" 'bv-open-my-config-scm
+   "<f6>" 'bv-open-my-zshrc))
 
 (setup display-line-numbers
   (:hook-into prog-mode
