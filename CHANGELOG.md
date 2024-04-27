@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Set default value of `left-margin-width` and `right-margin-width` to 2 column.
 - Add `org-preview.el` (fast, async, latex preview) to `emacs/lisp` for further hacking.
 - Add function `bv-zap-newline-at-eob` to `emacs/lisp/bv-essentials.el` for use during tangling yasnippet snippets. Hooked it to `org-babel-post-tangle-hook`.
 - Add `angle` and `quotes` to `usetikzlibrary` import in the latex headers in `emacs/setup/setupfile.org`.
@@ -90,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Added check for empty string in the function `org-preview-create-formula-image` in file `emacs/lisp/org-preview.el` to prevent `aset` errors.
 - Refined the handling of LaTeX fragment processing in `org-preview.el` to define critical variables such as `link`, `value`, and `block-type` within their operational scope. This update ensures more reliable and accurate rendering of LaTeX fragments in the buffer, particularly in complex documents with multiple types of content.
 - Improved the organization of `org-preview.el` by rearranging variable and function declarations to enhance code readability and structure. Variables related to process compilers and converters are now grouped at the beginning of the file.
 - Introduced `initiate-processing-steps` in `org-preview.el` to handle the initiation of LaTeX compilation and image conversion processes. This new function reduces code complexity in `org-preview-create-formula-image` by consolidating process initiation into `initiate-processing-steps`.
