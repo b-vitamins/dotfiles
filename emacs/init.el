@@ -140,6 +140,9 @@
    async-shell-command-buffer 'confirm-kill-process
    ;; Sets the display width of a tab character to 2 spaces, improving readability.
    tab-width 2
+	 ;; Sets margins around text for all buffers, enhancing readability.
+   left-margin-width 2  ;; Number of columns on the left margin.
+   right-margin-width 2  ;; Number of columns on the right margin.
    )
   
   (:set ;; Disables the startup screen for a cleaner launch experience.
