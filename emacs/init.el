@@ -189,8 +189,12 @@
   (message "Successfully setup whoami"))
 
 (setup bv-essentials
-	(:global
-   "C-c h" 'hidden-mode-line-mode
+  (:unbind
+	 "C-c C-e"  ;; elisp-eval-region-or-buffer
+	 "C-c C-f"  ;; elisp-byte-compile-file
+	 )
+  ;; Delimiter insertion keybindings
+  (:global
    "M-(" 'bv-insert-open-paren
    "M-)" 'bv-insert-close-paren
    "M-{" 'bv-insert-open-brace
@@ -199,7 +203,37 @@
    "M-]" 'bv-insert-close-bracket
    "M-'" 'bv-insert-single-quote
    "M-\"" 'bv-insert-double-quote
-   "M-`" 'bv-insert-backtick)
+   "M-`" 'bv-insert-backtick
+	 )
+  ;; File and buffer management keybindings
+  (:global
+   "C-c C-d" 'bv-move-to-trash
+	 "C-c C-f l j" 'bv-open-file-left-jump    ; Open left and jump
+   "C-c C-f l s" 'bv-open-file-left-stay    ; Open left and stay
+   "C-c C-f r j" 'bv-open-file-right-jump   ; Open right and jump
+   "C-c C-f r s" 'bv-open-file-right-stay   ; Open right and stay
+	)
+  ;; Code evaluation and search keybindings
+  (:global
+   "C-c C-e C-b" 'eval-buffer
+   "C-c C-e C-r" 'eval-region
+   "C-c C-g" 'grep
+	 )
+  ;; Text manipulation keybindings
+  (:global
+   "C-c C-r" 'replace-string
+   "C-c C-q" 'query-replace
+	 )
+  ;; Visual toggles and utility keybindings
+  (:global
+   "C-c C-t" 'toggle-truncate-lines
+   "C-c C-w" 'whitespace-mode
+   "C-c C-l" 'toggle-line-numbers
+	 )
+  ;; General utility keybindings
+  (:global
+   "C-c C-h" 'hidden-mode-line-mode)
+  ;; Success message after setup
   (message "Successfully setup bv-essentials"))
 
 (setup display-line-numbers
@@ -375,7 +409,7 @@
 (setup (:straight-if olivetti bv-not-guix-p)
   (:option* body-width 100)
   (:require olivetti)
-  (:global "C-c C-h" olivetti-mode)
+  (:global "C-c C-c" olivetti-mode)
   (message "Successfully setup olivetti-mode"))
 
 (setup (:straight-if which-key bv-not-guix-p)
