@@ -478,7 +478,7 @@ how images are processed.
           (make-process :name (format "Org-Preview-%s" (file-name-base texfile))
                         :buffer log-buf
                         :command (split-string-shell-command (format-spec (car latex-compiler) spec))
-                        :sentinel (lambda (proc signal)
+                        :sentinel (lambda (proc _)
                                     (unless (process-live-p proc)
                                       (org-preview-report "Tex process" start-time)
                                       (dolist (e (delete (concat "." image-input-type) post-clean))
