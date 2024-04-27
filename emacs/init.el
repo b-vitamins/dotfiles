@@ -141,8 +141,10 @@
    ;; Sets the display width of a tab character to 2 spaces, improving readability.
    tab-width 2
 	 ;; Sets margins around text for all buffers, enhancing readability.
-   left-margin-width 2  ;; Number of columns on the left margin.
-   right-margin-width 2  ;; Number of columns on the right margin.
+	 ;; Number of columns on the left margin.
+   left-margin-width 2
+	 ;; Number of columns on the right margin.
+   right-margin-width 2
    )
   
   (:set ;; Disables the startup screen for a cleaner launch experience.
@@ -464,10 +466,10 @@
                                 "biber %b"
                                 "lualatex -shell-escape -interaction nonstopmode %f"
                                 "lualatex -shell-escape -interaction nonstopmode %f")
-            latex-create-formula-image-program 'imagemagick
+            latex-create-formula-image-program 'dvipng
             format-latex-options (plist-put org-format-latex-options :scale 4.0)
             preview-latex-image-directory "~/.local/latex-previews/"
-            preview-latex-default-process 'imagemagick
+            preview-latex-default-process 'dvipng
             highlight-latex-and-related (quote (native latex script entities)))
 
   ;; `bv-latex' holds a customized workflow that helps with PAIN (PDF is all I need),
@@ -489,6 +491,15 @@
   (:require bv-latex)
   (:option bv-latex-output-dir "~/slipbox/out")
   (:alias org-latex-compile bv-org-latex-compile)
+
+  ;; `org-preview' is a minor mode which provides asynchronous,
+  ;; blazing fast, latex previews.
+  ;; It is written by Karthik Chikmagalur <karthikchikmagalur@gmail.com>.
+	;; Demo here: https://www.youtube.com/watch?v=n-AfvuV-bYo
+	;; It will be built into Org, probably in the 9.7 release.
+  ;;
+	(:require org-preview)
+	(org-preview-mode)
 
   ;; Habit Tracking
   (:option* modules '(org-habit)
