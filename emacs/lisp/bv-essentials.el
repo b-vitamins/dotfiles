@@ -235,5 +235,22 @@ If `make-backup-files' is enabled, this function will disable it temporarily."
 			(delete-char -1)
 			(save-buffer))))
 
+(defmacro bv-define-insert-delimiter (name char)
+  "Define a function NAME for inserting a single character CHAR."
+  `(defun ,name ()
+     (interactive)
+     (insert ,char)))
+
+;; Generate insert functions for various delimiters
+(bv-define-insert-delimiter bv-insert-open-paren "(")
+(bv-define-insert-delimiter bv-insert-close-paren ")")
+(bv-define-insert-delimiter bv-insert-open-brace "{")
+(bv-define-insert-delimiter bv-insert-close-brace "}")
+(bv-define-insert-delimiter bv-insert-open-bracket "[")
+(bv-define-insert-delimiter bv-insert-close-bracket "]")
+(bv-define-insert-delimiter bv-insert-single-quote "'")
+(bv-define-insert-delimiter bv-insert-double-quote "\"")
+(bv-define-insert-delimiter bv-insert-backtick "`")
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
