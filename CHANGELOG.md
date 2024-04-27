@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add keybindings for frequently visited files (as defined in `emacs/lisp/bv-file-navigation.el`) in `emacs/init.el`.
 - Add module `bv-file-navigation.el` for file navigation related functionality at `emacs/lisp/bv-file-navigation.el`.
 - Add new functions in `emacs/lisp/bv-essentials.el` for improved window management:
   - `bv-open-file-in-window`: Main function to open files in a new window with adjustable direction (left/right), focus control, and window size ratio. Enhances the user's ability to manage their workspace by providing more flexibility in how documents are displayed and interacted with.
