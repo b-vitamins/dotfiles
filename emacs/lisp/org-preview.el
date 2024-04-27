@@ -336,20 +336,20 @@ instead of replacing it."
 
 (defun org-preview-format-latex
     (prefix &optional beg end dir overlays msg forbuffer processing-type checkdir-flag)
-  "Replace LaTeX fragments with links to an image.
+  "Replace LaTeX fragments with links to an image in the specified region.
 
-The function takes care of creating the replacement image.
+PREFIX specifies a base directory or filename prefix for any files generated.
 
-Only consider fragments between BEG and END when those are
-provided.
-
-When optional argument OVERLAYS is non-nil, display the image on
-top of the fragment instead of replacing it.
-
-PROCESSING-TYPE is the conversion method to use, as a symbol.
-
-Some of the options can be changed using the variable
-`org-format-latex-options', which see."
+Optional parameters:
+  BEG and END specify the region to process.
+  OVERLAYS, when non-nil, specifies that images should overlay the
+LaTeX source instead of replacing it.
+  DIR specifies where any generated files should be stored.
+  MSG specifies a message to display during processing.
+  FORBUFFER indicates whether the processing is for buffer-specific settings.
+  PROCESSING-TYPE specifies the method of LaTeX processing to use.
+  CHECKDIR-FLAG, when non-nil, prevents redundant directory checks and creation,
+useful in batch operations or when multiple calls are made in succession."
   (when (and overlays (fboundp 'clear-image-cache)) (clear-image-cache))
   (unless (eq processing-type 'verbatim)
     (goto-char (or beg (point-min)))
