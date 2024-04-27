@@ -139,8 +139,166 @@ MSG, if non-nil, specifies a message to display during processing."
   "Raise an error to indicate that ImageMagick based previews are not supported."
   (user-error "Imagemagick based previews are currently not supported.\nPlease customize `org-preview-latex-default-process'"))
 
+(defun org-preview-ensure-directory (prefix dir &optional checkdir-flag)
+  "Ensure the directory specified by PREFIX and DIR exists.
+PREFIX and DIR are concatenated to form the full path of the directory.
+If the directory does not exist and CHECKDIR-FLAG is not set,
+it will be created.  CHECKDIR-FLAG is used to prevent redundant
+checks and directory creations in recursive calls or loops."
+  (let ((absprefix (expand-file-name prefix dir)))
+    (unless checkdir-flag ; Prevent redundant directory checks and creations.
+	    (setq checkdir-flag t)
+	    (let ((todir (file-name-directory absprefix)))
+	      (unless (file-directory-p todir)
+					(make-directory todir t))))
+    absprefix))
+
+(defun determine-color (option face forbuffer)
+  "Determine the color based on OPTION, FACE context, and FORBUFFER setting."
+	(let ((color (plist-get org-format-latex-options
+												  option)))
+    (if forbuffer
+        (cond
+         ((eq color 'auto)
+          (face-attribute face option nil 'default))
+         ((eq color 'default)
+          (face-attribute 'default option nil))
+         (t color))
+      color)))
+
+(defun prepare-options (fg bg)
+  "Prepare options for use in `org-preview-process-generic' using FG and BG."
+	(org-combine-plists org-format-latex-options
+											`(:foreground ,fg :background ,bg)))
+
+(defun collect-latex-fragments (end overlays &optional forbuffer)
+  "Collect LaTeX fragments up to END, considering OVERLAYS for processing.
+END specifies the end of the region within which to search for LaTeX fragments.
+OVERLAYS, when non-nil, specifies that the LaTeX fragments should consider
+any existing overlays.  FORBUFFER, if non-nil, modifies the color determination
+process to be suitable for buffer-specific settings."
+  (let* ((math-regexp "\\$\\|\\\\[([]\\|^[ \t]*\\\\begin{[A-Za-z0-9*]+}")
+         (face (face-at-point))
+				 (fg (determine-color :foreground face forbuffer))
+         (bg (determine-color :background face forbuffer))
+         (math-text nil)
+         (math-locations nil)
+         (math-hashes nil))
+    (save-excursion
+      (while (re-search-forward math-regexp end t)
+        (unless (and overlays
+                     (eq (get-char-property (point) 'org-overlay-type)
+                         'org-latex-overlay))
+          (let* ((context (org-element-context))
+                 (type (org-element-type context)))
+            (when (memq type '(latex-environment latex-fragment))
+              (let* ((value (org-element-property :value context))
+                     (block-beg (org-element-property :begin context))
+                     (block-end (save-excursion
+                                  (goto-char (org-element-property :end context))
+                                  (skip-chars-backward " \r\t\n")
+                                  (point)))
+                     (hash (sha1 (prin1-to-string
+																	(list org-format-latex-header
+																				org-latex-default-packages-alist
+																				org-latex-packages-alist
+																				org-format-latex-options
+																				forbuffer value fg bg)))))
+                (push value math-text)
+                (push (cons block-beg block-end) math-locations)
+                (push hash math-hashes)))))))
+    (list math-text math-locations math-hashes)))
+
+(defun org-preview-process-generic (prefix &optional end dir forbuffer processing-type checkdir-flag overlays)
+  "Process LaTeX fragments generically using PROCESSING-TYPE up to END.
+
+PREFIX is used as the base for generating file names and
+directories for output.  It specifies where generated files
+will be stored, combined with DIR.
+
+END specifies the end point in the buffer for processing
+LaTeX fragments.  If nil, processing continues to the end of the buffer.
+
+DIR is the directory relative to which PREFIX will be resolved.
+It determines where output files are saved.
+
+FORBUFFER indicates whether processing is adjusted for specific
+buffer conditions, affecting color determination among other settings.
+
+PROCESSING-TYPE determines the method used for converting
+LaTeX fragments into output formats.
+
+CHECKDIR-FLAG, when non-nil, prevents repeated checks and
+creation of the directory where files are stored,
+which is useful in recursive or batch operations.
+
+OVERLAYS, if non-nil, specifies that images should overlay the text
+instead of replacing it."
+  (org-preview-ensure-directory prefix dir checkdir-flag)
+
+  (let* ((face (face-at-point))
+         (fg (determine-color :foreground face forbuffer))
+         (bg (determine-color :background face forbuffer))
+				 (options (org-combine-plists org-format-latex-options
+																			`(:foreground ,fg :background ,bg)))
+				 (processing-info (cdr (assq processing-type org-preview-latex-process-alist)))
+				 (image-output-type (or (plist-get processing-info :image-output-type) "png"))
+				 (image-input-type (or (plist-get processing-info :image-input-type) "dvi"))
+         (fragments (collect-latex-fragments end overlays))
+         (math-text (car fragments))
+				 (math-locations (cadr fragments))
+				 (math-hashes (caddr fragments))
+				 (num-overlays (length math-locations))
+         (start-time (current-time))
+         (absprefix (expand-file-name prefix dir)))
+
+    (pcase-let ((`(,texfilebase ,tex-process ,image-process)
+                 (org-preview-create-formula-image
+                  (mapconcat #'identity (nreverse math-text) "\n\n")
+                  options forbuffer processing-type start-time)))
+      (set-process-sentinel
+       image-process
+       (lambda (proc signal)
+         (when org-preview--debug-msg
+           (unless (process-live-p proc)
+             (org-preview-report "DVI processing" start-time)))
+         (when (string= signal "finished\n")
+           (let ((images (file-expand-wildcards
+                          (concat texfilebase "*." image-output-type)
+                          'full)))
+             (cl-loop with loc = (point)
+                      for hash in (nreverse math-hashes)
+                      for (block-beg . block-end) in (nreverse math-locations)
+                      for image-file in images
+                      for movefile = (format "%s_%s.%s" absprefix hash image-output-type)
+                      do (copy-file image-file movefile 'replace)
+                      do (if overlays
+														 (progn
+															 (dolist (o (overlays-in block-beg block-end))
+																 (when (eq (overlay-get o 'org-overlay-type)
+		        															 'org-latex-overlay)
+																	 (delete-overlay o)))
+															 (org--make-preview-overlay block-beg block-end movefile image-output-type)
+															 (goto-char block-end))
+													 (delete-region block-beg block-end)
+													 (insert
+														(org-add-props link
+																(list 'org-latex-src
+		        													(replace-regexp-in-string "\"" "" value)
+		        													'org-latex-src-embed-type
+		        													(if block-type 'paragraph 'character)))))
+                      finally do (goto-char loc))))
+         (unless (process-live-p proc)
+           (mapc #'delete-file (file-expand-wildcards (concat texfilebase "*." image-output-type) 'full))
+           (delete-file (concat texfilebase "." image-input-type)))
+         (when org-preview--debug-msg
+           (org-preview-report "Overlay placement" start-time)
+           (with-current-buffer org-preview--log-buf
+             (insert (format "Previews: %d, Process: %S\n\n"
+                             num-overlays processing-type)))))))))
+
 (defun org-preview-format-latex
-    (prefix &optional beg end dir overlays msg forbuffer processing-type)
+    (prefix &optional beg end dir overlays msg forbuffer processing-type checkdir-flag)
   "Replace LaTeX fragments with links to an image.
 
 The function takes care of creating the replacement image.
@@ -157,141 +315,24 @@ Some of the options can be changed using the variable
 `org-format-latex-options', which see."
   (when (and overlays (fboundp 'clear-image-cache)) (clear-image-cache))
   (unless (eq processing-type 'verbatim)
-    (let* ((math-regexp "\\$\\|\\\\[([]\\|^[ \t]*\\\\begin{[A-Za-z0-9*]+}")
-					 (cnt 0)
-					 checkdir-flag)
-      (goto-char (or beg (point-min)))
-      ;; Optimize overlay creation: (info "(elisp) Managing Overlays").
-      (when (and overlays (memq processing-type '(dvipng imagemagick)))
-				(overlay-recenter (or end (point-max))))
-      (cond
-       ((eq processing-type 'mathjax)
-				(org-preview-process-mathjax end overlays))
-       ((eq processing-type 'html)
-				(org-preview-process-html end overlays))
-       ((eq processing-type 'mathml)
-				(org-preview-process-mathml prefix end overlays dir msg))
-			 ((eq processing-type 'imagemagick)
-				(org-preview-process-imagemagick))
-       ((assq processing-type org-preview-latex-process-alist)
-        (let* ((processing-info
-                (cdr (assq processing-type org-preview-latex-process-alist)))
-               (face (face-at-point))
-               (start-time (current-time))
-               (num-overlays)
-               (fg
-								(let ((color (plist-get org-format-latex-options
-																				:foreground)))
-                  (if forbuffer
-                      (cond
-                       ((eq color 'auto)
-                        (face-attribute face :foreground nil 'default))
-                       ((eq color 'default)
-                        (face-attribute 'default :foreground nil))
-                       (t color))
-                    color)))
-               (bg
-								(let ((color (plist-get org-format-latex-options
-																				:background)))
-                  (if forbuffer
-                      (cond
-                       ((eq color 'auto)
-                        (face-attribute face :background nil 'default))
-                       ((eq color 'default)
-                        (face-attribute 'default :background nil))
-                       (t color))
-                    color)))
-               (image-output-type (or (plist-get processing-info :image-output-type) "png"))
-               (image-input-type (or (plist-get processing-info :image-input-type) "dvi"))
-							 (absprefix (expand-file-name prefix dir))
-               (options
-								(org-combine-plists
-								 org-format-latex-options
-								 `(:foreground ,fg :background ,bg)))
-               (math-text)
-               (math-locations)
-               (math-hashes))
-          
-          (unless checkdir-flag ; Ensure the directory exists.
-						(setq checkdir-flag t)
-						(let ((todir (file-name-directory absprefix)))
-							(unless (file-directory-p todir)
-								(make-directory todir t))))
-
-          (save-excursion
-            (while (re-search-forward math-regexp end t)
-              (unless (and overlays
-                           (eq (get-char-property (point) 'org-overlay-type)
-                               'org-latex-overlay))
-                (let* ((context (org-element-context))
-                       (type (org-element-type context)))
-                  (when (memq type '(latex-environment latex-fragment))
-                    (let* ((block-type (eq type 'latex-environment))
-                           (value (org-element-property :value context))
-                           (block-beg (org-element-property :begin context))
-                           (block-end (save-excursion
-                                        (goto-char (org-element-property :end context))
-                                        (skip-chars-backward " \r\t\n")
-                                        (point)))
-                           (hash (sha1 (prin1-to-string
-																				(list org-format-latex-header
-																							org-latex-default-packages-alist
-																							org-latex-packages-alist
-																							org-format-latex-options
-																							forbuffer value fg bg)))))
-                      (push value math-text)
-                      (push (cons block-beg block-end) math-locations)
-                      (push hash math-hashes)))))))
-
-          (setq num-overlays (length math-locations))
-          
-          (pcase-let ((`(,texfilebase ,tex-process ,image-process)
-                       (org-preview-create-formula-image
-                        (mapconcat #'identity (nreverse math-text) "\n\n")
-                        options forbuffer processing-type start-time)))
-            (set-process-sentinel
-             image-process
-             (lambda (proc signal)
-               (when org-preview--debug-msg
-                 (unless (process-live-p proc)
-                   (org-preview-report "DVI processing" start-time)))
-               (when (string= signal "finished\n")
-                 (let ((images (file-expand-wildcards
-                                (concat texfilebase "*." image-output-type)
-                                'full)))
-                   (cl-loop with loc = (point)
-                            for hash in (nreverse math-hashes)
-                            for (block-beg . block-end) in (nreverse math-locations)
-                            for image-file in images
-                            for movefile = (format "%s_%s.%s" absprefix hash image-output-type)
-                            do (copy-file image-file movefile 'replace)
-                            do (if overlays
-																	 (progn
-																		 (dolist (o (overlays-in block-beg block-end))
-																			 (when (eq (overlay-get o 'org-overlay-type)
-		        																		 'org-latex-overlay)
-																				 (delete-overlay o)))
-																		 (org--make-preview-overlay block-beg block-end movefile image-output-type)
-																		 (goto-char block-end))
-																 (delete-region block-beg block-end)
-																 (insert
-																	(org-add-props link
-																			(list 'org-latex-src
-		        																(replace-regexp-in-string "\"" "" value)
-		        																'org-latex-src-embed-type
-		        																(if block-type 'paragraph 'character)))))
-                            finally do (goto-char loc))))
-               (unless (process-live-p proc)
-                 (mapc #'delete-file (file-expand-wildcards (concat texfilebase "*." image-output-type) 'full))
-                 (delete-file (concat texfilebase "." image-input-type)))
-               (when org-preview--debug-msg
-                 (org-preview-report "Overlay placement" start-time)
-                 (with-current-buffer org-preview--log-buf
-                   (insert (format "Previews: %d, Process: %S\n\n"
-                                   num-overlays processing-type)))))))))
-       (t
-				(error "Unknown conversion process %s for LaTeX fragments"
-							 processing-type))))))
+    (goto-char (or beg (point-min)))
+    ;; Optimize overlay creation: (info "(elisp) Managing Overlays").
+    (when (and overlays (memq processing-type '(dvipng imagemagick)))
+			(overlay-recenter (or end (point-max))))
+    (cond
+     ((eq processing-type 'mathjax)
+			(org-preview-process-mathjax end overlays))
+     ((eq processing-type 'html)
+			(org-preview-process-html end overlays))
+     ((eq processing-type 'mathml)
+			(org-preview-process-mathml prefix end overlays dir msg))
+		 ((eq processing-type 'imagemagick)
+			(org-preview-process-imagemagick))
+		 ((assq processing-type org-preview-latex-process-alist)
+			(org-preview-process-generic prefix end dir forbuffer processing-type checkdir-flag overlays))
+     ((assq processing-type org-preview-latex-process-alist)
+			(org-preview-process-generic prefix end dir forbuffer processing-type checkdir-flag overlays))
+     (t (error "Unknown conversion process %s for LaTeX fragments" processing-type)))))
 
 (defun org-preview-create-formula-image
     (string options buffer &optional processing-type start-time)
