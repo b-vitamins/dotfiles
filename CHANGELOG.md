@@ -171,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+- `\newtheorem{proof}{Proof}` latex header from `emacs/setup/setupfile.org`.
 - Hardcoded `background-color` and `foreground-color` in `default-frame-alist`.
 -  `zsh/.zshrc` file.
 -  `amdgpu` and `radeon` from `modprobe.blacklist` kernel parameters in `guix/config.scm`.
