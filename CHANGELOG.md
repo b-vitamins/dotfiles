@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add new functions in `emacs/lisp/bv-essentials.el` for improved window management:
+  - `bv-open-file-in-window`: Main function to open files in a new window with adjustable direction (left/right), focus control, and window size ratio. Enhances the user's ability to manage their workspace by providing more flexibility in how documents are displayed and interacted with.
+  - Convenience functions for opening files with predefined settings:
+    - `bv-open-file-left-jump`: Opens a file in a new window to the left and switches focus.
+    - `bv-open-file-left-stay`: Opens a file in a new window to the left without changing focus.
+    - `bv-open-file-right-jump`: Opens a file in a new window to the right and jumps to it.
+    - `bv-open-file-right-stay`: Opens a file in a new window to the right but keeps the focus in the original window.
 - Add `:quit` macro in `emacs/lisp/bv-setup.el` to unconditionally abort the evaluation of the current setup body.
 - Add function `bv-move-to-trash` to `emacs/lisp/bv-essentials.el` to delete open files from within Emacs.
 - Add macro `bv-define-insert-delimiter` to `emacs/lisp/bv-essentials.el` and use it to define several functions for inserted unpaired versions of pairing delimiters.
