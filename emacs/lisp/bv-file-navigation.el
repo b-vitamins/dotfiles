@@ -132,12 +132,12 @@ A width ratio specified by `bv-file-open-width-ratio' is used by default."
                 (if (eq ,direction 'left) "left" "right")
                 (if ,focus "with" "without")))))
 
-(bv-define-open-file-function open-my-init-el bv-init-el-path 'right t)
-(bv-define-open-file-function open-my-config-scm bv-config-scm-path 'right t)
-(bv-define-open-file-function open-my-main-org bv-main-org-path 'right t)
-(bv-define-open-file-function open-my-snippets-org bv-snippets-org-path 'right t)
-(bv-define-open-file-function open-my-zshrc bv-zshrc-path 'right t)
-(bv-define-open-file-function open-my-working-bib bv-working-bib-path 'right t)
+(bv-define-open-file-function bv-open-my-init-el bv-init-el-path 'right t)
+(bv-define-open-file-function bv-open-my-config-scm bv-config-scm-path 'right t)
+(bv-define-open-file-function bv-open-my-main-org bv-main-org-path 'right t)
+(bv-define-open-file-function bv-open-my-snippets-org bv-snippets-org-path 'right t)
+(bv-define-open-file-function bv-open-my-zshrc bv-zshrc-path 'right t)
+(bv-define-open-file-function bv-open-my-working-bib bv-working-bib-path 'right t)
 
 (provide 'bv-file-navigation)
 ;;; bv-file-navigation.el ends here
