@@ -9,7 +9,8 @@
              (gnu packages textutils)
              (gnu packages version-control)
              (gnu packages web)
-             (gnu packages xorg))
+             (gnu packages xorg)
+             (gnu packages hunspell))
 
 (specifications->manifest '("gitg" ;Graphical interface for git
                             "git-crypt" ;Git encryption plugin
@@ -72,4 +73,9 @@
                             "libtool" ;Generic library support script
                             "pkg-config" ;System for managing library compile/link flags
                             "make" ;GNU make utility to maintain groups of programs
+                            "hunspell" ;Spell checker and morphological analyzer
+                            "hunspell-dict-en" ;Hunspell dictionary for English
+                            "hunspell-dict-en-us" ;Hunspell dictionary for United States English
+                            "hunspell-dict-en-gb" ;Hunspell dictionary for British English, with -ise endings
+                            "hunspell-dict-en-gb-ize" ;Hunspell dictionary for British English, with -ise endings
                             ))
