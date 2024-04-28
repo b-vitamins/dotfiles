@@ -155,5 +155,15 @@
                                                       (auto-login? #f)
                                                       (default-user "b")
                                                       (auto-suspend? #f)
+                                                      (gnome-shell-assets (list
+                                                                           gitg
+                                                                           gnome-shell-extension-unite-shell
+                                                                           gnome-shell-extension-gsconnect
+                                                                           gnome-shell-extension-just-perfection
+                                                                           gnome-shell-extension-dash-to-dock
+                                                                           flat-remix-icon-theme
+                                                                           flat-remix-gtk-theme
+                                                                           flat-remix-gnome-theme
+                                                                           bibata-cursor-theme))
                                                       (wayland? #t)))))))
   (name-service-switch %mdns-host-lookup-nss))
