@@ -96,6 +96,7 @@
                                                      (tls-port "16555")))
                      (service rasdaemon-service-type)
                      (service earlyoom-service-type)
+										 (service zram-device-service-type)
                      (service spice-vdagent-service-type)
                      (service inputattach-service-type)
                      (service nftables-service-type)
