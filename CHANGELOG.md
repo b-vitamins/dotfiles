@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add channels `guix-science` and `guix-science-nonfree` to `guix/channels.scm` and authorize their substitute server in `guix/config.scm` by adding key files `guix/keys/science-signing-key.scm` and `guix/keys/nonscience-signing-key.scm`.
 - Add packages `emacs-paredit`, `emacs-combobulate`, and `emacs-markdown-mode` in `guix/manifests/emacs-manifest.scm`.
 - Add packages `tree-sitter`, `tree-sitter-cli`, and a bunch of tree-sitter grammars in `guix/manifests/development-manifest.scm`.
 - Function `bv-set-initial-background` to `emacs/early-init.el`.
