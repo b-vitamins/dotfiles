@@ -334,7 +334,8 @@
 
 (setup (:straight-if adaptive-wrap bv-not-guix-p)
   (:require adaptive-wrap)
-  (adaptive-wrap-prefix-mode)
+	(:with-mode visual-line-mode
+		(:hook adaptive-wrap-prefix-mode))
   (message "Successfully setup adaptive-wrap"))
 
 (setup (:straight-if smartparens bv-not-guix-p)
