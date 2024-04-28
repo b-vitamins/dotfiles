@@ -271,5 +271,31 @@ If `make-backup-files' is enabled, this function will disable it temporarily."
                   (kill-buffer)))))
         (message "Operation cancelled.")))))
 
+(defun bv-switch-theme (new-theme)
+  "Enable NEW-THEME."
+  (mapc 'disable-theme custom-enabled-themes) ; Disable all currently enabled themes
+  (enable-theme new-theme)                    ; Enable the chosen theme
+  (bv-store-default-mode-line-colors))        ; Update mode line colors if needed
+
+(defun bv-auto-switch-modus-themes ()
+  "Switch between Modus themes based on the time of day."
+  (interactive)
+  ;; Load all themes initially without enabling them
+  (mapc (lambda (theme) (load-theme theme t t))
+        '(modus-operandi modus-operandi-tinted modus-vivendi modus-vivendi-tinted))
+
+  ;; Determine which theme to enable based on the current hour
+  (let ((hour (string-to-number (format-time-string "%H"))))
+    (cond ((and (>= hour 5) (< hour 8))  (bv-switch-theme 'modus-operandi-tinted))
+          ((and (>= hour 8) (< hour 18)) (bv-switch-theme 'modus-operandi))
+          ((and (>= hour 18) (< hour 21)) (bv-switch-theme 'modus-vivendi-tinted))
+          (t                            (bv-switch-theme 'modus-vivendi))))
+
+  ;; Schedule theme switching at specific times
+  (run-at-time "05:00" (* 60 60 24) (lambda () (bv-switch-theme 'modus-operandi-tinted)))
+  (run-at-time "10:00" (* 60 60 24) (lambda () (bv-switch-theme 'modus-operandi)))
+  (run-at-time "18:00" (* 60 60 24) (lambda () (bv-switch-theme 'modus-vivendi-tinted)))
+  (run-at-time "23:00" (* 60 60 24) (lambda () (bv-switch-theme 'modus-vivendi))))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
