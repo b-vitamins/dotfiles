@@ -39,6 +39,24 @@
 ;; Borrowed from Protesilaos Stavrou <public@protesilaos.com>
 ;; https://github.com/protesilaos/dotfiles/blob/master/emacs/.emacs.d/early-init.el
 ;; 
+
+(defun bv-set-initial-background ()
+  "Set the initial background color based on time of day to reduce startup flash."
+  (let ((hour (string-to-number (format-time-string "%H"))))
+    (cond ((and (>= hour 5) (< hour 10))
+					 (progn (set-face-background 'default "#fbf7f0")
+									(set-face-foreground 'default "#000000")))
+          ((and (>= hour 10) (< hour 18))
+					 (progn (set-face-background 'default "#ffffff")
+									(set-face-foreground 'default "#000000")))
+          ((and (>= hour 18) (< hour 23))
+					 (progn (set-face-background 'default "#0d0e1c")
+									(set-face-foreground 'default "#ffffff")))
+          (t (progn (set-face-background 'default "#000000")
+										(set-face-foreground 'default "#ffffff"))))))
+
+(bv-set-initial-background)
+
 (setq gc-cons-threshold 100000000)
 (setq package-enable-at-startup nil)
 
