@@ -78,8 +78,8 @@
                             "cmake" ;Family of tools designed to build, test, and package software
                             "valgrind" ;Instrumentation framework for building dynamic analysis tools
                             "perf" ;Performance monitoring tool for Linux
-
-														;; Tree sitter packages
+                            
+                            ;; Tree sitter packages
                             "tree-sitter" ;A parser generator tool and an incremental parsing library
                             "tree-sitter-cli" ;Command line interface to manage tree-sitter language modules
                             "tree-sitter-typescript" ;Tree-sitter grammar for TypeScript programming language
