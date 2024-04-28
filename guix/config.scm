@@ -85,11 +85,12 @@
   (services
    (if (target-x86-64?)
        (append (list (service gnome-desktop-service-type)
-										 (service file-database-service-type)
+                     (service file-database-service-type)
+                     (service package-database-service-type)
                      (service bluetooth-service-type)
                      (service openssh-service-type)
                      (service bitmask-service-type)
-										 (service block-facebook-hosts-service-type)
+                     (service block-facebook-hosts-service-type)
                      (service docker-service-type)
                      (service libvirt-service-type
                               (libvirt-configuration (unix-sock-group
@@ -97,7 +98,7 @@
                                                      (tls-port "16555")))
                      (service rasdaemon-service-type)
                      (service earlyoom-service-type)
-										 (service zram-device-service-type)
+                     (service zram-device-service-type)
                      (service spice-vdagent-service-type)
                      (service inputattach-service-type)
                      (service nftables-service-type)
@@ -117,6 +118,13 @@
                                     (pam-limits-entry "*"
                                                       'both
                                                       'nofile 500000)))
+                     (service screen-locker-service-type
+                              (screen-locker-configuration (name "xlockmore")
+                                                           (program (file-append
+                                                                     xlockmore
+                                                                     "/bin/xlockmore"))
+                                                           (using-pam? #t)
+                                                           (using-setuid? #f)))
                      (set-xorg-configuration
                       (xorg-configuration (keyboard-layout keyboard-layout))))
                (modify-services %desktop-services
@@ -132,10 +140,10 @@
                                                                           (list
                                                                            (local-file
                                                                             "keys/nonguix-signing-key.pub")
-																																					 (local-file
-																																						"keys/science-signing-key.pub")
-                                                                           (local-file 
-																																						"keys/nonscience-signing-key.pub"))
+                                                                           (local-file
+                                                                            "keys/science-signing-key.pub")
+                                                                           (local-file
+                                                                            "keys/nonscience-signing-key.pub"))
                                                                           %default-authorized-guix-keys))
                                                         (tmpdir "/tmp")))
                  (dbus-root-service-type config =>
