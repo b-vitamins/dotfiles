@@ -74,4 +74,5 @@
                             "emacs-jit-spell"
                             "emacs-web-mode"
                             "emacs-combobulate"
-                            "emacs-markdown-mode"))
+                            "emacs-markdown-mode"
+														"emacs-jit-spell"))
