@@ -66,7 +66,6 @@
 
   (packages (append (list bluez
                           bluez-alsa
-                          nss-certs
                           coreutils
                           gvfs
                           alacritty
