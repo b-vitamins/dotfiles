@@ -280,9 +280,16 @@
   (savehist-mode))
 
 (setup (:straight-if doom-themes bv-not-guix-p)
+	(:quit)
   (load-theme 'doom-one-light t)
 	(bv-store-default-mode-line-colors)
   (message "Successfully setup doom-themes"))
+
+(setup modus-themes
+	(:require bv-essentials)
+	(:with-mode emacs-startup
+		(:hook bv-auto-switch-modus-themes))
+  (message "Successfully setup modus-themes"))
 
 (setup (:straight-if doom-modeline bv-not-guix-p)
   (:require doom-modeline)
