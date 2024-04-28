@@ -16,7 +16,7 @@
                             "htop" ;Interactive process viewer
                             "tree" ;Display directories as trees
                             "gnupg" ;Encryption and signing tools
-														"pinentry" ;GnuPG's interface to passphrase input
+                            "pinentry" ;GnuPG's interface to passphrase input
                             "password-store" ;Password management
                             "xdg-utils" ;Freedesktop.org scripts for desktop integration
                             "dconf" ;Low-level GNOME configuration system
