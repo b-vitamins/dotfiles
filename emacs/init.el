@@ -510,7 +510,7 @@
 							:image-output-type "png"
 							:image-size-adjust (1.0 . 1.0)
 							:latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
-							:image-converter ("convert -density %D -trim -antialias -colorspace RGB %f -quality 100 %O"))
+							:image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))
 						 ))
 
   ;; LaTeX Configuration
