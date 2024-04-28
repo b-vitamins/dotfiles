@@ -13,4 +13,3 @@ find . -type f -name "*.scm" -exec guix style -f {} \;
 cd "$original_dir"
 
 echo "All Scheme files have been formatted with guix style."
-
