@@ -503,15 +503,15 @@
   (:push-to org-preview-latex-process-alist
             (:elements
              (imagemagick
-              :programs ("lualatex" "convert")
-              :description "pdf > png"
-              :message "you need to install lualatex and imagemagick."
-              :use-xcolor t
-              :image-input-type "pdf"
-              :image-output-type "png"
-              :image-size-adjust (1.0 . 1.0)
-              :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
-              :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
+							:programs ("lualatex" "convert")
+							:description "pdf > png"
+							:message "you need to install lualatex and imagemagick."
+							:image-input-type "pdf"
+							:image-output-type "png"
+							:image-size-adjust (1.0 . 1.0)
+							:latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
+							:image-converter ("convert -density %D -trim -antialias -colorspace RGB %f -quality 100 %O"))
+						 ))
 
   ;; LaTeX Configuration
   (:option* latex-default-class "article"
