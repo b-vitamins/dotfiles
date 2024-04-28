@@ -108,6 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Fixed `adaptive-wrap-prefix-mode` setup block. To enable adaptive wrap globally, we hook it to `visual-line-mode` which is enabled globally via `global-visual-line-mode`.
 - Fixed inconsistent timing options in `bv-auto-switch-modus-themes`.
 - Dedicated setup block for `bv-latex` configuration. `bv-fix-math-delimiters` is now bound to `C-c f`.
 - Updated Olivetti mode toggle to `C-c o` from `C-c C-c`, since the latter is severely overloaded in `org-mode`.
