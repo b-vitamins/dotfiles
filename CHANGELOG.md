@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add `gitg`, `unite-shell`,`gs-connect`, `just-perfection`, `dash-to-dock`,`flat-remix-icon-theme`, `flat-remix-gtk-theme`, `flat-remix-gnome-theme`, and `bibata-cursor-theme` to `gnome-shell-assets` field in `gdm-service-type`.
+- Add package `gnome-shell-extensions` to `guix/manifests/core-manifest.scm`.
 - Add `xdisorg` package module in `guix/config.scm`. It provides the package `xlockmore` which is used in `screen-locker-service-type`.
 - Add `screen-locker-service-type` to `guix/config.scm`.
 - Add `package-database-service-type` to `guix/config.scm`.
