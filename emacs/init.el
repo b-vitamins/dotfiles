@@ -549,9 +549,11 @@
   ;;    performed offsite are hassle-free, without the need to shuffle images
   ;;    around the filesystem.
   ;;
-  (:require bv-latex)
-  (:option bv-latex-output-dir "~/slipbox/out")
-  (:alias org-latex-compile bv-org-latex-compile)
+	(setup bv-latex
+		(:require bv-latex)
+		(:option bv-latex-output-dir "~/slipbox/out")
+		(:alias org-latex-compile bv-org-latex-compile)
+		(:global "C-c f" bv-fix-math-delimiters))
 
   ;; `org-preview' is a minor mode which provides asynchronous,
   ;; blazing fast, latex previews.
