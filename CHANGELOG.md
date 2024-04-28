@@ -107,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - load of `setup.el` via `straight.el` in `emacs/init.el`.
 
 ### Changed
+- Fixed inconsistent timing options in `bv-auto-switch-modus-themes`.
 - Dedicated setup block for `bv-latex` configuration. `bv-fix-math-delimiters` is now bound to `C-c f`.
 - Updated Olivetti mode toggle to `C-c o` from `C-c C-c`, since the latter is severely overloaded in `org-mode`.
 - Released `M-{` from `org-mode-map` for use as a global binding to `bv-insert-open-brace`, which is used for bypassing smartparens to insert unpaired delimiters.
