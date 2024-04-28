@@ -21,7 +21,7 @@
                      linux)
 (use-package-modules imagemagick fonts fontutils)
 (use-package-modules version-control audio video)
-(use-package-modules xdisorg)
+(use-package-modules xdisorg gnome-xyz)
 
 (operating-system
   (host-name "server-0")
