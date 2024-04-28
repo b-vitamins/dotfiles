@@ -151,5 +151,36 @@ snippet."
           (move-file-to-trash original-tex))
         (when log-buf (kill-buffer log-buf))))))
 
+(defun bv-fix-math-delimiters (&optional start end)
+  "Replace all balanced $...$ and $$...$$ in a region or the entire buffer.
+If START and END are provided, restricts to that region; otherwise, operates
+on the entire buffer.  The function replaces single dollar signs $...$ with
+\\( ... \\) and double dollar signs $$...$$ with \\[ ... \\].  All changes
+are grouped into a single undo operation, and the number of replacements
+is reported."
+
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (list (point-min) (point-max))))
+  (let ((replacement-count 0))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region (or start (point-min)) (or end (point-max)))
+        (undo-boundary)  ; Set an undo boundary before making changes
+        (goto-char (point-min))
+        ;; Replace double dollar signs $$...$$ with \[...\]
+        (while (re-search-forward "\\$\\$\\(.*?\\)\\$\\$" nil t)
+          (replace-match "\\\\[\\1\\\\]" t)
+          (setq replacement-count (1+ replacement-count)))
+        (goto-char (point-min))
+        ;; Replace single dollar signs $...$ with \(...\)
+        (while (re-search-forward "\\([^\\[]\\|^\\)\\$\\(.*?\\)\\$" nil t)
+          (replace-match "\\1\\\\(\\2\\\\)" t)
+          (setq replacement-count (1+ replacement-count)))
+        (undo-boundary)  ; Set another undo boundary after all changes
+      ))
+    (message "Replacement complete! %d replacements made." replacement-count)))
+
 (provide 'bv-latex)
 ;;; bv-latex.el ends here
