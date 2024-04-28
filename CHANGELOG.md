@@ -172,6 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+- `:use-xcolor t` configuration removed from `imagemagick` configuration of `org-preview-latex-process-alist` to fix color space errors with the `convert` command.
 - `\newtheorem{proof}{Proof}` latex header from `emacs/setup/setupfile.org`.
 - Hardcoded `background-color` and `foreground-color` in `default-frame-alist`.
 -  `zsh/.zshrc` file.
