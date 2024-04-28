@@ -11,7 +11,7 @@
                             "emacs-rainbow-mode"
                             "emacs-adaptive-wrap"
                             "emacs-smartparens"
-														"emacs-paredit"
+                            "emacs-paredit"
                             "emacs-nerd-icons"
                             "emacs-nerd-icons-dired"
                             "emacs-nerd-icons-corfu"
@@ -73,5 +73,5 @@
                             "emacs-auctex"
                             "emacs-jit-spell"
                             "emacs-web-mode"
-														"emacs-combobulate"
-														"emacs-markdown-mode"))
+                            "emacs-combobulate"
+                            "emacs-markdown-mode"))
