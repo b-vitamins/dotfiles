@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add `xdisorg` package module in `guix/config.scm`. It provides the package `xlockmore` which is used in `screen-locker-service-type`.
 - Add `screen-locker-service-type` to `guix/config.scm`.
 - Add `package-database-service-type` to `guix/config.scm`.
 - Add `file-database-service-type` to `guix/config.scm`.
