@@ -10,7 +10,8 @@
              (gnu packages version-control)
              (gnu packages web)
              (gnu packages xorg)
-             (gnu packages hunspell))
+             (gnu packages hunspell)
+             (gnu packages math))
 
 (specifications->manifest '("gitg" ;Graphical interface for git
                             "git-crypt" ;Git encryption plugin
@@ -78,4 +79,7 @@
                             "hunspell-dict-en-us" ;Hunspell dictionary for United States English
                             "hunspell-dict-en-gb" ;Hunspell dictionary for British English, with -ise endings
                             "hunspell-dict-en-gb-ize" ;Hunspell dictionary for British English, with -ise endings
+                            "maxima" ;Numeric and symbolic expression manipulation
+                            "wxmaxima" ;GUI for Maxima
+                            "gnuplot" ;Command-line driven graphing utility
                             ))
