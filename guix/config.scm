@@ -88,6 +88,7 @@
                      (service bluetooth-service-type)
                      (service openssh-service-type)
                      (service bitmask-service-type)
+										 (service block-facebook-hosts-service-type)
                      (service docker-service-type)
                      (service libvirt-service-type
                               (libvirt-configuration (unix-sock-group
