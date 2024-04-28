@@ -78,5 +78,39 @@
                             "cmake" ;Family of tools designed to build, test, and package software
                             "valgrind" ;Instrumentation framework for building dynamic analysis tools
                             "perf" ;Performance monitoring tool for Linux
+
+														;; Tree sitter packages
+                            "tree-sitter" ;A parser generator tool and an incremental parsing library
+                            "tree-sitter-cli" ;Command line interface to manage tree-sitter language modules
+                            "tree-sitter-typescript" ;Tree-sitter grammar for TypeScript programming language
+                            "tree-sitter-scheme" ;Tree-sitter grammar for Scheme programming language
+                            "tree-sitter-rust" ;Tree-sitter grammar for Rust programming language
+                            "tree-sitter-ruby" ;Tree-sitter grammar for Ruby programming language
+                            "tree-sitter-racket" ;Tree-sitter grammar for Racket programming language
+                            "tree-sitter-r" ;Tree-sitter grammar for R programming language
+                            "tree-sitter-python" ;Tree-sitter grammar for Python programming language
+                            "tree-sitter-plantuml" ;Tree-sitter grammar for PlantUML
+                            "tree-sitter-org" ;Tree-sitter grammar for Org-mode files
+                            "tree-sitter-ocaml" ;Tree-sitter grammar for OCaml programming language
+                            "tree-sitter-markdown" ;Tree-sitter grammar for Markdown text formatting syntax
+                            "tree-sitter-lua" ;Tree-sitter grammar for Lua programming language
+                            "tree-sitter-latex" ;Tree-sitter grammar for LaTeX typesetting system
+                            "tree-sitter-julia" ;Tree-sitter grammar for Julia programming language
+                            "tree-sitter-json" ;Tree-sitter grammar for JSON data format
+                            "tree-sitter-javascript" ;Tree-sitter grammar for JavaScript programming language
+                            "tree-sitter-java" ;Tree-sitter grammar for Java programming language
+                            "tree-sitter-html" ;Tree-sitter grammar for HTML
+                            "tree-sitter-haskell" ;Tree-sitter grammar for Haskell programming language
+                            "tree-sitter-gomod" ;Tree-sitter grammar for Go module files
+                            "tree-sitter-go" ;Tree-sitter grammar for Go programming language
+                            "tree-sitter-elm" ;Tree-sitter grammar for Elm programming language
+                            "tree-sitter-dockerfile" ;Tree-sitter grammar for Dockerfile
+                            "tree-sitter-css" ;Tree-sitter grammar for CSS
+                            "tree-sitter-cpp" ;Tree-sitter grammar for C++ programming language
+                            "tree-sitter-cmake" ;Tree-sitter grammar for CMake files
+                            "tree-sitter-clojure" ;Tree-sitter grammar for Clojure programming language
+                            "tree-sitter-c" ;Tree-sitter grammar for C programming language
+                            "tree-sitter-bibtex" ;Tree-sitter grammar for BibTeX bibliography files
+                            "tree-sitter-bash" ;Tree-sitter grammar for Bash scripts
                             ))
 
