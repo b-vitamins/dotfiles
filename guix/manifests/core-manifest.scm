@@ -20,6 +20,7 @@
                             "password-store" ;Password management
                             "xdg-utils" ;Freedesktop.org scripts for desktop integration
                             "dconf" ;Low-level GNOME configuration system
+                            "gnome-shell-extensions" ;Extend and modify GNOME shell behaviour
                             "gsettings-desktop-schemas" ;GNOME settings for various desktop components
                             "rsync" ;File synchronization tool
                             "rclone" ;Cloud storage management
