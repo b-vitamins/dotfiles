@@ -12,7 +12,7 @@
                      networking
                      syncthing
                      sound)
-(use-service-modules docker virtualization spice linux)
+(use-service-modules docker virtualization spice linux admin)
 (use-package-modules certs
                      gnome
                      shells
@@ -85,6 +85,7 @@
   (services
    (if (target-x86-64?)
        (append (list (service gnome-desktop-service-type)
+										 (service file-database-service-type)
                      (service bluetooth-service-type)
                      (service openssh-service-type)
                      (service bitmask-service-type)
