@@ -286,10 +286,10 @@ If `make-backup-files' is enabled, this function will disable it temporarily."
 
   ;; Determine which theme to enable based on the current hour
   (let ((hour (string-to-number (format-time-string "%H"))))
-    (cond ((and (>= hour 5) (< hour 8))  (bv-switch-theme 'modus-operandi-tinted))
-          ((and (>= hour 8) (< hour 18)) (bv-switch-theme 'modus-operandi))
-          ((and (>= hour 18) (< hour 21)) (bv-switch-theme 'modus-vivendi-tinted))
-          (t                            (bv-switch-theme 'modus-vivendi))))
+    (cond ((and (>= hour 5) (< hour 10))  (bv-switch-theme 'modus-operandi-tinted))
+          ((and (>= hour 10) (< hour 18)) (bv-switch-theme 'modus-operandi))
+          ((and (>= hour 18) (< hour 23)) (bv-switch-theme 'modus-vivendi-tinted))
+          (t (bv-switch-theme 'modus-vivendi))))
 
   ;; Schedule theme switching at specific times
   (run-at-time "05:00" (* 60 60 24) (lambda () (bv-switch-theme 'modus-operandi-tinted)))
