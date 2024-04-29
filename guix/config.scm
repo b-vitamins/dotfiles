@@ -155,9 +155,6 @@
                                                       (auto-suspend? #f)
                                                       (gnome-shell-assets (list
                                                                            gitg
-                                                                           gnome-shell-extension-unite-shell
-                                                                           gnome-shell-extension-gsconnect
-                                                                           gnome-shell-extension-just-perfection
                                                                            gnome-shell-extension-dash-to-dock
                                                                            flat-remix-icon-theme
                                                                            flat-remix-gtk-theme
