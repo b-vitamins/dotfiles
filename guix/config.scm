@@ -141,9 +141,7 @@
                                                                            (local-file
                                                                             "keys/nonguix-signing-key.pub")
                                                                            (local-file
-                                                                            "keys/science-signing-key.pub")
-                                                                           (local-file
-                                                                            "keys/nonscience-signing-key.pub"))
+                                                                            "keys/science-signing-key.pub"))
                                                                           %default-authorized-guix-keys))
                                                         (tmpdir "/tmp")))
                  (dbus-root-service-type config =>
