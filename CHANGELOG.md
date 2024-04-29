@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add packages `openblas` to `guix/manifests/cpp-manifest.scm`.
 - Add packages `python-scikit-learn-extra`, `python-pytorch-lightning`, `python-torchmetrics`, `python-torchvision`, `python-beautifulsoup4`, `python-scrapy`, `python-pillow`, `python-pillow-simd`, `tensorflow`, `python-tensorflow`, `python-keras-preprocessing`, `python-keras`, `python-jax`, `python-jaxtyping`, `python-jaxlib`, `python-orbax-checkpoint`, `python-optax`, `python-jmp`, `python-flax`, `python-opt-einsum`, `python-sympy`, `python-nltk`, `python-spacy`, `python-bokeh`, `python-openai`, `python-pypdf2`, `python-pdfminer-six`, `python-lxml`, `python-xapian-bindings`, `vosk-api`, `python-vosk`, and `nerd-dictation` to `guix/manifests/python-manifest.scm`.
 - Add packages `xapian` to `guix/manifests/core-manifest.scm`.
 - Add packages `perl-xml-libxml`, `perl-xml-parser`, `perl-xml-dom`, `perl-xml-sax`, `perl-xml-xpath`, and `perl-xml-libxslt` to `guix/manifests/perl-manifest.scm`.
