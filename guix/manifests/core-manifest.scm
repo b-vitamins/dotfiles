@@ -85,6 +85,7 @@
                             "wxmaxima" ;GUI for Maxima
                             "gnuplot" ;Command-line driven graphing utility
                             "libxml2" ;C parser for XML
+                            "xapian" ;Search Engine Library
                             "xapers" ;Personal document indexing system
                             "omega" ;Search engine built on Xapian
                             ))
