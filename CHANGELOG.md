@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add packages `python-scikit-learn-extra`, `python-pytorch-lightning`, `python-torchmetrics`, `python-torchvision`, `python-beautifulsoup4`, `python-scrapy`, `python-pillow`, `python-pillow-simd`, `tensorflow`, `python-tensorflow`, `python-keras-preprocessing`, `python-keras`, `python-jax`, `python-jaxtyping`, `python-jaxlib`, `python-orbax-checkpoint`, `python-optax`, `python-jmp`, `python-flax`, `python-opt-einsum`, `python-sympy`, `python-nltk`, `python-spacy`, `python-bokeh`, `python-openai`, `python-pypdf2`, `python-pdfminer-six`, `python-lxml`, `python-xapian-bindings`, `vosk-api`, `python-vosk`, and `nerd-dictation` to `guix/manifests/python-manifest.scm`.
+- Add packages `xapian` to `guix/manifests/core-manifest.scm`.
+- Add packages `perl-xml-libxml`, `perl-xml-parser`, `perl-xml-dom`, `perl-xml-sax`, `perl-xml-xpath`, and `perl-xml-libxslt` to `guix/manifests/perl-manifest.scm`.
+- Add packages `libxml2`, `xapers`, and `omega` to `guix/manifests/core-manifest.scm`.
+- Add new manifest `java-manifest.scm` with packages `java-xerces`, `java-jaxp`, `java-jdom`, `java-dom4j`, and `java-jaxen` to `guix/manifests`.
+- Add new manifest `guile-manifest.scm` with packages `guile`, `guile-lib`, `guile-studio`, `guile-sqlite3`, `guile-json`, `guile-goblins`, `guile-fibers`, `guile-dbi`, `guile-openai`, `guile-lens`, and `guile-xapian` to `guix/manifests`.
+- Add new manifest `cpp-manifest.scm` with packages `kaldi`, `kaldi-for-vosk`, `kaldi-gstreamer-server`, and `llama-cpp` to `guix/manifests`.
+- Add packages `maxima`, `wxmaxima`, and `gnuplot` to `guix/manifests/core-manifest.scm`.
+- Add packages `hunspell`, `hunspell-dict-en`, `hunspell-dict-en-us`, `hunspell-dict-en-gb`, `hunspell-dict-gb-ize` to `guix/manifests/core-manifest.scm`.
+- Add package `emacs-jit-spell` to `guix/manifests/emacs-manifest.scm`.
 - Add `gitg`, `unite-shell`,`gs-connect`, `just-perfection`, `dash-to-dock`,`flat-remix-icon-theme`, `flat-remix-gtk-theme`, `flat-remix-gnome-theme`, and `bibata-cursor-theme` to `gnome-shell-assets` field in `gdm-service-type`.
 - Add package `gnome-shell-extensions` to `guix/manifests/core-manifest.scm`.
 - Add `xdisorg` package module in `guix/config.scm`. It provides the package `xlockmore` which is used in `screen-locker-service-type`.
