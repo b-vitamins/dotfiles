@@ -1,4 +1,5 @@
-(use-modules (gnu packages perl))
+(use-modules (gnu packages perl)
+             (gnu packages xml))
 
 ;; Define the Perl package manifest with a broader range of useful modules
 (specifications->manifest '("perl" ;Core Perl language
@@ -29,4 +30,10 @@
                             "perl-test-simple" ;Basic utilities for writing tests
                             "perl-yaml-tiny" ;Read/Write YAML files with as little code as possible
                             "perl-try-tiny" ;Minimal try/catch with no dependencies
+                            "perl-xml-libxml" ;Perl interface to libxml2
+                            "perl-xml-parser" ;Perl bindings to the Expat XML parsing library
+                            "perl-xml-dom" ;Perl module for building DOM Level 1 compliant document structures
+                            "perl-xml-sax" ;Perl API for XML
+                            "perl-xml-xpath" ;Parse and evaluate XPath statements
+                            "perl-xml-libxslt" ;Perl bindings to GNOME libxslt library
                             ))
