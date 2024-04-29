@@ -62,7 +62,6 @@ all_packages_installed=$(verify_manifest_installation)
 # Construct and execute the package installation command if needed
 if $manifests_updated || ! $all_packages_installed; then
     cd "$HOME"
-		pull_cmd="guix pull"
     install_cmd="guix package"
     
     # Build the command by appending each manifest
@@ -73,8 +72,6 @@ if $manifests_updated || ! $all_packages_installed; then
     install_cmd="$install_cmd -c  12"
     
     # Execute the constructed command
-		echo "Running: $pull_cmd"
-    eval "$pull_cmd"
     echo "Running command to install packages: $install_cmd"
     eval "$install_cmd"
 else
