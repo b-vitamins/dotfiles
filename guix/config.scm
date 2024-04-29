@@ -133,15 +133,12 @@
                                                         (authorize-key? #t)
                                                         (substitute-urls (append
                                                                           (list
-                                                                           "https://guix.bordeaux.inria.fr"
                                                                            "https://substitutes.nonguix.org")
                                                                           %default-substitute-urls))
                                                         (authorized-keys (append
                                                                           (list
                                                                            (local-file
-                                                                            "keys/nonguix-signing-key.pub")
-                                                                           (local-file
-                                                                            "keys/science-signing-key.pub"))
+                                                                            "keys/nonguix-signing-key.pub"))
                                                                           %default-authorized-guix-keys))
                                                         (tmpdir "/tmp")))
                  (dbus-root-service-type config =>
