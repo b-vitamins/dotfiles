@@ -51,7 +51,6 @@
                             "python-orbax-checkpoint" ;Utility libraries for JAX users
                             "python-optax" ;Gradient processing and optimization library for JAX
                             "python-jmp" ;JMP is a mixed precision library for JAX
-                            "python-flax" ;Neural network library for JAX designed for flexibility
                             "python-opt-einsum" ;Optimizing numpy's einsum function
                             "python-sympy" ;Python library for symbolic mathematics
                             "python-nltk" ;Natural language toolkit
