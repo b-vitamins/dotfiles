@@ -24,6 +24,7 @@
              (gnu packages guile)
              (gnu packages haskell)
              (gnu packages idris)
+             (gnu packages tree-sitter)
              (myguix packages rust)
              (myguix packages rust-pqrs)
              (myguix packages llvm-pqrs))
