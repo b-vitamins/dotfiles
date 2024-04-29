@@ -202,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+- Remove (non)package `kaldi-for-vosk` from `guix/manifests/cpp-manifest.scm`.
 - Remove `-colorspace RGB` in `image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")` from `imagemagick` configuration of `org-preview-latex-process-alist` to fix color space errors with the `convert` command.
 - `:use-xcolor t` configuration removed from `imagemagick` configuration of `org-preview-latex-process-alist` to fix color space errors with the `convert` command.
 - `\newtheorem{proof}{Proof}` latex header from `emacs/setup/setupfile.org`.
