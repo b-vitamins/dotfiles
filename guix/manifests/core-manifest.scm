@@ -11,7 +11,7 @@
              (gnu packages web)
              (gnu packages xorg)
              (gnu packages hunspell)
-             (gnu packages math)
+             (gnu packages maths)
              (gnu packages xml)
              (gnu packages search))
 
