@@ -202,6 +202,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emacs/lisp/bv-essentials.el` updated to include new default number of retries for bootstrapping `straight.el`.
 
 ### Removed
+- Remove `guix-science-nonfree` channel from `guix/channels.scm`.
+- Remove `guix/keys/science-signing-key.scm` and disable the use of https://guix.bordeaux.inria.fr as a substitute server.
+- Remove `guix/keys/nonscience-signing-key.scm` since it is a duplicate of `guix/keys/science-signing-key.scm` and authenticates the same substitute server. https://guix.bordeaux.inria.fr
+- Remove `gnome-shell-extension-unite-shell` (don't need), `gnome-shell-extension-gsconnect` (doesn't work), and `gnome-shell-extension-just-perfection` (don't need) from `gnome-shell-assets` field of `gdm-service-type` in `guix/config.scm`.
 - Remove (non)package `kaldi-for-vosk` from `guix/manifests/cpp-manifest.scm`.
 - Remove `-colorspace RGB` in `image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")` from `imagemagick` configuration of `org-preview-latex-process-alist` to fix color space errors with the `convert` command.
 - `:use-xcolor t` configuration removed from `imagemagick` configuration of `org-preview-latex-process-alist` to fix color space errors with the `convert` command.
