@@ -3,7 +3,7 @@
 (use-modules (gnu packages guile)
              (gnu packages guile-xyz))
 
-(specifications->manifest '("guile" "guile-lib"
+(specifications->manifest '("guile-lib"
                             "guile-studio"
                             "guile-sqlite3"
                             "guile-json"
