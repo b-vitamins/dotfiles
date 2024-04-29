@@ -11,7 +11,9 @@
              (gnu packages web)
              (gnu packages xorg)
              (gnu packages hunspell)
-             (gnu packages math))
+             (gnu packages math)
+             (gnu packages xml)
+             (gnu packages search))
 
 (specifications->manifest '("gitg" ;Graphical interface for git
                             "git-crypt" ;Git encryption plugin
@@ -82,4 +84,7 @@
                             "maxima" ;Numeric and symbolic expression manipulation
                             "wxmaxima" ;GUI for Maxima
                             "gnuplot" ;Command-line driven graphing utility
+                            "libxml2" ;C parser for XML
+                            "xapers" ;Personal document indexing system
+                            "omega" ;Search engine built on Xapian
                             ))
