@@ -387,7 +387,6 @@
   (message "Successfully setup guix"))
 
 (setup (:straight-if vterm bv-not-guix-p)
-	(:quit)
   (:require vterm)
   (message "Successfully setup vterm"))
 
