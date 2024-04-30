@@ -88,4 +88,5 @@
                             "xapian" ;Search Engine Library
                             "xapers" ;Personal document indexing system
                             "omega" ;Search engine built on Xapian
+                            "libvterm" ;VT220/xterm/ECMA-48 terminal emulator library
                             ))
