@@ -1042,13 +1042,13 @@
   (message "Successfully setup geiser"))
 
 (setup (:straight-if geiser-guile bv-not-guix-p)
+	(:load-after exec-path-from-shell)
+	(:push-to exec-path-from-shell-variables
+						(:elements "GUILE_LOAD_PATH"))
+	(exec-path-from-shell-initialize)
 	(:option geiser-guile-load-init-file t
 					 geiser-guile-load-path (split-string (getenv "GUILE_LOAD_PATH") path-separator)
 					 geiser-repl-add-project-paths t)
-	(:push-to geiser-guile-load-path
-						(:elements
-						 ("/home/b/.config/guix/current/share/guile/site/3.0/nonguix"
-							"/home/b/.config/guix/current/share/guile/site/3.0/myguix")))
   (:require geiser-guile)
   (message "Successfully setup geiser-guile"))
 
