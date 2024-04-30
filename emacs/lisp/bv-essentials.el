@@ -270,7 +270,7 @@ If `make-backup-files' is enabled, this function will disable it temporarily."
                   (rename-file filename new-location)
                   (message "Moved file to trash: %s" new-location)
                   (kill-buffer)))))
-        (message "Operation cancelled.")))))
+        (message "Operation canceled.")))))
 
 (defun bv-switch-theme (new-theme)
   "Enable NEW-THEME."
