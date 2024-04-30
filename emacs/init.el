@@ -393,6 +393,23 @@
 (setup (:straight-if exec-path-from-shell bv-not-guix-p)
   (:require exec-path-from-shell))
 
+(setup (:straight-if jit-spell bv-not-guix-p)
+	(:load-after exec-path-from-shell)
+	(:push-to exec-path-from-shell-variables
+						(:elements "MY_DICTIONARY" "DICTPATH"))
+	(exec-path-from-shell-initialize)
+	(:set ispell-program-name "hunspell"
+				ispell-hunspell-dict-paths-alist (getenv "DICTPATH")
+				ispell-personal-dictionary (getenv "MY_DICTIONARY")
+				ispell-local-dictionary "en_GB-ize")
+	(:require jit-spell)
+	(:with-mode text-mode
+		(:hook jit-spell-mode))
+	(:with-mode prog-mode
+		(:hook jit-spell-mode))
+	(:bind "C-c s" jit-spell-correct-word
+				 "C-c d" bv-add-word-at-point-to-personal-dictionary))
+
 (setup (:straight-if (mjolnir-mode :type git :host github :repo "b-vitamins/mjolnir-mode") bv-not-guix-p)
   (mjolnir-mode)
   (:global "M-n" mjolnir-cycle-window-forward
