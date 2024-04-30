@@ -1,7 +1,7 @@
 #!/bin/sh
 
 repo_dict="$(dirname "$(dirname "$0")")/my-dict"
-local_dict="$HOME/.config/hunspell/my-dict"
+local_dict="$HOME/.config/hunspell/my.dictionary"
 
 # Check if the local dictionary exists
 if [ ! -f "$local_dict" ]; then
