@@ -31,8 +31,6 @@
 ;;; Code:
 
 (require 'god-mode)
-(require 'corfu)
-(require 'geiser-guile)
 
 (defvar-local bv-straight-bootstrap-retries 3
   "Default number of retries for bootstrapping straight.el.")
