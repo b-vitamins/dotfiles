@@ -30,7 +30,6 @@
 
 ;;; Code:
 
-(require 'flycheck)
 (require 'god-mode)
 (require 'corfu)
 (require 'geiser-guile)
@@ -163,7 +162,9 @@
                      org-special-keyword org-meta-line org-checkbox))
         (set-face-attribute face nil :inherit 'fixed-pitch)))))
 
-(defun bv-copy-flycheck-overlay-at-point-to-kill-ring ()
+(with-eval-after-load 'flycheck
+	(declare-function flycheck-overlays-at "flycheck")
+	(defun bv-copy-flycheck-overlay-at-point-to-kill-ring ()
     "Copy the Flycheck overlay messages at point to the kill ring."
     (interactive)
     (let ((overlays (flycheck-overlays-at (point))))
@@ -178,7 +179,7 @@
                                overlays "\n")))
             (kill-new overlay-msgs)
             (message "Copied Flycheck messages to kill ring."))
-        (message "No Flycheck messages at point."))))
+        (message "No Flycheck messages at point.")))))
 
 (defun bv-blacken-buffer ()
   "Run `black' on the current file with a line length of 80 and reload the buffer.
