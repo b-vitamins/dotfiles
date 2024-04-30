@@ -4,6 +4,7 @@
              (guix utils))
 (use-modules (nongnu packages linux)
              (nongnu packages mozilla))
+
 (use-service-modules desktop
                      xorg
                      ssh
@@ -12,19 +13,22 @@
                      networking
                      syncthing
                      sound)
+
 (use-service-modules docker virtualization spice linux admin)
+
 (use-package-modules certs
                      gnome
                      shells
                      terminals
                      base
                      linux)
+
 (use-package-modules imagemagick fonts fontutils)
 (use-package-modules version-control audio video)
-(use-package-modules xdisorg gnome-xyz)
+(use-package-modules xdisorg gnome-xyz avahi)
 
 (operating-system
-  (host-name "server-0")
+  (host-name "lagertha")
   (timezone "Asia/Kolkata")
   (locale "en_US.utf8")
   (kernel linux)
@@ -68,6 +72,7 @@
                           bluez-alsa
                           coreutils
                           gvfs
+                          avahi
                           alacritty
                           firefox
                           git
@@ -78,6 +83,9 @@
                           yt-dlp
                           font-dejavu
                           font-iosevka-comfy
+                          font-google-noto
+                          font-google-noto-serif-cjk
+                          font-google-noto-sans-cjk
                           fontconfig
                           imagemagick
                           ffmpeg) %base-packages))
@@ -131,15 +139,20 @@
                  (guix-service-type config =>
                                     (guix-configuration (inherit config)
                                                         (authorize-key? #t)
-                                                        (substitute-urls (append
-                                                                          (list
-                                                                           "https://substitutes.nonguix.org")
-                                                                          %default-substitute-urls))
                                                         (authorized-keys (append
                                                                           (list
                                                                            (local-file
-                                                                            "keys/nonguix-signing-key.pub"))
+                                                                            "keys/nonguix-signing-key.pub")
+                                                                           (local-file
+                                                                            "keys/myguix-signing-key.pub"))
                                                                           %default-authorized-guix-keys))
+                                                        (use-substitutes? #t)
+                                                        (substitute-urls (append
+                                                                          (list
+                                                                           "https://substitutes.nonguix.org"
+                                                                           "substitutes.myguix.org")
+                                                                          %default-substitute-urls))
+                                                        (discover? #t)
                                                         (tmpdir "/tmp")))
                  (dbus-root-service-type config =>
                                          (dbus-configuration (inherit config)
