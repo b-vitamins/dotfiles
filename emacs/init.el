@@ -1245,5 +1245,8 @@
     (:hook nerd-icons-completion-marginalia-setup))
   (message "Successfully setup nerd-icons-completion"))
 
+(setup treesit
+	(:option* extra-load-path (list (concat (getenv "GUIX_PROFILE") "/lib/tree-sitter")))
+
 (provide 'init)
 ;;; init.el ends here
