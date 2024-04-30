@@ -323,5 +323,15 @@ the BUFFER in the selected window if conditions are met."
               (window-dedicated-p))
     (window--display-buffer buffer (selected-window) 'reuse alist)))
 
+(with-eval-after-load 'jit-spell
+	(declare-function jit-spell--accept-word "jit-spell")
+  (defun bv-add-word-at-point-to-personal-dictionary ()
+    "Add the word at point to the personal dictionary."
+    (interactive)
+    (let ((word (thing-at-point 'word)))
+      (when word
+        (jit-spell--accept-word word 'dict)
+        (message "Added '%s' to personal dictionary" word)))))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
