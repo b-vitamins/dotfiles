@@ -32,6 +32,8 @@
 
 (require 'flycheck)
 (require 'god-mode)
+(require 'corfu)
+(require 'geiser-guile)
 
 (defvar-local bv-straight-bootstrap-retries 3
   "Default number of retries for bootstrapping straight.el.")
@@ -296,6 +298,29 @@ If `make-backup-files' is enabled, this function will disable it temporarily."
   (run-at-time "10:00" (* 60 60 24) (lambda () (bv-switch-theme 'modus-operandi)))
   (run-at-time "18:00" (* 60 60 24) (lambda () (bv-switch-theme 'modus-vivendi-tinted)))
   (run-at-time "23:00" (* 60 60 24) (lambda () (bv-switch-theme 'modus-vivendi))))
+
+;; Borrowed from Mickey Peterson <mickey@masteringemacs.org>
+;; Demystifying Emacs's Window Manager
+;; https://www.masteringemacs.org/article/demystifying-emacs-window-manager
+;;
+(defun bv-display-buffer-same-window (buffer alist)
+  "Display BUFFER in the current window, adhering to ALIST constraints.
+
+This function attempts to display the given BUFFER in
+the currently selected window, but it will refrain from
+doing so if certain conditions are met:
+
+- If `inhibit-same-window is set in ALIST.
+- If the current window is a minibuffer window.
+- If the current window is dedicated to a specific buffer.
+
+ALIST is a list of parameters that may contain display specifications
+affecting buffer display.  Uses `window--display-buffer' to actually place
+the BUFFER in the selected window if conditions are met."
+  (unless (or (cdr (assq 'inhibit-same-window alist))
+              (window-minibuffer-p)
+              (window-dedicated-p))
+    (window--display-buffer buffer (selected-window) 'reuse alist)))
 
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
