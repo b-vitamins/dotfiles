@@ -26,10 +26,7 @@
                             "python-flask" ;A lightweight WSGI web application framework
                             "python-scikit-learn" ;Machine learning in Python
                             "python-scikit-learn-extra" ;Set of tools for scikit-learn
-                            "python-pytorch" ;Tensors and Dynamic neural networks in Python with strong GPU acceleration
-                            "python-pytorch-lightning" ;Deep learning framework to train, deploy, and ship AI products
-                            "python-torchmetrics" ;Machine learning metrics for PyTorch applications
-                            "python-torchvision" ;Datasets, transforms and models specific to computer vision
+                            "python-pytorch@2.2.1" ;Tensors and Dynamic neural networks in Python with strong GPU acceleration
                             "python-aiohttp" ;Async HTTP client/server framework
                             "python-httpx" ;A fully featured HTTP client for Python 3, which provides sync and async APIs
                             "python-websockets" ;A library for building WebSocket servers and clients in Python with a focus on correctness and simplicity
@@ -48,7 +45,6 @@
                             "python-jax" ;Differentiate, compile, and transform Numpy code
                             "python-jaxtyping" ;Type annotations and runtime checking for JAX arrays and others
                             "python-jaxlib" ;Differentiate, compile, and transform Numpy code
-                            "python-orbax-checkpoint" ;Utility libraries for JAX users
                             "python-optax" ;Gradient processing and optimization library for JAX
                             "python-jmp" ;JMP is a mixed precision library for JAX
                             "python-opt-einsum" ;Optimizing numpy's einsum function
