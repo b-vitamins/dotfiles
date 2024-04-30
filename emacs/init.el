@@ -46,9 +46,12 @@
 ;; This allows Emacs to find and load Lisp files located in this directory.
 ;;
 (when user-emacs-directory
-  (let* ((lisp-dir (expand-file-name "lisp/" user-emacs-directory)))
-    (when (file-directory-p lisp-dir)
-      (add-to-list 'load-path lisp-dir))))
+  (let* ((elisp-dir (expand-file-name "lisp/" user-emacs-directory))
+				 (guile-dir (expand-file-name "../guix/current/share/guile/site/3.0/" user-emacs-directory)))
+    (when (file-directory-p elisp-dir)
+      (add-to-list 'load-path elisp-dir))
+    (when (file-directory-p guile-dir)
+      (add-to-list 'load-path guile-dir))))
 
 ;; Ensure the server package is loaded
 ;; Check if the Emacs server is already running and start it if not
@@ -76,8 +79,6 @@
 (setup default-preferences
   ;; Basic preferences to improve user experience and workflow.
   (:set-default
-   ;; Makes switch-to-buffer commands respect display actions for a more intuitive window management.
-   switch-to-buffer-obey-display-actions t
    ;; Sets Org mode as the default major mode for new buffers, encouraging structured and organized note-taking.
    initial-major-mode 'org-mode
    ;; Disables the bell sound, replacing it with a silent ignore function to avoid auditory distraction.
@@ -159,6 +160,7 @@
    font-lock-support-mode 'jit-lock-mode
    ;; Enables maximum decoration for syntax highlighting, ensuring rich visual feedback in code.
    font-lock-maximum-decoration t)
+
   ;; Sets UTF-8 as the default coding system for file I/O, supporting a wide range of characters globally.
   (set-default-coding-systems 'utf-8)
   ;; Configures the Emacs environment to use UTF-8, enhancing support for international text standards.
@@ -254,7 +256,6 @@
               rust-mode
               rust-ts-mode)
   (message "Successfully setup display-line-numbers")
-  (global-visual-line-mode t)
   (message "Successfully enabled global-visual-line-mode"))
 
 (setup display-time-format
@@ -336,6 +337,7 @@
   (:require adaptive-wrap)
 	(:with-mode visual-line-mode
 		(:hook adaptive-wrap-prefix-mode))
+  (global-visual-line-mode t)
   (message "Successfully setup adaptive-wrap"))
 
 (setup (:straight-if smartparens bv-not-guix-p)
@@ -384,6 +386,11 @@
   (:option* guile-program "guile")
   (message "Successfully setup guix"))
 
+(setup (:straight-if vterm bv-not-guix-p)
+	(:quit)
+  (:require vterm)
+  (message "Successfully setup vterm"))
+
 (setup (:straight-if (mjolnir-mode :type git :host github :repo "b-vitamins/mjolnir-mode") bv-not-guix-p)
   (mjolnir-mode)
   (:global "M-n" mjolnir-cycle-window-forward
@@ -423,6 +430,61 @@
   (:global "M-o" ace-window)
   (ace-window-display-mode 1)
   (message "Successfully setup ace-window"))
+
+(setup
+		;; Makes switch-to-buffer commands respect display actions for a more intuitive window management.
+		(:set switch-to-buffer-obey-display-actions t)
+		(:push-to display-buffer-alist
+							(:elements
+							 ((or (major-mode . Info-mode)
+										(major-mode . help-mode))
+								(display-buffer-in-side-window)
+								(reusable-frames . visible)
+								(side . right)
+								(slot . 0)
+								(window-width . 0.4)
+								(window-parameters . ((display-buffer-reuse-window . t))))
+							 ((or (major-mode . org-agenda-mode)
+										(major-mode . org-capture-mode)
+										(major-mode . org-roam-mode))
+								(display-buffer-in-side-window)
+								(side . right)
+								(slot . 1)
+								(window-width . 0.4)
+								(window-parameters . ((no-delete-other-windows . t))))
+							 ("\\*vterm\\*" display-buffer-reuse-mode-window
+								;; change to `t' to not reuse same window
+								(inhibit-same-window . nil)
+								(mode vterm-mode vterm-copy-mode))
+							 (,(rx (| "*xref*"
+												"*grep*"
+												"*Occur*"))
+								display-buffer-reuse-window
+								(inhibit-same-window . nil))
+							 ((derived-mode . magit-mode)
+								(display-buffer-reuse-mode-window
+								 display-buffer-in-direction)
+								(mode magit-mode)
+								(window . root)
+								(window-width . 0.33)
+								(direction . left))
+							 (compiltation-mode
+								(display-buffer-no-window)
+								(allow-no-window . t))
+							 ("\\*e?shell\\*" display-buffer-in-direction
+								(direction . bottom)
+								(window . root)
+								(window-height . 0.3))
+							 (,(rx (| "*compilation*" "*grep*"))
+								(display-buffer-in-side-window)
+								(side . right)
+								(slot . 2)
+								(window-parameters . ((no-delete-other-windows . t)))
+								(window-width . 80))
+							 ("^test[-_]"
+								display-buffer-in-direction
+								(direction . right))
+							 )))
 
 (setup (:straight-if olivetti bv-not-guix-p)
   (:option* body-width 100)
@@ -597,6 +659,7 @@
             cycle t
             resize t
             grid-lookahead 200)
+
   (vertico-mode)
   (message "Successfully setup vertico"))
 
@@ -658,16 +721,15 @@
 (setup (:straight-if corfu bv-not-guix-p)
   (:load-after savehist-mode)
   (:require corfu)
-
   (:option tab-always-indent t
            completion-category-overrides '((file (styles . (partial-completion))))
            completion-cycle-threshold nil)
-
   (:option* auto t
             auto-prefix 2
-            auto-delay 0.30
-            max-width 80
-            count 10
+            auto-delay 0.10
+            max-width 150
+						min-width 20
+            count 15
             scroll-margin 10
             cycle nil
             quit-at-boundary nil
@@ -676,13 +738,16 @@
             preview-current 'insert
             preselect-first nil
             echo-documentation nil)
-
+	(:with-mode eshell-mode
+		(lambda ()
+			(setq-local corfu-auto nil)
+			(corfu-mode)))
   (:with-map corfu-map
     (:bind "C-n" corfu-next
            "C-p" corfu-previous
-           "C-g" corfu-quit
            "<return>" corfu-insert))
-
+	(:with-mode global-corfu-mode
+		(:hook corfu-echo-mode corfu-history-mode corfu-indexed-mode corfu-popupinfo-mode))
   (global-corfu-mode)
   (message "Successfully setup corfu"))
 
@@ -949,11 +1014,22 @@
   (message "Successfully setup yasnippets"))
 
 (setup (:straight-if geiser bv-not-guix-p)
-  (:option geiser-default-implementation 'guile)
+  (:option geiser-default-implementation 'guile
+					 geiser-active-implementations '(guile))
+  (:push-to geiser-implementations-alist
+						(:elements
+						 (((regexp "\\.scm$") guile))))
   (:require geiser)
   (message "Successfully setup geiser"))
 
 (setup (:straight-if geiser-guile bv-not-guix-p)
+	(:option geiser-guile-load-init-file t
+					 geiser-guile-load-path (split-string (getenv "GUILE_LOAD_PATH") path-separator)
+					 geiser-repl-add-project-paths t)
+	(:push-to geiser-guile-load-path
+						(:elements
+						 ("/home/b/.config/guix/current/share/guile/site/3.0/nonguix"
+							"/home/b/.config/guix/current/share/guile/site/3.0/myguix")))
   (:require geiser-guile)
   (message "Successfully setup geiser-guile"))
 
@@ -1010,7 +1086,6 @@
   (message "Successfully setup flycheck-inline"))
 
 (setup (:straight-if flycheck-guile bv-not-guix-p)
-  (:load-after flycheck flycheck-inline)
   (:require flycheck-guile)
   (message "Successfully setup flycheck-guile"))
 
