@@ -390,6 +390,9 @@
   (:require vterm)
   (message "Successfully setup vterm"))
 
+(setup (:straight-if exec-path-from-shell bv-not-guix-p)
+  (:require exec-path-from-shell))
+
 (setup (:straight-if (mjolnir-mode :type git :host github :repo "b-vitamins/mjolnir-mode") bv-not-guix-p)
   (mjolnir-mode)
   (:global "M-n" mjolnir-cycle-window-forward
