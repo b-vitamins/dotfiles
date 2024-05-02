@@ -562,7 +562,7 @@
             edit-src-content-indentation 2
             confirm-babel-evaluate nil
             src-window-setup 'split-window-below
-						babel-python-mode "python3")
+						babel-python-command "python3")
 
   ;; Babel Configurations for Source Code Execution
   (org-babel-do-load-languages
