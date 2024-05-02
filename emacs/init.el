@@ -1249,5 +1249,10 @@
 	(:option*
 	 extra-load-path (list (concat (getenv "GUIX_PROFILE") "/lib/tree-sitter"))))
 
+(setup gptel
+	(:require gptel)
+	(:option gptel-model "gpt-4-turbo")
+	(:global "C-c g" gptel-send))
+
 (provide 'init)
 ;;; init.el ends here
