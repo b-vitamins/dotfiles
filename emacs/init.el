@@ -253,8 +253,7 @@
               lisp-mode
               scheme-mode
               haskell-mode
-              rust-mode
-              rust-ts-mode)
+              rust-mode)
   (message "Successfully setup display-line-numbers")
   (message "Successfully enabled global-visual-line-mode"))
 
@@ -562,7 +561,8 @@
             src-preserve-indentation nil
             edit-src-content-indentation 2
             confirm-babel-evaluate nil
-            src-window-setup 'split-window-below)
+            src-window-setup 'split-window-below
+						babel-python-mode "python3")
 
   ;; Babel Configurations for Source Code Execution
   (org-babel-do-load-languages
@@ -1054,8 +1054,8 @@
 
 (setup (:straight-if lsp-mode bv-not-guix-p)
   (:hook-into rust-mode
-              lisp-mode
               python-mode
+              lisp-mode
               haskell-mode
               perl-mode
               lua-mode
@@ -1246,7 +1246,8 @@
   (message "Successfully setup nerd-icons-completion"))
 
 (setup treesit
-	(:option* extra-load-path (list (concat (getenv "GUIX_PROFILE") "/lib/tree-sitter")))
+	(:option*
+	 extra-load-path (list (concat (getenv "GUIX_PROFILE") "/lib/tree-sitter"))))
 
 (provide 'init)
 ;;; init.el ends here
