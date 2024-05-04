@@ -216,5 +216,34 @@ on the entire buffer.  Handles cases where aligned is not nested."
 				(undo-boundary)))
 		(message "Replacement complete! %d replacements made." replacement-count)))
 
+(defun bv-fix-gathered-environment (&optional start end)
+  "Convert LaTeX gathered environment to gather* environment.
+If START and END are provided, restricts to that region; otherwise, operates
+on the entire buffer.  Handles cases where gathered is not nested."
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (list (point-min) (point-max))))
+  (let ((replacement-count 0))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region (or start (point-min)) (or end (point-max)))
+        (undo-boundary)
+        (goto-char (point-min))
+        (while (search-forward "begin{gathered}" nil t)
+          (replace-match "begin{gather}" t)
+          (forward-line -1)
+          (kill-whole-line)
+          (setq replacement-count (1+ replacement-count)))
+        (goto-char (point-min))
+        (while (search-forward "end{gathered}" nil t)
+          (replace-match "end{gather}" t)
+          ;; Check if there's a closing display math delimiter ahead and remove it
+          (forward-line 1)
+          (kill-whole-line)
+          (setq replacement-count (1+ replacement-count)))
+        (undo-boundary)))
+    (message "Replacement complete! %d replacements made." replacement-count)))
+
 (provide 'bv-latex)
 ;;; bv-latex.el ends here
