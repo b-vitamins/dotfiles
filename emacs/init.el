@@ -544,7 +544,8 @@
             startup-with-latex-preview nil
             startup-with-inline-images t
             startup-align-all-tables t
-            startup-indented t)
+            startup-indented t
+						image-actual-width nil)
 
   ;; Visuals and UI Enhancements
   (:option* hide-leading-stars t
