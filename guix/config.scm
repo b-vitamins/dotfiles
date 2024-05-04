@@ -109,7 +109,7 @@
                      (service zram-device-service-type)
                      (service spice-vdagent-service-type)
                      (service inputattach-service-type)
-                     (service nftables-service-type)
+										 (service nftables-service-type)
                      (service syncthing-service-type
                               (syncthing-configuration (user "b")))
                      (service pam-limits-service-type
@@ -142,15 +142,12 @@
                                                         (authorized-keys (append
                                                                           (list
                                                                            (local-file
-                                                                            "keys/nonguix-signing-key.pub")
-                                                                           (local-file
-                                                                            "keys/myguix-signing-key.pub"))
+                                                                            "keys/nonguix-signing-key.pub"))
                                                                           %default-authorized-guix-keys))
                                                         (use-substitutes? #t)
                                                         (substitute-urls (append
                                                                           (list
-                                                                           "https://substitutes.nonguix.org"
-                                                                           "substitutes.myguix.org")
+                                                                           "https://substitutes.nonguix.org")
                                                                           %default-substitute-urls))
                                                         (discover? #t)
                                                         (tmpdir "/tmp")))
@@ -158,6 +155,10 @@
                                          (dbus-configuration (inherit config)
                                                              (services (list
                                                                         bluez-alsa))))
+								 (sysctl-service-type config =>
+																			(sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
+																																								("vm.max_map_count" . "262144"))
+																																							%default-sysctl-settings))))
                  (gdm-service-type config =>
                                    (gdm-configuration (inherit config)
                                                       (auto-login? #f)
