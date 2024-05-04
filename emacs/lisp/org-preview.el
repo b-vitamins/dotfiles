@@ -1,10 +1,11 @@
 ;;; org-preview.el --- Fast, async LaTeX previews for Org  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024  Ayan Das
 ;; Copyright (C) 2022  Karthik Chikmagalur
+;; Copyright (C) 2024  Ayan Das
 
 ;; Authors: Karthik Chikmagalur <karthikchikmagalur@gmail.com>
 ;;          Ayan Das <bvits@riseup.net>
+;; URL: https://github.com/karthink/org-preview
 ;; Keywords: tex, extensions, tools
 
 ;; This program is free software; you can redistribute it and/or modify
