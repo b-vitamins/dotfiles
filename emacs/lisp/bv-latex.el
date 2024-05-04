@@ -179,5 +179,42 @@ is reported."
       ))
     (message "Replacement complete! %d replacements made." replacement-count)))
 
+(defun bv-fix-aligned-environment (&optional start end)
+  "Convert LaTeX aligned environment to align* environment.
+If START and END are provided, restricts to that region; otherwise, operates
+on the entire buffer.  Handles cases where aligned is not nested."
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (list (point-min) (point-max))))
+  (let ((replacement-count 0))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region (or start (point-min)) (or end (point-max)))
+        (undo-boundary)
+        (goto-char (point-min))
+        (while (search-forward "begin{aligned}" nil t)
+          (replace-match "begin{align*}" t)
+          (beginning-of-line)
+          (if (looking-at "\\\\begin")
+							(progn
+								(forward-line -1)
+								(kill-whole-line))
+						t)
+          (setq replacement-count (1+ replacement-count)))
+        (goto-char (point-min))
+				(while (search-forward "end{aligned}" nil t)
+          (replace-match "end{align*}" t)
+          (end-of-line)
+          (backward-char 12)
+          (if (looking-at "\\\\end")
+              (progn
+                (forward-line 1)
+                (kill-whole-line))
+						t)
+					(setq replacement-count (1+ replacement-count)))
+				(undo-boundary)))
+		(message "Replacement complete! %d replacements made." replacement-count)))
+
 (provide 'bv-latex)
 ;;; bv-latex.el ends here
