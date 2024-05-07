@@ -1075,7 +1075,6 @@
    "C-M-<return> l S" lsp-ui-sideline-mode
    "C-M-<return> l X" lsp-execute-code-action)
   (:require lsp-mode)
-  (lsp)
   (message "Successfully setup lsp-mode"))
 
 (setup (:straight-if lsp-ui bv-not-guix-p)
@@ -1088,7 +1087,8 @@
             peek-always-show t
             peek-show-directory t)
   (:require lsp-ui)
-  (lsp-ui-mode)
+	(:with-hook lsp-mode-hook
+		(:hook lsp-ui-mode))
   (message "Successfully setup lsp-ui"))
 
 (setup (:straight-if flycheck bv-not-guix-p)
