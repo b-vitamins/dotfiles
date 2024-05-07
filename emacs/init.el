@@ -917,11 +917,26 @@
   (:with-hook after-init-hook
 		(:hook org-roam-db-autosync-mode))
   (:global
-   "C-c n f" org-roam-node-find
    "C-c n g" org-roam-graph
    "C-c n i" org-roam-node-insert
    "C-c n c" org-roam-capture)
   (message "Successfully setup org-roam"))
+
+(setup (:straight-if consult-org-roam bv-not-guix-p)
+  (:load-after org-roam consult)
+  (:require)
+  (consult-org-roam-mode 1)
+  (:option*
+	 grep-func #'consult-ripgrep
+	 buffer-narrow-key ?r
+   buffer-after-buffers t)
+  (:global
+   "C-c n f" consult-org-roam-file-find
+   "C-c n s" consult-org-roam-search
+   "C-c n b" consult-org-roam-backlinks
+   "C-c n B" consult-org-roam-backlinks-recursive
+   "C-c n l" consult-org-roam-forward-links
+   "C-c n r" consult-org-roam-search))
 
 (setup (:straight-if websocket bv-not-guix-p)
   (:option* debug t
