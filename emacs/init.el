@@ -271,16 +271,20 @@
 (setup recentf
   (:require recentf)
   (:option* max-saved-items 500
-            max-menu-items 25)
+            max-menu-items 250)
   (recentf-mode 1)
+	(run-at-time nil (* 5 60) 'recentf-save-list)
   (message "Successfully setup recentf"))
 
 (defvar bv-not-guix-p (if (bv-guix-p) nil t))
 
 (setup (:straight-if savehist bv-not-guix-p)
-  (:require savehist)
-  (setq history-length 1000)
-  (savehist-mode))
+  (:set auto-save-default nil
+				history-length 1000)
+	(:option* autosave-interval 60
+						additional-variables '(search-ring regexp-search-ring))
+  (savehist-mode 1)
+  (message "Successfully setup savehist"))
 
 (setup (:straight-if doom-themes bv-not-guix-p)
 	(:quit)
