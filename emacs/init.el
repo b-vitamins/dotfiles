@@ -512,7 +512,7 @@
 							 )))
 
 (setup (:straight-if olivetti bv-not-guix-p)
-  (:option* body-width 100)
+  (:option* body-width 120)
   (:require olivetti)
   (:global "C-c o" olivetti-mode)
   (message "Successfully setup olivetti-mode"))
