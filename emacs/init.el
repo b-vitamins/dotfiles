@@ -524,7 +524,8 @@
             sort-order 'which-key-local-then-key-order
             use-C-h-commands t
             show-remaining-keys t)
-  (which-key-mode)
+	(:with-hook after-init-hook
+		(:hook which-key-mode))
   (message "Successfully setup which-key"))
 
 (setup org
