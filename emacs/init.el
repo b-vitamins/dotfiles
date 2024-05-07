@@ -947,7 +947,6 @@
     (:hook pdf-view-themed-minor-mode))
   (:option pdf-view-use-imagemagick t)
   (:require pdf-tools)
-  (pdf-tools-install)
   (pdf-loader-install)
   (message "Successfully setup pdf-tools"))
 
