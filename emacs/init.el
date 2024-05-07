@@ -1033,7 +1033,8 @@
   (:option yas-snippet-dirs
            (list (expand-file-name "snippets" user-emacs-directory)))
   (:require yasnippet)
-  (yas-reload-all)
+	(:with-hook after-init-hook
+		(:hook yas-reload-all))
   (message "Successfully setup yasnippets"))
 
 (setup (:straight-if geiser bv-not-guix-p)
