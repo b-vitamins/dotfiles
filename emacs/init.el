@@ -893,11 +893,9 @@
   (message "Successfully setup citar"))
 
 (setup (:straight-if org-roam bv-not-guix-p)
-  (:delay 30)
   (:load-after org)
   (:load-after consult)
   (:load-after marginalia)
-  (:when-loaded (org-roam-complete-everywhere))
   (:option*
    v2-ack t
    directory "~/slipbox"
@@ -909,13 +907,12 @@
    tag-sources '(all-directories)
    tag-sort t
    tag-context-lines 5)
-  (:when-loaded (org-roam-db-autosync-mode))
-
   (:require bv-org-roam)
   (:option org-roam-capture-templates bv-org-roam-capture-templates)
   (:option* node-display-template bv-org-roam-node-display-template
             org-roam-node-annotation-function bv-org-roam-node-annotation-function)
-
+  (:with-hook after-init-hook
+		(:hook org-roam-db-autosync-mode))
   (:global
    "C-c n f" org-roam-node-find
    "C-c n g" org-roam-graph
