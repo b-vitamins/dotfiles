@@ -76,6 +76,9 @@
         (message "Successfully loaded setup.el"))
     (message "Proceeding without setup.el")))
 
+(defvar cached-font-family-list (font-family-list)
+  "Cache the list of available font families at startup.")
+
 (setup default-preferences
   ;; Basic preferences to improve user experience and workflow.
   (:set-default
@@ -169,8 +172,8 @@
   (indent-tabs-mode 1)
   (message "Successfully setup default preferences"))
 
-(if (and (member "Iosevka Comfy" (font-family-list))
-         (member "DejaVu Sans" (font-family-list)))
+(if (and (member "Iosevka Comfy" cached-font-family-list)
+         (member "DejaVu Sans" cached-font-family-list))
     (progn
       (set-face-attribute 'default nil
                           :font "Iosevka Comfy"
