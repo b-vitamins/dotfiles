@@ -331,5 +331,32 @@ the BUFFER in the selected window if conditions are met."
         (jit-spell--accept-word word 'dict)
         (message "Added '%s' to personal dictionary" word)))))
 
+(defun bv-deduplicate-scheme-packages ()
+  "De-duplicate package definitions in Scheme files based on name and version."
+  (interactive)
+  (save-excursion
+    (let ((packages (make-hash-table :test 'equal))
+          (duplicate-count 0))
+      ;; Scan the buffer and collect package definitions
+      (goto-char (point-min))
+      (while (re-search-forward "(define-public \\([^ \n]+\\)" nil t)
+        (let ((package-name (match-string 1)))
+          ;; Jump back to the start of define-public
+          (goto-char (match-beginning 0))
+          ;; Use forward-sexp to correctly find the end of the package block
+          (let ((start (point))
+                (end (progn (forward-sexp) (point))))
+            (goto-char start)
+            (if (re-search-forward "(version \"\\([^\"]+\\)\")" end t)
+                (let* ((version (match-string 1))
+                       (full-name (concat package-name "-" version)))
+                  (if (gethash full-name packages)
+                      (progn
+                        (setq duplicate-count (1+ duplicate-count))
+                        (delete-region start end))
+                    (puthash full-name t packages)))
+              (message "Package version not found for %s" package-name))))
+      (message "Removed %d duplicate packages" duplicate-count)))))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
