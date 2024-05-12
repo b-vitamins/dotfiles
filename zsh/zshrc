@@ -22,15 +22,6 @@ compctl -K _git_checkout_repos git_checkout
 # Configuration for completion system
 autoload -Uz compinit && compinit
 
-# Prefer alias completion
-zstyle ':completion:*' completer _aliases _commands _files
-zstyle ':completion:*:commands' ignored-patterns '*(-command-|*:*:*)'
-zstyle ':completion:*:aliases' group-name aliases
-zstyle ':completion:*' menu select=2
-zstyle ':completion:*' format 'Completing %d'
-zstyle ':completion:*' group-name ''
-zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
-
 # Shell options
 setopt NO_BEEP EXTENDED_GLOB NO_CLOBBER SHARE_HISTORY
 
