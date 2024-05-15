@@ -1,4 +1,4 @@
-# Function to mirror and compress a Git repository
+#autoload git_mirror
 function git_mirror {
   if [ -z "$1" ]; then
     echo "Usage: git-mirror <repository URL>"
@@ -17,7 +17,7 @@ function git_mirror {
     echo "Mirror already exists for $repo_url at $target_dir"
   elif [ -f "$archive" ]; then
     echo "Mirror already archived for $repo_url at $archive"
-  else {
+  else
     git clone --mirror "$repo_url" "$target_dir" && echo "Mirrored $repo_url to $target_dir"
     tar -czf "$archive" -C "$base_dir" "$(basename "$target_dir")"
     rm -rf "$target_dir"
