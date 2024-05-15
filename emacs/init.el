@@ -797,10 +797,6 @@
     (:hook consult-preview-at-point-mode))
   (message "Successfully setup embark"))
 
-(defconst bv-bibliography (list "~/slipbox/bibs/working.bib"))
-(defconst bv-library '("~/library/papers/"))
-(defconst bv-notes '("~/slipbox/notes"))
-
 (setup oc
   (:require oc-biblatex)
   (:require oc-csl)

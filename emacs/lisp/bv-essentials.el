@@ -32,6 +32,21 @@
 
 (require 'god-mode)
 
+(defcustom bv-bibliography (list "~/slipbox/bibliographies/working.bib")
+  "Specify the path to the bibliography file."
+  :type 'list
+  :group 'bv)
+
+(defcustom bv-library '("~/library/papers/")
+  "Specify the path to the library directory."
+  :type 'list
+  :group 'bv)
+
+(defcustom bv-notes '("~/slipbox/notes")
+  "Specify the path to the notes directory."
+  :type 'list
+  :group 'bv)
+
 (defvar-local bv-straight-bootstrap-retries 3
   "Default number of retries for bootstrapping straight.el.")
 
