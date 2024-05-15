@@ -4,7 +4,6 @@ export GUIX_PROFILE="$HOME/.guix-profile"
 export GUILE_LOAD_PATH="$GUILE_LOAD_PATH:$HOME/.config/guix/current/lib/guile/3.0/site-ccache"
 export MY_DICTIONARY="$HOME/.config/hunspell/my-dict"
 export EDITOR="emacs"
-
 source "$GUIX_PROFILE/etc/profile"
 source "$ZDOTDIR/lscolors.sh"
 
@@ -13,14 +12,12 @@ HISTFILE="$ZDOTDIR/zsh_history"
 HISTSIZE=10000
 SAVEHIST=10000
 
-# Function and Completion configuration
-fpath=($ZDOTDIR/functions $fpath)
-autoload -Uz $ZDOTDIR/functions/*
-compctl -K _web_mirror_domains web_mirror_checkout
-compctl -K _git_checkout_repos git_checkout
+autoload -Uz add-zsh-hook
 
-# Configuration for completion system
-autoload -Uz compinit && compinit
+# Function and Completion configuration
+fpath=($ZDOTDIR/functions $ZDOTDIR/completions $fpath)
+autoload -Uz compinit
+compinit -u
 
 # Shell options
 setopt NO_BEEP EXTENDED_GLOB NO_CLOBBER SHARE_HISTORY
@@ -34,12 +31,9 @@ RPROMPT='%F{#88c0d0}%D{%d %b}%f %F{#ECBE7B}%D{%l:%M:%S}%f'
 function update_clock_precmd {
     RPROMPT="%F{#88c0d0}%D{%d %b}%f %F{#ECBE7B}%D{%l:%M:%S}%f"
 }
-
-# Hook for updating the prompt with the current time
-autoload -Uz add-zsh-hook
 add-zsh-hook precmd update_clock_precmd
 
-# Command aliases
+# Aliases
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 alias diff='diff --color=auto'
@@ -47,8 +41,6 @@ alias env='pretty_env'
 alias e='emacs -nw'
 alias zshrc="emacs -nw $ZDOTDIR/.zshrc"
 alias reconfigure='sudo guix system reconfigure $ZDOTDIR/../guix/config.scm'
-
-# Alias for git and web mirror commands
 alias web-mirror='web_mirror'
 alias web-mirror-update='web_mirror_update'
 alias web-mirror-checkout='web_mirror_checkout'
@@ -64,11 +56,3 @@ TMOUT=1
 
 # File creation mask
 umask 022
-
-# Conditional prompt for GUIX environment
-if [ -n "$GUIX_ENVIRONMENT" ]; then
-    PROMPT='%F{#ff6c6b}カオス%f %F{#98be65}%2~%f %F{#51afef}>%f '
-fi
-
-# Initialize completion system
-[[ -z "$(whence -p compinit)" ]] && autoload -Uz compinit && compinit
