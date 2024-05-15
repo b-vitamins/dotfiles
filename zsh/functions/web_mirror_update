@@ -1,4 +1,4 @@
-# Function to update an archived website mirror
+#autoload web_mirror_update
 function web_mirror_update {
   local base_dir="$HOME/library/mirrors/websites"
 

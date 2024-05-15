@@ -1,4 +1,4 @@
-# Dynamically creates aliases for all Bash scripts in ~/bash-scripts
+#autoload create_bash_script_aliases
 function create_bash_script_aliases {
     local script_dir="$HOME/bash-scripts"
     for script in "$script_dir"/*.sh; do

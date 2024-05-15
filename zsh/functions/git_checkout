@@ -1,4 +1,4 @@
-# Function to clone and checkout the latest branch from a compressed mirror
+#autoload git_checkout
 function git_checkout {
   local repo_name="$1"
   local mirror_dir="$HOME/library/mirrors/repos/${repo_name}.git.tar.gz"

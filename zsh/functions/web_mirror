@@ -1,4 +1,4 @@
-# Function to mirror a website to ~/library/mirrors/websites
+#autoload web_mirror
 function web_mirror {
   if [ -z "$1" ]; then
     echo "Usage: web-mirror <URL>"

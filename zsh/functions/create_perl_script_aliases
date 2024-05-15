@@ -1,4 +1,4 @@
-# Dynamically creates aliases for all Perl scripts in ~/perl-scripts
+#autoload create_perl_script_aliases
 function create_perl_script_aliases {
     local script_dir="$HOME/perl-scripts"
     for script in "$script_dir"/*.pl; do
