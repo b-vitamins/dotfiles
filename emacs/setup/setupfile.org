@@ -61,5 +61,5 @@
 
 # Bibliography Management
 #+LATEX_HEADER: \usepackage[backend=biber]{biblatex}
-#+LATEX_HEADER: \addbibresource{~/slipbox/bibliography/working.bib}
-#+bibliography: ~/slipbox/bibliography/working.bib
+#+LATEX_HEADER: \addbibresource{~/slipbox/bibliographies/working.bib}
+#+bibliography: ~/slipbox/bibliographies/working.bib
