@@ -46,9 +46,19 @@
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-working-bib-path "~/slipbox/bibliographies/working.bib"
-  "Path to the working bibliography file."
-  :type 'string
+(defcustom bv-working-bib-path (list "~/slipbox/bibliographies/working.bib")
+  "Specify the path to the bibliography file."
+  :type 'list
+  :group 'bv-file-paths)
+
+(defcustom bv-library-path (list "~/library/papers/")
+  "Specify the path to the library directory."
+  :type 'list
+  :group 'bv-file-paths)
+
+(defcustom bv-notes-path (list "~/slipbox/notes")
+  "Specify the path to the notes directory."
+  :type 'list
   :group 'bv-file-paths)
 
 (defcustom bv-cold-init-el-path "~/projects/dotfiles/emacs/init.el"

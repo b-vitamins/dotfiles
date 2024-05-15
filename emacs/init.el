@@ -800,7 +800,7 @@
 (setup oc
   (:require oc-biblatex)
   (:require oc-csl)
-  (setq org-cite-global-bibliography bv-bibliography
+  (setq org-cite-global-bibliography bv-working-bib-path
         org-cite-insert-processor 'citar
         org-cite-follow-processor 'citar
         org-cite-activate-processor 'citar
@@ -859,10 +859,9 @@
                  citar-indicator-links-icons
                  citar-indicator-notes-icons))
 
-  (:option* bibliography bv-bibliography
-            library-paths bv-library
-            notes-paths bv-notes
-            bibliography org-cite-global-bibliography
+  (:option* bibliography org-cite-global-bibliography
+            library-paths bv-library-path
+            notes-paths bv-notes-path
             file-extensions '("pdf" "org" "md")
             templates
             '((main . "${author editor:60}    ${date year issued:4}   ${title:150}")
