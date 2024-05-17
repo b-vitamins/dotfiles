@@ -1273,8 +1273,16 @@
 
 (setup gptel
 	(:require gptel)
-	(:option gptel-model "gpt-4-turbo")
+	(:option gptel-model "gpt-4o-turbo")
 	(:global "C-c g" gptel-send))
+
+(setup arxiv-mode
+  (:require arxiv-mode)
+  (:option arxiv-default-category "cond-mat.dis-nn"
+           arxiv-entries-per-fetch "25"
+           arxiv-default-download-folder bv-library-path
+           arxiv-default-bibliography bv-working-bib-path
+           arxiv-pdf-open-function (lambda (fpath) (call-process "evince" nil 0 nil fpath))))
 
 (provide 'init)
 ;;; init.el ends here
