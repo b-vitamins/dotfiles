@@ -21,6 +21,9 @@ fpath=($ZDOTDIR/functions $ZDOTDIR/completions $fpath)
 autoload -Uz compinit
 compinit -u
 
+# Ensure functions from $ZDOTDIR/functions are loaded
+autoload -U $ZDOTDIR/functions/*(:t)
+
 # Shell options
 setopt NO_BEEP EXTENDED_GLOB NO_CLOBBER SHARE_HISTORY
 
