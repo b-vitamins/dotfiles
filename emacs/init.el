@@ -595,6 +595,9 @@
   (:option* log-done 'time
             export-kill-after-export t)
 
+  (:option* latex-create-formula-image-program 'dvipng
+            preview-latex-default-process 'dvipng)
+
   ;; LaTeX and Image Export Settings
   (:push-to org-preview-latex-process-alist
             (:elements
@@ -616,10 +619,9 @@
                                 "biber %b"
                                 "lualatex -shell-escape -interaction nonstopmode %f"
                                 "lualatex -shell-escape -interaction nonstopmode %f")
-            latex-create-formula-image-program 'imagemagick
+            latex-create-formula-image-program 'dvipng
             format-latex-options (plist-put org-format-latex-options :scale 4.0)
             preview-latex-image-directory "~/.local/latex-previews/"
-            preview-latex-default-process 'imagemagick
             highlight-latex-and-related (quote (native latex script entities)))
 
   ;; `bv-latex' holds a customized workflow that helps with PAIN (PDF is all I need),
@@ -894,26 +896,32 @@
   (:load-after org)
   (:load-after consult)
   (:load-after marginalia)
-  (:option*
+  (:option
    v2-ack t
-   directory "~/slipbox"
-   database-connector 'sqlite-builtin
-   db-extra-links-elements '(keyword node-property)
-   mode-sections '((org-roam-backlinks-section :unique t)
-                   org-roam-reflinks-section)
-   link-title-format "R:%s"
-   tag-sources '(all-directories)
-   tag-sort t
-   tag-context-lines 5)
+   org-roam-directory "~/slipbox"
+   org-roam-database-connector 'sqlite-builtin
+   org-roam-db-extra-links-elements '(keyword node-property)
+   org-roam-mode-sections '((org-roam-backlinks-section :unique t)
+														org-roam-reflinks-section)
+   org-roam-link-title-format "R:%s"
+   org-roam-tag-sources '(all-directories)
+   org-roam-tag-sort t
+   org-roam-tag-context-lines 5)
   (:require bv-org-roam)
-  (:option org-roam-capture-templates bv-org-roam-capture-templates)
-  (:option* node-display-template bv-org-roam-node-display-template
-            org-roam-node-annotation-function bv-org-roam-node-annotation-function)
+
+	(:option
+	 org-roam-capture-templates bv-org-roam-capture-templates
+	 org-roam-node-display-template bv-org-roam-node-display-template
+	 org-roam-dailies-capture-templates bv-org-roam-dailies-capture-templates
+	 org-roam-dailies-directory (car bv-dailies-path)
+   org-roam-node-annotation-function bv-org-roam-node-annotation-function)
+
   (:with-hook after-init-hook
 		(:hook org-roam-db-autosync-mode))
   (:global
    "C-c n g" org-roam-graph
    "C-c n i" org-roam-node-insert
+	 "C-c n d" org-roam-dailies-capture-today
    "C-c n c" org-roam-capture)
   (message "Successfully setup org-roam"))
 
