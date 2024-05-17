@@ -61,6 +61,11 @@
   :type 'list
   :group 'bv-file-paths)
 
+(defcustom bv-dailies-path (list "~/slipbox/dailies")
+  "Specify the path to the notes directory."
+  :type 'list
+  :group 'bv-file-paths)
+
 (defcustom bv-cold-init-el-path "~/projects/dotfiles/emacs/init.el"
   "Path to the Emacs init file."
   :type 'string

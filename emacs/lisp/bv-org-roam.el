@@ -33,48 +33,51 @@
 ;;; Code:
 
 (require 'org)
-(require 'org-roam)
 (require 'marginalia)
 
 (defvar bv-org-roam-capture-templates
   '(
+		("d" "default" entry
+     "* %?"
+     :target (file+head "%<%Y-%m-%d>.org"
+                        "#+title: %<%Y-%m-%d>\n"))
     ("f" "fleeting" plain "%?"
-     :target (file+head "notes/${slug}-%<%Y%m%d%H%M%S>.org"
+     :target (file+head "notes/${slug}-%<%Y-%m-%d-%H-%M-%S>.org"
                         "#+TITLE: ${title}\n#+FILETAGS: :fleeting:\n#+SETUPFILE: ~/.config/emacs/setup/setupfile.org\n")
      :unnarrowed t)
 
     ("F" "fleeting-timed" plain "%?"
-     :target (file+head "notes/${slug}-%<%Y%m%d%H%M%S>.org"
+     :target (file+head "notes/${slug}-%<%Y-%m-%d-%H-%M-%S>.org"
                         "#+TITLE: ${title}\n#+FILETAGS: :fleeting:\n#+SETUPFILE: ~/.config/emacs/setup/setupfile.org\n#+BEGIN: clocktable :maxlevel 2 :scope nil :emphasize nil\n#+CAPTION:\n#+END\n")
      :unnarrowed t)
 
     ("c" "concept" plain "%?"
-     :target (file+head "notes/${slug}-%<%Y%m%d%H%M%S>.org"
+     :target (file+head "notes/${slug}-%<%Y-%m-%d-%H-%M-%S>.org"
                         "#+TITLE: ${title}\n#+FILETAGS: :concept:\n#+SETUPFILE: ~/.config/emacs/setup/setupfile.org\n")
      :unnarrowed t)
 
     ("C" "concept-timed" plain "%?"
-     :target (file+head "notes/${slug}-%<%Y%m%d%H%M%S>.org"
+     :target (file+head "notes/${slug}-%<%Y-%m-%d-%H-%M-%S>.org"
                         "#+TITLE: ${title}\n#+FILETAGS: :concept:\n#+SETUPFILE: ~/.config/emacs/setup/setupfile.org\n#+BEGIN: clocktable :maxlevel 2 :scope nil :emphasize nil\n#+CAPTION:\n#+END\n")
      :unnarrowed t)
 
     ("l" "literature" plain "%?"
-     :target (file+head "notes/${slug}-%<%Y%m%d%H%M%S>.org"
+     :target (file+head "notes/${slug}-%<%Y-%m-%d-%H-%M-%S>.org"
                         "#+TITLE: ${title}\n#+FILETAGS: :literature:\n#+SETUPFILE: ~/.config/emacs/setup/setupfile.org\n")
      :unnarrowed t)
 
     ("L" "literature-timed" plain "%?"
-     :target (file+head "notes/${slug}-%<%Y%m%d%H%M%S>.org"
+     :target (file+head "notes/${slug}-%<%Y-%m-%d-%H-%M-%S>.org"
                         "#+TITLE: ${title}\n#+FILETAGS: :literature:\n#+SETUPFILE: ~/.config/emacs/setup/setupfile.org\n#+BEGIN: clocktable :maxlevel 2 :scope nil :emphasize nil\n#+CAPTION:\n#+END\n")
      :unnarrowed t)
 
     ("p" "problem" plain "%?"
-     :target (file+head "notes/${slug}-%<%Y%m%d%H%M%S>.org"
+     :target (file+head "notes/${slug}-%<%Y-%m-%d-%H-%M-%S>.org"
                         "#+TITLE: ${title}\n#+FILETAGS: :problem:\n#+TEXTBOOK: \n#+SETUPFILE: ~/.config/emacs/setup/setupfile.org\n")
      :unnarrowed t)
 
     ("P" "problem-timed" plain "%?"
-     :target (file+head "notes/${slug}-%<%Y%m%d%H%M%S>.org"
+     :target (file+head "notes/${slug}-%<%Y-%m-%d-%H-%M-%S>.org"
                         "#+TITLE: ${title}\n#+FILETAGS: :problem:\n#+TEXTBOOK: \n#+SETUPFILE: ~/.config/emacs/setup/setupfile.org\n#+BEGIN: clocktable :maxlevel 2 :scope nil :emphasize nil\n#+CAPTION:\n#+END\n")
      :unnarrowed t)
     ))
