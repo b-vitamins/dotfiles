@@ -640,19 +640,20 @@
   ;;    performed offsite are hassle-free, without the need to shuffle images
   ;;    around the filesystem.
   ;;
-	(setup bv-latex
-		(:require bv-latex)
-		(:option bv-latex-output-dir "~/slipbox/out")
-		(:alias org-latex-compile bv-org-latex-compile)
-		(:global "C-c f" bv-fix-math-delimiters))
-
   ;; `org-preview' is a minor mode which provides asynchronous,
   ;; blazing fast, latex previews.
   ;; It is written by Karthik Chikmagalur <karthikchikmagalur@gmail.com>.
 	;; Demo here: https://www.youtube.com/watch?v=n-AfvuV-bYo
 	;; It will be built into Org, probably in the 9.7 release.
   ;;
-	(:require org-preview)
+	(setup bv-latex
+		(:require bv-latex)
+		(:require org-preview)
+		(:with-mode org-mode
+			(:hook org-preview-mode))
+		(:option bv-latex-output-dir "~/slipbox/out")
+		(:alias org-latex-compile bv-org-latex-compile)
+		(:global "C-c f" bv-fix-math-delimiters))
 
   ;; Habit Tracking
   (:option* modules '(org-habit)
