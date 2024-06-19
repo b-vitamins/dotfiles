@@ -245,5 +245,29 @@ on the entire buffer.  Handles cases where gathered is not nested."
         (undo-boundary)))
     (message "Replacement complete! %d replacements made." replacement-count)))
 
+(defun bv-find-math-environments ()
+  "Find math environments in the current buffer or region.
+Returns a list of (START END) tuples where START is the line number
+where a math environment begins and END is the line number where it ends."
+  (let ((math-envs '())
+        (start-index nil)
+        (start (if (use-region-p) (region-beginning) (point-min)))
+        (end (if (use-region-p) (region-end) (point-max))))
+    (save-excursion
+      (goto-char start)
+      (while (and (< (point) end) (not (eobp)))
+        (let ((line (thing-at-point 'line t)))
+          (cond
+           ((string-match-p "^\\\\\\[" (string-trim line))
+						;; Record the start line number of a math environment
+            (setq start-index (line-number-at-pos)))
+           ((string-match-p "^\\\\\\]" (string-trim line))
+            (when start-index
+              ;; Once the end is found, store the tuple and reset start-index
+              (push (cons start-index (line-number-at-pos)) math-envs)
+              (setq start-index nil))))
+          (forward-line 1))))
+    (reverse math-envs)))
+
 (provide 'bv-latex)
 ;;; bv-latex.el ends here
