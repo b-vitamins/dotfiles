@@ -245,5 +245,20 @@ on the entire buffer.  Handles cases where gathered is not nested."
         (undo-boundary)))
     (message "Replacement complete! %d replacements made." replacement-count)))
 
+(defun bv-latex-preview-march (arg)
+  "Move point forward by words until the end of the buffer.
+With prefix argument ARG, start from the current location.
+If a region is active, move within the region."
+  (interactive "P")
+  (if (use-region-p)
+      (let ((end (region-end)))
+        (goto-char (region-beginning))
+        (while (< (point) end)
+          (forward-word 1)))
+    (unless arg
+      (goto-char (point-min))) ;; Move to the beginning of the buffer unless ARG is non-nil
+    (while (not (eobp))        ;; Continue until the end of the buffer
+      (forward-word 1))))
+
 (provide 'bv-latex)
 ;;; bv-latex.el ends here
