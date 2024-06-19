@@ -670,11 +670,9 @@
   (message "Successfully setup org-mode"))
 
 (setup org-faces
-  (:load-after org)
-  (:also-load org-indent)
-  (:when-loaded
-    (bv-setup-org-fonts))
-  (message "Successfully setup org-faces"))
+	(:with-mode org-mode
+		(:hook bv-setup-org-fonts))
+	(message "Successfully setup org-faces"))
 
 (setup (:straight-if org-fragtog bv-not-guix-p)
   (:load-after org)
