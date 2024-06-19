@@ -152,13 +152,15 @@
                       (org-level-8 . 1.0)))
         (set-face-attribute (car face) nil
                             :font "Iosevka Comfy"
-                            :weight 'normal
+                            :weight 'bold
                             :height (* 1.0 (cdr face)))))
     ;; Set fixed-pitch attributes for specific elements if either font is available
     (when (or dejavu-available iosevka-available)
       (dolist (face '(org-block org-table org-formula org-code org-verbatim
                      org-special-keyword org-meta-line org-checkbox))
-        (set-face-attribute face nil :inherit 'fixed-pitch)))))
+        (set-face-attribute face nil :inherit 'fixed-pitch)))
+    (set-face-attribute 'org-block nil
+                        :background (face-background 'default))))
 
 (with-eval-after-load 'flycheck
 	(declare-function flycheck-overlays-at "flycheck")
