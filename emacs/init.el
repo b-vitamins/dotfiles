@@ -648,9 +648,6 @@
   ;;
 	(setup bv-latex
 		(:require bv-latex)
-		(:require org-preview)
-		(:with-mode org-mode
-			(:hook org-preview-mode))
 		(:option bv-latex-output-dir "~/slipbox/out")
 		(:alias org-latex-compile bv-org-latex-compile)
 		(:global "C-c f" bv-fix-math-delimiters))
