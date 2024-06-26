@@ -47,7 +47,7 @@ if available; otherwise, uses home."
   :set (lambda (symbol value)
          (set-default symbol (if (string-empty-p value)
                                  (bv-default-latex-output-dir)
-                                 value))))
+                               value))))
 
 (defun bv-fix-graphics-paths (texfile)
   "Adjust \\includegraphics paths to absolute paths in TEXFILE.
@@ -70,7 +70,9 @@ TEXFILE is the path to a LaTeX document needing path adjustments for
     (with-temp-buffer
       (insert-file-contents texfile)
       (goto-char (point-min))
-      (while (re-search-forward "\\\\includegraphics\\(?:\\[.*?\\]\\)?{\\(.*?\\)}"
+      (while (re-search-forward "\\\\includegraphics\\(?:\\[
+.*?\\]
+\\)?{\\(.*?\\)}"
                                 nil t)
         (let ((graphics-file (match-string 1)))
           (if (file-name-absolute-p graphics-file)
@@ -151,11 +153,13 @@ snippet."
           (move-file-to-trash original-tex))
         (when log-buf (kill-buffer log-buf))))))
 
- (defun bv-fix-math-delimiters (&optional start end)
+(defun bv-fix-math-delimiters (&optional start end)
   "Replace all balanced $...$ and $$...$$ in a region or the entire buffer.
 If START and END are provided, restricts to that region; otherwise, operates
 on the entire buffer.  The function replaces single dollar signs $...$ with
-\\( ... \\) and double dollar signs $$...$$ with \\[ ... \\].  All changes
+\\( ... \\) and double dollar signs $$...$$ with \\[
+... \\]
+.  All changes
 are grouped into a single undo operation, and the number of replacements
 is reported."
   (interactive
@@ -166,17 +170,21 @@ is reported."
     (save-excursion
       (save-restriction
         (narrow-to-region (or start (point-min)) (or end (point-max)))
-        (undo-boundary)  ; Set an undo boundary before making changes
+        (undo-boundary)
         (goto-char (point-min))
         (while (re-search-forward "\\$\\$\\(\\(.\\|\n\\)*?\\)\\$\\$" nil t)
-          (replace-match "\\\\[\\1\\\\]" t)
+          (replace-match "\\\\[
+\\1\\\\]
+" t)
           (setq replacement-count (1+ replacement-count)))
         (goto-char (point-min))
-        (while (re-search-forward "\\([^\\\\]\\|^\\)\\$\\(.*?\\)\\$" nil t)
+        (while (re-search-forward "\\([
+^\\\\]
+\\|^\\)\\$\\(.*?\\)\\$" nil t)
           (replace-match "\\1\\\\(\\2\\\\)" t)
           (setq replacement-count (1+ replacement-count)))
-        (undo-boundary)  ; Set another undo boundary after all changes
-      ))
+        (undo-boundary)
+				))
     (message "Replacement complete! %d replacements made." replacement-count)))
 
 (defun bv-fix-aligned-environment (&optional start end)
@@ -203,8 +211,10 @@ on the entire buffer.  Handles cases where aligned is not nested."
 						t)
           (setq replacement-count (1+ replacement-count)))
         (goto-char (point-min))
-				(while (search-forward "end{aligned}" nil t)
-          (replace-match "end{align*}" t)
+				(while (search-forward "end{aligned}
+" nil t)
+          (replace-match "end{align*}
+" t)
           (end-of-line)
           (backward-char 12)
           (if (looking-at "\\\\end")
@@ -236,8 +246,10 @@ on the entire buffer.  Handles cases where gathered is not nested."
           (kill-whole-line)
           (setq replacement-count (1+ replacement-count)))
         (goto-char (point-min))
-        (while (search-forward "end{gathered}" nil t)
-          (replace-match "end{gather}" t)
+        (while (search-forward "end{gathered}
+" nil t)
+          (replace-match "end{gather}
+" t)
           ;; Check if there's a closing display math delimiter ahead and remove it
           (forward-line 1)
           (kill-whole-line)
@@ -245,29 +257,141 @@ on the entire buffer.  Handles cases where gathered is not nested."
         (undo-boundary)))
     (message "Replacement complete! %d replacements made." replacement-count)))
 
-(defun bv-find-math-environments ()
-  "Find math environments in the current buffer or region.
-Returns a list of (START END) tuples where START is the line number
-where a math environment begins and END is the line number where it ends."
-  (let ((math-envs '())
-        (start-index nil)
-        (start (if (use-region-p) (region-beginning) (point-min)))
-        (end (if (use-region-p) (region-end) (point-max))))
-    (save-excursion
-      (goto-char start)
-      (while (and (< (point) end) (not (eobp)))
-        (let ((line (thing-at-point 'line t)))
-          (cond
-           ((string-match-p "^\\\\\\[" (string-trim line))
-						;; Record the start line number of a math environment
-            (setq start-index (line-number-at-pos)))
-           ((string-match-p "^\\\\\\]" (string-trim line))
-            (when start-index
-              ;; Once the end is found, store the tuple and reset start-index
-              (push (cons start-index (line-number-at-pos)) math-envs)
-              (setq start-index nil))))
-          (forward-line 1))))
-    (reverse math-envs)))
+(defun normalize-latex-delimiters (&optional beg end buffer-or-file)
+  "Closed LaTeX delimiter is followed by a newline.
+
+Operates between BEG and END, which define the region to process.
+
+If no region is specified, the operation defaults to the entire buffer.
+BUFFER-OR-FILE can be a buffer or a file name.
+If BUFFER-OR-FILE is non-nil, the function operates on the
+specified buffer or opens the file and operates on its content.
+If nil, it operates on the current buffer.
+
+This function adjusts LaTeX environments and mathematical delimiters such that:
+- '\\]', '\\end{...}', '\\[', and '\\begin{...}' are followed by one newline,
+regardless of preceding whitespace or line breaks."
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end) nil)
+     (list nil nil nil)))
+  (let ((target (if buffer-or-file
+                    (if (bufferp buffer-or-file)
+                        buffer-or-file
+                      (find-file-noselect buffer-or-file))
+                  (current-buffer))))
+    (with-current-buffer target
+      (save-excursion
+        (goto-char (or beg (point-min)))
+        (let ((forward-patterns '("\\]" "\\end{[A-Za-z0-9*]+}" "\\[" "\\begin{[A-Za-z0-9*]+}")))
+          (dolist (pattern forward-patterns)
+            (goto-char (or beg (point-min)))
+            (while (re-search-forward
+										(concat pattern "\\([ \t]*\\(?:\n[ \t]*\\)*\\)")
+										(or end (point-max)) t)
+              (replace-match (concat pattern "\n") t t nil 1))))))))
+
+(defun bv-collect-latex-fragments (&optional beg end buffer-or-file)
+  "Collect LaTeX fragments from BEG to END in BUFFER-OR-FILE.
+BEG and END define the region to process.  If BUFFER-OR-FILE is nil,
+operate in the current buffer.  Collects fragments defined by LaTeX
+environments or math delimiters."
+  (let ((target (if buffer-or-file
+                    (if (bufferp buffer-or-file)
+                        buffer-or-file
+                      (find-file-noselect buffer-or-file))
+                  (current-buffer))))
+    (with-current-buffer target
+      (save-excursion
+        (goto-char (or beg (point-min)))
+        (cl-loop while (re-search-forward
+                        "\\$\\|\\\\[([]\\|^[\t]*\\\\begin{[A-Za-z0-9*]+}"
+                        (or end (point-max)) t)
+                 for context = (org-element-context)
+                 when (memq (org-element-type context)
+                            '(latex-environment latex-fragment))
+                 collect (buffer-substring-no-properties
+                          (org-element-property :begin context)
+                          (progn
+                            (goto-char (org-element-property :end context))
+                            (skip-chars-backward " \r\t\n")
+                            (point))))))))
+
+(defun bv-classified-latex-fragments (fragments)
+  "Classify LaTeX FRAGMENTS by type.
+FRAGMENTS is a list of strings containing LaTeX code.
+Returns a list of plists categorizing each fragment."
+  (mapcar (lambda (frag)
+            (cond ((string-match "\\$[^$]*\\$\\|\\\\([^$]*\\\\)" frag)
+                   `(:type "inline-math" :content ,frag))
+                  ((string-match "\\$$[^$]*\\$$\\|\\\\[^$]*\\\\]" frag)
+                   `(:type "display-math" :content ,frag))
+                  ((string-match "\\\\begin{\\(equation\\*?\\|align\\*?\\|aligned\\|gathered\\|figure\\|algorithm\\)}" frag)
+                   `(:type ,(match-string 1 frag) :content ,frag))
+                  (t `(:type "other" :content ,frag))))
+          fragments))
+
+(defun bv-find-latex-fragments (&optional beg end buffer-or-file)
+  "Find and display LaTeX fragments from BEG to END in BUFFER-OR-FILE.
+Interactively or when called, collects and optionally displays LaTeX
+fragments. Handles checking buffer type to ensure appropriate environment."
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end) nil)
+     (list nil nil nil)))
+  (if (derived-mode-p 'org-mode 'latex-mode 'LaTeX-mode 'tex-mode)
+      (let* ((beg (or beg (point-min)))
+             (end (or end (point-max)))
+             (current-buffer-name (buffer-name))
+             (buffer-or-file (normalize-latex-delimiters beg end buffer-or-file))
+             (fragments (bv-collect-latex-fragments beg end buffer-or-file))
+             (classified-fragments (bv-classified-latex-fragments fragments)))
+        (unless (string= current-buffer-name "*LaTeX Fragments*")
+          (if (called-interactively-p 'any)
+              (progn
+                (if current-prefix-arg
+                    (bv-display-fragments-by-class classified-fragments "*LaTeX Fragments*")
+                  (bv-display-fragments-by-order fragments "*LaTeX Fragments*")))
+            fragments))
+    (message "Not in a LaTeX or Org mode buffer.")))
+
+(defun bv-display-fragments-by-order (fragments buffer-name)
+  "Display LaTeX FRAGMENTS in order in BUFFER-NAME.
+Creates or reuses a buffer named BUFFER-NAME to display LaTeX fragments."
+  (let ((buffer (get-buffer-create buffer-name))
+        (org-mode-hook nil))
+    (with-current-buffer buffer
+      (erase-buffer)
+      (dolist (fragment fragments)
+        (insert "#+begin_latex\n")
+        (insert fragment)
+        (insert "\n#+end_latex\n"))
+      (switch-to-buffer buffer)
+      (org-mode)
+      (message "Found %d LaTeX fragments." (length fragments)))))
+
+(defun bv-display-fragments-by-class (classified-fragments buffer-name)
+  "Display CLASSIFIED-FRAGMENTS by type in BUFFER-NAME.
+Groups fragments by their classification and displays them in a dedicated
+buffer named BUFFER-NAME."
+  (let ((buffer (get-buffer-create buffer-name))
+        (grouped-fragments (make-hash-table :test 'equal))
+        (org-mode-hook nil))
+    (dolist (fragment classified-fragments)
+      (let ((type (plist-get fragment :type)))
+        (puthash type (cons (plist-get fragment :content) (gethash type grouped-fragments)) grouped-fragments)))
+    (with-current-buffer buffer
+      (erase-buffer)
+      (maphash (lambda (type fragments)
+                 (insert (format "* %s\n" type))
+                 (dolist (frag (reverse fragments))
+                   (insert "#+begin_latex\n")
+                   (insert frag)
+                   (insert "\n#+end_latex\n")))
+               grouped-fragments)
+      (switch-to-buffer buffer)
+      (org-mode)
+      (message "Found %d LaTeX fragments." (length classified-fragments)))))
 
 (provide 'bv-latex)
 ;;; bv-latex.el ends here
