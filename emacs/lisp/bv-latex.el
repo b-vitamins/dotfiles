@@ -353,7 +353,7 @@ fragments. Handles checking buffer type to ensure appropriate environment."
                     (bv-display-fragments-by-class classified-fragments "*LaTeX Fragments*")
                   (bv-display-fragments-by-order fragments "*LaTeX Fragments*")))
             fragments))
-    (message "Not in a LaTeX or Org mode buffer.")))
+    (message "Not in a LaTeX or Org mode buffer."))))
 
 (defun bv-display-fragments-by-order (fragments buffer-name)
   "Display LaTeX FRAGMENTS in order in BUFFER-NAME.
