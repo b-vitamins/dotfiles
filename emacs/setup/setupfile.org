@@ -28,6 +28,7 @@
 #+LATEX_HEADER: \usepackage{amsthm}                 % Theorem-like structures.
 #+LATEX_HEADER: \usepackage{siunitx}                % A modern interface for units in LaTeX
 #+LATEX_HEADER: \usepackage{tabularx}
+#+LATEX_HEADER: \usepackage{dsfont}
 
 # Figures and Plots
 #+LATEX_HEADER: \usepackage{graphicx}               % Enhanced support for graphics
