@@ -609,8 +609,19 @@
 							:image-output-type "png"
 							:image-size-adjust (1.0 . 1.0)
 							:latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
-							:image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))
-						 ))
+							:image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
+  ;; LaTeX and Image Export Settings
+  (:push-to org-preview-latex-process-alist
+            (:elements
+						 (dvipng :programs ("latex" "dvipng")
+										 :description "dvi > png"
+										 :message "you need to install the programs: latex and dvipng."
+										 :image-input-type "dvi"
+										 :image-output-type "png"
+										 :image-size-adjust (1.0 . 1.0)
+										 :latex-compiler ("latex --output-format=dvi -interaction nonstopmode -output-directory %o %f")
+										 :image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f")
+										 :transparent-image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f"))))
 
   ;; LaTeX Configuration
   (:option* latex-default-class "article"
@@ -623,6 +634,17 @@
             format-latex-options (plist-put org-format-latex-options :scale 4.0)
             preview-latex-image-directory "~/.local/latex-previews/"
             highlight-latex-and-related (quote (native latex script entities)))
+
+	;; Source: https://tecosaur.github.io/emacs-config/config.html#prettier-highlighting
+	;;
+	;; Using native highlighting for `highlight-latex-and-related' adds the org-block face, which
+	;; may not look ideal, especially in previews. Instead of advising `org-src-font-lock-fontify-block', we can override the background color by adding another face with `:inherit default'.
+	;;
+	;; Inspecting `org-do-latex-and-related' reveals "latex" as the language argument passed.
+	;; Therefore, we override the background color.
+	(require 'org-src)
+	(:push-to org-src-block-faces
+						(:elements ("latex" (:inherit default :extend t))))
 
   ;; `bv-latex' holds a customized workflow that helps with PAIN (PDF is all I need),
   ;; among other things.
