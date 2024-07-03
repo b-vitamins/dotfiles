@@ -1,0 +1,84 @@
+# LaTeX preamble setup for SICP
+
+#+LATEX_HEADER: % !TEX TS-program = xelatex
+#+LATEX_HEADER: % !TEX encoding = UTF-8 Unicode
+#+LATEX_HEADER: \documentclass[11pt,oneside]{book}
+#+LATEX_HEADER: \renewcommand{\baselinestretch}{1.05}
+#+LATEX_HEADER: \usepackage[no-math]{fontspec}
+#+LATEX_HEADER: \defaultfontfeatures{Scale=MatchLowercase}
+#+LATEX_HEADER: \setmonofont{Inconsolata LGC}
+#+LATEX_HEADER: \defaultfontfeatures{Scale=MatchLowercase, Mapping=tex-text, SmallCapsFeatures={LetterSpace=2.5,WordSpace=1.05}}
+#+LATEX_HEADER: \setmainfont{Linux Libertine O}
+#+LATEX_HEADER: \setsansfont{Linux Biolinum O}
+#+LATEX_HEADER: \usepackage{polyglossia}
+#+LATEX_HEADER: \setdefaultlanguage[variant=american]{english}
+#+LATEX_HEADER: \setotherlanguages{greek}
+#+LATEX_HEADER: \usepackage[shortcuts]{extdash}
+#+LATEX_HEADER: \usepackage[multidot]{grffile}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage[usenames,dvipsnames,x11names]{xcolor}
+#+LATEX_HEADER: \usepackage{amsmath}
+#+LATEX_HEADER: \usepackage[libertine]{newtxmath}
+#+LATEX_HEADER: \DeclareSymbolFont{parenthesis}{T1}{fxl}{m}{n}
+#+LATEX_HEADER: \DeclareMathDelimiter{(}{\mathopen}{parenthesis}{"28}{largesymbols}{"00}
+#+LATEX_HEADER: \DeclareMathDelimiter{)}{\mathclose}{parenthesis}{"29}{largesymbols}{"01}
+#+LATEX_HEADER: \DeclareMathDelimiter{[}{\mathopen}{parenthesis}{"5B}{largesymbols}{"02}
+#+LATEX_HEADER: \DeclareMathDelimiter{]}{\mathclose}{parenthesis}{"5D}{largesymbols}{"03}
+#+LATEX_HEADER: \DeclareMathDelimiter{\lbrace}{\mathopen}{parenthesis}{"7B}{largesymbols}{"08}
+#+LATEX_HEADER: \DeclareMathDelimiter{\rbrace}{\mathclose}{parenthesis}{"7D}{largesymbols}{"09}
+#+LATEX_HEADER: \usepackage{fancyvrb}
+#+LATEX_HEADER: \usepackage{imakeidx}
+#+LATEX_HEADER: \usepackage[totoc,font=footnotesize]{idxlayout}
+#+LATEX_HEADER: \usepackage{fancyhdr}
+#+LATEX_HEADER: \pagestyle{plain}
+#+LATEX_HEADER: \usepackage[final]{pdfpages}
+#+LATEX_HEADER: \usepackage[papersize={148mm,197mm},top=21mm,textwidth=111mm,textheight=148mm,hcentering]{geometry}
+#+LATEX_HEADER: \usepackage{titlesec}
+#+LATEX_HEADER: \usepackage{listings}
+#+LATEX_HEADER: \usepackage{verbatim}
+#+LATEX_HEADER: \usepackage{enumerate}
+#+LATEX_HEADER: \usepackage{hyperref}
+#+LATEX_HEADER: \definecolor{LinkRed}{HTML}{80171F}
+#+LATEX_HEADER: \hypersetup{pdfauthor={Harold Abelson, Gerald Jay Sussman, Julie Sussman},pdftitle={Structure and Interpretation of Computer Programs, 2nd ed.},pdfsubject={computer science, programming, abstraction},colorlinks=true,linkcolor=LinkRed,urlcolor=LinkRed}
+#+LATEX_HEADER: \definecolor{SchemeLight}{HTML}{686868}
+#+LATEX_HEADER: \definecolor{SchemeSteel}{HTML}{888888}
+#+LATEX_HEADER: \definecolor{SchemeDark}{HTML}{262626}
+#+LATEX_HEADER: \definecolor{SchemeBlue}{HTML}{4172A3}
+#+LATEX_HEADER: \definecolor{SchemeGreen}{HTML}{487818}
+#+LATEX_HEADER: \definecolor{SchemeBrown}{HTML}{A07040}
+#+LATEX_HEADER: \definecolor{SchemeRed}{HTML}{AD4D3A}
+#+LATEX_HEADER: \definecolor{SchemeViolet}{HTML}{7040A0}
+#+LATEX_HEADER: \definecolor{DropCapGray}{HTML}{B8B8B8}
+#+LATEX_HEADER: \definecolor{ChapterGray}{HTML}{C8C8C8}
+#+LATEX_HEADER: \definecolor{ChapterViolet}{HTML}{AEAECE}
+#+LATEX_HEADER: \definecolor{DropCapViolet}{HTML}{9090C0}
+#+LATEX_HEADER: \usepackage{lettrine}
+#+LATEX_HEADER: \renewcommand{\LettrineFontHook}{\rmfamily\mdseries\color{DropCapViolet}}
+#+LATEX_HEADER: \renewcommand{\DefaultLraise}{0.00}
+#+LATEX_HEADER: \renewcommand{\DefaultLoversize}{0.02}
+#+LATEX_HEADER: \renewcommand{\DefaultLhang}{0.12}
+#+LATEX_HEADER: \setlength{\DefaultFindent}{1pt}
+#+LATEX_HEADER: \setlength{\DefaultNindent}{0em}
+#+LATEX_HEADER: \lstset{columns=fixed,extendedchars=true,upquote=true,showstringspaces=false,sensitive=false,mathescape=true,escapechar=~,alsodigit={>,<,/,-,=,!,?,*},alsoletter=',morestring=[b]",morecomment=[l];,morekeywords={lambda, define, if, else, cond, and, or, case, let, let*, letrec, begin, do, delay, set!, =>, quote, quasiquote, unquote, unquote-splicing, define-syntax, let-syntax, letrec-syntax, syntax-rules},emph={'lambda, 'define, 'if, 'else, 'cond, 'and, 'or, 'case, 'let, 'let*, 'letrec, 'begin, 'do, 'delay, 'set!, '=>, 'quote, 'quasiquote, 'unquote, 'unquote-splicing, 'define-syntax, 'let-syntax, 'letrec-syntax, 'syntax-rules},emphstyle=\color{SchemeDark},emph={[2]error},emphstyle=[2]\color{SchemeRed},emph={[3]*, +, -, /, <, <=, =, >, >=, abs, acos, angle, append, apply, asin, assoc, assq, assv, atan, boolean?, caaaar, caaadr, caaar, caadar, caaddr, caadr, caar, cadaar, cadadr, cadar, caddar, cadddr, caddr, cadr, call-with-current-continuation, call-with-input-file, call-with-output-file, call-with-values, call/cc, car, cdaaar, cdaadr, cdaar, cdadar, cdaddr, cdadr, cdar, cddaar, cddadr, cddar, cdddar, cddddr, cdddr, cddr, cdr, ceiling, char->integer, char-alphabetic?, char-ci<=?, char-ci<?, char-ci=?, char-ci>=?, char-ci>?, char-downcase, char-lower-case?, char-numeric?, char-ready?, char-upcase, char-upper-case?, char-whitespace?, char<=?, char<?, char=?, char>=?, char>?, char?, close-input-port, close-output-port, complex?, cons, cos, current-input-port, current-output-port, denominator, display, dynamic-wind, eof-object?, eq?, equal?, eqv?, eval, even?, exact->inexact, exact?, exp, expt, floor, for-each, force, gcd, imag-part, inexact->exact, inexact?, input-port?, integer->char, integer?, interaction-environment, lcm, length, list, list->string, list->vector, list-ref, list-tail, list?, load, log, magnitude, make-polar, make-rectangular, make-string, make-vector, map, max, member, memq, memv, min, modulo, negative?, newline, not, null-environment, null?, number->string, number?, numerator, odd?, open-input-file, open-output-file, output-port?, pair?, peek-char, port?, positive?, procedure?, quotient, rational?, rationalize, read, read-char, real-part, real?, remainder, reverse, round, scheme-report-environment, set-car!, set-cdr!, sin, sqrt, string, string->list, string->number, string->symbol, string-append, string-ci<=?, string-ci<?, string-ci=?, string-ci>=?, string-ci>?, string-copy, string-fill!, string-length, string-ref, string-set!, string<=?, string<?, string=?, string>=?, string>?, string?, substring, symbol->string, symbol?, tan, transcript-off, transcript-on, truncate, values, vector, vector->list, vector-fill!, vector-length, vector-ref, vector-set!, vector?, with-input-from-file, with-output-to-file, write, write-char, zero?},emphstyle=[3]\color{SchemeViolet},basicstyle=\color{SchemeLight}\ttfamily,keywordstyle=\color{SchemeBlue}\bfseries,identifierstyle=\color{SchemeDark},stringstyle=\color{SchemeGreen},commentstyle=\color{SchemeLight}\itshape}
+#+LATEX_HEADER: \newcommand{\acronym}[1]{\textsc{\fontspec[Numbers={OldStyle}]{Linux Libertine O}\MakeLowercase{#1}}}
+#+LATEX_HEADER: \newcommand{\uppersc}[1]{{\fontspec[Letters=UppercaseSmallCaps]{Linux Libertine O}#1}}
+#+LATEX_HEADER: \newcommand{\newterm}[1]{\index{#1}\emph{#1}}
+#+LATEX_HEADER: \newcommand{\var}[1]{\textsl{#1}}
+#+LATEX_HEADER: \newcommand{\code}[1]{\texttt{#1}}
+#+LATEX_HEADER: \newcommand{\link}[1]{\hyperref[#1]{#1}}
+#+LATEX_HEADER: \newcommand{\heading}[1]{{\sffamily\bfseries #1}}
+#+LATEX_HEADER: \newcommand{\dark}{\color{SchemeDark}}
+#+LATEX_HEADER: \newcommand{\mono}[1]{\hbox{\ttfamily\scriptsize #1}}
+#+LATEX_HEADER: \newcommand{\monoit}[1]{\hbox{\ttfamily\itshape\scriptsize #1}}
+#+LATEX_HEADER: \newenvironment{example}{\verbatim\small}{\endverbatim}
+#+LATEX_HEADER: \newenvironment{smallexample}{\verbatim\footnotesize}{\endverbatim}
+#+LATEX_HEADER: \lstnewenvironment{scheme}[1][] {\lstset{basicstyle=\ttfamily\small\color{SchemeLight},#1}}{}
+#+LATEX_HEADER: \lstnewenvironment{smallscheme}[1][] {\lstset{basicstyle=\ttfamily\footnotesize\color{SchemeLight},#1}}{}
+#+LATEX_HEADER: \titleformat{\chapter}[display]{\color{SchemeDark}\normalfont\sffamily\bfseries\LARGE}{\filright \color{ChapterViolet}\sffamily\mdseries \fontsize{6em}{0em}\selectfont \oldstylenums{\thechapter}}{1em}{\filright}
+#+LATEX_HEADER: \titleformat{\section}{\color{SchemeDark}\normalfont\Large\sffamily\bfseries}{\color{DropCapViolet}\thesection}{0.8em}{}
+#+LATEX_HEADER: \titleformat{\subsection}{\color{SchemeDark}\normalfont\large\sffamily\bfseries}{\color{DropCapViolet}\thesubsection}{0.8em}{}
+#+LATEX_HEADER: \titleformat{\subsubsection}{\color{black}\normalfont\normalsize\sffamily\bfseries}{\color{DropCapViolet}\thesubsubsection}{0.8em}{}
+#+LATEX_HEADER: \setcounter{secnumdepth}{3}
+#+LATEX_HEADER: \setcounter{tocdepth}{3}
+#+LATEX_HEADER: \frenchspacing
+#+LATEX_HEADER: \makeindex
