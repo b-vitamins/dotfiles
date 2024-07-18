@@ -52,10 +52,13 @@
 #+LATEX_HEADER: \newtheorem{corollary}{Corollary}
 #+LATEX_HEADER: \newtheorem*{remark}{Remark}
 
-# Some operators
+# Some commands and operators
+#+LATEX_HEADER: \newcommand{\minus}{\scalebox{0.8}{\(-\)}}
+#+LATEX_HEADER: \newcommand{\plus}{\scalebox{0.6}{\(+\)}}
 #+LATEX_HEADER: \DeclareMathOperator{\sech}{sech}
 #+LATEX_HEADER: \DeclareMathOperator{\sgn}{sgn}
 #+LATEX_HEADER: \DeclareMathOperator{\tr}{Tr}
+
 
 # Cross-referencing and Hyperlinks
 #+LATEX_HEADER: \usepackage{hyperref}               % Extensive support for hyperlinks
