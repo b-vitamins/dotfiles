@@ -2,6 +2,7 @@
 export ZDOTDIR="$(dirname "$(readlink -f "${(%):-%x}")")"
 export GUIX_PROFILE="$HOME/.guix-profile"
 export GUILE_LOAD_PATH="$GUILE_LOAD_PATH:$HOME/.config/guix/current/lib/guile/3.0/site-ccache"
+export GUIX_PACKAGE_PATH="$HOME/projects/myguix/myguix/packages/patches"
 export MY_DICTIONARY="$HOME/.config/hunspell/my-dict"
 export EDITOR="emacs"
 export CC="$HOME/.guix-profile/bin/gcc"
