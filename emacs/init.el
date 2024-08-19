@@ -164,10 +164,18 @@
    ;; Enables maximum decoration for syntax highlighting, ensuring rich visual feedback in code.
    font-lock-maximum-decoration t)
 
+	;; Open .gscm files in scheme-mode
+	(add-to-list 'auto-mode-alist '("\\.gscm\\'" . scheme-mode))
+
+	;; Open zshrc files in sh-mode
+	(add-to-list 'auto-mode-alist '("zshrc\\'" . sh-mode))
+
   ;; Sets UTF-8 as the default coding system for file I/O, supporting a wide range of characters globally.
   (set-default-coding-systems 'utf-8)
+
   ;; Configures the Emacs environment to use UTF-8, enhancing support for international text standards.
   (set-language-environment "UTF-8")
+
   ;; Disables the use of tabs for indentation, using spaces instead for consistent formatting across different editors.
   (indent-tabs-mode 1)
   (message "Successfully setup default preferences"))
@@ -255,8 +263,7 @@
   (:hook-into prog-mode
               lisp-mode
               scheme-mode
-              haskell-mode
-              rust-mode)
+              haskell-mode)
   (message "Successfully setup display-line-numbers")
   (message "Successfully enabled global-visual-line-mode"))
 
@@ -772,11 +779,11 @@
            completion-cycle-threshold nil)
   (:option* auto t
             auto-prefix 2
-            auto-delay 0.10
+            auto-delay 0.2
             max-width 150
 						min-width 20
-            count 15
-            scroll-margin 10
+            count 16
+            scroll-margin 3
             cycle nil
             quit-at-boundary nil
             separator ?\s
@@ -793,8 +800,8 @@
            "C-p" corfu-previous
            "<return>" corfu-insert))
 	(:with-mode global-corfu-mode
-		(:hook corfu-echo-mode corfu-history-mode corfu-indexed-mode corfu-popupinfo-mode))
-  (global-corfu-mode)
+		(:hook corfu-history-mode corfu-indexed-mode corfu-popupinfo-mode))
+	(global-corfu-mode)
   (message "Successfully setup corfu"))
 
 (setup (:straight-if embark bv-not-guix-p)
@@ -926,11 +933,9 @@
    org-roam-tag-sort t
    org-roam-tag-context-lines 5)
   (:require bv-org-roam)
-
 	(:option
 	 org-roam-capture-templates bv-org-roam-capture-templates
 	 org-roam-node-display-template bv-org-roam-node-display-template
-	 org-roam-dailies-capture-templates bv-org-roam-dailies-capture-templates
 	 org-roam-dailies-directory (car bv-dailies-path)
    org-roam-node-annotation-function bv-org-roam-node-annotation-function)
 
@@ -1078,6 +1083,9 @@
   (:push-to geiser-implementations-alist
 						(:elements
 						 (((regexp "\\.scm$") guile))))
+(:push-to geiser-implementations-alist
+						(:elements
+						 (((regexp "\\.gscm$") guile))))
   (:require geiser)
   (message "Successfully setup geiser"))
 
@@ -1093,8 +1101,7 @@
   (message "Successfully setup geiser-guile"))
 
 (setup (:straight-if lsp-mode bv-not-guix-p)
-  (:hook-into rust-mode
-              python-mode
+  (:hook-into python-mode
               lisp-mode
               haskell-mode
               perl-mode
@@ -1112,6 +1119,14 @@
    "C-M-<return> l e" lsp-ui-flycheck-list
    "C-M-<return> l S" lsp-ui-sideline-mode
    "C-M-<return> l X" lsp-execute-code-action)
+	(:option
+   lsp-rust-analyzer-cargo-watch-command "clippy"
+	 lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial"
+   lsp-rust-analyzer-display-chaining-hints t
+   lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil
+   lsp-rust-analyzer-display-closure-return-type-hints t
+   lsp-rust-analyzer-display-parameter-hints nil
+   lsp-rust-analyzer-display-reborrow-hints nil)
   (:require lsp-mode)
   (message "Successfully setup lsp-mode"))
 
