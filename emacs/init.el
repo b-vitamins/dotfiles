@@ -669,12 +669,6 @@
   ;;    performed offsite are hassle-free, without the need to shuffle images
   ;;    around the filesystem.
   ;;
-  ;; `org-preview' is a minor mode which provides asynchronous,
-  ;; blazing fast, latex previews.
-  ;; It is written by Karthik Chikmagalur <karthikchikmagalur@gmail.com>.
-	;; Demo here: https://www.youtube.com/watch?v=n-AfvuV-bYo
-	;; It will be built into Org, probably in the 9.7 release.
-  ;;
 	(setup bv-latex
 		(:require bv-latex)
 		(:option bv-latex-output-dir "~/slipbox/out")
