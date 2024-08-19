@@ -1,14 +1,52 @@
 # Environment configuration
-export ZDOTDIR="$(dirname "$(readlink -f "${(%):-%x}")")"
-export GUIX_PROFILE="$HOME/.guix-profile"
-export GUILE_LOAD_PATH="$GUILE_LOAD_PATH:$HOME/.config/guix/current/lib/guile/3.0/site-ccache"
-export GUIX_PACKAGE_PATH="$HOME/projects/myguix/myguix/packages/patches"
-export MY_DICTIONARY="$HOME/.config/hunspell/my-dict"
+
+# Set ZDOTDIR to the directory of the current script, with a check
+if [ -n "$(readlink -f "${(%):-%x}")" ]; then
+    export ZDOTDIR="$(dirname "$(readlink -f "${(%):-%x}")")"
+fi
+
+# Set GUIX_PROFILE if the directory exists
+if [ -d "$HOME/.guix-profile" ]; then
+    export GUIX_PROFILE="$HOME/.guix-profile"
+    source "$GUIX_PROFILE/etc/profile"
+fi
+
+# Add to GUILE_LOAD_PATH if the directory exists
+if [ -d "$HOME/.config/guix/current/lib/guile/3.0/site-ccache" ]; then
+    export GUILE_LOAD_PATH="$GUILE_LOAD_PATH:$HOME/.config/guix/current/lib/guile/3.0/site-ccache"
+fi
+
+# Set GUIX_PACKAGE_PATH if the directory exists
+if [ -d "$HOME/projects/myguix/myguix/packages/patches" ]; then
+    export GUIX_PACKAGE_PATH="$HOME/projects/myguix/myguix/packages/patches"
+fi
+
+# Set MY_DICTIONARY if the file exists
+if [ -f "$HOME/.config/hunspell/my-dict" ]; then
+    export MY_DICTIONARY="$HOME/.config/hunspell/my-dict"
+fi
+
+# Set EDITOR, CC, and CCX unconditionally (assuming the Guix profile path always exists if configured)
 export EDITOR="emacs"
 export CC="$HOME/.guix-profile/bin/gcc"
 export CCX="$HOME/.guix-profile/bin/gcc"
-source "$GUIX_PROFILE/etc/profile"
-source "$ZDOTDIR/lscolors.sh"
+
+# Source the lscolors.sh script if it exists
+if [ -f "$ZDOTDIR/lscolors.sh" ]; then
+    source "$ZDOTDIR/lscolors.sh"
+fi
+
+# Add directories to PATH if they exist
+if [ -d "$HOME/.cargo/bin" ]; then
+    export PATH="$PATH:$HOME/.cargo/bin"
+fi
+
+if [ -d "$HOME/.config/scripts" ]; then
+    export PATH="$HOME/.config/scripts:$PATH"
+fi
+
+# Disable auto-compilation in Guile
+export GUILE_AUTO_COMPILE=0
 
 # Zsh history configuration
 HISTFILE="$ZDOTDIR/zsh_history"
