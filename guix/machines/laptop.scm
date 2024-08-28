@@ -38,7 +38,6 @@
 
   (keyboard-layout (keyboard-layout "us"
                                     "altgr-intl"
-                                    #:model "thinkpad"
                                     #:options '("ctrl:nocaps")))
 
   (bootloader (bootloader-configuration
@@ -160,10 +159,6 @@
                      (list (oci-container-configuration (image
                                                          "grobid/grobid:0.8.0")
                                                         (network "host")
-                                                        (ports '(("8070" . "8070"))))))
-            (set-xorg-configuration
-             (xorg-configuration (keyboard-layout (keyboard-layout "us"
-                                                   "altgr-intl"
-                                                   #:options '("ctrl:nocaps"))))))
+                                                        (ports '(("8070" . "8070")))))))
            %my-desktop-services))
   (name-service-switch %mdns-host-lookup-nss))
