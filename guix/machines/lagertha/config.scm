@@ -70,6 +70,7 @@
                           (specification->package "htop")
                           (specification->package "nmap")
                           (specification->package "screen")
+                          (specification->package "rsync")
                           (specification->package "font-dejavu")
                           (specification->package "font-iosevka-comfy")
                           (specification->package "font-google-noto")
@@ -118,8 +119,18 @@
             (service nftables-service-type)
             (service ntp-service-type)
 
+            ;; Synchronization Service
+            (service syncthing-service-type
+                     (syncthing-configuration (user "b")))
+
             ;; VPN Services
             (service bitmask-service-type)
+
+            ;; Power Management Services
+            (service tlp-service-type
+                     (tlp-configuration (cpu-boost-on-ac? #t)
+                                        (wifi-pwr-on-bat? #t)))
+            (service thermald-service-type)
 
             ;; Linux Services
             (service earlyoom-service-type)
