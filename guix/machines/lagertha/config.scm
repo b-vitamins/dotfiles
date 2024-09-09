@@ -38,14 +38,12 @@
 
   (file-systems (cons* (file-system
                          (mount-point "/boot/efi")
-                         (device (uuid "D488-74A2"
+                         (device (uuid "FDAC-FCCB"
                                        'fat32))
                          (type "vfat"))
                        (file-system
                          (mount-point "/")
-                         (device (uuid
-                                  "999203ab-375d-4a0e-90f6-bb2e6b2d71f4"
-                                  'ext4))
+                         (device (file-system-label "my-root"))
                          (type "ext4")) %base-file-systems))
 
   ;; The list of user accounts ('root' is implicit).
@@ -54,10 +52,10 @@
                   (comment "Ayan")
                   (group "users")
                   (home-directory "/home/b")
-									(shell (file-append (specification->package "zsh")
+                  (shell (file-append (specification->package "zsh")
                                       "/bin/zsh"))
-                  (supplementary-groups '("adbusers" "wheel" "netdev" "audio" "video")))
-                %base-user-accounts))
+                  (supplementary-groups '("adbusers" "wheel" "netdev" "audio"
+                                          "video"))) %base-user-accounts))
 
   ;; System-wide packages
   (packages (append (list (specification->package "git")
@@ -103,17 +101,17 @@
                                    "network-manager-applet")))
             (service modem-manager-service-type)
             (service usb-modeswitch-service-type)
-						;; OpenSSH for remote access
-						(service openssh-service-type
-										 (openssh-configuration (authorized-keys `(("b" ,(local-file
-																																			"keys/ragnar.pub"))
-																															 ("b" ,(local-file
-																																			"keys/leif.pub"))
-																															 ("b" ,(local-file
-																																			"keys/bjorn.pub"))
-																															 ("b" ,(local-file
-																																			"keys/freydis.pub"))))
-																						(password-authentication? #f)))
+            ;; OpenSSH for remote access
+            (service openssh-service-type
+                     (openssh-configuration (authorized-keys `(("b" ,(local-file
+                                                                      "keys/ssh/ragnar.pub"))
+                                                               ("b" ,(local-file
+                                                                      "keys/ssh/leif.pub"))
+                                                               ("b" ,(local-file
+                                                                      "keys/ssh/bjorn.pub"))
+                                                               ("b" ,(local-file
+                                                                      "keys/ssh/freydis.pub"))))
+                                            (password-authentication? #f)))
 
             ;; Networking Services
             (service avahi-service-type)
@@ -134,8 +132,7 @@
                                                       %default-sysctl-settings)))))
            ;; This is the default list of services we
            ;; are appending to.
-					 %my-base-services))
+           %my-base-services))
   (name-service-switch %mdns-host-lookup-nss)
   (swap-devices (list (swap-space
-                        (target (uuid
-                                 "f7e87737-5365-468a-8dfa-fbe6ce790566"))))))
+                        (target (uuid "ac60c11d-f255-4981-8678-ec1e0d969f3b"))))))
