@@ -88,8 +88,7 @@
                           (specification->package "font-google-noto")
                           (specification->package "font-google-noto-serif-cjk")
                           (specification->package "font-google-noto-sans-cjk")
-                          (specification->package "fontconfig")
-													(specification->package "rclone"))
+                          (specification->package "fontconfig"))
                     %base-packages))
 
   (services
