@@ -83,16 +83,29 @@ the feature prefix."
 (setup-define :straight-if
   (lambda (recipe condition)
     (let ((pkg (if (consp recipe) (car recipe) recipe))) ;; Extract package name from recipe if it's a list
-      `(if ,condition
-           (straight-use-package ',recipe)
-         ;; If the condition fails, check if the package is installed or the feature is loaded.
-         (unless (or (package-installed-p ',pkg) (featurep ',pkg))
-           ;; If not installed or loaded, then use straight.el as a fallback.
-           (straight-use-package ',recipe)))))
+      `(progn
+         ;; Ensure bv-essentials is loaded for bv-bootstrap-straight.
+         (require 'bv-essentials)
+         ;; If the condition is true, check if straight-use-package is available.
+         (if ,condition
+             (progn
+               (unless (fboundp 'straight-use-package)
+                 (log-init-message "Bootstrapping straight.el...")
+                 (bv-bootstrap-straight)) ;; Bootstrap straight.el if not already bootstrapped.
+               (straight-use-package ',recipe))
+           ;; If the condition fails, check if the package is installed or the feature is loaded.
+           (unless (or (package-installed-p ',pkg) (featurep ',pkg))
+             ;; If not installed or loaded, then use straight.el as a fallback.
+             (progn
+               (unless (fboundp 'straight-use-package)
+                 (log-init-message "Bootstrapping straight.el for fallback...")
+                 (bv-bootstrap-straight)) ;; Bootstrap straight.el if not already bootstrapped.
+               (straight-use-package ',recipe)))))))
   :documentation
   "Conditionally install RECIPE with `straight-use-package' if CONDITION is met.
 If CONDITION is false, it checks if the package (or feature) PKG is installed or loaded, and if not, installs it using straight.el.
-This macro can be used as a HEAD in setup blocks and replaces itself with the RECIPE's package. This macro is not repeatable."
+This macro ensures that `straight.el` is bootstrapped if `straight-use-package` is not already available.
+It can be used as a HEAD in setup blocks and replaces itself with the RECIPE's package. This macro is not repeatable."
   :repeatable nil
   :indent 1
   :shorthand (lambda (sexp)
