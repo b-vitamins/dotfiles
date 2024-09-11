@@ -37,9 +37,9 @@
   (kernel-loadable-modules (list (specification->package
                                   "v4l2loopback-linux-module")))
 
-  (keyboard-layout (keyboard-layout "us"
-                                    "altgr-intl"
-                                    #:options '("ctrl:nocaps" "altwin:swap_alt_win")))
+  (keyboard-layout (keyboard-layout "us" "altgr-intl"
+                                    #:options '("ctrl:nocaps"
+                                                "altwin:swap_alt_win")))
 
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
@@ -98,9 +98,12 @@
             ;; Printing Services
             (service cups-service-type
                      (cups-configuration (web-interface? #t)
-                                         (extensions (list (specification->package "cups-filters")
-                                                           (specification->package "brlaser")
-                                                           (specification->package "foomatic-filters")))))
+                                         (extensions (list (specification->package
+                                                            "cups-filters")
+                                                           (specification->package
+                                                            "brlaser")
+                                                           (specification->package
+                                                            "foomatic-filters")))))
 
             ;; Networking Setup
             (service network-manager-service-type

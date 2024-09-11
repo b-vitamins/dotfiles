@@ -12,7 +12,7 @@
              (gnu home services shells)
              (gnu home services pm)
              (gnu system shadow)
-						 (guix gexp)
+             (guix gexp)
              (myguix packages base)
              (myguix services mcron)
              (myguix services home))
@@ -38,8 +38,8 @@
 
   (services
    (append (list
-						;; Power Management Home Services
-						(service home-batsignal-service-type)
+            ;; Power Management Home Services
+            (service home-batsignal-service-type)
             ;; Scheduled User’s Job Execution
             (service home-mcron-service-type
                      (home-mcron-configuration (jobs (list
@@ -61,10 +61,14 @@
                                                                              2123)
                                                                             (identity-file
                                                                              "~/.ssh/id_ed25519"))))
-																								 (authorized-keys (list (local-file "keys/ragnar.pub")
-																																				(local-file "keys/lagertha.pub")
-																																				(local-file "keys/bjorn.pub")
-																																				(local-file "keys/freydis.pub")))
+                                                 (authorized-keys (list (local-file
+                                                                         "keys/ssh/ragnar.pub")
+                                                                        (local-file
+                                                                         "keys/ssh/lagertha.pub")
+                                                                        (local-file
+                                                                         "keys/ssh/bjorn.pub")
+                                                                        (local-file
+                                                                         "keys/ssh/freydis.pub")))
                                                  (add-keys-to-agent "confirm")))
 
             ;; Desktop Home Services
