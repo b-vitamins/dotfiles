@@ -36,432 +36,605 @@
 
 ;;; Code:
 
-;; Dynamically set the user-emacs-directory to the directory of this init file,
-;; ensuring it is a valid directory.
+;; Helper function to log formatted messages during initialization.
+(defun log-init-message (format-string &rest args)
+  "Log initialization messages in a consistent format.
+FORMAT-STRING is the message to display, with optional ARGS for formatting."
+  (apply 'message (concat "[Init] " format-string) args))
+
+;; Dynamically set the `user-emacs-directory` to the directory of this init file,
+;; whether loaded from a file or interactively. We prioritize `load-file-name` (used
+;; when loading init.el) and fallback to `buffer-file-name` in other cases.
+
 (let ((config-dir (file-name-directory (or load-file-name (buffer-file-name)))))
+  ;; Ensure the extracted directory is valid before updating `user-emacs-directory`.
   (when (and config-dir (file-directory-p config-dir))
-    (setq user-emacs-directory config-dir)))
+    (setq user-emacs-directory config-dir)
+    ;; Log the directory in the *Messages* buffer for debugging purposes.
+    (log-init-message "user-emacs-directory set to: %s" user-emacs-directory)))
 
-;; Add the "lisp" directory within the user-emacs-directory to the load path.
-;; This allows Emacs to find and load Lisp files located in this directory.
-;;
+;; Add the "lisp/" directory within `user-emacs-directory` to `load-path`.
+;; This allows Emacs to find and load any custom Lisp files stored in this directory.
+;; If the directory exists, all .el files within it will be logged in the *Messages* buffer.
+
 (when user-emacs-directory
-  (let* ((elisp-dir (expand-file-name "lisp/" user-emacs-directory))
-				 (guile-dir (expand-file-name "../guix/current/share/guile/site/3.0/" user-emacs-directory)))
+  (let ((elisp-dir (expand-file-name "lisp/" user-emacs-directory)))  ;; Define path to the lisp/ directory
+
+    ;; Check if the lisp/ directory exists before adding it to `load-path`.
     (when (file-directory-p elisp-dir)
-      (add-to-list 'load-path elisp-dir))
-    (when (file-directory-p guile-dir)
-      (add-to-list 'load-path guile-dir))))
+      (add-to-list 'load-path elisp-dir)
+      (log-init-message "lisp/ directory added to load-path: %s" elisp-dir)
 
-;; Ensure the server package is loaded
-;; Check if the Emacs server is already running and start it if not
-;;
+      ;; List and log all .el files in the lisp/ directory to the *Messages* buffer.
+      (let ((elisp-files (directory-files elisp-dir t "\\.el$")))
+        (if elisp-files
+            (progn
+              (log-init-message "Found the following .el files in lisp/:")
+              (dolist (file elisp-files)
+                (log-init-message "   - %s" (file-name-nondirectory file))))
+          (log-init-message "No .el files found in lisp/ directory"))))))
+
+;; Ensure the Emacs server is loaded and running.
+;; If the server is not already running, start it and log the action.
 (require 'server)
-(unless (server-running-p)
-  (server-start))
 
+(if (server-running-p)
+    (log-init-message "Emacs server is already running.")
+  (server-start)
+  (log-init-message "Emacs server started."))
+
+;; Automatically switch to *scratch* buffer if emacsclient is invoked without a file.
+;; This ensures that `emacsclient` opens the *scratch* buffer by default when no filename is provided.
+(add-hook 'server-create-window-hook
+          (lambda ()
+            ;; Only switch to *scratch* if no other buffer is specified.
+            (when (and (not (buffer-file-name))
+                       (string= (buffer-name) "SERVER"))
+              (switch-to-buffer "*scratch*")
+              (log-init-message "Opened *scratch* buffer in new frame."))))
+
+;; NOTE:
+;; To ensure this configuration works as intended, especially for faster frame
+;; opening with `emacsclient`, use the following command:
+;;
+;;    emacsclient -c -a emacs
+;;
+;; - `-c` opens a new frame.
+;; - `-a emacs` starts a new Emacs instance if no server is running.
+;;
+;; Add this command to any shortcut you use to launch Emacs (e.g., GNOME, i3, or a custom keybinding).
+;; This will allow you to open Emacs frames quickly with the *scratch* buffer, without reloading `init.el` every time.
+
+;; Load essential configuration and define Guix environment check.
 (require 'bv-essentials)
-(bv-bootstrap-straight)
 
-(let ((install-success t))
-  (condition-case err
-      (straight-use-package 'setup)
-    (error
-     (setq install-success nil)
-     (message "Failed to install setup.el: %s" err)))
-  (if install-success
-      (progn
-        (require 'setup)
-        (require 'bv-setup)
-        (message "Successfully loaded setup.el"))
-    (message "Proceeding without setup.el")))
+;; Define `bv-not-guix-p` as a variable that checks if the current system is not Guix.
+(defvar bv-not-guix-p (not (bv-guix-p))
+  "Non-nil if the system is not running Guix.  Used to conditionally manage packages.")
+
+;; Bootstrap `straight.el` for non-Guix systems.
+(when bv-not-guix-p
+  (log-init-message "Bootstrapping straight.el for package management.")
+  (bv-bootstrap-straight))
+
+;; Attempt to load `setup.el`. Use Guix if available, otherwise fallback to `straight.el`.
+(condition-case err
+    (if bv-not-guix-p
+        ;; On non-Guix systems, install and load `setup.el` using `straight.el`.
+        (progn
+          (when (fboundp 'straight-use-package)
+            (straight-use-package 'setup)
+            (log-init-message "Installed setup.el using straight.el."))
+          (require 'setup)
+          (log-init-message "Successfully loaded setup.el using straight.el."))
+      ;; On Guix systems, load `setup.el` directly from the Guix package manager.
+      (require 'setup)
+      (log-init-message "Loaded setup.el from Guix package manager."))
+  
+  ;; Handle any errors during installation or loading.
+  (error
+   (log-init-message "Error loading setup.el: %s" err)
+   (log-init-message "Proceeding without setup.el.")))
+
+;; Load `bv-setup` if `setup.el` was successfully loaded.
+(condition-case err
+    (progn
+      (require 'bv-setup)
+      (log-init-message "Successfully loaded bv-setup."))
+  (error
+   (log-init-message "Error loading bv-setup: %s" err)
+   (log-init-message "Proceeding without bv-setup.")))
 
 (defvar cached-font-family-list (font-family-list)
   "Cache the list of available font families at startup.")
 
+;; Set up default preferences to improve the Emacs user experience.
 (setup default-preferences
-  ;; Basic preferences to improve user experience and workflow.
+
+  ;; Log the start of the setup process.
+  (log-init-message "Setting up default preferences:")
+
+  ;; ---- Buffer and Editing Behavior ----
   (:set-default
-   ;; Sets Org mode as the default major mode for new buffers, encouraging structured and organized note-taking.
-   initial-major-mode 'org-mode
-   ;; Disables the bell sound, replacing it with a silent ignore function to avoid auditory distraction.
-   ring-bell-function 'ignore
-   ;; Enables short answers (y/n) for prompts, streamlining user interactions.
-   use-short-answers t
-   ;; Adjusts the context lines for next-screen and previous-screen commands, improving readability during navigation.
-   next-screen-context-lines 4
-   ;; Sets a thin bar as the cursor type, providing a precise visual cue for the cursor's location.
-   cursor-type 'bar
-   ;; Applies the bar cursor type to non-selected windows as well, maintaining visual consistency across windows.
-   cursor-in-non-selected-window 'bar
-   ;; Allows C-k to kill the entire line, including the newline character, for more efficient editing.
-   kill-whole-line t
-   ;; Permits killing buffers that are read-only, facilitating quick closure of documentation or help buffers.
-   kill-read-only-ok t
-   ;; Reduces the delay before showing keystrokes in the echo area, enhancing feedback for partially typed commands.
-   echo-keystrokes 0.1
-   ;; Disables the creation of auto-save list files, simplifying the file system and reducing clutter.
-   auto-save-list-file-prefix nil
-   ;; Enables focus-follows-mouse, allowing window focus to change based on mouse position, aligning with certain user preferences or workflows.
-   focus-follows-mouse t
-   ;; Sets preferred positions for the recenter command, offering customization for viewing buffer content.
-   recenter-positions '(top bottom middle)
-   ;; Opens files in view mode when they are read-only, encouraging non-destructive file exploration.
-   view-read-only t
-   ;; Automatically follows symbolic links to version-controlled files, simplifying navigation in projects.
-   vc-follow-symlinks t
-   ;; Highlights matching portions during searches, improving visibility of search results.
-   search-highlight t
-   ;; Saves the clipboard contents before overwriting, preventing accidental loss of clipboard data.
-   save-interprogram-paste-before-kill t
-   ;; Enables Dired's "Do What I Mean" behavior for more intuitive file operations between splits.
-   dired-dwim-target t
-   ;; Configures tab behavior for consistent indentation, enhancing code readability and standardization.
-   tab-always-indent 'complete
-   ;; Allows evaluation of local variables if set, useful for project-specific settings.
-   enable-local-eval t
-   ;; Disables creation of backup files to minimize clutter.
-   make-backup-files nil
-   ;; Avoids creation of .#lockfile files, reducing file system clutter.
-   create-lockfiles nil
-   ;; Disables requirement for a final newline in files, accommodating varied file formats.
-   require-final-newline nil
-   ;; Prevents font cache compaction during garbage collection, potentially improving performance.
-   inhibit-compacting-font-caches t
-   ;; Adjusts the mode's requirement for a final newline, offering flexibility across different file types.
-   mode-require-final-newline nil
-   ;; Sets the minimum level of warnings to display, reducing noise from less critical warnings.
-   warning-minimum-level :emergency
-   ;; Specifies sources for authentication credentials, enhancing security by using encrypted storage.
-   auth-sources '("~/.authinfo.gpg")
-   ;; Controls native compilation warnings and errors display, minimizing distractions during compilation.
-   native-comp-async-report-warnings-errors 'silent
-   ;; Disables warnings for opening large files, streamlining access to large data or code bases.
-   large-file-warning-threshold nil
-   ;; Enables pruning of the native compilation cache to manage disk space usage efficiently.
-   native-compile-prune-cache t
-   ;; Configures behavior for async shell commands, preventing accidental process termination.
-   async-shell-command-buffer 'confirm-kill-process
-   ;; Sets the display width of a tab character to 2 spaces, improving readability.
-   tab-width 2
-	 ;; Sets margins around text for all buffers, enhancing readability.
-	 ;; Number of columns on the left margin.
-   left-margin-width 2
-	 ;; Number of columns on the right margin.
-   right-margin-width 2
-   )
-  
-  (:set ;; Disables the startup screen for a cleaner launch experience.
-   inhibit-startup-screen t
-   ;; Customizes the startup echo area message.
-   inhibit-startup-echo-area-message "Welcome to Emacs!"
-   ;; Enables fitting windows to the buffer horizontally, allowing for more flexible window sizing.
-   fit-window-to-buffer-horizontally t
-   ;; Allows windows to be resized to the exact pixel, offering finer control over window dimensions.
-   window-resize-pixelwise t
-   ;; Sets the syntax highlighting support mode to JIT Lock mode, enabling just-in-time syntax highlighting for improved performance.
-   font-lock-support-mode 'jit-lock-mode
-   ;; Enables maximum decoration for syntax highlighting, ensuring rich visual feedback in code.
-   font-lock-maximum-decoration t)
+   initial-major-mode 'org-mode                          ;; Org mode as the default major mode for new buffers.
+   kill-whole-line t                                     ;; Allow C-k to kill the whole line, including newline.
+   kill-read-only-ok t                                   ;; Permit killing read-only buffers.
+   use-short-answers t                                   ;; Enable short (y/n) answers for prompts.
+   save-interprogram-paste-before-kill t                 ;; Save clipboard content before killing text.
+   dired-dwim-target t                                   ;; Enable Dired DWIM behavior for easier file operations.
+   set-default-coding-systems 'utf-8                     ;; Set default coding system for file I/O to UTF-8.
+   set-language-environment "UTF-8"                      ;; Configure the environment to use UTF-8.
+   ring-bell-function 'ignore                            ;; Disable the bell sound.
+   echo-keystrokes 0.1)                                  ;; Reduce delay before showing keystrokes.
 
-	;; Open .gscm files in scheme-mode
-	(add-to-list 'auto-mode-alist '("\\.gscm\\'" . scheme-mode))
+  (log-init-message "    Buffer and editing preferences set.")
 
-	;; Open zshrc files in sh-mode
-	(add-to-list 'auto-mode-alist '("zshrc\\'" . sh-mode))
+  ;; ---- Cursor, Navigation, and Display ----
+  (:set-default
+   cursor-type 'bar                                      ;; Set cursor type to a thin bar for better visibility.
+   cursor-in-non-selected-window 'bar                    ;; Apply bar cursor to non-selected windows as well.
+   next-screen-context-lines 4                           ;; Show 4 lines of context when navigating between screens.
+   recenter-positions '(top bottom middle)               ;; Customize recenter positions: top, bottom, middle.
+   view-read-only t)                                     ;; Open read-only files in view mode by default.
 
-  ;; Sets UTF-8 as the default coding system for file I/O, supporting a wide range of characters globally.
-  (set-default-coding-systems 'utf-8)
+  (log-init-message "    Cursor, navigation, and display preferences set.")
 
-  ;; Configures the Emacs environment to use UTF-8, enhancing support for international text standards.
-  (set-language-environment "UTF-8")
+  ;; ---- File and Auto-Saving Behavior ----
+  (:set-default
+   auto-save-list-file-prefix nil                        ;; Disable the creation of auto-save list files.
+   vc-follow-symlinks t                                  ;; Automatically follow symlinks for version-controlled files.
+   make-backup-files nil                                 ;; Disable creation of backup files.
+   create-lockfiles nil                                  ;; Prevent creation of lockfiles (e.g., .#file).
+   require-final-newline nil)                            ;; Disable final newline requirement in files.
 
-  ;; Disables the use of tabs for indentation, using spaces instead for consistent formatting across different editors.
-  (indent-tabs-mode 1)
-  (message "Successfully setup default preferences"))
+  (log-init-message "    File and auto-saving behavior preferences set.")
 
-(if (and (member "Iosevka Comfy" cached-font-family-list)
-         (member "DejaVu Sans" cached-font-family-list))
-    (progn
-      (set-face-attribute 'default nil
-                          :font "Iosevka Comfy"
-                          :weight 'regular
-                          :height 110)
-      (set-face-attribute 'fixed-pitch nil
-                          :font "Iosevka Comfy"
-                          :weight 'light
-                          :height 110)
-      (set-face-attribute 'variable-pitch nil
-                          :font "DejaVu Sans"
-                          :height 120))
-  (message "Required fonts not available, falling back to defaults"))
+  ;; ---- Performance and Warnings ----
+  (:set-default
+   inhibit-compacting-font-caches t                      ;; Prevent font cache compaction during garbage collection.
+   mode-require-final-newline nil                        ;; Disable mode-specific final newline requirement.
+   warning-minimum-level :emergency                      ;; Set the minimum level of warnings to display to reduce noise.
+   native-comp-async-report-warnings-errors 'silent      ;; Silence native compilation warnings and errors.
+   large-file-warning-threshold nil                      ;; Disable large file warnings.
+   native-compile-prune-cache t)                         ;; Enable native compilation cache pruning to save space.
+
+  (log-init-message "    Performance and warning preferences set.")
+
+  ;; ---- Tab and Indentation Behavior ----
+  (:set-default
+   tab-always-indent 'complete                           ;; Configure tab behavior to first indent, then complete.
+   tab-width 2                                           ;; Set tab width to 2 spaces.
+   indent-tabs-mode nil)                                 ;; Use spaces instead of tabs for indentation.
+
+  (log-init-message "    Tab and indentation preferences set.")
+
+  ;; ---- Mouse and Focus Behavior ----
+  (:set-default
+   focus-follows-mouse t                                 ;; Enable focus-follows-mouse behavior.
+   left-margin-width 2                                   ;; Set left margin width for better text readability.
+   right-margin-width 2)                                 ;; Set right margin width for better text readability.
+
+  (log-init-message "    Mouse and focus behavior preferences set.")
+
+  ;; ---- Shell Command and Async Behavior ----
+  (:set-default
+   async-shell-command-buffer 'confirm-kill-process)     ;; Confirm before killing async shell command processes.
+
+  (log-init-message "    Shell command and async behavior preferences set.")
+
+  ;; ---- Direct Settings (Desugars to `setq`) ----
+  (:set
+   inhibit-startup-screen t                              ;; Disable startup screen for a cleaner launch experience.
+   inhibit-startup-echo-area-message "Welcome to Emacs!" ;; Custom startup message in the echo area.
+   fit-window-to-buffer-horizontally t                   ;; Fit windows horizontally to the buffer content.
+   window-resize-pixelwise t                             ;; Allow pixel-level window resizing.
+   font-lock-support-mode 'jit-lock-mode                 ;; Set JIT Lock mode for just-in-time syntax highlighting.
+   font-lock-maximum-decoration t)                       ;; Enable maximum decoration for syntax highlighting.
+
+  (log-init-message "    Direct preferences set with `setq`.")
+
+  ;; ---- File Associations ----
+  (add-to-list 'auto-mode-alist '("\\.gscm\\'" . scheme-mode)) ;; Open `.gscm` files in `scheme-mode`.
+  (add-to-list 'auto-mode-alist '("zshrc\\'" . sh-mode))       ;; Open `zshrc` files in `sh-mode`.
+
+  (log-init-message "    File associations set for `.gscm` and `zshrc`.")
+
+  ;; ---- Additional Settings ----
+  (:set-default
+   search-highlight t                                    ;; Highlight matching search patterns.
+   enable-local-eval t                                   ;; Allow evaluation of local variables.
+   auth-sources '("~/.authinfo.gpg"))                    ;; Set encrypted `.authinfo.gpg` for authentication credentials.
+
+  (log-init-message "    Additional preferences set.")
+  (log-init-message "Successfully completed setting up default preferences."))
+
+;; Cache the list of available font families at startup for efficient lookups.
+(defvar cached-font-family-list (font-family-list)
+  "Cache the list of available font families at startup.")
+
+;; Check the availability of the required fonts.
+(let ((iosevka-comfy-available (member "Iosevka Comfy" cached-font-family-list))
+      (dejavu-sans-available (member "DejaVu Sans" cached-font-family-list)))
+  (cond
+   ((and iosevka-comfy-available dejavu-sans-available)
+    (set-face-attribute 'default nil
+                        :font "Iosevka Comfy"
+                        :weight 'regular
+                        :height 110)          ;; Set the default face to "Iosevka Comfy".
+    (set-face-attribute 'fixed-pitch nil
+                        :font "Iosevka Comfy"
+                        :weight 'light
+                        :height 110)          ;; Set the fixed-pitch face to "Iosevka Comfy".
+    (set-face-attribute 'variable-pitch nil
+                        :font "DejaVu Sans"
+                        :height 120)          ;; Set the variable-pitch face to "DejaVu Sans".
+    (log-init-message "Fonts successfully set: Iosevka Comfy (default, fixed-pitch) and DejaVu Sans (variable-pitch)."))
+   ;; If only "Iosevka Comfy" is missing.
+   ((not iosevka-comfy-available)
+    (log-init-message "Font 'Iosevka Comfy' not available. Falling back to default font for fixed-pitch and default face."))
+   ;; If only "DejaVu Sans" is missing.
+   ((not dejavu-sans-available)
+    (log-init-message "Font 'DejaVu Sans' not available. Falling back to default font for variable-pitch face.")))
+  ;; If neither font is available.
+  (unless (or iosevka-comfy-available dejavu-sans-available)
+    (log-init-message "Neither 'Iosevka Comfy' nor 'DejaVu Sans' are available. Falling back to all default fonts.")))
 
 (setup whoami
   (:set-default user-full-name "Ayan Das"
                 user-mail-address "bvits@riseup.net")
-  (message "Successfully setup whoami"))
+  (log-init-message (format "User: %s, Email: %s" user-full-name user-mail-address)))
 
+;; Setup keybindings for bv-essentials
 (setup bv-essentials
-  ;; Delimiter insertion keybindings
-  (:global
-   "M-(" 'bv-insert-open-paren
-   "M-)" 'bv-insert-close-paren
-   "M-{" 'bv-insert-open-brace
-   "M-}" 'bv-insert-close-brace
-   "M-[" 'bv-insert-open-bracket
-   "M-]" 'bv-insert-close-bracket
-   "M-'" 'bv-insert-single-quote
-   "M-\"" 'bv-insert-double-quote
-   "M-`" 'bv-insert-backtick
-	 )
-  ;; Code evaluation and search keybindings
-  (:global
-   "C-c C-e C-b" 'eval-buffer
-   "C-c C-e C-r" 'eval-region
-   "C-c C-g" 'grep
-	 )
-  ;; Text manipulation keybindings
-  (:global
-   "C-c r" 'replace-string
-   "C-c q" 'query-replace
-	 )
-  ;; Visual toggles and utility keybindings
-  (:global
-   "C-c C-t" 'toggle-truncate-lines
-   "C-c C-w" 'whitespace-mode
-   "C-c C-l" 'toggle-line-numbers
-	 )
-  ;; General utility keybindings
-  (:global
-   "C-c C-d" 'bv-move-to-trash
-   "C-c C-h" 'hidden-mode-line-mode)
-  ;; Success message after setup
-  (message "Successfully setup bv-essentials"))
+  (log-init-message "Setting up bv-essentials keybindings:")
 
+  ;; ---- Delimiter Insertion Keybindings ----
+  (:global
+   "M-(" 'bv-insert-open-paren                         ;; Insert open parenthesis.
+   "M-)" 'bv-insert-close-paren                        ;; Insert close parenthesis.
+   "M-{" 'bv-insert-open-brace                         ;; Insert open brace.
+   "M-}" 'bv-insert-close-brace                        ;; Insert close brace.
+   "M-[" 'bv-insert-open-bracket                       ;; Insert open bracket.
+   "M-]" 'bv-insert-close-bracket                      ;; Insert close bracket.
+   "M-'" 'bv-insert-single-quote                       ;; Insert single quote.
+   "M-\"" 'bv-insert-double-quote                      ;; Insert double quote.
+   "M-`" 'bv-insert-backtick)                          ;; Insert backtick.
+
+  (log-init-message "    Delimiter insertion keybindings set.")
+
+  ;; ---- Code Evaluation and Search Keybindings ----
+  (:global
+   "C-c C-e C-b" 'eval-buffer                          ;; Evaluate the entire buffer.
+   "C-c C-e C-r" 'eval-region                          ;; Evaluate the selected region.
+   "C-c C-g" 'grep)                                    ;; Search using grep.
+
+  (log-init-message "    Code evaluation and search keybindings set.")
+
+  ;; ---- Text Manipulation Keybindings ----
+  (:global
+   "C-c r" 'replace-string                             ;; Replace string throughout the buffer.
+   "C-c q" 'query-replace)                             ;; Query and replace throughout the buffer.
+
+  (log-init-message "    Text manipulation keybindings set.")
+
+  ;; ---- Visual Toggles and Utility Keybindings ----
+  (:global
+   "C-c C-t" 'toggle-truncate-lines                    ;; Toggle line truncation.
+   "C-c C-w" 'whitespace-mode                          ;; Toggle whitespace mode.
+   "C-c C-l" 'toggle-line-numbers)                     ;; Toggle line numbers.
+
+  (log-init-message "    Visual toggles and utility keybindings set.")
+
+  ;; ---- General Utility Keybindings ----
+  (:global
+   "C-c C-d" 'bv-move-to-trash                         ;; Move file to trash.
+   "C-c C-h" 'hidden-mode-line-mode)                   ;; Toggle hidden mode line.
+
+  (log-init-message "    General utility keybindings set.")
+  (log-init-message "Successfully completed setting up bv-essentials keybindings."))
+
+;; Setup keybindings for bv-file-navigation.
 (setup bv-file-navigation
+  (log-init-message "Setting up bv-file-navigation keybindings:")
   (:require bv-file-navigation)
-  ;; File and buffer management keybindings
-  (:global
-	 "C-c C-f l j" 'bv-open-file-left-jump    ; Open left and jump
-   "C-c C-f l s" 'bv-open-file-left-stay    ; Open left and stay
-   "C-c C-f r j" 'bv-open-file-right-jump   ; Open right and jump
-   "C-c C-f r s" 'bv-open-file-right-stay   ; Open right and stay
-	 )
-	;; Frequently visited files
-  (:global
-   "<f1>" 'bv-open-my-main-org
-   "<f2>" 'bv-open-my-snippets-org
-   "<f3>" 'bv-open-my-working-bib
-   "<f4>" 'bv-open-my-cold-init-el
-   "<f5>" 'bv-open-my-cold-config-scm
-   "<f6>" 'bv-open-my-cold-zshrc
-   "<f7>" 'bv-open-my-hot-zshrc
-   "<f8>" 'bv-open-my-hot-config-scm
-   "<f9>" 'bv-open-my-hot-init-el))
 
+  ;; ---- File and Buffer Management Keybindings ----
+  (:global
+   "C-c C-f l j" 'bv-open-file-left-jump    ;; Open file in the left window and jump.
+   "C-c C-f l s" 'bv-open-file-left-stay    ;; Open file in the left window and stay.
+   "C-c C-f r j" 'bv-open-file-right-jump   ;; Open file in the right window and jump.
+   "C-c C-f r s" 'bv-open-file-right-stay)  ;; Open file in the right window and stay.
+
+  (log-init-message "    File and buffer management keybindings set.")
+
+  ;; ---- Frequently Visited Files Keybinding ----
+  (:global
+   "<f9>" 'bv-open-my-init-el               ;; Open Emacs init file.
+   "<f8>" 'bv-open-my-config-scm            ;; Open Guix config.scm file.
+   "<f7>" 'bv-open-my-zshrc                 ;; Open zshrc configuration file.
+   "<f6>" 'bv-open-my-bib                   ;; Open bibliography file.
+   "<f5>" 'bv-open-my-snippets-org          ;; Open snippets Org file.
+   "<f4>" 'bv-open-my-main-org)             ;; Open main Org file.
+
+  (log-init-message "    Frequently visited files keybindings set (starting from <f9>).")
+  (log-init-message "Successfully completed setting up bv-file-navigation keybindings."))
+
+;; Setup line numbers for programming-related modes.
 (setup display-line-numbers
   (:hook-into prog-mode
               lisp-mode
               scheme-mode
               haskell-mode)
-  (message "Successfully setup display-line-numbers")
-  (message "Successfully enabled global-visual-line-mode"))
+  (log-init-message "Successfully set up display-line-numbers for programming modes."))
 
+;; Enable visual line mode globally.
+(setup global-visual-line-mode
+  (global-visual-line-mode 1)
+  (log-init-message "Successfully enabled global-visual-line-mode."))
+
+;; Setup display time format in the mode-line.
 (setup display-time-format
   (:option display-time-format "%d %b %H:%M:%S"
            display-time-24hr-format t
            display-time-interval 1
            display-time-day-and-date t)
   (display-time)
-  (message "Successfully setup display-time-format"))
+  (log-init-message "Successfully set up display-time-format."))
 
+;; Setup recentf - Keep track of recently opened files.
 (setup recentf
   (:require recentf)
-  (:option* max-saved-items 500
-            max-menu-items 250)
+  (:option* max-saved-items 500      ;; Increase max number of saved items.
+            max-menu-items 250)      ;; Increase max number of items in the menu.
   (recentf-mode 1)
-	(run-at-time nil (* 5 60) 'recentf-save-list)
-  (message "Successfully setup recentf"))
+  (run-at-time nil (* 5 60) 'recentf-save-list)
+  (log-init-message "Successfully set up recentf for tracking recent files."))
 
-(defvar bv-not-guix-p (if (bv-guix-p) nil t))
-
+;; Setup savehist for saving minibuffer history.
 (setup (:straight-if savehist bv-not-guix-p)
-  (:set auto-save-default nil
-				history-length 1000)
-	(:option* autosave-interval 60
-						additional-variables '(search-ring regexp-search-ring))
+  (:set auto-save-default nil              ;; Disable auto-save.
+        history-length 1000)               ;; Set the history length to 1000 items.
+  (:option* autosave-interval 60                 ;; Autosave every 60 seconds.
+            additional-variables '(search-ring   ;; Additional variables to save.
+                                             regexp-search-ring))
   (savehist-mode 1)
-  (message "Successfully setup savehist"))
+  (log-init-message "Successfully set up savehist for saving minibuffer history."))
 
+;; Setup doom-themes if on non-Guix systems.
 (setup (:straight-if doom-themes bv-not-guix-p)
-	(:quit)
+  ;; Disable doom-themes. Modus themes are in use.
+  (:quit)
   (load-theme 'doom-one-light t)
-	(bv-store-default-mode-line-colors)
-  (message "Successfully setup doom-themes"))
+  ;; Store the default mode line colors for custom usage.
+  (bv-store-default-mode-line-colors)
+  (log-init-message "Successfully set up doom-themes with Doom One Light."))
 
+;; Setup modus-themes for automatic switching.
 (setup modus-themes
-	(:require bv-essentials)
-	(:with-mode emacs-startup
-		(:hook bv-auto-switch-modus-themes))
-  (message "Successfully setup modus-themes"))
+  (:require bv-essentials)
+  (:with-mode emacs-startup
+    (:hook bv-auto-switch-modus-themes))
+  (log-init-message "Successfully set up modus-themes with auto-switching."))
 
+;; Setup doom-modeline if on non-Guix systems.
 (setup (:straight-if doom-modeline bv-not-guix-p)
   (:require doom-modeline)
   (:hook-into after-init-hook
               after-change-major-mode-hook)
   (:option*
-   height 10
-   bar-width 2
-   icon (display-graphic-p)
-   major-mode-icon (display-graphic-p)
-   major-mode-color-icon (display-graphic-p)
-   buffer-state-icon (display-graphic-p)
-   buffer-modification-icon (display-graphic-p)
-   buffer-name t
-   minor-modes nil
-   time t
-   mu4e t
-   buffer-encoding nil
-   buffer-file-name-style 'truncate-except-project
-   checker-simple-format nil
-   number-limit 99
-   vcs-max-length 12
-   env-enable-python t
-   env-enable-perl t
-   env-enable-rust t
-   env-python-executable "python"
-   env-perl-executable "perl"
-   env-rust-executable "rustc")
-  (doom-modeline-mode 1)
-  (message "Successfully setup doom-modeline"))
+   height 10                                   ;; Set the height of the modeline.
+   bar-width 2                                 ;; Set the width of the mode-line bar.
+   icon (display-graphic-p)                    ;; Show icons if in a graphical environment.
+   major-mode-icon (display-graphic-p)         ;; Show major mode icon if in a graphical environment.
+   major-mode-color-icon (display-graphic-p)   ;; Color the major mode icon.
+   buffer-state-icon (display-graphic-p)       ;; Display buffer state icon if graphical.
+   buffer-modification-icon (display-graphic-p) ;; Display buffer modification icon.
+   buffer-name t                               ;; Show buffer name in the modeline.
+   minor-modes nil                             ;; Hide minor modes in the modeline.
+   time t                                      ;; Show time in the modeline.
+   mu4e t                                      ;; Enable mu4e (email client) support in the modeline.
+   buffer-encoding nil                         ;; Don't show buffer encoding in the modeline.
+   buffer-file-name-style 'truncate-except-project ;; Truncate file paths, except for project paths.
+   checker-simple-format nil                   ;; Don't simplify the checker format.
+   number-limit 99                             ;; Limit numbers (e.g., line numbers) to two digits.
+   vcs-max-length 12                           ;; Truncate version control branch names.
+   env-enable-python t                         ;; Enable Python environment in the modeline.
+   env-enable-perl t                           ;; Enable Perl environment in the modeline.
+   env-enable-rust t                           ;; Enable Rust environment in the modeline.
+   env-python-executable "python"              ;; Set Python executable.
+   env-perl-executable "perl"                  ;; Set Perl executable.
+   env-rust-executable "rustc")                ;; Set Rust executable.
 
+  (doom-modeline-mode 1)
+  (log-init-message "Successfully set up doom-modeline."))
+
+;; Setup rainbow-delimiters for colorful nested parentheses in programming modes.
 (setup (:straight-if rainbow-delimiters bv-not-guix-p)
   (:hook-into prog-mode)
-  (message "Successfully setup rainbow-delimiters"))
+  (log-init-message "Successfully set up rainbow-delimiters for prog-mode."))
 
+;; Setup rainbow-mode for colorizing hex and RGB colors in code.
 (setup (:straight-if rainbow-mode bv-not-guix-p)
   (:hook-into web-mode
               typescript-mode
               js2-mode
               org-mode)
-  (message "Successfully setup rainbow-mode"))
+  (log-init-message "Successfully set up rainbow-mode for color modes."))
 
+;; Setup adaptive-wrap for wrapping lines with indentation in visual-line-mode.
 (setup (:straight-if adaptive-wrap bv-not-guix-p)
   (:require adaptive-wrap)
-	(:with-mode visual-line-mode
-		(:hook adaptive-wrap-prefix-mode))
+  (:with-mode visual-line-mode
+    (:hook adaptive-wrap-prefix-mode))
   (global-visual-line-mode t)
-  (message "Successfully setup adaptive-wrap"))
+  (log-init-message "Successfully set up adaptive-wrap for visual-line-mode."))
 
+;; Setup smartparens for better handling of paired delimiters in code and org-mode.
 (setup (:straight-if smartparens bv-not-guix-p)
   (:hook-into prog-mode
-							org-mode)
-  (message "Successfully setup smartparens"))
+              org-mode)
+  (log-init-message "Successfully set up smartparens for prog-mode and org-mode."))
 
+;; Setup all-the-icons for rich icons support in Emacs.
 (setup (:straight-if all-the-icons bv-not-guix-p)
   (:require all-the-icons)
-  (message "Successfully setup all-the-icons"))
+  (log-init-message "Successfully set up all-the-icons."))
 
+;; Setup kind-icon for icon completion support in Corfu.
 (setup (:straight-if kind-icon bv-not-guix-p)
   (:load-after corfu nerd-icons)
   (:require kind-icon)
-  (:option*
-   default-face 'corfu-default
-   use-icons t
-   blend-background nil)
-  (message "Successfully setup kind-icon"))
+  (:option* default-face 'corfu-default      ;; Set the default face for kind-icon.
+            use-icons t                      ;; Enable the use of icons.
+            blend-background nil)            ;; Disable background blending for icons.
+  (log-init-message "Successfully set up kind-icon for Corfu."))
 
+;; Setup no-littering for organizing configuration files.
 (setup (:straight-if no-littering bv-not-guix-p)
   (:require no-littering)
-  (:option*
-   etc-directory
-   (expand-file-name "etc/" user-emacs-directory)
-   var-directory
-   (expand-file-name "var/" user-emacs-directory))
+  (:option* etc-directory (expand-file-name "etc/" user-emacs-directory)
+            var-directory (expand-file-name "var/" user-emacs-directory))
   (:option auto-save-file-name-transforms
-           `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))
+           `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))   ;; Set auto-save directory.
            backup-directory-alist
-           `(("." . ,(no-littering-expand-var-file-name "backup/")))
+           `(("." . ,(no-littering-expand-var-file-name "backup/")))        ;; Set backup directory.
            url-history-file
-           (no-littering-expand-var-file-name "url/history")
+           (no-littering-expand-var-file-name "url/history")               ;; Set URL history file.
            custom-file
-           (no-littering-expand-etc-file-name "custom.el"))
+           (no-littering-expand-etc-file-name "custom.el"))                ;; Set custom file.
+  ;; Redirect the native compilation cache.
   (when (fboundp 'startup-redirect-eln-cache)
     (startup-redirect-eln-cache
      (convert-standard-filename
       (expand-file-name "var/eln-cache/" user-emacs-directory))))
+  ;; Load the custom file if it exists.
   (load custom-file t)
-  (message "Successfully setup no-littering"))
+  (log-init-message "Successfully set up no-littering for organizing configuration files."))
 
+;; Setup `jit-spell` with `hunspell` for on-the-fly spell checking.
+(setup (:straight-if jit-spell bv-not-guix-p)
+  ;; Define possible dictionary paths.
+  (let* ((guix-home-path "~/.guix-home/profile/share/hunspell/en_GB-ize.aff")
+         (guix-profile-path "~/.guix-profile/share/hunspell/en_GB-ize.aff")
+         (personal-dict "~/.dictionary")  ;; Personal dictionary path
+         ;; Check if the dictionary exists in either location.
+         (dict-path (cond
+                     ((file-exists-p guix-home-path) guix-home-path)
+                     ((file-exists-p guix-profile-path) guix-profile-path)
+                     (nil))))
+    ;; If no dictionary is found, quit the setup block.
+    (unless dict-path
+      (log-init-message "Hunspell dictionary not found. Disabling `jit-spell`.")
+      (:quit))
+    ;; Create personal dictionary if it doesn't exist and set permissions.
+    (unless (file-exists-p personal-dict)
+      (with-temp-buffer (write-file personal-dict))
+      (set-file-modes personal-dict #o600)  ;; Set permissions to 600 (rw-------)
+      (log-init-message "Created personal dictionary at %s" personal-dict))
+    ;; Set `hunspell` as the spell checker program.
+    (:set ispell-program-name "hunspell"
+          ;; Use the found dictionary path.
+          ispell-hunspell-dict-paths-alist `(("en_GB-ize" ,dict-path))
+          ;; Directly point to the personal dictionary file.
+          ispell-personal-dictionary personal-dict
+          ;; Disable the alternate dictionary to avoid lookup errors.
+          ispell-alternate-dictionary nil)
+    ;; Load `jit-spell` for text and programming modes.
+    (:require jit-spell)
+    (:with-mode text-mode
+      (:hook jit-spell-mode))
+    (:with-mode prog-mode
+      (:hook jit-spell-mode))
+    ;; Bind keys for spell correction and adding words to the personal dictionary.
+    (:bind "C-c s" jit-spell-correct-word
+           "C-c d" bv-add-word-at-point-to-personal-dictionary)
+    (log-init-message (format "Successfully set up `jit-spell` with `hunspell` using dictionary from %s" dict-path))))
+
+;; Setup geiser for Scheme development, with Guile as the default implementation.
+(setup (:straight-if geiser bv-not-guix-p)
+  (:option geiser-default-implementation 'guile
+           geiser-active-implementations '(guile))
+  (:push-to geiser-implementations-alist
+            (:elements (((regexp "\\.scm$") guile))))
+  (:push-to geiser-implementations-alist
+            (:elements (((regexp "\\.gscm$") guile))))
+  (:require geiser)
+  (log-init-message "Successfully set up Geiser with Guile as the default implementation."))
+
+;; Setup exec-path-from-shell to synchronize environment variables from the shell.
+(setup (:straight-if exec-path-from-shell bv-not-guix-p)
+  (:require exec-path-from-shell)
+  (exec-path-from-shell-initialize)
+  (log-init-message "Successfully set up exec-path-from-shell to sync environment variables."))
+
+;; Setup geiser-guile with exec-path integration for Guile environment variables.
+(setup (:straight-if geiser-guile bv-not-guix-p)
+  (:load-after exec-path-from-shell)
+  (:push-to exec-path-from-shell-variables
+            (:elements "GUILE_LOAD_PATH"))
+  (exec-path-from-shell-initialize)
+  (:option geiser-guile-load-init-file t                       ;; Load Guile init file in Geiser.
+           geiser-guile-load-path (split-string (getenv "GUILE_LOAD_PATH") path-separator) ;; Set the Guile load path from environment.
+           geiser-repl-add-project-paths t)                    ;; Automatically add project paths to Geiser REPL.
+  (:require geiser-guile)
+  (log-init-message "Successfully set up Geiser with Guile support and environment integration."))
+
+;; Setup guix on Guix systems.
 (setup (:and (not bv-not-guix-p) guix)
   (:load-after geiser-mode)
   (:require guix)
-  (:option* guile-program "guile")
-  (message "Successfully setup guix"))
+  (:option* program "guile")
+  (log-init-message "Successfully set up Guix on a Guix system."))
 
+;; Setup vterm for terminal emulation within Emacs.
 (setup (:straight-if vterm bv-not-guix-p)
   (:require vterm)
-  (message "Successfully setup vterm"))
+  (log-init-message "Successfully set up vterm for terminal emulation."))
 
-(setup (:straight-if exec-path-from-shell bv-not-guix-p)
-  (:require exec-path-from-shell))
-
-(setup (:straight-if jit-spell bv-not-guix-p)
-	(:load-after exec-path-from-shell)
-	(:push-to exec-path-from-shell-variables
-						(:elements "MY_DICTIONARY" "DICTPATH"))
-	(exec-path-from-shell-initialize)
-	(:set ispell-program-name "hunspell"
-				ispell-hunspell-dict-paths-alist (getenv "DICTPATH")
-				ispell-personal-dictionary (getenv "MY_DICTIONARY")
-				ispell-local-dictionary "en_GB-ize")
-	(:require jit-spell)
-	(:with-mode text-mode
-		(:hook jit-spell-mode))
-	(:with-mode prog-mode
-		(:hook jit-spell-mode))
-	(:bind "C-c s" jit-spell-correct-word
-				 "C-c d" bv-add-word-at-point-to-personal-dictionary))
-
+;; Setup `mjolnir-mode` for window cycling and management.
 (setup (:straight-if (mjolnir-mode :type git :host github :repo "b-vitamins/mjolnir-mode") bv-not-guix-p)
   (mjolnir-mode)
-  (:global "M-n" mjolnir-cycle-window-forward
-           "M-p" mjolnir-cycle-window-backward
-           "C-c u" mjolnir-toggle-fixed-window)
-  (message "Successfully setup mjolnir-mode"))
+  (:global "M-n" mjolnir-cycle-window-forward           ;; Cycle windows forward.
+           "M-p" mjolnir-cycle-window-backward          ;; Cycle windows backward.
+           "C-c u" mjolnir-toggle-fixed-window)         ;; Toggle fixed window status.
+  (log-init-message "Successfully set up `mjolnir-mode` for window cycling."))
 
+;; Setup `cycle-buffer` for efficient buffer cycling.
 (setup (:local-or-package cycle-buffer)
   (:require cycle-buffer)
-  (:global "M-N" cycle-buffer
-           "M-P" cycle-buffer-backward)
-  (message "Successfully setup cycle-buffer"))
+  (:global "M-N" cycle-buffer                           ;; Cycle buffers forward.
+           "M-P" cycle-buffer-backward)                 ;; Cycle buffers backward.
+  (log-init-message "Successfully set up `cycle-buffer` for buffer cycling."))
 
+;; Setup `windmove` for easy window navigation.
 (setup windmove
   (:require windmove)
-  (:option* wrap-around t)
-  (:global "S-<down>" windmove-down
-           "S-<up>" windmove-up
-           "S-<right>" windmove-right
-           "S-<left>" windmove-left)
-  (message "Successfully setup windmove"))
+  (:option* wrap-around t)                              ;; Allow wrap-around window movement.
+  (:global "S-<down>" windmove-down                     ;; Move to the window below.
+           "S-<up>" windmove-up                         ;; Move to the window above.
+           "S-<right>" windmove-right                   ;; Move to the window on the right.
+           "S-<left>" windmove-left)                    ;; Move to the window on the left.
+  (log-init-message "Successfully set up `windmove` for directional window navigation."))
 
+;; Setup `windsize` for window resizing.
 (setup (:straight-if (windsize :type git :flavor melpa :host github :repo "grammati/windsize") bv-not-guix-p)
   (:require windsize)
-  (:option* cols 2
-            rows 2)
-  (:global "S-M-<left>" windsize-left
-           "S-M-<right>" windsize-right
-           "S-M-<up>" windsize-up
-           "S-M-<down>" windsize-down)
-  (message "Successfully setup windsize"))
+  (:option* cols 2                                      ;; Adjust window by 2 columns.
+            rows 2)                                     ;; Adjust window by 2 rows.
+  (:global "S-M-<left>" windsize-left                   ;; Shrink window to the left.
+           "S-M-<right>" windsize-right                 ;; Expand window to the right.
+           "S-M-<up>" windsize-up                       ;; Shrink window upward.
+           "S-M-<down>" windsize-down)                  ;; Expand window downward.
+  (log-init-message "Successfully set up `windsize` for window resizing."))
 
+;; Setup `ace-window` for fast window switching.
 (setup (:straight-if (ace-window :type git :flavor melpa :host github :repo "abo-abo/ace-window") bv-not-guix-p)
-  (:option aw-scope 'frame
-           aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
-           aw-minibuffer-flag t)
-  (:global "M-o" ace-window)
+  (:option aw-scope 'frame                              ;; Limit window switching to current frame.
+           aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)        ;; Use home row keys for window selection.
+           aw-minibuffer-flag t)                        ;; Include minibuffer in window switching.
+  (:global "M-o" ace-window)                            ;; Activate `ace-window` with `M-o`.
   (ace-window-display-mode 1)
-  (message "Successfully setup ace-window"))
+  (log-init-message "Successfully set up `ace-window` for fast window switching."))
 
 (setup
 		;; Makes switch-to-buffer commands respect display actions for a more intuitive window management.
@@ -821,7 +994,7 @@
 (setup oc
   (:require oc-biblatex)
   (:require oc-csl)
-  (setq org-cite-global-bibliography bv-working-bib-path
+  (setq org-cite-global-bibliography bv-bib-path
         org-cite-insert-processor 'citar
         org-cite-follow-processor 'citar
         org-cite-activate-processor 'citar
@@ -930,7 +1103,6 @@
 	(:option
 	 org-roam-capture-templates bv-org-roam-capture-templates
 	 org-roam-node-display-template bv-org-roam-node-display-template
-	 org-roam-dailies-directory (car bv-dailies-path)
    org-roam-node-annotation-function bv-org-roam-node-annotation-function)
 
   (:with-hook after-init-hook
@@ -1308,7 +1480,7 @@
   (:option arxiv-default-category "cond-mat.dis-nn"
            arxiv-entries-per-fetch "25"
            arxiv-default-download-folder bv-library-path
-           arxiv-default-bibliography bv-working-bib-path
+           arxiv-default-bibliography bv-bib-path
            arxiv-pdf-open-function (lambda (fpath) (call-process "evince" nil 0 nil fpath))))
 
 (provide 'init)
