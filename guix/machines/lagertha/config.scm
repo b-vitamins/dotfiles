@@ -5,6 +5,8 @@
              (gnu system install)
              (gnu services avahi)
              (gnu services ssh)
+             (gnu services desktop)
+             (gnu services xorg)
              (gnu services cups)
              (gnu services vpn)
              (gnu services networking)
@@ -12,8 +14,9 @@
              (gnu services linux)
              (gnu services sysctl)
              (gnu services pm)
-             (myguix services base)
+             (myguix services desktop)
              (myguix system install)
+             (myguix packages base)
              (myguix packages linux)
              (myguix system linux-initrd)
              (srfi srfi-1))
@@ -24,7 +27,9 @@
   (locale "en_US.utf8")
 
   (kernel linux)
-  (firmware (list linux-firmware))
+  (kernel-arguments '("modprobe.blacklist=b43,b43legacy,ssb,bcm43xx,brcm80211,brcmfmac,brcmsmac,bcma"))
+  (kernel-loadable-modules (list broadcom-sta))
+  (firmware (list linux-firmware broadcom-bt-firmware))
   (initrd microcode-initrd)
 
   (keyboard-layout (keyboard-layout "us" "altgr-intl"
@@ -54,24 +59,12 @@
                   (home-directory "/home/b")
                   (shell (file-append (specification->package "zsh")
                                       "/bin/zsh"))
-                  (supplementary-groups '("adbusers" "wheel" "netdev" "audio"
-                                          "video"))) %base-user-accounts))
+                  (supplementary-groups '("adbusers" "wheel" "netdev" "lp"
+                                          "audio" "video")))
+                %base-user-accounts))
 
   ;; System-wide packages
-  (packages (append (list (specification->package "git")
-                          (specification->package "wget")
-                          (specification->package "curl")
-                          (specification->package "coreutils")
-                          (specification->package "zstd")
-                          (specification->package "gnupg")
-                          (specification->package "pinentry")
-                          (specification->package "password-store")
-                          (specification->package "emacs-no-x-toolkit")
-                          (specification->package "htop")
-                          (specification->package "nmap")
-                          (specification->package "screen")
-                          (specification->package "rsync")
-                          (specification->package "font-dejavu")
+  (packages (append (list (specification->package "font-dejavu")
                           (specification->package "font-iosevka-comfy")
                           (specification->package "font-google-noto")
                           (specification->package "font-google-noto-serif-cjk")
@@ -83,6 +76,12 @@
   ;; services, run 'guix system search KEYWORD' in a terminal.
   (services
    (append (list
+            ;; Desktop Environment
+            (service gnome-desktop-service-type)
+            (set-xorg-configuration
+             (xorg-configuration (keyboard-layout keyboard-layout)))
+            (service gnome-keyring-service-type)
+
             ;; Printing Services
             (service cups-service-type
                      (cups-configuration (web-interface? #t)
@@ -102,26 +101,14 @@
                                    "network-manager-applet")))
             (service modem-manager-service-type)
             (service usb-modeswitch-service-type)
+
             ;; OpenSSH for remote access
-            (service openssh-service-type
-                     (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                      "keys/ssh/ragnar.pub"))
-                                                               ("b" ,(local-file
-                                                                      "keys/ssh/leif.pub"))
-                                                               ("b" ,(local-file
-                                                                      "keys/ssh/bjorn.pub"))
-                                                               ("b" ,(local-file
-                                                                      "keys/ssh/freydis.pub"))))
-                                            (password-authentication? #f)))
+            (service openssh-service-type)
 
             ;; Networking Services
             (service avahi-service-type)
             (service nftables-service-type)
             (service ntp-service-type)
-
-            ;; Synchronization Service
-            (service syncthing-service-type
-                     (syncthing-configuration (user "b")))
 
             ;; VPN Services
             (service bitmask-service-type)
@@ -143,7 +130,7 @@
                                                       %default-sysctl-settings)))))
            ;; This is the default list of services we
            ;; are appending to.
-           %my-base-services))
+           %my-desktop-services))
   (name-service-switch %mdns-host-lookup-nss)
   (swap-devices (list (swap-space
                         (target (uuid "ac60c11d-f255-4981-8678-ec1e0d969f3b"))))))
