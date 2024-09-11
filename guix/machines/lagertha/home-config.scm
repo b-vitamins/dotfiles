@@ -55,13 +55,13 @@
                                                                             (identity-file
                                                                              "~/.ssh/id_ed25519"))))
                                                  (authorized-keys (list (local-file
-                                                                         "keys/ragnar.pub")
+                                                                         "keys/ssh/ragnar.pub")
                                                                         (local-file
-                                                                         "keys/leif.pub")
+                                                                         "keys/ssh/leif.pub")
                                                                         (local-file
-                                                                         "keys/bjorn.pub")
+                                                                         "keys/ssh/bjorn.pub")
                                                                         (local-file
-                                                                         "keys/freydis.pub")))
+                                                                         "keys/ssh/freydis.pub")))
                                                  (add-keys-to-agent "confirm")))
 
             ;; Desktop Home Services
