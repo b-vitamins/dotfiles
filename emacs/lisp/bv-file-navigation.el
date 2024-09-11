@@ -23,10 +23,11 @@
 ;; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-
+;;
 ;; This module provides functions to open files in new windows with specific directions
-;; and focus settings.  It includes customizable paths for frequently accessed files
+;; and focus settings. It includes customizable paths for frequently accessed files
 ;; and macros to easily create specific file opening functions.
+;;
 
 ;;; Code:
 
@@ -46,52 +47,32 @@
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-working-bib-path (list "~/slipbox/bibliographies/working.bib")
-  "Specify the path to the bibliography file."
-  :type 'list
+(defcustom bv-bib-path "~/slipbox/bibliographies/working.bib"
+  "Path to the bibliography file."
+  :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-library-path (list "~/library/papers/")
-  "Specify the path to the library directory."
-  :type 'list
+(defcustom bv-library-path "~/library/papers"
+  "Path to the library files."
+  :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-notes-path (list "~/slipbox/notes")
-  "Specify the path to the notes directory."
-  :type 'list
+(defcustom bv-notes-path "~/slipbox/notes"
+  "Path to notes files."
+  :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-dailies-path (list "~/slipbox/dailies")
-  "Specify the path to the notes directory."
-  :type 'list
-  :group 'bv-file-paths)
-
-(defcustom bv-cold-init-el-path "~/projects/dotfiles/emacs/init.el"
+(defcustom bv-init-el-path "~/.config/emacs/init.el"
   "Path to the Emacs init file."
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-hot-init-el-path "~/.config/emacs/init.el"
-  "Path to the Emacs init file."
-  :type 'string
-  :group 'bv-file-paths)
-
-(defcustom bv-cold-config-scm-path "~/projects/dotfiles/guix/config.scm"
+(defcustom bv-config-scm-path "~/.config/guix/config.scm"
   "Path to the Guix configuration file."
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-hot-config-scm-path "~/.config/guix/config.scm"
-  "Path to the Guix configuration file."
-  :type 'string
-  :group 'bv-file-paths)
-
-(defcustom bv-cold-zshrc-path "~/projects/dotfiles/zsh/zshrc"
-  "Path to the Zsh configuration file."
-  :type 'string
-  :group 'bv-file-paths)
-
-(defcustom bv-hot-zshrc-path "~/.config/zsh/zshrc"
+(defcustom bv-zshrc-path "~/.config/zsh/zshrc"
   "Path to the Zsh configuration file."
   :type 'string
   :group 'bv-file-paths)
@@ -102,16 +83,15 @@
   :group 'bv-file-paths)
 
 (defun bv-open-file-in-window (filename &optional direction focus ratio)
-  "Open FILENAME from the current window in the specified DIRECTION.
-Optional arguments include DIRECTION for window placement (`left or `right),
-FOCUS to determine if focus should switch to the new window, and RATIO for
-width of the new window relative to the frame width (default is 2/5, or 0.4)."
+  "Open FILENAME in a new window in the specified DIRECTION.
+DIRECTION can be `left` or `right`. If FOCUS is non-nil, the new window
+will receive focus. The window width is determined by RATIO, defaulting
+to `bv-file-open-width-ratio`."
   (interactive
-   (list (read-file-name "Open file in window: ")
-         (intern (completing-read "Direction (left or right): " '("left" "right")
-                                  nil t "right"))
+   (list (read-file-name "Open file: ")
+         (intern (completing-read "Direction (left or right): " '("left" "right") nil t "right"))
          (y-or-n-p "Switch to the new window? ")
-         (or (read-number "Window width ratio (default 2/5): " bv-file-open-width-ratio) bv-file-open-width-ratio)))
+         (or (read-number "Window width ratio (default 0.45): " bv-file-open-width-ratio) bv-file-open-width-ratio)))
   (unless (file-exists-p filename)
     (error "The file does not exist"))
   (let ((buffer-new (find-file-noselect filename))
@@ -149,10 +129,9 @@ width of the new window relative to the frame width (default is 2/5, or 0.4)."
   (bv-open-file-in-window filename 'right nil bv-file-open-width-ratio))
 
 (defmacro bv-define-open-file-function (func-name file-path direction focus)
-  "Define a function FUNC-NAME to open FILE-PATH..
-DIRECTION (`left or `right) specifies to which side the window will open.
-If FOCUS is non-nil, the new window will receive focus after opening.
-A width ratio specified by `bv-file-open-width-ratio' is used by default."
+  "Define a function FUNC-NAME to open FILE-PATH in a window.
+DIRECTION (`left` or `right`) specifies window placement. If FOCUS is
+non-nil, the window will receive focus after opening."
   `(defun ,func-name ()
      (interactive)
      (bv-open-file-in-window ,file-path ,direction ,focus bv-file-open-width-ratio)
@@ -162,15 +141,13 @@ A width ratio specified by `bv-file-open-width-ratio' is used by default."
                 (if (eq ,direction 'left) "left" "right")
                 (if ,focus "with" "without")))))
 
-(bv-define-open-file-function bv-open-my-main-org bv-main-org-path 'right t)
+;; Define file opening functions (starting from <f9>).
+(bv-define-open-file-function bv-open-my-init-el bv-init-el-path 'right t)
+(bv-define-open-file-function bv-open-my-config-scm bv-config-scm-path 'right t)
+(bv-define-open-file-function bv-open-my-zshrc bv-zshrc-path 'right t)
+(bv-define-open-file-function bv-open-my-bib bv-bib-path 'right t)
 (bv-define-open-file-function bv-open-my-snippets-org bv-snippets-org-path 'right t)
-(bv-define-open-file-function bv-open-my-working-bib bv-working-bib-path 'right t)
-(bv-define-open-file-function bv-open-my-cold-init-el bv-cold-init-el-path 'right t)
-(bv-define-open-file-function bv-open-my-hot-init-el bv-hot-init-el-path 'right t)
-(bv-define-open-file-function bv-open-my-cold-config-scm bv-cold-config-scm-path 'right t)
-(bv-define-open-file-function bv-open-my-hot-config-scm bv-hot-config-scm-path 'right t)
-(bv-define-open-file-function bv-open-my-cold-zshrc bv-cold-zshrc-path 'right t)
-(bv-define-open-file-function bv-open-my-hot-zshrc bv-hot-zshrc-path 'right t)
+(bv-define-open-file-function bv-open-my-main-org bv-main-org-path 'right t)
 
 (provide 'bv-file-navigation)
 ;;; bv-file-navigation.el ends here
