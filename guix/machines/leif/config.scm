@@ -4,6 +4,7 @@
              (gnu system nss)
              (gnu system install)
              (gnu services avahi)
+             (gnu services cups)
              (gnu services ssh)
              (gnu services desktop)
              (gnu services xorg)
@@ -64,7 +65,7 @@
                  (name "b")
                  (comment "Ayan")
                  (group "users")
-                 (home-directory "/home/b")
+                 d1fbe05c06e6(home-directory "/home/b")
                  (shell (file-append (specification->package "zsh") "/bin/zsh"))
                  (supplementary-groups '("adbusers" "wheel"
                                          "netdev"
