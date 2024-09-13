@@ -43,7 +43,7 @@
 
   (file-systems (cons* (file-system
                          (mount-point "/boot/efi")
-                         (device (uuid "FDAC-FCCB"
+                         (device (uuid "4BB6-C7C7"
                                        'fat32))
                          (type "vfat"))
                        (file-system
@@ -133,4 +133,4 @@
            %my-desktop-services))
   (name-service-switch %mdns-host-lookup-nss)
   (swap-devices (list (swap-space
-                        (target (uuid "ac60c11d-f255-4981-8678-ec1e0d969f3b"))))))
+                        (target (uuid "4cf79ddb-c7c1-4258-9700-1db7057242c3"))))))
