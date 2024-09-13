@@ -42,7 +42,7 @@
                 (keyboard-layout keyboard-layout)))
 
   (swap-devices (list (swap-space
-                       (target (uuid "dcb45227-af43-451b-b5f1-966ba2d08f4a")))))
+                       (target (uuid "ac2f440b-33d9-40ef-b751-bvd7b7fb4bb8")))))
 
   (file-systems (cons* (file-system
                          (mount-point "/boot/efi")
@@ -51,7 +51,7 @@
                          (type "vfat"))
                        (file-system
                          (mount-point "/")
-                         (device (uuid "28530fac-c9b0-4ad5-af25-32ba7ea69744" 'ext4))
+                         (device (uuid "a2660229-e393-49c9-9113-a04d689a0e0d" 'ext4))
                          (type "ext4")) %base-file-systems))
 
   ;; The list of user accounts ('root' is implicit).
