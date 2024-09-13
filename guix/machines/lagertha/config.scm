@@ -41,14 +41,17 @@
                 (targets (list "/dev/sda"))
                 (keyboard-layout keyboard-layout)))
 
+  (swap-devices (list (swap-space
+                       (target (uuid "dcb45227-af43-451b-b5f1-966ba2d08f4a")))))
+
   (file-systems (cons* (file-system
                          (mount-point "/boot/efi")
-                         (device (uuid "4BB6-C7C7"
+                         (device (uuid "57D1-D16E"
                                        'fat32))
                          (type "vfat"))
                        (file-system
                          (mount-point "/")
-                         (device (file-system-label "my-root"))
+                         (device (uuid "28530fac-c9b0-4ad5-af25-32ba7ea69744" 'ext4))
                          (type "ext4")) %base-file-systems))
 
   ;; The list of user accounts ('root' is implicit).
@@ -131,6 +134,4 @@
            ;; This is the default list of services we
            ;; are appending to.
            %my-desktop-services))
-  (name-service-switch %mdns-host-lookup-nss)
-  (swap-devices (list (swap-space
-                        (target (uuid "4cf79ddb-c7c1-4258-9700-1db7057242c3"))))))
+  (name-service-switch %mdns-host-lookup-nss))
