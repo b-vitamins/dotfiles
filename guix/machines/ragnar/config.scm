@@ -13,6 +13,7 @@
              (gnu services virtualization)
              (gnu services spice)
              (gnu services linux)
+             (gnu services vpn)
              (gnu services ssh)
              (gnu services sysctl)
              (myguix services desktop)
@@ -23,10 +24,6 @@
              (myguix packages nvidia)
              (myguix system linux-initrd)
              (srfi srfi-1))
-
-(define %rclone-path
-  ;; Use assoc-ref to get the store path to rclone, then append "/bin/rclone"
-  (string-append (assoc-ref %build-inputs "rclone") "/bin/rclone"))
 
 (operating-system
   (host-name "ragnar")
