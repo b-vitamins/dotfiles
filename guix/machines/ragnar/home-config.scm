@@ -172,7 +172,7 @@
   (services
    (append (list
             ;; Home Emacs Service
-    	    (service my-home-emacs-service-type)
+            (service my-home-emacs-service-type)
             ;; Scheduled User’s Job Execution
             (service home-mcron-service-type
                      (home-mcron-configuration (jobs (list
