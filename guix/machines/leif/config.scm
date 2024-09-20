@@ -67,13 +67,8 @@
                  (shell (file-append (specification->package "zsh") "/bin/zsh"))
                  (supplementary-groups '("adbusers" "wheel"
                                          "netdev"
-                                         "kvm"
-                                         "tty"
-                                         "libvirt"
-                                         "input"
                                          "docker"
                                          "realtime"
-                                         "lp"
                                          "audio"
                                          "video"))) %base-user-accounts))
 
