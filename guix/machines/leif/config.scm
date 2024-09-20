@@ -13,8 +13,6 @@
              (gnu services networking)
              (gnu services syncthing)
              (gnu services docker)
-             (gnu services virtualization)
-             (gnu services spice)
              (gnu services linux)
              (gnu services sysctl)
              (gnu services pm)
@@ -133,11 +131,6 @@
             (service tlp-service-type
                      (tlp-configuration (cpu-boost-on-ac? #t)
                                         (wifi-pwr-on-bat? #t)))
-            (service thermald-service-type)
-
-            ;; Virtualization Services
-            (service libvirt-service-type
-                     (libvirt-configuration (tls-port "16555")))
 
             ;; Linux Services
             (service earlyoom-service-type)
@@ -147,8 +140,6 @@
                      (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
                                                                ("vm.max_map_count" . "262144"))
                                                       %default-sysctl-settings))))
-            (service spice-vdagent-service-type)
-            (service inputattach-service-type)
             (service containerd-service-type)
             (service docker-service-type)
             (service oci-container-service-type

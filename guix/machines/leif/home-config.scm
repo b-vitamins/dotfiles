@@ -73,8 +73,6 @@
 
             ;; Desktop Home Services
             (service home-dbus-service-type)
-            (service home-unclutter-service-type
-                     (home-unclutter-configuration (idle-timeout 2)))
 
             ;; Sound Home Services
             (service home-pipewire-service-type)
@@ -86,7 +84,6 @@
             (service home-syncthing-service-type)
 
             ;; Miscellaneous Home Services
-            (service home-dicod-service-type)
             (service home-beets-service-type
                      (home-beets-configuration (directory
                                                 "/home/b/library/music"))))
