@@ -15,7 +15,8 @@
              (guix gexp)
              (myguix packages base)
              (myguix services mcron)
-             (myguix services home))
+             (myguix home)
+             (myguix home services emacs))
 
 (home-environment
   (packages (append %system-core-packages
@@ -28,7 +29,6 @@
                     %python-development-packages
                     %guile-development-packages
                     %perl-development-packages
-                    %emacs-core-packages
                     %language-support-packages
                     %system-monitoring-packages
                     %security-tools-packages
@@ -38,6 +38,8 @@
 
   (services
    (append (list
+    	    ;; Home Emacs Service
+    	    (service my-home-emacs-service-type)
             ;; Power Management Home Services
             (service home-batsignal-service-type)
             ;; Scheduled User’s Job Execution
