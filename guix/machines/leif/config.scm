@@ -8,18 +8,14 @@
              (gnu services ssh)
              (gnu services desktop)
              (gnu services xorg)
-             (gnu services docker)
-             (gnu services vpn)
              (gnu services networking)
-             (gnu services syncthing)
-             (gnu services docker)
              (gnu services linux)
              (gnu services sysctl)
              (gnu services pm)
              (myguix services desktop)
-             (myguix services oci-containers)
              (myguix system install)
              (myguix packages linux)
+             (myguix packages gl)
              (myguix system linux-initrd)
              (srfi srfi-1))
 
@@ -82,14 +78,17 @@
                           (specification->package "font-google-noto-serif-cjk")
                           (specification->package "font-google-noto-sans-cjk")
                           (specification->package "fontconfig"))
-                    %base-packages))
+                    (append (list mesa-intel-xe-kmd) %base-packages)))
 
   (services
    (append (list
             ;; Desktop Environment
-            (service gnome-desktop-service-type)
+            (service gnome-desktop-service-type
+                     (gnome-desktop-configuration
+                      (gnome (transform-mesa gnome))))
             (set-xorg-configuration
-             (xorg-configuration (keyboard-layout keyboard-layout)))
+             (xorg-configuration (keyboard-layout keyboard-layout)
+                                 (drivers '("intel"))))
             (service gnome-keyring-service-type)
 
             ;; Printing Services
@@ -119,9 +118,6 @@
             (service ntp-service-type)
             (service openssh-service-type)
 
-            ;; VPN Services
-            (service bitmask-service-type)
-
             ;; Power Management Services
             (service tlp-service-type
                      (tlp-configuration (cpu-boost-on-ac? #t)
@@ -134,11 +130,6 @@
             (service sysctl-service-type
                      (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
                                                                ("vm.max_map_count" . "262144"))
-                                                      %default-sysctl-settings))))
-            (service containerd-service-type)
-            (service docker-service-type)
-            (service oci-container-service-type
-                     (list oci-grobid-service-type
-                           oci-meilisearch-service-type)))
+                                                      %default-sysctl-settings)))))
            %my-desktop-services))
   (name-service-switch %mdns-host-lookup-nss))
