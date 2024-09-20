@@ -812,7 +812,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
                                 "lualatex -shell-escape -interaction nonstopmode %f")
             latex-create-formula-image-program 'dvipng
             format-latex-options (plist-put org-format-latex-options :scale 4.0)
-            preview-latex-image-directory "~/.local/latex-previews/"
+            preview-latex-image-directory "~/.latex-previews/"
             highlight-latex-and-related (quote (native latex script entities)))
 
 	;; Source: https://tecosaur.github.io/emacs-config/config.html#prettier-highlighting
