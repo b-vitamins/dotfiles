@@ -9,13 +9,10 @@
              (gnu services desktop)
              (gnu services xorg)
              (gnu services networking)
-             (gnu services linux)
              (gnu services sysctl)
-             (gnu services pm)
              (myguix services desktop)
              (myguix system install)
              (myguix packages linux)
-             (myguix packages gl)
              (myguix system linux-initrd)
              (srfi srfi-1))
 
@@ -25,12 +22,8 @@
   (locale "en_US.utf8")
 
   (kernel linux)
-  (kernel-arguments (list "i915.force_probe=!7d55" "xe.force_probe=7d55"))
   (firmware (list linux-firmware sof-firmware))
   (initrd microcode-initrd)
-
-  (kernel-loadable-modules (list (specification->package
-                                  "v4l2loopback-linux-module")))
 
   (keyboard-layout (keyboard-layout "us" "altgr-intl"
                                     #:options '("ctrl:nocaps"
@@ -53,20 +46,17 @@
                                 (type "vfat"))) %base-file-systems))
 
   (swap-devices (list (swap-space
-                       (target (uuid "f3e629c3-ae11-41c7-b866-ebf78d914760")))))
+                        (target (uuid "f3e629c3-ae11-41c7-b866-ebf78d914760")))))
 
   (users (cons (user-account
                  (name "b")
                  (comment "Ayan")
                  (group "users")
-                 d1fbe05c06e6(home-directory "/home/b")
+                 (home-directory "/home/b")
                  (shell (file-append (specification->package "zsh") "/bin/zsh"))
-                 (supplementary-groups '("adbusers" "wheel"
-                                         "netdev"
-                                         "docker"
-                                         "realtime"
-                                         "audio"
-                                         "video"))) %base-user-accounts))
+                 (supplementary-groups '("adbusers" "wheel" "netdev"
+                                         "realtime" "audio" "video")))
+               %base-user-accounts))
 
   (groups (cons (user-group
                   (system? #t)
@@ -78,18 +68,14 @@
                           (specification->package "font-google-noto-serif-cjk")
                           (specification->package "font-google-noto-sans-cjk")
                           (specification->package "fontconfig"))
-                    (append (list mesa-intel-xe-kmd) %base-packages)))
+                    %base-packages))
 
   (services
    (append (list
             ;; Desktop Environment
-            (service gnome-desktop-service-type
-                     (gnome-desktop-configuration
-                      (gnome (transform-mesa gnome))))
+            (service gnome-desktop-service-type)
             (set-xorg-configuration
-             (xorg-configuration (keyboard-layout keyboard-layout)
-                                 (drivers '("intel"))))
-            (service gnome-keyring-service-type)
+             (xorg-configuration (keyboard-layout keyboard-layout)))
 
             ;; Printing Services
             (service cups-service-type
@@ -118,18 +104,9 @@
             (service ntp-service-type)
             (service openssh-service-type)
 
-            ;; Power Management Services
-            (service tlp-service-type
-                     (tlp-configuration (cpu-boost-on-ac? #t)
-                                        (wifi-pwr-on-bat? #t)))
-
-            ;; Linux Services
-            (service earlyoom-service-type)
-            (service zram-device-service-type)
             ;; Miscellaneous Services
             (service sysctl-service-type
-                     (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
-                                                               ("vm.max_map_count" . "262144"))
+                     (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1"))
                                                       %default-sysctl-settings)))))
            %my-desktop-services))
   (name-service-switch %mdns-host-lookup-nss))

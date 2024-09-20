@@ -38,8 +38,8 @@
 
   (services
    (append (list
-    	    ;; Home Emacs Service
-    	    (service my-home-emacs-service-type)
+            ;; Home Emacs Service
+            (service my-home-emacs-service-type)
             ;; Power Management Home Services
             (service home-batsignal-service-type)
             ;; Scheduled User’s Job Execution
