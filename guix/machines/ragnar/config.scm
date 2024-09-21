@@ -53,7 +53,7 @@
                                 (mount-point "/")
                                 (type "btrfs"))
                               (file-system
-                                (device (uuid "925A-AE22"
+                                (device (uuid "B224-27F3"
                                               'fat))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
