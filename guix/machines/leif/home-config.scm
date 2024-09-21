@@ -64,11 +64,11 @@
                                                                             (identity-file
                                                                              "~/.ssh/id_ed25519"))))
                                                  (authorized-keys (list (local-file
-                                                                         "keys/ssh/ragnar.pub")
+                                                                         "../../../keys/ssh/ragnar.pub")
                                                                         (local-file
-                                                                         "keys/ssh/freydis.pub")
+                                                                         "../../../keys/ssh/freydis.pub")
                                                                         (local-file
-                                                                         "keys/ssh/bjorn.pub")))
+                                                                         "../../../keys/ssh/bjorn.pub")))
                                                  (add-keys-to-agent "confirm")))
 
             ;; Desktop Home Services

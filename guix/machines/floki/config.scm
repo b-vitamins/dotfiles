@@ -53,7 +53,7 @@
                  ;; OpenSSH for remote access
                  (service openssh-service-type
                           (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                           "keys/ssh/helga.pub"))))
+                                                                           "../../../keys/ssh/helga.pub"))))
                                                  (password-authentication? #f)))
                  (service wpa-supplicant-service-type)
                  (service network-manager-service-type)
@@ -70,7 +70,7 @@
                                                     (authorized-keys (append
                                                                       %default-authorized-guix-keys
                                                                       (list (local-file
-                                                                             "keys/guix/myguix-cuirass-server-signing-key.pub"))))
+                                                                             "../../../keys/guix/myguix-cuirass-server-signing-key.pub"))))
                                                     (extra-options '("--max-jobs=4"
                                                                      "--cores=16")))))))
   (bootloader (bootloader-configuration
