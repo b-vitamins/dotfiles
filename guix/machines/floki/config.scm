@@ -17,7 +17,7 @@
                   (comment "Ayan")
                   (group "users")
                   (home-directory "/home/b")
-									(shell (file-append (specification->package "zsh")
+                  (shell (file-append (specification->package "zsh")
                                       "/bin/zsh"))
                   (supplementary-groups '("wheel" "netdev" "audio" "video")))
                 %base-user-accounts))
@@ -44,7 +44,7 @@
                                                                (public-key
                                                                 "/etc/guix/signing-key.pub")
                                                                (server
-                                                                "10.0.0.2:5555")
+                                                                "10.0.0.3:5555")
                                                                (substitute-urls '
                                                                 ("https://ci.guix.gnu.org"
                                                                  "https://substitutes.myguix.bvits.in"))
@@ -53,7 +53,7 @@
                  ;; OpenSSH for remote access
                  (service openssh-service-type
                           (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                           "keys/helga.pub"))))
+                                                                           "keys/ssh/helga.pub"))))
                                                  (password-authentication? #f)))
                  (service wpa-supplicant-service-type)
                  (service network-manager-service-type)
@@ -70,7 +70,7 @@
                                                     (authorized-keys (append
                                                                       %default-authorized-guix-keys
                                                                       (list (local-file
-                                                                             "keys/myguix-cuirass-server.pub"))))
+                                                                             "keys/guix/myguix-cuirass-server-signing-key.pub"))))
                                                     (extra-options '("--max-jobs=4"
                                                                      "--cores=16")))))))
   (bootloader (bootloader-configuration
