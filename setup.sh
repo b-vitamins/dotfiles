@@ -47,7 +47,9 @@ GUIX_MACHINE_DIR="$DOTFILES_DIR/guix/machines/$HOSTNAME"
 if [ -d "$GUIX_MACHINE_DIR" ]; then
     links["$DOTFILES_DIR/guix/channels.scm"]="~/.config/guix/channels.scm"
     links["$GUIX_MACHINE_DIR/config.scm"]="~/.config/guix/config.scm"
-    links["$GUIX_MACHINE_DIR/home-config.scm"]="~/.config/guix/home-config.scm"
+    if [ -f "$GUIX_MACHINE_DIR/home-config.scm" ]; then
+        links["$GUIX_MACHINE_DIR/home-config.scm"]="~/.config/guix/home-config.scm"
+    fi
     links["$DOTFILES_DIR/keys"]="~/.config/guix/keys"
 else
     echo "Warning: No configuration found for hostname '$HOSTNAME'. Skipping Guix links."
