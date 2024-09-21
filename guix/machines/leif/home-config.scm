@@ -66,7 +66,7 @@
                                                  (authorized-keys (list (local-file
                                                                          "keys/ssh/ragnar.pub")
                                                                         (local-file
-                                                                         "keys/ssh/lagertha.pub")
+                                                                         "keys/ssh/freydis.pub")
                                                                         (local-file
                                                                          "keys/ssh/bjorn.pub")))
                                                  (add-keys-to-agent "confirm")))
