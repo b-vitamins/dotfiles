@@ -192,9 +192,9 @@
                                                                             (identity-file
                                                                              "~/.ssh/id_ed25519"))))
                                                  (authorized-keys (list (local-file
-                                                                         "keys/ssh/leif.pub")
+                                                                         "keys/ssh/freydis.pub")
                                                                         (local-file
-                                                                         "keys/ssh/lagertha.pub")
+                                                                         "keys/ssh/leif.pub")
                                                                         (local-file
                                                                          "keys/ssh/bjorn.pub")))
                                                  (add-keys-to-agent "confirm")))
