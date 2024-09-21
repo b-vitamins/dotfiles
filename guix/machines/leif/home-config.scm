@@ -68,9 +68,7 @@
                                                                         (local-file
                                                                          "keys/ssh/lagertha.pub")
                                                                         (local-file
-                                                                         "keys/ssh/bjorn.pub")
-                                                                        (local-file
-                                                                         "keys/ssh/freydis.pub")))
+                                                                         "keys/ssh/bjorn.pub")))
                                                  (add-keys-to-agent "confirm")))
 
             ;; Desktop Home Services
