@@ -37,7 +37,7 @@
   :group 'files
   :prefix "bv-")
 
-(defcustom bv-main-org-path "~/main.org"
+(defcustom bv-main-org-path "~/desktop/main.org"
   "Path to the main Org file."
   :type 'string
   :group 'bv-file-paths)
@@ -72,7 +72,7 @@
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-zshrc-path "~/.config/zsh/zshrc"
+(defcustom bv-home-config-scm-path "~/.config/guix/home-config.scm"
   "Path to the Zsh configuration file."
   :type 'string
   :group 'bv-file-paths)
@@ -144,7 +144,7 @@ non-nil, the window will receive focus after opening."
 ;; Define file opening functions (starting from <f9>).
 (bv-define-open-file-function bv-open-my-init-el bv-init-el-path 'right t)
 (bv-define-open-file-function bv-open-my-config-scm bv-config-scm-path 'right t)
-(bv-define-open-file-function bv-open-my-zshrc bv-zshrc-path 'right t)
+(bv-define-open-file-function bv-open-my-home-config-scm bv-home-config-scm-path 'right t)
 (bv-define-open-file-function bv-open-my-bib bv-bib-path 'right t)
 (bv-define-open-file-function bv-open-my-snippets-org bv-snippets-org-path 'right t)
 (bv-define-open-file-function bv-open-my-main-org bv-main-org-path 'right t)
