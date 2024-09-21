@@ -45,6 +45,7 @@ declare -A links=(
 # Add hostname-dependent Guix symlinks
 GUIX_MACHINE_DIR="$DOTFILES_DIR/guix/machines/$HOSTNAME"
 if [ -d "$GUIX_MACHINE_DIR" ]; then
+    links["$DOTFILES_DIR/guix/channels.scm"]="~/.config/guix/channels.scm"
     links["$GUIX_MACHINE_DIR/config.scm"]="~/.config/guix/config.scm"
     links["$GUIX_MACHINE_DIR/home-config.scm"]="~/.config/guix/home-config.scm"
     links["$DOTFILES_DIR/keys"]="~/.config/guix/keys"
