@@ -1,3 +1,0 @@
-function update_clock_precmd {
-    RPROMPT="%F{#88c0d0}%D{%d %b}%f %F{#ECBE7B}%D{%l:%M:%S}%f"
-}
