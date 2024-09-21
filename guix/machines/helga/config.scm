@@ -114,7 +114,7 @@
   ;; Collect garbage 5 minutes after midnight every day.
   ;; The job's action is a shell command.
   #~(job "5 0 * * *" ;Vixie cron syntax
-         "guix gc -F 1G"))
+         "guix gc -F 10G"))
 
 ;; Main operating system configuration
 (operating-system
@@ -202,15 +202,13 @@
          ;; OpenSSH for remote access
          (service openssh-service-type
                   (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                   "keys/ragnar.pub"))
+                                                                   "keys/ssh/ragnar.pub"))
                                                             ("b" ,(local-file
-                                                                   "keys/leif.pub"))
+                                                                   "keys/ssh/leif.pub"))
                                                             ("b" ,(local-file
-                                                                   "keys/lagertha.pub"))
+                                                                   "keys/ssh/bjorn.pub"))
                                                             ("b" ,(local-file
-                                                                   "keys/bjorn.pub"))
-                                                            ("b" ,(local-file
-                                                                   "keys/freydis.pub"))))
+                                                                   "keys/ssh/freydis.pub"))))
                                          (password-authentication? #f)
                                          (port-number 2123)))
          ;; NTP for time synchronization
@@ -249,7 +247,7 @@
                                       (authorized-keys (append
                                                         %default-authorized-guix-keys
                                                         (list (local-file
-                                                               "keys/myguix-cuirass-worker.pub"))))))
+                                                               "keys/guix/myguix-cuirass-worker-signing-key.pub"))))))
          (service nscd-service-type)
          (service rottlog-service-type)
          ;; Periodically delete old build logs.
