@@ -132,8 +132,8 @@ update_snippets() {
     echo "All specified snippet modes have been updated."
 }
 
-# Run the update snippets function only if not in dry run
-if [ "$DRY_RUN" = false ]; then
+# Run the update snippets function only if not in dry run and not in guix-only mode
+if [ "$DRY_RUN" = false ] && [ "$GUIX_ONLY" = false ]; then
     echo "Configuring the repository..."
     echo "Updating snippets..."
     update_snippets
