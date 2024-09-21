@@ -61,7 +61,6 @@ fi
 GUIX_MACHINE_DIR="$DOTFILES_DIR/guix/machines/$HOSTNAME"
 if [ -d "$GUIX_MACHINE_DIR" ]; then
     links["$DOTFILES_DIR/guix/channels.scm"]="~/.config/guix/channels.scm"
-    links["$DOTFILES_DIR/keys"]="~/.config/guix/keys"
     links["$GUIX_MACHINE_DIR/config.scm"]="~/.config/guix/config.scm"
     if [ -f "$GUIX_MACHINE_DIR/home-config.scm" ]; then
         links["$GUIX_MACHINE_DIR/home-config.scm"]="~/.config/guix/home-config.scm"
