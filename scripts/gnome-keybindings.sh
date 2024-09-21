@@ -31,7 +31,7 @@ else
 fi
 
 # Base path for keybindings relative to the script's directory
-keybindings_dir="../keybindings"
+keybindings_dir="../gnome/keybindings"
 
 # Apply keybindings from stored dconf files if dconf is available
 if command_exists dconf; then
@@ -56,18 +56,6 @@ if command_exists dconf; then
 else
     echo "Warning: 'dconf' is not installed. Skipping keybindings settings."
 fi
-
-# Copy the user-dirs.dirs file to the appropriate location
-user_dirs_dir="../user-dirs.dirs"
-config_dir="$HOME/.config"
-user_dirs_file="$config_dir/user-dirs.dirs"
-
-# Ensure the config directory exists
-mkdir -p "$config_dir"
-
-# Copy user-dirs.dirs file, overwriting if it exists
-cp "$user_dirs_dir" "$user_dirs_file"
-echo "Custom user-dirs.dirs has been copied to $HOME/.config."
 
 echo "Setup completed with available tools."
 
