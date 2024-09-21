@@ -1,10 +1,4 @@
 [/]
-custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']
 home=['<Control><Alt>Home']
 screensaver=['<Control><Alt>l']
 www=['<Control><Alt>b']
-
-[custom-keybindings/custom0]
-binding='<Control><Alt>t'
-command='alacritty'
-name='alacritty'
