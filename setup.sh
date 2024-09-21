@@ -2,20 +2,23 @@
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 [--dry-run] [--force]"
+    echo "Usage: $0 [--dry-run] [--force] [--machine <hostname>]"
     echo "  --dry-run      Simulate the script without making any changes."
     echo "  --force        Remove existing files before creating symlinks."
+    echo "  --machine      Specify a machine name to use its configuration."
     exit 1
 }
 
 # Parse command-line arguments
 DRY_RUN=false
 FORCE=false
+MACHINE=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --dry-run) DRY_RUN=true; shift ;;
         --force) FORCE=true; shift ;;
+        --machine) MACHINE="$2"; shift 2 ;;
         *) usage ;;
     esac
 done
@@ -26,8 +29,12 @@ if [ "$DRY_RUN" = true ] && [ "$FORCE" = true ]; then
     exit 1
 fi
 
-# Get the hostname
-HOSTNAME=$(hostname)
+# Determine the hostname
+if [ -z "$MACHINE" ]; then
+    HOSTNAME=$(hostname)
+else
+    HOSTNAME="$MACHINE"
+fi
 
 # Define the base directory for dotfiles
 DOTFILES_DIR=~/projects/dotfiles
@@ -50,7 +57,6 @@ if [ -d "$GUIX_MACHINE_DIR" ]; then
     if [ -f "$GUIX_MACHINE_DIR/home-config.scm" ]; then
         links["$GUIX_MACHINE_DIR/home-config.scm"]="~/.config/guix/home-config.scm"
     fi
-    links["$DOTFILES_DIR/keys"]="~/.config/guix/keys"
 else
     echo "Warning: No configuration found for hostname '$HOSTNAME'. Skipping Guix links."
 fi
