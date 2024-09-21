@@ -30,12 +30,10 @@
                                                "mega:backup/ragnar/.config/rclone")
                                               ("/home/b/.gitconfig"
                                                "mega:backup/ragnar/.gitconfig")
-                                              ("/home/b/.gnupg"
-                                               "mega:backup/ragnar/.gnupg")
                                               ("/home/b/.guile"
                                                "mega:backup/ragnar/.guile")
-                                              ("/home/b/.local/latex-previews"
-                                               "mega:backup/ragnar/.local/latex-previews")
+                                              ("/home/b/.latex-previews"
+                                               "mega:backup/ragnar/.latex-previews")
                                               ("/home/b/.mozilla"
                                                "mega:backup/ragnar/.mozilla")
                                               ("/home/b/.password-store"
@@ -202,9 +200,7 @@
                                                                         (local-file
                                                                          "keys/ssh/lagertha.pub")
                                                                         (local-file
-                                                                         "keys/ssh/bjorn.pub")
-                                                                        (local-file
-                                                                         "keys/ssh/freydis.pub")))
+                                                                         "keys/ssh/bjorn.pub")))
                                                  (add-keys-to-agent "confirm")))
 
             ;; Desktop Home Services
