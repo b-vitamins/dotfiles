@@ -799,7 +799,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 										 :image-input-type "dvi"
 										 :image-output-type "png"
 										 :image-size-adjust (1.0 . 1.0)
-										 :latex-compiler ("latex --output-format=dvi -interaction nonstopmode -output-directory %o %f")
+										 :latex-compiler ("lualatex --output-format=dvi -interaction nonstopmode -output-directory %o %f")
 										 :image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f")
 										 :transparent-image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f"))))
 
