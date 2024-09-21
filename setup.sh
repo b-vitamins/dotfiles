@@ -2,11 +2,10 @@
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 [--dry-run] [--force] [--machine <hostname>] [--guix-only]"
+    echo "Usage: $0 [--dry-run] [--force] [--machine <hostname>]"
     echo "  --dry-run      Simulate the script without making any changes."
     echo "  --force        Remove existing files before creating symlinks."
     echo "  --machine      Specify a machine name to use its configuration."
-    echo "  --guix-only    Only set up Guix-related symlinks."
     exit 1
 }
 
@@ -14,14 +13,12 @@ usage() {
 DRY_RUN=false
 FORCE=false
 MACHINE=""
-GUIX_ONLY=false
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --dry-run) DRY_RUN=true; shift ;;
         --force) FORCE=true; shift ;;
         --machine) MACHINE="$2"; shift 2 ;;
-        --guix-only) GUIX_ONLY=true; shift ;;
         *) usage ;;
     esac
 done
@@ -143,112 +140,55 @@ else
 fi
 
 # Create symlinks
-if [ "$GUIX_ONLY" = false ]; then
-    for src in "${!links[@]}"; do
-        target=${links[$src]}
-        
-        # Expand ~ to the home directory
-        target_expanded=$(eval echo "$target")
-
-        # Check if source file/directory exists
-        if [ ! -e "$src" ]; then
-            echo "Error: Source '$src' does not exist. Skipping."
-            continue
-        fi
-        
-        # Create target directory if it doesn't exist
-        target_dir="$(dirname "$target_expanded")"
-        if [ ! -d "$target_dir" ]; then
-            echo "Warning: Target directory '$target_dir' does not exist. Creating it."
-            if [ "$DRY_RUN" = false ]; then
-                mkdir -p "$target_dir" || { echo "Error: Failed to create directory '$target_dir'. Exiting."; exit 1; }
-            else
-                echo " (would create directory: $target_dir)"
-            fi
-        fi
-        
-        # Check if the target already exists
-        if [ -e "$target_expanded" ]; then
-            echo "Warning: Target '$target_expanded' already exists."
-            if [ "$FORCE" = true ]; then
-                echo "Removing existing target before creating symlink."
-                if [ "$DRY_RUN" = false ]; then
-                    rm -rf "$target_expanded"
-                else
-                    echo " (would remove: $target_expanded)"
-                fi
-            else
-                if [ "$DRY_RUN" = false ]; then
-                    echo "Skipping symlink creation."
-                    continue
-                else
-                    echo " (would be skipped in dry run)"
-                fi
-            fi
-        fi
-        
-        # Create the symlink
-        if [ "$DRY_RUN" = false ]; then
-            ln -sf "$src" "$target_expanded" && echo "Created symlink: $src -> $target_expanded" || { echo "Error: Failed to create symlink."; exit 1; }
-        else
-            echo " (would create symlink: $src -> $target_expanded)"
-        fi
-    done
-else
-    echo "Setting up only Guix-related symlinks..."
+for src in "${!links[@]}"; do
+    target=${links[$src]}
     
-    for src in "${!links[@]}"; do
-        target=${links[$src]}
-        
-        # Expand ~ to the home directory
-        target_expanded=$(eval echo "$target")
+    # Expand ~ to the home directory
+    target_expanded=$(eval echo "$target")
 
-        # Check if source file/directory exists
-        if [[ "$src" == *"/guix/"* ]]; then
-            if [ ! -e "$src" ]; then
-                echo "Error: Source '$src' does not exist. Skipping."
-                continue
-            fi
-            
-            # Create target directory if it doesn't exist
-            target_dir="$(dirname "$target_expanded")"
-            if [ ! -d "$target_dir" ]; then
-                echo "Warning: Target directory '$target_dir' does not exist. Creating it."
-                if [ "$DRY_RUN" = false ]; then
-                    mkdir -p "$target_dir" || { echo "Error: Failed to create directory '$target_dir'. Exiting."; exit 1; }
-                else
-                    echo " (would create directory: $target_dir)"
-                fi
-            fi
-            
-            # Check if the target already exists
-            if [ -e "$target_expanded" ]; then
-                echo "Warning: Target '$target_expanded' already exists."
-                if [ "$FORCE" = true ]; then
-                    echo "Removing existing target before creating symlink."
-                    if [ "$DRY_RUN" = false ]; then
-                        rm -rf "$target_expanded"
-                    else
-                        echo " (would remove: $target_expanded)"
-                    fi
-                else
-                    if [ "$DRY_RUN" = false ]; then
-                        echo "Skipping symlink creation."
-                        continue
-                    else
-                        echo " (would be skipped in dry run)"
-                    fi
-                fi
-            fi
-            
-            # Create the symlink
+    # Check if source file/directory exists
+    if [ ! -e "$src" ]; then
+        echo "Error: Source '$src' does not exist. Skipping."
+        continue
+    fi
+    
+    # Create target directory if it doesn't exist
+    target_dir="$(dirname "$target_expanded")"
+    if [ ! -d "$target_dir" ]; then
+        echo "Warning: Target directory '$target_dir' does not exist. Creating it."
+        if [ "$DRY_RUN" = false ]; then
+            mkdir -p "$target_dir" || { echo "Error: Failed to create directory '$target_dir'. Exiting."; exit 1; }
+        else
+            echo " (would create directory: $target_dir)"
+        fi
+    fi
+    
+    # Check if the target already exists
+    if [ -e "$target_expanded" ]; then
+        echo "Warning: Target '$target_expanded' already exists."
+        if [ "$FORCE" = true ]; then
+            echo "Removing existing target before creating symlink."
             if [ "$DRY_RUN" = false ]; then
-                ln -sf "$src" "$target_expanded" && echo "Created symlink: $src -> $target_expanded" || { echo "Error: Failed to create symlink."; exit 1; }
+                rm -rf "$target_expanded"
             else
-                echo " (would create symlink: $src -> $target_expanded)"
+                echo " (would remove: $target_expanded)"
+            fi
+        else
+            if [ "$DRY_RUN" = false ]; then
+                echo "Skipping symlink creation."
+                continue
+            else
+                echo " (would be skipped in dry run)"
             fi
         fi
-    done
-fi
+    fi
+    
+    # Create the symlink
+    if [ "$DRY_RUN" = false ]; then
+        ln -sf "$src" "$target_expanded" && echo "Created symlink: $src -> $target_expanded" || { echo "Error: Failed to create symlink."; exit 1; }
+    else
+        echo " (would create symlink: $src -> $target_expanded)"
+    fi
+done
 
 echo "Symlink setup complete."
