@@ -2,10 +2,11 @@
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 [--dry-run] [--force] [--machine <hostname>]"
+    echo "Usage: $0 [--dry-run] [--force] [--machine <hostname>] [--guix-only]"
     echo "  --dry-run      Simulate the script without making any changes."
     echo "  --force        Remove existing files before creating symlinks."
     echo "  --machine      Specify a machine name to use its configuration."
+    echo "  --guix-only    Only set up Guix-related symlinks."
     exit 1
 }
 
@@ -13,12 +14,14 @@ usage() {
 DRY_RUN=false
 FORCE=false
 MACHINE=""
+GUIX_ONLY=false
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --dry-run) DRY_RUN=true; shift ;;
         --force) FORCE=true; shift ;;
         --machine) MACHINE="$2"; shift 2 ;;
+        --guix-only) GUIX_ONLY=true; shift ;;
         *) usage ;;
     esac
 done
@@ -40,14 +43,19 @@ fi
 DOTFILES_DIR=~/projects/dotfiles
 
 # Define source and target pairs
-declare -A links=(
-    ["$DOTFILES_DIR/emacs/init.el"]="~/.config/emacs/init.el"
-    ["$DOTFILES_DIR/emacs/early-init.el"]="~/.config/emacs/early-init.el"
-    ["$DOTFILES_DIR/emacs/lisp"]="~/.config/emacs/lisp"
-    ["$DOTFILES_DIR/emacs/setup"]="~/.config/emacs/setup"
-    ["$DOTFILES_DIR/alacritty/alacritty.toml"]="~/.config/alacritty/alacritty.toml"
-    ["$DOTFILES_DIR/.gitconfig"]="~/.gitconfig"
-)
+declare -A links=()
+
+# Only add non-Guix links if not in guix-only mode
+if [ "$GUIX_ONLY" = false ]; then
+    links=(
+        ["$DOTFILES_DIR/emacs/init.el"]="~/.config/emacs/init.el"
+        ["$DOTFILES_DIR/emacs/early-init.el"]="~/.config/emacs/early-init.el"
+        ["$DOTFILES_DIR/emacs/lisp"]="~/.config/emacs/lisp"
+        ["$DOTFILES_DIR/emacs/setup"]="~/.config/emacs/setup"
+        ["$DOTFILES_DIR/alacritty/alacritty.toml"]="~/.config/alacritty/alacritty.toml"
+        ["$DOTFILES_DIR/.gitconfig"]="~/.gitconfig"
+    )
+fi
 
 # Add hostname-dependent Guix symlinks
 GUIX_MACHINE_DIR="$DOTFILES_DIR/guix/machines/$HOSTNAME"
