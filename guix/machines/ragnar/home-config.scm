@@ -24,11 +24,7 @@
   ;; This job runs every hour and skips execution if a previous instance is still running.
   #~(job '(next-hour (range 0 24 1)) ;Run every hour
          (lambda ()
-           (let* ((source-destination-pairs '(("/home/b/.authinfo.gpg"
-                                               "mega:backup/ragnar/.authinfo.gpg")
-                                              ("/home/b/.config/rclone"
-                                               "mega:backup/ragnar/.config/rclone")
-                                              ("/home/b/.gitconfig"
+           (let* ((source-destination-pairs '(("/home/b/.gitconfig"
                                                "mega:backup/ragnar/.gitconfig")
                                               ("/home/b/.guile"
                                                "mega:backup/ragnar/.guile")
