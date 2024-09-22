@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Directory containing your .org files
-ORG_DIR="/home/b/slipbox/notes"
+ORG_DIR="/home/b/slipbox"
 
 # Use xvfb-run to execute Emacs in a virtual framebuffer environment
 xvfb-run -a emacs --eval "
