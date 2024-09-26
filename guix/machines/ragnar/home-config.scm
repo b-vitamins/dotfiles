@@ -28,8 +28,8 @@
                                                "mega:backup/ragnar/.gitconfig")
                                               ("/home/b/.guile"
                                                "mega:backup/ragnar/.guile")
-                                              ("/home/b/.latex-previews"
-                                               "mega:backup/ragnar/.latex-previews")
+                                              ("/home/b/.images"
+                                               "mega:backup/ragnar/.images")
                                               ("/home/b/.mozilla"
                                                "mega:backup/ragnar/.mozilla")
                                               ("/home/b/.password-store"
