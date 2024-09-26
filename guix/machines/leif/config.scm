@@ -90,7 +90,9 @@
             ;; Networking Setup
             (service network-manager-service-type
                      (network-manager-configuration (vpn-plugins (list (specification->package
-                                                                        "network-manager-openvpn")))))
+                                                                        "network-manager-openvpn")
+                                                                       (specification->package
+                                                                        "network-manager-openconnect")))))
             (service wpa-supplicant-service-type)
             (simple-service 'network-manager-applet profile-service-type
                             (list (specification->package
