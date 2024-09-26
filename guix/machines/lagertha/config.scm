@@ -42,7 +42,7 @@
                 (keyboard-layout keyboard-layout)))
 
   (swap-devices (list (swap-space
-                       (target (uuid "ac2f440b-33d9-40ef-b751-bvd7b7fb4bb8")))))
+                        (target (uuid "ac2f440b-33d9-40ef-b751-bvd7b7fb4bb8")))))
 
   (file-systems (cons* (file-system
                          (mount-point "/boot/efi")
@@ -51,7 +51,8 @@
                          (type "vfat"))
                        (file-system
                          (mount-point "/")
-                         (device (uuid "a2660229-e393-49c9-9113-a04d689a0e0d" 'ext4))
+                         (device (uuid "a2660229-e393-49c9-9113-a04d689a0e0d"
+                                       'ext4))
                          (type "ext4")) %base-file-systems))
 
   ;; The list of user accounts ('root' is implicit).
@@ -97,7 +98,9 @@
             ;; Networking Setup
             (service network-manager-service-type
                      (network-manager-configuration (vpn-plugins (list (specification->package
-                                                                        "network-manager-openvpn")))))
+                                                                        "network-manager-openvpn")
+                                                                       (specification->package
+                                                                        "network-manager-openconnect")))))
             (service wpa-supplicant-service-type)
             (simple-service 'network-manager-applet profile-service-type
                             (list (specification->package
