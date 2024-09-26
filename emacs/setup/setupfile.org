@@ -31,13 +31,20 @@
 #+LATEX_HEADER: \usepackage{blkarray, bigstrut}     % for block arrays and spacing
 #+LATEX_HEADER: \usepackage{dsfont}
 
+# Some commands and operators
+#+LATEX_HEADER: \newcommand{\minus}{\scalebox{0.8}{\(-\)}}
+#+LATEX_HEADER: \newcommand{\plus}{\scalebox{0.6}{\(+\)}}
+#+LATEX_HEADER: \DeclareMathOperator{\sech}{sech}
+#+LATEX_HEADER: \DeclareMathOperator{\sgn}{sgn}
+#+LATEX_HEADER: \DeclareMathOperator{\tr}{Tr}
+
 # Figures and Plots
 #+LATEX_HEADER: \usepackage{graphicx}               % Enhanced support for graphics
 #+LATEX_HEADER: \usepackage{subcaption}             % Support for subcaptions
 #+LATEX_HEADER: \usepackage{tikz}                   % Creation of diagrams
 #+LATEX_HEADER: \usepackage{pgfplots}               % Creates normal/logarithmic plots
 #+LATEX_HEADER: \pgfplotsset{compat=newest}
-#+LATEX_HEADER: \usetikzlibrary{calc, angle, positioning, babel, quotes, patterns}
+#+LATEX_HEADER: \usetikzlibrary{calc, positioning, babel, quotes, patterns}
 #+LATEX_HEADER: \usetikzlibrary{arrows.meta, shapes.geometric}
 #+LATEX_HEADER: \usepgfplotslibrary{fillbetween}    % Allows filling between named plots
 
@@ -47,7 +54,7 @@
 #+LATEX_HEADER: \newtheorem{axiom}{Axiom}
 #+LATEX_HEADER: \newtheorem{postulate}{Postulate}
 #+LATEX_HEADER: \newtheorem{definition}{Definition}
-#+LATEX_HEADER: \newtheorem{lemma}[theorem]{Lemma}
+#+LATEX_HEADER: \newtheorem{lemma}{Lemma}
 #+LATEX_HEADER: \newtheorem{theorem}{Theorem}
 #+LATEX_HEADER: \newtheorem{corollary}{Corollary}
 #+LATEX_HEADER: \newtheorem*{remark}{Remark}
@@ -59,12 +66,12 @@
 #+LATEX_HEADER: \DeclareMathOperator{\sgn}{sgn}
 #+LATEX_HEADER: \DeclareMathOperator{\tr}{Tr}
 
-
 # Cross-referencing and Hyperlinks
 #+LATEX_HEADER: \usepackage{hyperref}               % Extensive support for hyperlinks
 #+LATEX_HEADER: \usepackage{cleveref}               % Intelligent cross-referencing
 
 # Bibliography Management
+#+LATEX_HEADER: \usepackage{csquotes}
 #+LATEX_HEADER: \usepackage[backend=biber]{biblatex}
 #+LATEX_HEADER: \addbibresource{~/slipbox/bibliographies/working.bib}
 #+bibliography: ~/slipbox/bibliographies/working.bib
