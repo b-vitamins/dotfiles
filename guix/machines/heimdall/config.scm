@@ -157,14 +157,12 @@ table ip nat {
                                                         (max-clients 10)
                                                         (status
                                                          "/var/log/openvpn-status.log")
-                                                        (verbosity 3)))
-                 (service sysctl-service-type
-                          (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
-                                                                    ("vm.max_map_count" . "262144"))
-                                                           %default-sysctl-settings)))))
-           ;; This is the default list of services we
-           ;; are appending to.
-           %base-services))
+                                                        (verbosity 3))))
+           (modify-services %base-services
+             (sysctl-service-type config =>
+                                  (sysctl-configuration
+                                   (settings (append '(("net.ipv4.ip_forward" . "1"))
+                                                     %default-sysctl-settings)))))))
   (bootloader (bootloader-configuration
                 (bootloader grub-bootloader)
                 (targets (list "/dev/sda"))
