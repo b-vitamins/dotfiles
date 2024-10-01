@@ -88,8 +88,8 @@
                                                "mega:backup/ragnar/library/courses")
                                               ("/home/b/library/documents"
                                                "mega:backup/ragnar/library/documents")
-                                              ("/home/b/library/archives"
-                                               "mega:backup/ragnar/library/archives")
+                                              ("/home/b/archives"
+                                               "mega:backup/ragnar/archives")
                                               ("/home/b/library/notes"
                                                "mega:backup/ragnar/library/notes")
                                               ("/home/b/library/papers"
