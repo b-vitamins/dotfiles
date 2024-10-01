@@ -139,7 +139,6 @@ table ip nat {
                  (service openvpn-server-service-type
                           (openvpn-server-configuration (proto 'tcp)
                                                         (port 443)
-                                                        (dev "tun")
                                                         (ca
                                                          "/etc/openvpn/ca.crt")
                                                         (cert
