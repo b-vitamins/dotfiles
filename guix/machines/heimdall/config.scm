@@ -4,6 +4,7 @@
                      networking
                      ssh
                      xorg
+                     sysctl
                      vpn)
 
 (define %vpn-nftables-ruleset
@@ -157,9 +158,11 @@ table ip nat {
                                                         (max-clients 10)
                                                         (status
                                                          "/var/log/openvpn-status.log")
-                                                        (log
-                                                         "/var/log/openvpn.log")
-                                                        (verbosity 3))))
+                                                        (verbosity 3)))
+                 (service sysctl-service-type
+                          (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
+                                                                    ("vm.max_map_count" . "262144"))
+                                                           %default-sysctl-settings)))))
            ;; This is the default list of services we
            ;; are appending to.
            %base-services))
