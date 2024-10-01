@@ -1,13 +1,3 @@
-;; This is an operating system configuration generated
-;; by the graphical installer.
-;;
-;; Once installation is complete, you can learn and modify
-;; this file to tweak the system configuration, and pass it
-;; to the 'guix system reconfigure' command to effect your
-;; changes.
-
-;; Indicate which modules to import to access the variables
-;; used in this configuration.
 (use-modules (gnu))
 (use-service-modules cups
                      desktop
@@ -194,3 +184,72 @@ table ip nat {
                          (device (uuid "f2598482-d63b-4d4d-b0cb-511242dc54c3"
                                        'ext4))
                          (type "ext4")) %base-file-systems)))
+
+;; Instructions for setting up the /etc/openvpn directory:
+
+;; 1. Ensure that the following files are placed in /etc/openvpn:
+;;
+;;    - ca.crt: CA certificate
+;;    - ca.key: CA private key
+;;    - ca.srl: CA serial file (can be generated or copied)
+;;    - client.crt: Client certificate
+;;    - client.csr: Client certificate signing request (CSR)
+;;    - client.key: Client private key
+;;    - dh2048.pem: Diffie-Hellman parameters
+;;    - server.crt: Server certificate
+;;    - server.csr: Server certificate signing request (CSR)
+;;    - server.key: Server private key
+;;
+;; 2. The permissions and ownership for these files must be set as follows:
+;;
+;;    - ca.crt:
+;;        Permissions: 644 (rw-r--r--)
+;;        Owner: openvpn:openvpn
+;;        Command: `sudo chown openvpn:openvpn /etc/openvpn/ca.crt && sudo chmod 644 /etc/openvpn/ca.crt`
+;;
+;;    - ca.key:
+;;        Permissions: 600 (rw-------)
+;;        Owner: openvpn:openvpn
+;;        Command: `sudo chown openvpn:openvpn /etc/openvpn/ca.key && sudo chmod 600 /etc/openvpn/ca.key`
+;;
+;;    - ca.srl:
+;;        Permissions: 644 (rw-r--r--)
+;;        Owner: root:root
+;;        Command: `sudo chown root:root /etc/openvpn/ca.srl && sudo chmod 644 /etc/openvpn/ca.srl`
+;;
+;;    - client.crt:
+;;        Permissions: 644 (rw-r--r--)
+;;        Owner: openvpn:openvpn
+;;        Command: `sudo chown openvpn:openvpn /etc/openvpn/client.crt && sudo chmod 644 /etc/openvpn/client.crt`
+;;
+;;    - client.csr:
+;;        Permissions: 644 (rw-r--r--)
+;;        Owner: root:root
+;;        Command: `sudo chown root:root /etc/openvpn/client.csr && sudo chmod 644 /etc/openvpn/client.csr`
+;;
+;;    - client.key:
+;;        Permissions: 600 (rw-------)
+;;        Owner: openvpn:openvpn
+;;        Command: `sudo chown openvpn:openvpn /etc/openvpn/client.key && sudo chmod 600 /etc/openvpn/client.key`
+;;
+;;    - dh2048.pem:
+;;        Permissions: 600 (rw-------)
+;;        Owner: openvpn:openvpn
+;;        Command: `sudo chown openvpn:openvpn /etc/openvpn/dh2048.pem && sudo chmod 600 /etc/openvpn/dh2048.pem`
+;;
+;;    - server.crt:
+;;        Permissions: 600 (rw-------)
+;;        Owner: openvpn:openvpn
+;;        Command: `sudo chown openvpn:openvpn /etc/openvpn/server.crt && sudo chmod 600 /etc/openvpn/server.crt`
+;;
+;;    - server.csr:
+;;        Permissions: 644 (rw-r--r--)
+;;        Owner: root:root
+;;        Command: `sudo chown root:root /etc/openvpn/server.csr && sudo chmod 644 /etc/openvpn/server.csr`
+;;
+;;    - server.key:
+;;        Permissions: 600 (rw-------)
+;;        Owner: openvpn:openvpn
+;;        Command: `sudo chown openvpn:openvpn /etc/openvpn/server.key && sudo chmod 600 /etc/openvpn/server.key`
+;;
+;; 3. Make sure the OpenVPN service has permission to access these files and that they are readable by the service, while keeping private keys protected with restricted access.
