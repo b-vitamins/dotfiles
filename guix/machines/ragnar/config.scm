@@ -25,6 +25,67 @@
              (myguix system linux-initrd)
              (srfi srfi-1))
 
+(define %my-nftables-ruleset
+  (plain-file "nftables.conf"
+   "# A simple and safe firewall
+table inet filter {
+  chain input {
+    type filter hook input priority 0; policy drop;
+
+    # early drop of invalid connections
+    ct state invalid drop
+
+    # allow established/related connections
+    ct state { established, related } accept
+
+    # allow from loopback
+    iif lo accept
+    # drop connections to lo not coming from lo
+    iif != lo ip daddr 127.0.0.1/8 drop
+    iif != lo ip6 daddr ::1/128 drop
+
+    # allow icmp
+    ip protocol icmp accept
+    ip6 nexthdr icmpv6 accept
+
+    # allow ssh
+    tcp dport ssh accept
+
+    # allow traffic from the local LAN (10.42.0.0/24)
+    ip saddr 10.42.0.0/24 accept
+
+    # reject everything else
+    reject with icmpx type port-unreachable
+  }
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    # allow forwarding of traffic from the local LAN (10.42.0.0/24) to the Wi-Fi interface (wlp37s0)
+    ip saddr 10.42.0.0/24 oifname wlp37s0 accept
+
+    # allow forwarding of traffic from Wi-Fi to the local LAN
+    ip daddr 10.42.0.0/24 iifname wlp37s0 accept
+
+    # Allow forwarding of established and related connections
+    ct state { established, related } accept
+  }
+  chain output {
+    type filter hook output priority 0; policy accept;
+  }
+}
+
+# NAT
+table ip nat {
+  chain postrouting {
+    type nat hook postrouting priority 100; policy accept;
+
+    # Masquerade traffic from the local LAN (10.42.0.0/24) through the Wi-Fi interface (wlp37s0)
+    ip saddr 10.42.0.0/24 oifname wlp37s0 masquerade
+
+  }
+}
+"))
+
 (operating-system
   (host-name "ragnar")
   (timezone "Asia/Kolkata")
@@ -124,7 +185,8 @@
 
             ;; Networking Services
             (service avahi-service-type)
-            (service nftables-service-type)
+            (service nftables-service-type
+                     (nftables-configuration (ruleset %my-nftables-ruleset)))
             (service ntp-service-type)
 
             ;; VPN Services
