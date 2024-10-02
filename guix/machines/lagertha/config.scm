@@ -1,61 +1,38 @@
-;; -*- mode: scheme; -*-
 (use-modules (gnu)
-             (gnu system)
-             (gnu system nss)
-             (gnu system install)
-             (gnu services avahi)
-             (gnu services ssh)
-             (gnu services desktop)
-             (gnu services xorg)
-             (gnu services cups)
-             (gnu services vpn)
+             (gnu services certbot)
              (gnu services networking)
-             (gnu services syncthing)
-             (gnu services linux)
-             (gnu services sysctl)
-             (gnu services pm)
-             (myguix services desktop)
-             (myguix system install)
-             (myguix packages base)
-             (myguix packages linux)
-             (myguix system linux-initrd)
-             (srfi srfi-1))
+             (gnu services ssh)
+             (gnu services web))
+
+;; Define the Nginx deploy hook to reload Nginx on certificate renewal
+(define %nginx-deploy-hook
+  (program-file "nginx-deploy-hook"
+                #~(let ((pid (call-with-input-file "/var/run/nginx/pid"
+                               read)))
+                    (kill pid SIGHUP))))
+
+(define %bvits-server-block
+  (nginx-server-configuration (server-name '("bvits.in" "www.bvits.in"))
+                              (root "/srv/http/bvits.in")
+                              (listen '("80"))
+                              (index '("index.html"))
+                              (locations (list (nginx-location-configuration (uri
+                                                                              "/")
+                                                                             (body
+                                                                              (list
+                                                                               "try_files $uri $uri/ /index.html")))))))
 
 (operating-system
-  (host-name "lagertha")
-  (timezone "Asia/Kolkata")
   (locale "en_US.utf8")
+  (timezone "Asia/Kolkata")
+  (host-name "lagertha")
 
-  (kernel linux)
-  (kernel-arguments '("modprobe.blacklist=b43,b43legacy,ssb,bcm43xx,brcm80211,brcmfmac,brcmsmac,bcma"))
-  (kernel-loadable-modules (list broadcom-sta))
-  (firmware (list linux-firmware broadcom-bt-firmware))
-  (initrd microcode-initrd)
-
+  ;; Updated keyboard layout with custom options
   (keyboard-layout (keyboard-layout "us" "altgr-intl"
                                     #:options '("ctrl:nocaps"
                                                 "altwin:swap_alt_win")))
 
-  (bootloader (bootloader-configuration
-                (bootloader grub-bootloader)
-                (targets (list "/dev/sda"))
-                (keyboard-layout keyboard-layout)))
-
-  (swap-devices (list (swap-space
-                        (target (uuid "ac2f440b-33d9-40ef-b751-bvd7b7fb4bb8")))))
-
-  (file-systems (cons* (file-system
-                         (mount-point "/boot/efi")
-                         (device (uuid "57D1-D16E"
-                                       'fat32))
-                         (type "vfat"))
-                       (file-system
-                         (mount-point "/")
-                         (device (uuid "a2660229-e393-49c9-9113-a04d689a0e0d"
-                                       'ext4))
-                         (type "ext4")) %base-file-systems))
-
-  ;; The list of user accounts ('root' is implicit).
+  ;; User accounts with a custom shell for the 'b' user
   (users (cons* (user-account
                   (name "b")
                   (comment "Ayan")
@@ -63,12 +40,21 @@
                   (home-directory "/home/b")
                   (shell (file-append (specification->package "zsh")
                                       "/bin/zsh"))
-                  (supplementary-groups '("adbusers" "wheel" "netdev" "lp"
-                                          "audio" "video")))
+                  (supplementary-groups '("wheel" "netdev" "audio" "video")))
                 %base-user-accounts))
 
   ;; System-wide packages
-  (packages (append (list (specification->package "font-dejavu")
+  (packages (append (list (specification->package "git")
+                          (specification->package "wget")
+                          (specification->package "curl")
+                          (specification->package "emacs-no-x-toolkit")
+                          (specification->package "htop")
+                          (specification->package "nmap")
+                          (specification->package "node")
+                          (specification->package "screen")
+                          (specification->package "zstd")
+                          (specification->package "coreutils")
+                          (specification->package "font-dejavu")
                           (specification->package "font-iosevka-comfy")
                           (specification->package "font-google-noto")
                           (specification->package "font-google-noto-serif-cjk")
@@ -76,65 +62,51 @@
                           (specification->package "fontconfig"))
                     %base-packages))
 
-  ;; Below is the list of system services.  To search for available
-  ;; services, run 'guix system search KEYWORD' in a terminal.
   (services
    (append (list
-            ;; Desktop Environment
-            (service gnome-desktop-service-type)
-            (set-xorg-configuration
-             (xorg-configuration (keyboard-layout keyboard-layout)))
-            (service gnome-keyring-service-type)
+            ;; Certbot for handling SSL certificates
+            (service certbot-service-type
+                     (certbot-configuration (email "bvits@riseup.net")
+                                            (certificates (list (certificate-configuration
+                                                                 (domains '("bvits.in"))
+                                                                 (deploy-hook
+                                                                  %nginx-deploy-hook))))))
 
-            ;; Printing Services
-            (service cups-service-type
-                     (cups-configuration (web-interface? #t)
-                                         (extensions (list (specification->package
-                                                            "cups-filters")
-                                                           (specification->package
-                                                            "brlaser")
-                                                           (specification->package
-                                                            "foomatic-filters")))))
-            ;; Networking Setup
-            (service network-manager-service-type
-                     (network-manager-configuration (vpn-plugins (list (specification->package
-                                                                        "network-manager-openvpn")
-                                                                       (specification->package
-                                                                        "network-manager-openconnect")))))
-            (service wpa-supplicant-service-type)
-            (simple-service 'network-manager-applet profile-service-type
-                            (list (specification->package
-                                   "network-manager-applet")))
-            (service modem-manager-service-type)
-            (service usb-modeswitch-service-type)
+            ;; NGINX service setup
+            (service nginx-service-type
+                     (nginx-configuration (server-blocks (list
+                                                          %bvits-server-block))))
 
             ;; OpenSSH for remote access
-            (service openssh-service-type)
+            (service openssh-service-type
+                     (openssh-configuration (authorized-keys `(("b" ,(local-file
+                                                                      "../../../keys/ssh/ragnar.pub"))
+                                                               ("b" ,(local-file
+                                                                      "../../../keys/ssh/leif.pub"))
+                                                               ("b" ,(local-file
+                                                                      "../../../keys/ssh/bjorn.pub"))
+                                                               ("b" ,(local-file
+                                                                      "../../../keys/ssh/freydis.pub"))))
+                                            (password-authentication? #f)
+                                            (port-number 2123)))
+            (service network-manager-service-type)
+            (service wpa-supplicant-service-type)
+            (service ntp-service-type)) %base-services))
+  (bootloader (bootloader-configuration
+                (bootloader grub-bootloader)
+                (targets (list "/dev/sda"))
+                (keyboard-layout keyboard-layout)))
+  (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
+  (swap-devices (list (swap-space
+                        (target (uuid "9700bf14-2fc0-4fdb-bc16-88b8f66538d9")))))
 
-            ;; Networking Services
-            (service avahi-service-type)
-            (service nftables-service-type)
-            (service ntp-service-type)
-
-            ;; VPN Services
-            (service bitmask-service-type)
-
-            ;; Power Management Services
-            (service tlp-service-type
-                     (tlp-configuration (cpu-boost-on-ac? #t)
-                                        (wifi-pwr-on-bat? #t)))
-            (service thermald-service-type)
-
-            ;; Linux Services
-            (service earlyoom-service-type)
-            (service zram-device-service-type)
-
-            ;; Miscellaneous Services
-            (service sysctl-service-type
-                     (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
-                                                               ("vm.max_map_count" . "262144"))
-                                                      %default-sysctl-settings)))))
-           ;; This is the default list of services we
-           ;; are appending to.
-           %my-desktop-services))
-  (name-service-switch %mdns-host-lookup-nss))
+  (file-systems (cons* (file-system
+                         (mount-point "/boot/efi")
+                         (device (uuid "B1A0-F495"
+                                       'fat16))
+                         (type "vfat"))
+                       (file-system
+                         (mount-point "/")
+                         (device (uuid "ec620eab-171d-4607-8b6c-428d1e100537"
+                                       'ext4))
+                         (type "ext4")) %base-file-systems)))
