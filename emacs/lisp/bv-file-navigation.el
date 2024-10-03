@@ -37,7 +37,7 @@
   :group 'files
   :prefix "bv-")
 
-(defcustom bv-main-org-path "~/desktop/main.org"
+(defcustom bv-main-org-path "~/main/main.org"
   "Path to the main Org file."
   :type 'string
   :group 'bv-file-paths)
