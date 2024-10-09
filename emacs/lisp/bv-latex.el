@@ -393,5 +393,18 @@ buffer named BUFFER-NAME."
       (org-mode)
       (message "Found %d LaTeX fragments." (length classified-fragments)))))
 
+(defun bv-set-org-format-latex-preview-scale ()
+  "Set the LaTeX preview scale based on the current machine."
+  (let ((machine-name (system-name)))
+    (cond
+     ((string-equal machine-name "ragnar")
+      (plist-put org-format-latex-options :scale 1.5))
+     ((string-equal machine-name "leif")
+      (plist-put org-format-latex-options :scale 1.5))
+     ((string-equal machine-name "freydis")
+      (plist-put org-format-latex-options :scale 3.0))
+     (t
+      (plist-put org-format-latex-options :scale 1.0)))))
+
 (provide 'bv-latex)
 ;;; bv-latex.el ends here
