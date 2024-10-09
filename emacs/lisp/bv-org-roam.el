@@ -115,7 +115,7 @@
                                                    (seq-remove #'nonspacing-mark-p
                                                                (string-glyph-decompose s)))))
                (cl-replace (title pair) (replace-regexp-in-string (car pair) (cdr pair) title)))
-      (let* ((pairs `(("[^[:alnum:][:digit:]]" . "-") ;; convert anything not alphanumeric to "-"
+      (let* ((pairs (("[^[:alnum:][:digit:]]" . "-") ;; convert anything not alphanumeric to "-"
                       ("--*" . "-")                   ;; remove sequential hyphens
                       ("^-" . "")                     ;; remove starting hyphen
                       ("-$" . "")))                   ;; remove ending hyphen
@@ -150,7 +150,7 @@
 
 (cl-defmethod org-roam-node-directories ((node org-roam-node))
   "Return the uppercase directory of the NODE's file.
-The directory is relative to `org-roam-directory'."
+The directory is relative to org-roam-directory'."
   (if-let ((dirs (file-name-directory (file-relative-name (org-roam-node-file node) org-roam-directory))))
       (format "%s" (upcase (car (split-string dirs "/"))))
     ""))
