@@ -847,7 +847,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   ;;
 	(setup bv-latex
 		(:require bv-latex)
-		(:option bv-latex-output-dir "~/slipbox/out")
+		(:option bv-latex-output-dir "~/documents/slipbox/out")
 		(:alias org-latex-compile bv-org-latex-compile)
 		(:global "C-c f" bv-fix-math-delimiters)
     (bv-set-org-format-latex-preview-scale))
