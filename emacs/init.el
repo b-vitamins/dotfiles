@@ -236,6 +236,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   ;; ---- File Associations ----
   (add-to-list 'auto-mode-alist '("\\.gscm\\'" . scheme-mode)) ;; Open `.gscm` files in `scheme-mode`.
   (add-to-list 'auto-mode-alist '("zshrc\\'" . sh-mode))       ;; Open `zshrc` files in `sh-mode`.
+  (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))     ;; Open `.txt` files in `org-mode`.
 
   (log-init-message "    File associations set for `.gscm` and `zshrc`.")
 
@@ -758,8 +759,10 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
      (scheme . t) (julia . t) (gnuplot . t) (lua . t) (ruby . t)
      (python . t) (emacs-lisp . t) (dot . t) (maxima . t) (org . t)))
 
+
+
   ;; Agenda and Task Management
-  (:option* agenda-files '("~/desktop/main.org" "~/slipbox/notes")
+  (:option* agenda-files '("~/documents/main")
             agenda-skip-deadline-prewarning-if-scheduled nil
             agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline
             agenda-columns-add-appointments-to-effort-sum t
@@ -790,6 +793,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 							:image-size-adjust (1.0 . 1.0)
 							:latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
 							:image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
+
   ;; LaTeX and Image Export Settings
   (:push-to org-preview-latex-process-alist
             (:elements
@@ -811,8 +815,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
                                 "lualatex -shell-escape -interaction nonstopmode %f"
                                 "lualatex -shell-escape -interaction nonstopmode %f")
             latex-create-formula-image-program 'dvipng
-            format-latex-options (plist-put org-format-latex-options :scale 4.0)
-            preview-latex-image-directory "~/.latex-previews/"
+            preview-latex-image-directory "~/pictures/.images/latex-previews/"
             highlight-latex-and-related (quote (native latex script entities)))
 
 	;; Source: https://tecosaur.github.io/emacs-config/config.html#prettier-highlighting
@@ -846,7 +849,8 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 		(:require bv-latex)
 		(:option bv-latex-output-dir "~/slipbox/out")
 		(:alias org-latex-compile bv-org-latex-compile)
-		(:global "C-c f" bv-fix-math-delimiters))
+		(:global "C-c f" bv-fix-math-delimiters)
+    (bv-set-org-format-latex-preview-scale))
 
   ;; Habit Tracking
   (:option* modules '(org-habit)
