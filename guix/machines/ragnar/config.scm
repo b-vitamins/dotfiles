@@ -54,6 +54,10 @@ table inet filter {
     # allow traffic from the local LAN (10.42.0.0/24)
     ip saddr 10.42.0.0/24 accept
 
+    # allow Nicotine+ (Soulseek) client traffic (port range 2234-2239)
+    tcp dport { 2234-2239 } accept
+    udp dport { 2234-2239 } accept
+
     # reject everything else
     reject with icmpx type port-unreachable
   }
@@ -81,7 +85,6 @@ table ip nat {
 
     # Masquerade traffic from the local LAN (10.42.0.0/24) through the Wi-Fi interface (wlp37s0)
     ip saddr 10.42.0.0/24 oifname wlp37s0 masquerade
-
   }
 }
 "))
