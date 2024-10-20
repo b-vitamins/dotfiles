@@ -37,7 +37,7 @@
   :group 'files
   :prefix "bv-")
 
-(defcustom bv-main-org-path "~/main/main.org"
+(defcustom bv-main-org-path "~/documents/main/main.org"
   "Path to the main Org file."
   :type 'string
   :group 'bv-file-paths)
@@ -47,17 +47,17 @@
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-bib-path "~/slipbox/bibliographies/working.bib"
+(defcustom bv-bib-path "~/documents/slipbox/bibliographies/working.bib"
   "Path to the bibliography file."
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-library-path "~/library/papers"
+(defcustom bv-library-path "~/documents/papers"
   "Path to the library files."
   :type 'string
   :group 'bv-file-paths)
 
-(defcustom bv-notes-path "~/slipbox/notes"
+(defcustom bv-notes-path "~/documents/slipbox/notes"
   "Path to notes files."
   :type 'string
   :group 'bv-file-paths)
