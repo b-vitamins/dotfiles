@@ -86,5 +86,5 @@
             ;; Miscellaneous Home Services
             (service home-beets-service-type
                      (home-beets-configuration (directory
-                                                "/home/b/library/music"))))
+                                                "/home/b/music"))))
            %my-home-services)))
