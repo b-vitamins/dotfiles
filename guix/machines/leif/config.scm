@@ -36,17 +36,17 @@
                 (theme (grub-theme (inherit (grub-theme))))))
 
   (file-systems (append (list (file-system
-                                (device (uuid "ca39f3aa-80dd-45b3-84d1-20f12a127365" 'ext4))
+                                (device (file-system-label "my-root"))
                                 (mount-point "/")
                                 (type "ext4"))
                               (file-system
-                                (device (uuid "0B4A-3D6C"
+                                (device (uuid "763C-E5EC"
                                               'fat32))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
 
   (swap-devices (list (swap-space
-                        (target (uuid "cfce6e44-12df-4e94-810d-18024ae9f0d2")))))
+                        (target (uuid "d9d26205-fab2-4061-82b6-4c231a429b68")))))
 
   (users (cons (user-account
                  (name "b")
