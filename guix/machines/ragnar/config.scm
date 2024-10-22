@@ -9,6 +9,7 @@
              (gnu services xorg)
              (gnu services docker)
              (gnu services networking)
+             (gnu services file-sharing)
              (gnu services docker)
              (gnu services virtualization)
              (gnu services spice)
@@ -58,9 +59,14 @@ table inet filter {
     tcp dport { 2234-2239 } accept
     udp dport { 2234-2239 } accept
 
+    # allow OpenVPN traffic on ports 80 and 1194 (both TCP and UDP)
+    tcp dport { 80, 1194 } accept
+    udp dport { 80, 1194 } accept
+
     # reject everything else
     reject with icmpx type port-unreachable
   }
+
   chain forward {
     type filter hook forward priority 0; policy drop;
 
@@ -73,6 +79,7 @@ table inet filter {
     # Allow forwarding of established and related connections
     ct state { established, related } accept
   }
+
   chain output {
     type filter hook output priority 0; policy accept;
   }
@@ -136,6 +143,7 @@ table ip nat {
                                          "input"
                                          "docker"
                                          "realtime"
+                                         "transmission"
                                          "lp"
                                          "audio"
                                          "video"))) %base-user-accounts))
@@ -191,6 +199,65 @@ table ip nat {
             (service nftables-service-type
                      (nftables-configuration (ruleset %my-nftables-ruleset)))
             (service ntp-service-type)
+
+            ;; File Sharing Services
+            (service transmission-daemon-service-type
+                     (transmission-daemon-configuration
+                      ;; Restrict access to the RPC ("control") interface for user "b"
+                      (rpc-authentication-required? #t)
+                      (rpc-username "b")
+                      (rpc-password
+                       "{9b8548746166356d4f2b168a067ffec74073ada1NoxgzcwS")
+
+                      ;; Accept requests from localhost and the subnet 10.42.*.*
+                      (rpc-whitelist-enabled? #t)
+                      (rpc-whitelist '("127.0.0.1" "::1" "10.42.*.*"))
+
+                      ;; Regular (modest) speeds during the day
+                      (speed-limit-down-enabled? #t)
+                      (speed-limit-down (* 1024 1024 1)) ;1 MB/s download speed
+                      (speed-limit-up-enabled? #t)
+                      (speed-limit-up (* 1024 200)) ;200 KB/s upload speed
+                      
+                      ;; High-speed downloads during the night
+                      (alt-speed-enabled? #t)
+                      (alt-speed-down (* 1024 1024 20)) ;20 MB/s download speed
+                      (alt-speed-up (* 1024 2048)) ;2 MB/s upload speed
+                      
+                      ;; Schedule the alternative speeds for nighttime hours
+                      (alt-speed-time-enabled? #t)
+                      (alt-speed-time-day 'all) ;Every day
+                      (alt-speed-time-begin 1320) ;Start at 10:00 PM (1320 minutes)
+                      (alt-speed-time-end 480) ;End at 8:00 AM (480 minutes)
+                      
+                      ;; Store downloads in the default directory
+                      (download-dir "/var/lib/transmission-daemon/downloads")
+
+                      ;; Enable incomplete directory to hold incomplete downloads
+                      (incomplete-dir-enabled? #t)
+                      (incomplete-dir
+                       "/var/lib/transmission-daemon/incomplete")
+
+                      ;; Enable uTP for reduced network impact
+                      (utp-enabled? #t)
+
+                      ;; Enable encryption for secure peer connections
+                      (encryption prefer-encrypted-connections)
+
+                      ;; Set peer limits for faster downloads
+                      (peer-limit-global 1000)
+                      (peer-limit-per-torrent 200)
+
+                      ;; Enable Distributed Hash Table (DHT) and Peer Exchange (PEX)
+                      (dht-enabled? #t)
+                      (pex-enabled? #t)
+
+                      ;; Watch directory for .torrent files and automatically add them
+                      (watch-dir-enabled? #t)
+                      (watch-dir "/var/lib/transmission-daemon/watch") ;Specify your watch directory path
+                      
+                      ;; Automatically delete .torrent files after processing
+                      (trash-original-torrent-files? #t)))
 
             ;; VPN Services
             (service bitmask-service-type)
