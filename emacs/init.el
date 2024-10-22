@@ -517,7 +517,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   ;; Define possible dictionary paths.
   (let* ((guix-home-path "~/.guix-home/profile/share/hunspell/en_GB-ize.aff")
          (guix-profile-path "~/.guix-profile/share/hunspell/en_GB-ize.aff")
-         (personal-dict "~/.dictionary")  ;; Personal dictionary path
+         (personal-dict "~/documents/.dictionary")  ;; Personal dictionary path
          ;; Check if the dictionary exists in either location.
          (dict-path (cond
                      ((file-exists-p guix-home-path) guix-home-path)
@@ -759,7 +759,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
      (scheme . t) (julia . t) (gnuplot . t) (lua . t) (ruby . t)
      (python . t) (emacs-lisp . t) (dot . t) (maxima . t) (org . t)))
 
-
+  (:require bv-file-navigation)
 
   ;; Agenda and Task Management
   (:option* agenda-files '("~/documents/main")
@@ -770,9 +770,21 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
             agenda-todo-list-sublevels nil
             agenda-start-with-clockreport-mode t
             agenda-clock-report-header "Clock Table"
-            agenda-clockreport-parameter-plist '(:maxlevel 0 :filetitle t :compact t :stepskip0 t :fileskip0 t)
+            agenda-clockreport-parameter-plist '(:scope bv-clockable-org-files
+                                                        :maxlevel 3
+                                                        :block thisweek
+                                                        :filetitle t
+                                                        :emphasize t
+                                                        :stepskip0 t
+                                                        :fileskip0 t
+                                                        :level nil
+                                                        :indent t
+                                                        :narrow 50!
+                                                        :tcolumns 3
+                                                        :link t)
             deadline-warning-days 1
-            clock-total-time-cell-format "*%s*")
+            clock-total-time-cell-format "*%s*"
+            duration-format '((special . h:mm)))
 
   ;; Logging and Archiving
   (:option* log-done 'time
@@ -847,13 +859,14 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   ;;
 	(setup bv-latex
 		(:require bv-latex)
-		(:option bv-latex-output-dir "~/documents/slipbox/out")
+		(:option bv-latex-output-dir "~/documents/out")
 		(:alias org-latex-compile bv-org-latex-compile)
 		(:global "C-c f" bv-fix-math-delimiters)
     (bv-set-org-format-latex-preview-scale))
 
   ;; Habit Tracking
   (:option* modules '(org-habit)
+            habit-following-days 7
             habit-preceding-days 30
             habit-graph-column 40)
 
@@ -1094,7 +1107,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   (:load-after marginalia)
   (:option
    v2-ack t
-   org-roam-directory "~/slipbox"
+   org-roam-directory "~/documents/slipbox/notes"
    org-roam-database-connector 'sqlite-builtin
    org-roam-db-extra-links-elements '(keyword node-property)
    org-roam-mode-sections '((org-roam-backlinks-section :unique t)
