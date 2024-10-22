@@ -36,17 +36,17 @@
                 (theme (grub-theme (inherit (grub-theme))))))
 
   (file-systems (append (list (file-system
-                                (device (file-system-label "my-root"))
+                                (device (uuid "ca39f3aa-80dd-45b3-84d1-20f12a127365" 'ext4))
                                 (mount-point "/")
-                                (type "btrfs"))
+                                (type "ext4"))
                               (file-system
                                 (device (uuid "0B4A-3D6C"
-                                              'fat))
+                                              'fat32))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
 
   (swap-devices (list (swap-space
-                        (target (uuid "11daada6-79c9-4b65-82b5-ece1d6cc532e")))))
+                        (target (uuid "cfce6e44-12df-4e94-810d-18024ae9f0d2")))))
 
   (users (cons (user-account
                  (name "b")
@@ -67,7 +67,8 @@
                           (specification->package "font-google-noto")
                           (specification->package "font-google-noto-serif-cjk")
                           (specification->package "font-google-noto-sans-cjk")
-                          (specification->package "fontconfig"))
+                          (specification->package "fontconfig")
+                          (specification->package "pinentry"))
                     %base-packages))
 
   (services
