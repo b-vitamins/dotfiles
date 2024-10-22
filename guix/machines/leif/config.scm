@@ -40,13 +40,13 @@
                                 (mount-point "/")
                                 (type "btrfs"))
                               (file-system
-                                (device (uuid "6B0C-4AAA"
+                                (device (uuid "0B4A-3D6C"
                                               'fat))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
 
   (swap-devices (list (swap-space
-                        (target (uuid "5fa45346-2a9a-4b7a-9353-ff6e7f5991a7")))))
+                        (target (uuid "11daada6-79c9-4b65-82b5-ece1d6cc532e")))))
 
   (users (cons (user-account
                  (name "b")
