@@ -157,7 +157,8 @@ table ip nat {
                           (specification->package "font-google-noto")
                           (specification->package "font-google-noto-serif-cjk")
                           (specification->package "font-google-noto-sans-cjk")
-                          (specification->package "fontconfig"))
+                          (specification->package "fontconfig")
+                          (specification->package "pinentry"))
                     %base-packages))
 
   (services
@@ -240,9 +241,6 @@ table ip nat {
 
                       ;; Enable uTP for reduced network impact
                       (utp-enabled? #t)
-
-                      ;; Enable encryption for secure peer connections
-                      (encryption prefer-encrypted-connections)
 
                       ;; Set peer limits for faster downloads
                       (peer-limit-global 1000)
