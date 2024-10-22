@@ -37,6 +37,11 @@
   :group 'files
   :prefix "bv-")
 
+(defcustom bv-main-path "~/documents/main"
+  "Path to the main Org file."
+  :type 'string
+  :group 'bv-file-paths)
+
 (defcustom bv-main-org-path "~/documents/main/main.org"
   "Path to the main Org file."
   :type 'string
@@ -148,6 +153,13 @@ non-nil, the window will receive focus after opening."
 (bv-define-open-file-function bv-open-my-bib bv-bib-path 'right t)
 (bv-define-open-file-function bv-open-my-snippets-org bv-snippets-org-path 'right t)
 (bv-define-open-file-function bv-open-my-main-org bv-main-org-path 'right t)
+
+
+(defun bv-clockable-org-files ()
+  "Return a list of Org files in `bv-main-path' and `bv-notes-path' directories."
+  (append
+   (directory-files-recursively bv-notes-path "\\.org$")
+   (directory-files-recursively bv-main-path "\\.org$")))
 
 (provide 'bv-file-navigation)
 ;;; bv-file-navigation.el ends here
