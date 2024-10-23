@@ -18,32 +18,74 @@
              (myguix home)
              (myguix home services emacs))
 
-;; Backup job: runs every hour
-(define %rclone-backup-job
-  ;; Run 'rclone' to back up local paths to their respective remote destinations.
-  ;; This job runs every hour and skips execution if a previous instance is still running.
+(define %borg-backup-job
+  ;; Run 'borg' to create backups of local paths in a local repository.
+  #~(job '(next-hour '(1)) ; Run daily at 01:00
+         (lambda ()
+           (let* ((source-paths '("/home/b/documents"
+                                  "/home/b/.mozilla"
+                                  "/home/b/music"
+                                  "/home/b/pictures"
+                                  "/home/b/projects"
+                                  "/home/b/templates"
+                                  "/home/b/trash"
+                                  "/home/b/videos"))
+                  (repo-path "ssh://u429656@u429656.your-storagebox.de:23/./backups")
+                  (backup-name (string-append "backup-" (strftime "%Y-%m-%d" (localtime (current-time)))))
+                  (log-file "/home/b/.local/share/borg-backup.log")
+                  (lock-file "/tmp/borg-backup.lock"))
+             ;; Lock file to prevent overlapping jobs
+             (if (file-exists? lock-file)
+                 ;; Skip backup if another instance is running
+                 (format #t "Skipping Borg backup: previous instance is still running~%")
+                 ;; Proceed with backup if no lock file exists
+                 (begin
+                   (call-with-output-file lock-file
+                     (lambda (port)
+                       (format port "Borg backup started at ~a~%" (current-time))))
+
+                   ;; Set BORG_PASSCOMMAND to securely retrieve the first line of the pass entry
+                   (setenv "BORG_PASSCOMMAND" "pass infra/borg/passphrase")
+                   
+                   ;; Create Borg backup with lzma compression (level 9)
+                   (system* "borg"
+                            "create"
+                            (string-append repo-path "::" backup-name)
+                            (string-join source-paths " ")
+                            "--compression" "lzma,9")
+
+                   ;; Prune old backups (keep 7 daily, 4 weekly, and 12 monthly backups)
+                   (system* "borg"
+                            "prune"
+                            repo-path
+                            "--keep-daily=7"
+                            "--keep-weekly=4"
+                            "--keep-monthly=12")
+
+                   ;; Remove lock file after backup completes
+                   (delete-file lock-file)
+                   (format #t "Borg backup completed successfully~%")))))
+         "borg-backup"))
+
+;; Sync job: runs every hour
+(define %mega-sync-job
+  ;; Run 'rclone' to sync local paths to their respective remote destinations.
   #~(job '(next-hour (range 0 24 1)) ;Run every hour
          (lambda ()
-           (let* ((source-destination-pairs '(("/home/b/.gitconfig"
-                                               "mega:backup/ragnar/.gitconfig")
-                                              ("/home/b/.guile"
-                                               "mega:backup/ragnar/.guile")
-                                              ("/home/b/.mozilla"
-                                               "mega:backup/ragnar/.mozilla")
-                                              ("/home/b/.password-store"
-                                               "mega:backup/ragnar/.password-store")
-                                              ("/home/b/projects"
-                                               "mega:backup/ragnar/projects")
-                                              ("/home/b/documents"
-                                               "mega:backup/ragnar/documents")
-                                              ("/home/b/.ssh"
-                                               "mega:backup/ragnar/.ssh")
+           (let* ((source-destination-pairs '(("/home/b/documents"
+                                               "mega:ragnar/documents")
+                                              ("/home/b/music"
+                                               "mega:ragnar/music")
                                               ("/home/b/pictures"
-                                               "mega:backup/ragnar/pictures")
-                                              ("/home/b/archives"
-                                               "mega:backup/ragnar/archives")))
-                  (log-file "/home/b/.local/share/rclone-fast-backup.log") ;Log file for fast backup
-                  (lock-file "/tmp/rclone-fast-backup.lock"))
+                                               "mega:ragnar/pictures")
+                                              ("/home/b/projects"
+                                               "mega:ragnar/projects")
+                                              ("/home/b/templates"
+                                               "mega:ragnar/templates")
+                                              ("/home/b/videos"
+                                               "mega:ragnar/videos")))
+                  (log-file "/home/b/.local/share/rclone-backup.log") ;Log file for backup
+                  (lock-file "/tmp/rclone-backup.lock"))
              ;; Lock file to prevent overlapping jobs
              
              (if (file-exists? lock-file)
@@ -63,7 +105,7 @@
                                (let ((path (car pair))
                                      (remote (cadr pair)))
                                  (system* "rclone"
-                                          "copy"
+                                          "sync"
                                           path
                                           remote
                                           "--log-file"
@@ -72,15 +114,15 @@
                    ;; Remove lock file after backup completes
                    (delete-file lock-file)
                    (format #t "Backup completed successfully~%")))))
-         "rclone-backup"))
+         "mega-sync"))
 
 ;; Dedupe job: runs 3 times a day
-(define %rclone-dedupe-job
-  ;; Run 'rclone dedupe' on the 'mega:backup/ragnar' path to remove duplicates.
+(define %mega-dedupe-job
+  ;; Run 'rclone dedupe' on the 'mega:ragnar' path to remove duplicates.
   ;; This job runs at 8:00 AM, 2:00 PM, and 8:00 PM.
   #~(job '(next-hour '(8 14 20)) ;Run at 8:00 AM, 2:00 PM, and 8:00 PM
          (lambda ()
-           (let ((remote-path "mega:backup/ragnar")
+           (let ((remote-path "mega:ragnar")
                  ;; Remote path to deduplicate
                  (log-file "/home/b/.local/share/rclone-dedupe.log"))
              ;; Log file for deduplication process
@@ -89,7 +131,7 @@
              (system* "rclone" "dedupe" remote-path "--log-file" log-file)
 
              (format #t "Deduplication completed successfully~%")))
-         "rclone-dedupe"))
+         "mega-dedupe"))
 
 (home-environment
   (packages (append %system-core-packages
@@ -117,8 +159,9 @@
             (service home-mcron-service-type
                      (home-mcron-configuration (jobs (list
                                                       %garbage-collector-job
-                                                      %rclone-backup-job
-                                                      %rclone-dedupe-job))))
+                                                      %borg-backup-job
+                                                      %mega-sync-job
+                                                      %mega-dedupe-job))))
 
             ;; Secure Shell
             (service home-openssh-service-type
@@ -158,6 +201,5 @@
 
             ;; Miscellaneous Home Services
             (service home-beets-service-type
-                     (home-beets-configuration (directory
-                                                "/home/b/music"))))
+                     (home-beets-configuration (directory "/home/b/music"))))
            %my-home-services)))
