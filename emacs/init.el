@@ -715,6 +715,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 
 (setup org
   (:require org ox-latex)
+  (:require bv-org)
 
   ;; Mode Enhancements
   (org-indent-mode 1)
@@ -741,6 +742,8 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
             pretty-entities nil
             pretty-entities-include-sub-superscripts nil
             fontify-quote-and-verse-blocks t
+            fontify-done-headline nil
+            org-fontify-todo-headline nil
 						return-follows-link t)
 
   ;; Source Code Blocks and Babel
@@ -759,9 +762,34 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
      (scheme . t) (julia . t) (gnuplot . t) (lua . t) (ruby . t)
      (python . t) (emacs-lisp . t) (dot . t) (maxima . t) (org . t)))
 
-  (:require bv-file-navigation)
+  ;; TODO Items
+  (:option* todo-keywords
+            '((sequence "TODO(t)" "|" "DONE(d)")
+              (sequence "TOMEET(m)" "|" "CONCLUDED(c)" "CANCELED(x)")
+              (sequence "TOREAD(r)" "|" "COMPLETED(p)")
+              (sequence "TOWATCH(w)" "|" "FINISHED(f)")
+              (sequence "TOSOLVE(s)" "|" "SOLVED(v)")
+              (sequence "|" "ABANDONED(a)")))
+  (:with-hook org-shiftright-hook
+    (:hook bv-org-todo-cycle-right))
+  (:with-hook org-shiftleft-hook
+    (:hook bv-org-todo-cycle-left))
+  (:option* todo-keyword-faces
+            '(("TODO" . 'org-todo)
+              ("DONE" . 'org-done)
+              ("TOMEET" . 'org-agenda-date)
+              ("CONCLUDED" . 'org-agenda-done)
+              ("CANCELED" . 'org-agenda-dimmed-todo-face)
+              ("TOREAD" . 'modus-themes-completion-match-0)
+              ("COMPLETED" . 'org-done)
+              ("TOWATCH" . 'modus-themes-completion-match-1)
+              ("FINISHED" . 'org-done)
+              ("TOSOLVE" . 'modus-themes-completion-match-2)
+              ("SOLVED" . 'org-done)
+              ("ABANDONED" . 'org-agenda-dimmed-todo-face)))
 
   ;; Agenda and Task Management
+  (:require bv-file-navigation)
   (:option* agenda-files '("~/documents/main")
             agenda-skip-deadline-prewarning-if-scheduled nil
             agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline
@@ -881,6 +909,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   (message "Successfully setup org-mode"))
 
 (setup org-faces
+  (:require bv-org)
 	(:with-mode org-mode
 		(:hook bv-setup-org-fonts))
 	(message "Successfully setup org-faces"))
@@ -1125,6 +1154,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   (:with-hook after-init-hook
 		(:hook org-roam-db-autosync-mode))
   (:global
+   "C-c n f" org-roam-node-find
    "C-c n g" org-roam-graph
    "C-c n i" org-roam-node-insert
 	 "C-c n d" org-roam-dailies-capture-today
@@ -1140,7 +1170,6 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 	 buffer-narrow-key ?r
    buffer-after-buffers t)
   (:global
-   "C-c n f" consult-org-roam-file-find
    "C-c n s" consult-org-roam-search
    "C-c n b" consult-org-roam-backlinks
    "C-c n B" consult-org-roam-backlinks-recursive
