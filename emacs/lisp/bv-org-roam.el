@@ -113,7 +113,7 @@
 (defcustom bv-org-roam-node-display-template
   (concat
    (propertize "" 'face 'org-todo)
-   (propertize " ${hierarchy:100} " 'face 'italic)
+   (propertize " ${title:100} " 'face 'italic)
    (propertize " ${directories:20} " 'face 'italic)
    (propertize " ${tags:60} " 'face 'org-tag)
    (propertize " ${backlinkscount:6} " 'face 'italic))
@@ -144,14 +144,6 @@ The directory is relative to org-roam-directory'."
                                 :and (= type "id")]
                        (org-roam-node-id node)))))
     (format "[%d]" count)))
-
-(cl-defmethod org-roam-node-hierarchy ((node org-roam-node))
-  "Return the hierarchy string for the NODE."
-  (let ((level (org-roam-node-level node)))
-    (concat
-     (when (> level 0) (concat (org-roam-node-file-title node) ">"))
-     (when (> level 1) (concat (string-join (org-roam-node-olp node) ">") ">"))
-     (org-roam-node-title node))))
 
 (provide 'bv-org-roam)
 ;;; bv-org-roam.el ends here
