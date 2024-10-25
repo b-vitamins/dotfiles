@@ -132,36 +132,6 @@
     (when (called-interactively-p 'interactive)
       (message "hidden-mode-line-mode disabled."))))
 
-(defun bv-setup-org-fonts ()
-  "Configure font settings for Org-mode, checking font availability."
-  (let ((dejavu-available (member "DejaVu Sans" (font-family-list)))
-        (iosevka-available (member "Iosevka Comfy" (font-family-list))))
-    ;; Set the document title font if DejaVu Sans is available
-    (when dejavu-available
-      (set-face-attribute 'org-document-title nil
-                          :font "DejaVu Sans" :height 1.0))
-    ;; Set heading fonts if Iosevka Comfy is available
-    (when iosevka-available
-      (dolist (face '((org-level-1 . 1.1)
-                      (org-level-2 . 1.05)
-                      (org-level-3 . 1.0)
-                      (org-level-4 . 1.0)
-                      (org-level-5 . 1.0)
-                      (org-level-6 . 1.0)
-                      (org-level-7 . 1.0)
-                      (org-level-8 . 1.0)))
-        (set-face-attribute (car face) nil
-                            :font "Iosevka Comfy"
-                            :weight 'bold
-                            :height (* 1.0 (cdr face)))))
-    ;; Set fixed-pitch attributes for specific elements if either font is available
-    (when (or dejavu-available iosevka-available)
-      (dolist (face '(org-block org-table org-formula org-code org-verbatim
-                     org-special-keyword org-meta-line org-checkbox))
-        (set-face-attribute face nil :inherit 'fixed-pitch)))
-    (set-face-attribute 'org-block nil
-                        :background (face-background 'default))))
-
 (with-eval-after-load 'flycheck
 	(declare-function flycheck-overlays-at "flycheck")
 	(defun bv-copy-flycheck-overlay-at-point-to-kill-ring ()
@@ -358,7 +328,7 @@ the BUFFER in the selected window if conditions are met."
                         (delete-region start end))
                     (puthash full-name t packages)))
               (message "Package version not found for %s" package-name))))
-      (message "Removed %d duplicate packages" duplicate-count)))))
+        (message "Removed %d duplicate packages" duplicate-count)))))
 
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
