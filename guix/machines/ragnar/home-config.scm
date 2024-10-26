@@ -20,18 +20,10 @@
 
 (define %borg-backup-job
   ;; Run 'borg' to create backups of local paths in a local repository.
-  #~(job '(next-hour '(1)) ; Run daily at 01:00
+  #~(job '(next-hour '(0)) ; Run daily at 00:00
          (lambda ()
-           (let* ((source-paths '("/home/b/documents"
-                                  "/home/b/.mozilla"
-                                  "/home/b/music"
-                                  "/home/b/pictures"
-                                  "/home/b/projects"
-                                  "/home/b/templates"
-                                  "/home/b/trash"
-                                  "/home/b/videos"))
-                  (repo-path "ssh://u429656@u429656.your-storagebox.de:23/./backups")
-                  (backup-name (string-append "backup-" (strftime "%Y-%m-%d" (localtime (current-time)))))
+           (let* ((repo-path "ssh://u429656@u429656.your-storagebox.de:23/./backups")
+                  (backup-name (string-append "ragnar-" (strftime "%Y-%m-%d-%H-%M-%S" (localtime (current-time)))))
                   (log-file "/home/b/.local/share/borg-backup.log")
                   (lock-file "/tmp/borg-backup.lock"))
              ;; Lock file to prevent overlapping jobs
@@ -51,8 +43,17 @@
                    (system* "borg"
                             "create"
                             (string-append repo-path "::" backup-name)
-                            (string-join source-paths " ")
-                            "--compression" "lzma,9")
+                            "/home/b"
+                            "--exclude-caches"
+                            "--exclude" "/home/b/.gnupg/*"
+                            "--exclude" "/home/b/.ssh/*"
+                            "--exclude" "/home/b/.guix-home/*"
+                            "--exclude" "/home/b/.guix-profile/*"
+                            "--exclude" "/home/b/.npm/*"
+                            "--exclude" "/home/b/.cache/*"
+                            "--exclude" "/home/b/.local/state/*"
+                            "--exclude" "/home/b/downloads/*"
+                            "--compression" "zstd,22")
 
                    ;; Prune old backups (keep 7 daily, 4 weekly, and 12 monthly backups)
                    (system* "borg"
