@@ -8,13 +8,13 @@
              (gnu services desktop)
              (gnu services xorg)
              (gnu services docker)
+             (gnu services databases)
              (gnu services networking)
              (gnu services file-sharing)
              (gnu services docker)
              (gnu services virtualization)
              (gnu services spice)
              (gnu services linux)
-             (gnu services vpn)
              (gnu services ssh)
              (gnu services sysctl)
              (myguix services desktop)
@@ -201,6 +201,10 @@ table ip nat {
                      (nftables-configuration (ruleset %my-nftables-ruleset)))
             (service ntp-service-type)
 
+            ;; Database Services
+            (service mysql-service-type)
+            (service redis-service-type)
+
             ;; File Sharing Services
             (service transmission-daemon-service-type
                      (transmission-daemon-configuration
@@ -256,9 +260,6 @@ table ip nat {
                       
                       ;; Automatically delete .torrent files after processing
                       (trash-original-torrent-files? #t)))
-
-            ;; VPN Services
-            (service bitmask-service-type)
 
             ;; Virtualization Services
             (service libvirt-service-type
