@@ -7,9 +7,11 @@
              (gnu services cuirass)
              (gnu services mcron)
              (gnu services networking)
+             (gnu services shepherd)
              (gnu services ssh)
              (gnu services web)
              (gnu services sysctl)
+             (guix channels)
              (guix modules)
              (ice-9 match))
 
@@ -188,7 +190,7 @@
                           (specification->package "font-google-noto")
                           (specification->package "font-google-noto-serif-cjk")
                           (specification->package "font-google-noto-sans-cjk")
-                          (specification->package "bind:utils")
+                          (specification->package "bind")
                           (specification->package "cifs-utils")
                           (specification->package "fontconfig"))
                     %base-packages))
@@ -217,8 +219,7 @@ COMMIT
                                                               (domains '("bvits.in"
                                                                          "www.bvits.in"))
                                                               (deploy-hook
-                                                               %nginx-deploy-hook)
-                                                              (webroot "/srv/http"))))))
+                                                               %nginx-deploy-hook))))))
          ;; Cuirass for CI builds
          (service cuirass-service-type
                   (cuirass-configuration (remote-server (cuirass-remote-server-configuration
@@ -257,9 +258,9 @@ COMMIT
          ;; OpenSSH for remote access
          (service openssh-service-type
                   (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                   "../../../keys/ssh/ragnar.pub"))
+                                                                   "../../keys/ssh/ragnar.pub"))
                                                             ("b" ,(local-file
-                                                                   "../../../keys/ssh/leif.pub"))))
+                                                                   "../../keys/ssh/leif.pub"))))
                                          (password-authentication? #f)
                                          (port-number 2123)))
          ;; NTP for time synchronization
@@ -298,7 +299,7 @@ COMMIT
                                       (authorized-keys (append
                                                         %default-authorized-guix-keys
                                                         (list (local-file
-                                                               "../../../keys/guix/myguix-cuirass-worker-signing-key.pub"))))))
+                                                               "../../keys/guix/myguix-cuirass-worker-signing-key.pub"))))))
          (service nscd-service-type)
          (service rottlog-service-type)
          ;; Periodically delete old build logs.
