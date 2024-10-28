@@ -350,12 +350,13 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 
   ;; ---- Frequently Visited Files Keybinding ----
   (:global
+   "<f1>" 'org-agenda              ;; Open Org Agenda.
+   "<f2>" 'bv-open-my-main-org              ;; Open main Org file.
    "<f9>" 'bv-open-my-init-el               ;; Open Emacs init.el file.
    "<f8>" 'bv-open-my-config-scm            ;; Open Guix config.scm file.
    "<f7>" 'bv-open-my-home-config-scm       ;; Open Guix home-config.scm file.
    "<f6>" 'bv-open-my-bib                   ;; Open bibliography file.
-   "<f5>" 'bv-open-my-snippets-org          ;; Open snippets Org file.
-   "<f1>" 'bv-open-my-main-org)             ;; Open main Org file.
+   "<f5>" 'bv-open-my-snippets-org)         ;; Open snippets Org file.
 
   (log-init-message "    Frequently visited files keybindings set (starting from <f9>).")
   (log-init-message "Successfully completed setting up bv-file-navigation keybindings."))
