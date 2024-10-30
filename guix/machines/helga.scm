@@ -388,18 +388,18 @@ COMMIT
   ;; by running 'blkid' in a terminal.
   (file-systems (cons* (file-system
                          (mount-point "/boot/efi")
-                         (device (uuid "0A4C-1E59")
-                                 'fat32)
+                         (device (uuid "0A4C-1E59"
+                                 'fat))
                          (type "vfat"))
                        (file-system
                          (mount-point "/")
-                         (device (uuid "34a7a06a-dd13-40c5-bb0c-7d65dc2c1a08")
-                                 'ext4)
+                         (device (uuid "34a7a06a-dd13-40c5-bb0c-7d65dc2c1a08"
+                                 'ext4))
                          (type "ext4"))
                        (file-system
                          (mount-point "/data")
-                         (device (uuid "8b2979da-cf5f-4c9c-a9b8-d159ecd13067")
-                                 'ext4)
+                         (device (uuid "8b2979da-cf5f-4c9c-a9b8-d159ecd13067"
+                                 'ext4))
                          (type "ext4"))
                        (file-system
                          (device
