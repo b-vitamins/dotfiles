@@ -26,6 +26,21 @@
                                               "883B CA6B D275 A5F2 673C  C5DD 2AD3 2FC0 2A50 01F7"))))
                                          %default-channels))
                          (priority 0)
+                         (systems '("x86_64-linux")))
+          (specification (name "images")
+                         (build "images")
+                         (channels (cons (channel
+                                          (name 'myguix)
+                                          (url
+                                           "https://github.com/b-vitamins/myguix.git")
+                                          (branch "master")
+                                          (introduction
+                                           (make-channel-introduction
+                                            "85d58b09dc71e9dc9834b666b658f79d2e212d65"
+                                            (openpgp-fingerprint
+                                             "883B CA6B D275 A5F2 673C  C5DD 2AD3 2FC0 2A50 01F7"))))
+                                         %default-channels))
+                         (priority 0)
                          (systems '("x86_64-linux")))))
 
 ;; Define the Nginx deploy hook to reload Nginx on certificate renewal
@@ -202,13 +217,13 @@
          ;; OpenSSH for remote access
          (service openssh-service-type
                   (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                   "keys/ssh/ragnar.pub"))
+                                                                   "../../../keys/ssh/ragnar.pub"))
                                                             ("b" ,(local-file
-                                                                   "keys/ssh/leif.pub"))
+                                                                   "../../../keys/ssh/leif.pub"))
                                                             ("b" ,(local-file
-                                                                   "keys/ssh/bjorn.pub"))
+                                                                   "../../../keys/ssh/bjorn.pub"))
                                                             ("b" ,(local-file
-                                                                   "keys/ssh/freydis.pub"))))
+                                                                   "../../../keys/ssh/freydis.pub"))))
                                          (password-authentication? #f)
                                          (port-number 2123)))
          ;; NTP for time synchronization
@@ -247,7 +262,7 @@
                                       (authorized-keys (append
                                                         %default-authorized-guix-keys
                                                         (list (local-file
-                                                               "keys/guix/myguix-cuirass-worker-signing-key.pub"))))))
+                                                               "../../../keys/guix/myguix-cuirass-worker-signing-key.pub"))))))
          (service nscd-service-type)
          (service rottlog-service-type)
          ;; Periodically delete old build logs.
