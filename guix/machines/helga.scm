@@ -168,7 +168,7 @@
                   (home-directory "/home/b")
                   (shell (file-append (specification->package "zsh")
                                       "/bin/zsh"))
-                  (supplementary-groups '("wheel" "netdev" "audio" "video")))
+                  (supplementary-groups '("wheel" "netdev" "kvm")))
                 %base-user-accounts))
 
   ;; System-wide packages
