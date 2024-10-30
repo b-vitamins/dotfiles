@@ -1,19 +1,20 @@
 ;; -*- mode: scheme; -*-
 ;; guix system image --image-type=qcow2 /home/b/projects/dotfiles/guix/machines/floki/config.scm
-(use-modules (gnu) (guix) (srfi srfi-1))
+(use-modules (gnu)
+             (guix)
+             (srfi srfi-1))
 (use-service-modules avahi cuirass networking ssh mcron)
 
 ;; Run the garbe collector every day at 3:00 AM
 (define %garbage-collector-job
-  #~(job "0 3 * * *"
-         "guix gc -F 50G"))
-
+  #~(job "0 3 * * *" "guix gc -F 50G"))
 
 (operating-system
   (host-name "floki")
   (timezone "Asia/Kolkata")
   (locale "en_US.utf8")
-  (label (string-append "GNU Guix " (package-version(specification->package "guix"))))
+  (label (string-append "GNU Guix "
+                        (package-version (specification->package "guix"))))
 
   (keyboard-layout (keyboard-layout "us" "altgr-intl"
                                     #:options '("ctrl:nocaps"
@@ -32,10 +33,9 @@
 
   ;; Our /etc/sudoers file.  Since 'guest' initially has an empty password,
   ;; allow for password-less sudo.
-  (sudoers-file (plain-file "sudoers" "\
-root ALL=(ALL) ALL
-%wheel ALL=NOPASSWD: ALL\n"))
-
+  (sudoers-file (plain-file "sudoers" "root ALL=(ALL) ALL
+%wheel ALL=NOPASSWD: ALL
+"))
 
   ;; Packages installed system-wide.  Users can also install packages
   ;; under their own account: use 'guix search KEYWORD' to search
@@ -68,12 +68,10 @@ root ALL=(ALL) ALL
                                                                (workers 2)))
                  ;; OpenSSH for remote access
                  (service openssh-service-type
-                          (openssh-configuration
-                           (allow-empty-passwords? #t)
-                           (permit-root-login #t)))
+                          (openssh-configuration (allow-empty-passwords? #t)
+                                                 (permit-root-login #t)))
 
-                 (simple-service 'my-cron-jobs
-                                 mcron-service-type
+                 (simple-service 'my-cron-jobs mcron-service-type
                                  (list %garbage-collector-job))
 
                  (service wpa-supplicant-service-type)
@@ -82,27 +80,27 @@ root ALL=(ALL) ALL
                  (service gpm-service-type))
 
            (modify-services %base-services
-                            (guix-service-type config =>
-                                               (guix-configuration
-                                                (inherit config)
-                                                (generate-substitute-key? #f)
-                                                (authorized-keys (append
-                                                                  %default-authorized-guix-keys
-                                                                  (list (plain-file "substitutes.myguix.bvits.in"
-                                                                                    "(public-key 
+             (guix-service-type config =>
+                                (guix-configuration (inherit config)
+                                                    (generate-substitute-key?
+                                                                              #f)
+                                                    (authorized-keys (append
+                                                                      %default-authorized-guix-keys
+                                                                      (list (plain-file
+                                                                             "substitutes.myguix.bvits.in"
+                                                                             "(public-key 
  (ecc 
   (curve Ed25519)
   (q #07F312DEF6FA7A83CD5825457EDA1388C5B6636C143096D1365DE07FCF4E3CC9#)
   )
  )"))))
-                                                (extra-options
-                                                 '("--max-jobs=2" "--cores=8")))))))
+                                                    (extra-options '("--max-jobs=2"
+                                                                     "--cores=8")))))))
   (bootloader (bootloader-configuration
                 (bootloader grub-bootloader)
                 (targets (list "/dev/vda"))
                 (terminal-outputs '(console))))
   (file-systems (cons (file-system
-                       (mount-point "/")
-                       (device "/dev/vda2")
-                       (type "ext4"))
-                      %base-file-systems)))
+                        (mount-point "/")
+                        (device "/dev/vda2")
+                        (type "ext4")) %base-file-systems)))
