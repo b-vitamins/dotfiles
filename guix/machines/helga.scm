@@ -1,42 +1,30 @@
 ;; -*- mode: scheme; -*-
 (use-modules (gnu)
-             (gnu packages virtualization)
-             (gnu services admin)
              (gnu services avahi)
              (gnu services certbot)
              (gnu services cuirass)
              (gnu services mcron)
              (gnu services networking)
-             (gnu services shepherd)
              (gnu services ssh)
              (gnu services web)
-             (gnu services sysctl)
-             (guix channels)
-             (guix modules)
-             (ice-9 match))
-
-(define %my-channels
-  (cons (channel
-          (name 'myguix)
-          (url "https://github.com/b-vitamins/myguix.git")
-          (branch "master")
-          (introduction
-           (make-channel-introduction
-            "85d58b09dc71e9dc9834b666b658f79d2e212d65"
-            (openpgp-fingerprint
-             "883B CA6B D275 A5F2 673C  C5DD 2AD3 2FC0 2A50 01F7"))))
-        %default-channels))
+             (gnu services admin)
+             (gnu services sysctl))
 
 ;; Define Cuirass specifications for building the 'myguix' channel
 (define %cuirass-specs
   #~(list (specification (name "myguix")
                          (build '(channels myguix))
-                         (channels %my-channels)
-                         (priority 0)
-                         (systems '("x86_64-linux")))
-          (specification (name "images")
-                         (build "images")
-                         (channels %my-channels)
+                         (channels (cons (channel
+                                           (name 'myguix)
+                                           (url
+                                            "https://github.com/b-vitamins/myguix.git")
+                                           (branch "master")
+                                           (introduction
+                                            (make-channel-introduction
+                                             "85d58b09dc71e9dc9834b666b658f79d2e212d65"
+                                             (openpgp-fingerprint
+                                              "883B CA6B D275 A5F2 673C  C5DD 2AD3 2FC0 2A50 01F7"))))
+                                         %default-channels))
                          (priority 0)
                          (systems '("x86_64-linux")))))
 
@@ -46,13 +34,6 @@
                 #~(let ((pid (call-with-input-file "/var/run/nginx/pid"
                                read)))
                     (kill pid SIGHUP))))
-
-;; Define a NGINX server block for your domain
-(define %bvits-server-block
-  (nginx-server-configuration (server-name '("bvits.in" "www.bvits.in"))
-                              (root "/srv/http/bvits.in")
-                              (listen '("80"))
-                              (index '("index.html"))))
 
 ;; Define Nginx server blocks for the CI and substitute services
 (define %ci-server-block
@@ -135,26 +116,6 @@
   #~(job "5 0 * * *" ;Vixie cron syntax
          "guix gc -F 10G"))
 
-(define-public default-module-filter
-  (match-lambda
-    (('guix 'config)
-     #f)
-    (('guix _ ...)
-     #t)
-    (('gnu _ ...)
-     #t)
-    (('myguix _ ...)
-     #t)
-    (_ #f)))
-
-(define-syntax-rule (with-service-gexp-modules body ...)
-  (with-imported-modules (source-module-closure (append '((gnu build shepherd))
-                                                        ;; This %default-modules is from (gnu services shepherd).
-                                                        %default-modules)
-                                                #:select?
-                                                default-module-filter) body
-                         ...))
-
 ;; Main operating system configuration
 (operating-system
   (host-name "helga")
@@ -172,7 +133,7 @@
                   (home-directory "/home/b")
                   (shell (file-append (specification->package "zsh")
                                       "/bin/zsh"))
-                  (supplementary-groups '("wheel" "netdev" "kvm")))
+                  (supplementary-groups '("wheel" "netdev" "audio" "video")))
                 %base-user-accounts))
 
   ;; System-wide packages
@@ -182,11 +143,7 @@
                           (specification->package "emacs-no-x-toolkit")
                           (specification->package "htop")
                           (specification->package "nmap")
-                          (specification->package "ncdu")
-                          (specification->package "qemu")
-                          (specification->package "rsync")
                           (specification->package "screen")
-                          (specification->package "smartmontools")
                           (specification->package "zstd")
                           (specification->package "coreutils")
                           (specification->package "font-dejavu")
@@ -194,35 +151,18 @@
                           (specification->package "font-google-noto")
                           (specification->package "font-google-noto-serif-cjk")
                           (specification->package "font-google-noto-sans-cjk")
-                          (specification->package "bind")
-                          (specification->package "cifs-utils")
                           (specification->package "fontconfig"))
                     %base-packages))
 
   ;; System services
   (services
-   (list ;Firewall Setup
-         (service iptables-service-type
-                  (iptables-configuration (ipv4-rules (plain-file
-                                                       "iptables.rules"
-                                                       "*filter
--A INPUT -p tcp --dport 5522 ! -s 127.0.0.1 -j REJECT
--A INPUT -p tcp --dport 5555:5558 ! -s 127.0.0.1 -j REJECT
--A INPUT -p tcp --dport 8080:8081 ! -s 127.0.0.1 -j REJECT
-COMMIT
-"))))
-
+   (list (service avahi-service-type)
          ;; Certbot for handling SSL certificates
          (service certbot-service-type
                   (certbot-configuration (email "bvits@riseup.net")
                                          (certificates (list (certificate-configuration
                                                               (domains '("ci.myguix.bvits.in"
                                                                          "substitutes.myguix.bvits.in"))
-                                                              (deploy-hook
-                                                               %nginx-deploy-hook))
-                                                             (certificate-configuration
-                                                              (domains '("bvits.in"
-                                                                         "www.bvits.in"))
                                                               (deploy-hook
                                                                %nginx-deploy-hook))))))
          ;; Cuirass for CI builds
@@ -256,16 +196,19 @@ COMMIT
                                        (server-blocks (list
                                                        %nginx-redirect-server-block
                                                        %ci-server-block
-                                                       %substitutes-server-block
-                                                       %bvits-server-block))))
+                                                       %substitutes-server-block))))
          (service wpa-supplicant-service-type)
          (service network-manager-service-type)
          ;; OpenSSH for remote access
          (service openssh-service-type
                   (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                   "../../keys/ssh/ragnar.pub"))
+                                                                   "keys/ssh/ragnar.pub"))
                                                             ("b" ,(local-file
-                                                                   "../../keys/ssh/leif.pub"))))
+                                                                   "keys/ssh/leif.pub"))
+                                                            ("b" ,(local-file
+                                                                   "keys/ssh/bjorn.pub"))
+                                                            ("b" ,(local-file
+                                                                   "keys/ssh/freydis.pub"))))
                                          (password-authentication? #f)
                                          (port-number 2123)))
          ;; NTP for time synchronization
@@ -304,7 +247,7 @@ COMMIT
                                       (authorized-keys (append
                                                         %default-authorized-guix-keys
                                                         (list (local-file
-                                                               "../../keys/guix/myguix-cuirass-worker-signing-key.pub"))))))
+                                                               "keys/guix/myguix-cuirass-worker-signing-key.pub"))))))
          (service nscd-service-type)
          (service rottlog-service-type)
          ;; Periodically delete old build logs.
@@ -322,7 +265,6 @@ COMMIT
                                                     "alsa-utils")
                                                    (specification->package
                                                     "crda")))))
-         (service avahi-service-type)
          (service sysctl-service-type)
          (service special-files-service-type
                   `(("/bin/sh" ,(file-append (specification->package "bash")
@@ -335,78 +277,29 @@ COMMIT
                                                "/bin/perl"))
                     ("/usr/bin/env" ,(file-append coreutils "/bin/env"))))
          (simple-service 'my-cron-jobs mcron-service-type
-                         (list garbage-collector-job))
-         (simple-service 'floki shepherd-root-service-type
-                         (list (shepherd-service (requirement '(file-systems
-                                                                networking))
-                                                 (provision '(floki))
-                                                 (documentation
-                                                  "Runs the qemu VM specified in floki.scm")
-                                                 (start (with-service-gexp-modules #~(begin
-                                                                                       (lambda _
-                                                                                         (let 
-                                                                                              (
-                                                                                               (cmd
-                                                                                                (list #$
-                                                                                                 (file-append
-                                                                                                  qemu
-                                                                                                  "/bin/qemu-system-x86_64")
-                                                                                                 "-enable-kvm"
-                                                                                                 "-nographic"
-                                                                                                 "-m"
-                                                                                                 "80G"
-                                                                                                 "-smp"
-                                                                                                 "8"
-                                                                                                 "-device"
-                                                                                                 "e1000,netdev=net0"
-                                                                                                 "-netdev"
-                                                                                                 "user,id=net0,hostfwd=tcp::5522-:22,hostfwd=tcp::5558-:5558"
-                                                                                                 "-drive"
-                                                                                                 "file=/data/floki.qcow2,if=virtio,cache=writeback,werror=report"
-                                                                                                 "-serial"
-                                                                                                 "mon:stdio")))
-                                                                                           
-                                                                                           (fork+exec-command
-                                                                                            cmd
-                                                                                            #:log-file
-                                                                                            "/var/log/floki.log")))))))))))
+                         (list garbage-collector-job))))
+
   ;; Bootloader configuration
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
-                (targets '("/boot/efi"))
-                (keyboard-layout keyboard-layout)
-                (theme (grub-theme (inherit (grub-theme))))))
+                (targets (list "/boot/efi"))
+                (keyboard-layout keyboard-layout)))
 
   ;; Initrd modules for virtio SCSI support
   (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
 
+  ;; Swap space configuration
   (swap-devices (list (swap-space
-                        (target (uuid "bad6b62f-43f7-4d41-a377-8aca610fabec")))))
+                        (target (uuid "bd55c217-6b5e-4c37-aed2-c947af9f8a05")))))
 
-  ;; The list of file systems that get "mounted". The unique
-  ;; file system identifiers there ("UUIDs") can be obtained
-  ;; by running 'blkid' in a terminal.
+  ;; File system configuration
   (file-systems (cons* (file-system
                          (mount-point "/boot/efi")
-                         (device (uuid "0A4C-1E59"
-                                 'fat))
+                         (device (uuid "87BA-E400"
+                                       'fat32))
                          (type "vfat"))
                        (file-system
                          (mount-point "/")
-                         (device (uuid "34a7a06a-dd13-40c5-bb0c-7d65dc2c1a08"
-                                 'ext4))
-                         (type "ext4"))
-                       (file-system
-                         (mount-point "/data")
-                         (device (uuid "8b2979da-cf5f-4c9c-a9b8-d159ecd13067"
-                                 'ext4))
-                         (type "ext4"))
-                       (file-system
-                         (device
-                          "//u429656.your-storagebox.de/guix-publish/samba/zstd")
-                         (options
-                          "uid=guix-publish,gid=guix-publish,credentials=/root/samba.credentials")
-                         (mount-point "/var/cache/publish/zstd")
-                         (mount? #f)
-                         (type "cifs")) %base-file-systems)))
-
+                         (device (uuid "83c5632c-3ad9-4eca-b233-ad9d6c23e5c8"
+                                       'ext4))
+                         (type "ext4")) %base-file-systems)))
