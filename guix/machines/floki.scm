@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; -*-
-;; guix system image --image-type=qcow2 /home/b/projects/dotfiles/guix/machines/floki/config.scm
+;; guix system image --image-type=qcow2 /home/b/projects/dotfiles/guix/machines/floki.scm
 (use-modules (gnu)
              (guix)
              (srfi srfi-1))
