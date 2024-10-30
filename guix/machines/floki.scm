@@ -1,4 +1,5 @@
 ;; -*- mode: scheme; -*-
+;; guix system image --image-type=qcow2 /home/b/projects/dotfiles/guix/machines/floki/config.scm
 (use-modules (gnu) (guix) (srfi srfi-1))
 (use-service-modules avahi cuirass networking ssh mcron)
 
