@@ -1,20 +1,11 @@
 ;; -*- mode: scheme; -*-
-;; guix system image --image-type=qcow2 /home/b/projects/dotfiles/guix/machines/floki.scm
-(use-modules (gnu)
-             (guix)
-             (srfi srfi-1))
-(use-service-modules avahi cuirass networking ssh mcron)
-
-;; Run the garbe collector every day at 3:00 AM
-(define %garbage-collector-job
-  #~(job "0 3 * * *" "guix gc -F 50G"))
+(use-modules (gnu))
+(use-service-modules avahi cuirass networking ssh xorg)
 
 (operating-system
   (host-name "floki")
   (timezone "Asia/Kolkata")
   (locale "en_US.utf8")
-  (label (string-append "GNU Guix "
-                        (package-version (specification->package "guix"))))
 
   (keyboard-layout (keyboard-layout "us" "altgr-intl"
                                     #:options '("ctrl:nocaps"
@@ -25,17 +16,11 @@
                   (name "b")
                   (comment "Ayan")
                   (group "users")
-                  (password "")
+                  (home-directory "/home/b")
                   (shell (file-append (specification->package "zsh")
                                       "/bin/zsh"))
                   (supplementary-groups '("wheel" "netdev" "audio" "video")))
                 %base-user-accounts))
-
-  ;; Our /etc/sudoers file.  Since 'guest' initially has an empty password,
-  ;; allow for password-less sudo.
-  (sudoers-file (plain-file "sudoers" "root ALL=(ALL) ALL
-%wheel ALL=NOPASSWD: ALL
-"))
 
   ;; Packages installed system-wide.  Users can also install packages
   ;; under their own account: use 'guix search KEYWORD' to search
@@ -46,7 +31,6 @@
                           (specification->package "emacs-no-x-toolkit")
                           (specification->package "htop")
                           (specification->package "nmap")
-                          (specification->package "nvi")
                           (specification->package "rsync")
                           (specification->package "screen")) %base-packages))
 
@@ -60,25 +44,24 @@
                                                                (public-key
                                                                 "/etc/guix/signing-key.pub")
                                                                (server
-                                                                "10.0.0.2:5555")
+                                                                "10.0.0.3:5555")
                                                                (substitute-urls '
                                                                 ("https://ci.guix.gnu.org"
                                                                  "https://substitutes.myguix.bvits.in"))
                                                                (systems '("x86_64-linux"))
-                                                               (workers 2)))
+                                                               (workers 4)))
                  ;; OpenSSH for remote access
                  (service openssh-service-type
-                          (openssh-configuration (allow-empty-passwords? #t)
-                                                 (permit-root-login #t)))
-
-                 (simple-service 'my-cron-jobs mcron-service-type
-                                 (list %garbage-collector-job))
-
+                          (openssh-configuration (authorized-keys `(("b" ,(local-file
+                                                                           "keys/ssh/helga.pub"))))
+                                                 (password-authentication? #f)))
                  (service wpa-supplicant-service-type)
                  (service network-manager-service-type)
                  (service ntp-service-type)
                  (service gpm-service-type))
 
+           ;; This is the default list of services we
+           ;; are appending to.
            (modify-services %base-services
              (guix-service-type config =>
                                 (guix-configuration (inherit config)
@@ -86,21 +69,28 @@
                                                                               #f)
                                                     (authorized-keys (append
                                                                       %default-authorized-guix-keys
-                                                                      (list (plain-file
-                                                                             "substitutes.myguix.bvits.in"
-                                                                             "(public-key 
- (ecc 
-  (curve Ed25519)
-  (q #07F312DEF6FA7A83CD5825457EDA1388C5B6636C143096D1365DE07FCF4E3CC9#)
-  )
- )"))))
-                                                    (extra-options '("--max-jobs=2"
-                                                                     "--cores=8")))))))
+                                                                      (list (local-file
+                                                                             "keys/guix/myguix-cuirass-server-signing-key.pub"))))
+                                                    (extra-options '("--max-jobs=4"
+                                                                     "--cores=16")))))))
   (bootloader (bootloader-configuration
-                (bootloader grub-bootloader)
-                (targets (list "/dev/vda"))
-                (terminal-outputs '(console))))
-  (file-systems (cons (file-system
-                        (mount-point "/")
-                        (device "/dev/vda2")
-                        (type "ext4")) %base-file-systems)))
+                (bootloader grub-efi-bootloader)
+                (targets (list "/boot/efi"))
+                (keyboard-layout keyboard-layout)))
+  (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
+  (swap-devices (list (swap-space
+                        (target (uuid "8d1b86e7-af3a-4092-942a-f5224a9e24f4")))))
+
+  ;; The list of file systems that get "mounted".  The unique
+  ;; file system identifiers there ("UUIDs") can be obtained
+  ;; by running 'blkid' in a terminal.
+  (file-systems (cons* (file-system
+                         (mount-point "/boot/efi")
+                         (device (uuid "F440-D8E3"
+                                       'fat32))
+                         (type "vfat"))
+                       (file-system
+                         (mount-point "/")
+                         (device (uuid "c86aa251-1b31-481b-93c3-8d344d610a80"
+                                       'ext4))
+                         (type "ext4")) %base-file-systems)))
