@@ -79,18 +79,18 @@
                 (keyboard-layout keyboard-layout)))
   (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
   (swap-devices (list (swap-space
-                        (target (uuid "8d1b86e7-af3a-4092-942a-f5224a9e24f4")))))
+                        (target (uuid "94606287-e361-49fd-8bb5-178d22e90650")))))
 
   ;; The list of file systems that get "mounted".  The unique
   ;; file system identifiers there ("UUIDs") can be obtained
   ;; by running 'blkid' in a terminal.
   (file-systems (cons* (file-system
                          (mount-point "/boot/efi")
-                         (device (uuid "F440-D8E3"
+                         (device (uuid "081A-297F"
                                        'fat32))
                          (type "vfat"))
                        (file-system
                          (mount-point "/")
-                         (device (uuid "c86aa251-1b31-481b-93c3-8d344d610a80"
+                         (device (uuid "7914b638-0067-49e6-aa3b-79a52010799c"
                                        'ext4))
                          (type "ext4")) %base-file-systems)))
