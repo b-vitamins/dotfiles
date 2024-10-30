@@ -137,19 +137,23 @@
 
 (define-public default-module-filter
   (match-lambda
-    (('guix 'config) #f)
-    (('guix _ ...) #t)
-    (('gnu _ ...) #t)
-    (('myguix _ ...) #t)
+    (('guix 'config)
+     #f)
+    (('guix _ ...)
+     #t)
+    (('gnu _ ...)
+     #t)
+    (('myguix _ ...)
+     #t)
     (_ #f)))
 
 (define-syntax-rule (with-service-gexp-modules body ...)
-  (with-imported-modules (source-module-closure
-                          (append '((gnu build shepherd))
-                                  ;; This %default-modules is from (gnu services shepherd).
-                                  %default-modules)
-                          #:select? default-module-filter)
-    body ...))
+  (with-imported-modules (source-module-closure (append '((gnu build shepherd))
+                                                        ;; This %default-modules is from (gnu services shepherd).
+                                                        %default-modules)
+                                                #:select?
+                                                default-module-filter) body
+                         ...))
 
 ;; Main operating system configuration
 (operating-system
@@ -197,10 +201,11 @@
 
   ;; System services
   (services
-   (list ;; Firewall Setup
+   (list ;Firewall Setup
          (service iptables-service-type
-                  (iptables-configuration
-                   (ipv4-rules (plain-file "iptables.rules" "*filter
+                  (iptables-configuration (ipv4-rules (plain-file
+                                                       "iptables.rules"
+                                                       "*filter
 -A INPUT -p tcp --dport 5522 ! -s 127.0.0.1 -j REJECT
 -A INPUT -p tcp --dport 5555:5558 ! -s 127.0.0.1 -j REJECT
 -A INPUT -p tcp --dport 8080:8081 ! -s 127.0.0.1 -j REJECT
@@ -331,29 +336,40 @@ COMMIT
                     ("/usr/bin/env" ,(file-append coreutils "/bin/env"))))
          (simple-service 'my-cron-jobs mcron-service-type
                          (list garbage-collector-job))
-         (simple-service 'floki
-                         shepherd-root-service-type
-                         (list
-                          (shepherd-service
-                           (requirement '(file-systems networking))
-                           (provision '(floki))
-                           (documentation "Runs the qemu VM specified in floki.scm")
-                           (start
-                            (with-service-gexp-modules
-                             #~(begin
-                                 (lambda _
-                                   (let ((cmd (list #$(file-append qemu "/bin/qemu-system-x86_64")
-                                                    "-enable-kvm"
-                                                    "-nographic"
-                                                    "-m"      "80G"
-                                                    "-smp"    "8"
-                                                    "-device" "e1000,netdev=net0"
-                                                    "-netdev" "user,id=net0,hostfwd=tcp::5522-:22,hostfwd=tcp::5558-:5558"
-                                                    "-drive"  "file=/data/floki.qcow2,if=virtio,cache=writeback,werror=report"
-                                                    "-serial" "mon:stdio")))
-                                     (fork+exec-command
-                                      cmd
-                                      #:log-file "/var/log/floki.log")))))))))))
+         (simple-service 'floki shepherd-root-service-type
+                         (list (shepherd-service (requirement '(file-systems
+                                                                networking))
+                                                 (provision '(floki))
+                                                 (documentation
+                                                  "Runs the qemu VM specified in floki.scm")
+                                                 (start (with-service-gexp-modules #~(begin
+                                                                                       (lambda _
+                                                                                         (let 
+                                                                                              (
+                                                                                               (cmd
+                                                                                                (list #$
+                                                                                                 (file-append
+                                                                                                  qemu
+                                                                                                  "/bin/qemu-system-x86_64")
+                                                                                                 "-enable-kvm"
+                                                                                                 "-nographic"
+                                                                                                 "-m"
+                                                                                                 "80G"
+                                                                                                 "-smp"
+                                                                                                 "8"
+                                                                                                 "-device"
+                                                                                                 "e1000,netdev=net0"
+                                                                                                 "-netdev"
+                                                                                                 "user,id=net0,hostfwd=tcp::5522-:22,hostfwd=tcp::5558-:5558"
+                                                                                                 "-drive"
+                                                                                                 "file=/data/floki.qcow2,if=virtio,cache=writeback,werror=report"
+                                                                                                 "-serial"
+                                                                                                 "mon:stdio")))
+                                                                                           
+                                                                                           (fork+exec-command
+                                                                                            cmd
+                                                                                            #:log-file
+                                                                                            "/var/log/floki.log")))))))))))
   ;; Bootloader configuration
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
@@ -364,24 +380,33 @@ COMMIT
   ;; Initrd modules for virtio SCSI support
   (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
 
-  ;; File system configuration
+  (swap-devices (list (swap-space
+                        (target (uuid "bad6b62f-43f7-4d41-a377-8aca610fabec")))))
+
+  ;; The list of file systems that get "mounted". The unique
+  ;; file system identifiers there ("UUIDs") can be obtained
+  ;; by running 'blkid' in a terminal.
   (file-systems (cons* (file-system
-                        (device (uuid "0A4C-1E59"
-                                      'fat32))
-                                (mount-point "/boot/efi")
-                                (type "vfat"))
+                         (mount-point "/boot/efi")
+                         (device (uuid "0A4C-1E59")
+                                 'fat32)
+                         (type "vfat"))
                        (file-system
-                        (mount-point "/")
-                        (device (file-system-label "my-root"))
-                        (type "ext4"))
+                         (mount-point "/")
+                         (device (uuid "34a7a06a-dd13-40c5-bb0c-7d65dc2c1a08")
+                                 'ext4)
+                         (type "ext4"))
                        (file-system
-                        (mount-point "/data")
-                        (device (file-system-label "my-data"))
-                        (type "ext4"))
+                         (mount-point "/data")
+                         (device (uuid "8b2979da-cf5f-4c9c-a9b8-d159ecd13067")
+                                 'ext4)
+                         (type "ext4"))
                        (file-system
-                        (device "//u429656.your-storagebox.de/guix-publish/samba/zstd")
-                        (options "uid=guix-publish,gid=guix-publish,credentials=/root/samba.credentials")
-                        (mount-point "/var/cache/publish/zstd")
-                        (mount? #f)
-                        (type "cifs"))
-                       %base-file-systems)))
+                         (device
+                          "//u429656.your-storagebox.de/guix-publish/samba/zstd")
+                         (options
+                          "uid=guix-publish,gid=guix-publish,credentials=/root/samba.credentials")
+                         (mount-point "/var/cache/publish/zstd")
+                         (mount? #f)
+                         (type "cifs")) %base-file-systems)))
+
