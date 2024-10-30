@@ -53,7 +53,7 @@
                  ;; OpenSSH for remote access
                  (service openssh-service-type
                           (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                           "keys/ssh/helga.pub"))))
+                                                                           "../../keys/ssh/helga.pub"))))
                                                  (password-authentication? #f)))
                  (service wpa-supplicant-service-type)
                  (service network-manager-service-type)
