@@ -356,30 +356,27 @@ COMMIT
                                       #:log-file "/var/log/floki.log")))))))))))
   ;; Bootloader configuration
   (bootloader (bootloader-configuration
-               (bootloader grub-bootloader)
-               (targets (list "/dev/sda"))
-               (keyboard-layout keyboard-layout)))
+                (bootloader grub-efi-bootloader)
+                (targets '("/boot/efi"))
+                (keyboard-layout keyboard-layout)
+                (theme (grub-theme (inherit (grub-theme))))))
 
   ;; Initrd modules for virtio SCSI support
   (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
 
-  ;; Swap space configuration
-  (swap-devices (list (swap-space
-                       (target (uuid
-                                "8a764dc5-460d-4bbc-833b-17deaeb41691")))))
-
   ;; File system configuration
   (file-systems (cons* (file-system
+                        (device (uuid "0A4C-1E59"
+                                      'fat32))
+                                (mount-point "/boot/efi")
+                                (type "vfat"))
+                       (file-system
                         (mount-point "/")
-                        (device (uuid
-                                 "c39c9d7f-6528-4dd9-bce1-26c6017c8803"
-                                 'ext4))
+                        (device (file-system-label "my-root"))
                         (type "ext4"))
                        (file-system
                         (mount-point "/data")
-                        (device (uuid
-                                 "1a7d0ab9-cda8-4206-a623-5de8fda3aa8f"
-                                 'ext4))
+                        (device (file-system-label "my-data"))
                         (type "ext4"))
                        (file-system
                         (device "//u429656.your-storagebox.de/guix-publish/samba/zstd")
