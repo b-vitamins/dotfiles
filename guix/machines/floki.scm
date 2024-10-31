@@ -49,7 +49,7 @@
                                                                 ("https://ci.guix.gnu.org"
                                                                  "https://substitutes.myguix.bvits.in"))
                                                                (systems '("x86_64-linux"))
-                                                               (workers 4)))
+                                                               (workers 2)))
                  ;; OpenSSH for remote access
                  (service openssh-service-type
                           (openssh-configuration (authorized-keys `(("b" ,(local-file
