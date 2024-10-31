@@ -70,7 +70,7 @@
                                                     (authorized-keys (append
                                                                       %default-authorized-guix-keys
                                                                       (list (local-file
-                                                                             "keys/guix/myguix-cuirass-server-signing-key.pub"))))
+                                                                             "../../keys/guix/myguix-cuirass-server-signing-key.pub"))))
                                                     (extra-options '("--max-jobs=4"
                                                                      "--cores=16")))))))
   (bootloader (bootloader-configuration
