@@ -26,6 +26,21 @@
                                               "883B CA6B D275 A5F2 673C  C5DD 2AD3 2FC0 2A50 01F7"))))
                                          %default-channels))
                          (priority 0)
+                         (systems '("x86_64-linux")))
+          (specification (name "images")
+                         (build '(images myguix))
+                         (channels (cons (channel
+                                          (name 'myguix)
+                                          (url
+                                           "https://github.com/b-vitamins/myguix.git")
+                                          (branch "master")
+                                          (introduction
+                                           (make-channel-introduction
+                                            "85d58b09dc71e9dc9834b666b658f79d2e212d65"
+                                            (openpgp-fingerprint
+                                             "883B CA6B D275 A5F2 673C  C5DD 2AD3 2FC0 2A50 01F7"))))
+                                         %default-channels))
+                         (priority 0)
                          (systems '("x86_64-linux")))))
 
 ;; Define the Nginx deploy hook to reload Nginx on certificate renewal
@@ -146,6 +161,11 @@
                           (specification->package "screen")
                           (specification->package "zstd")
                           (specification->package "coreutils")
+                          (specification->package "bind")
+                          (specification->package "cifs-utils")
+                          (specification->package "ncdu")
+                          (specification->package "rsync")
+                          (specification->package "smartmontools")
                           (specification->package "font-dejavu")
                           (specification->package "font-iosevka-comfy")
                           (specification->package "font-google-noto")
@@ -294,12 +314,17 @@
 
   ;; File system configuration
   (file-systems (cons* (file-system
-                         (mount-point "/boot/efi")
-                         (device (uuid "87BA-E400"
-                                       'fat32))
-                         (type "vfat"))
+                        (mount-point "/boot/efi")
+                        (device (uuid "87BA-E400"
+                                      'fat32))
+                        (type "vfat"))
                        (file-system
-                         (mount-point "/")
-                         (device (uuid "83c5632c-3ad9-4eca-b233-ad9d6c23e5c8"
-                                       'ext4))
-                         (type "ext4")) %base-file-systems)))
+                        (mount-point "/")
+                        (device (uuid "83c5632c-3ad9-4eca-b233-ad9d6c23e5c8"
+                                      'ext4))
+                        (type "ext4"))
+                       (file-system
+                        (device "//u429656-sub1.your-storagebox.de/guix-publish")
+                        (options "uid=guix-publish,gid=guix-publish,credentials=/root/samba.credentials")
+                        (mount-point "/var/cache/publish/zstd")
+                        (type "cifs")) %base-file-systems)))
