@@ -39,7 +39,6 @@
              (myguix home)
              (myguix home services emacs)
              (myguix packages base)
-             (myguix packages cuda)
              (myguix packages linux)
              (myguix packages nvidia)
              (myguix packages video)
@@ -50,14 +49,6 @@
              (myguix system install)
              (myguix system linux-initrd)
              (srfi srfi-1))
-
-(define ffmpeg/fake
-  (package
-    (inherit ffmpeg)
-    (replacement ffmpeg-cuda)))
-
-(define-public replace-ffmpeg
-  (package-input-rewriting `((,ffmpeg unquote ffmpeg/fake))))
 
 (define %my-nftables-ruleset
   (plain-file "nftables.conf"
@@ -261,24 +252,35 @@ table ip nat {
 
 (define %my-home-config
   (home-environment
-    (packages (map replace-mesa
-                   (append %system-core-packages
-                           %compression-tools-packages
-                           %filesystem-management-packages
-                           %terminal-tools-packages
-                           %network-tools-packages
-                           %development-tools-packages
-                           %rust-development-packages
-                           %python-development-packages
-                           %guile-development-packages
-                           %perl-development-packages
-                           %language-support-packages
-                           %system-monitoring-packages
-                           %security-tools-packages
-                           %media-tools-packages
-                           %nvidia-gpu-packages
-                           %desktop-environment-packages
-                           %document-formatting-packages)))
+   (packages (map replace-mesa
+                  (append %terminal-tools-packages
+                          %desktop-utilities-packages
+                          %diagnostic-and-maintenance-tools
+                          %remote-storage-mount-packages
+                          %compression-tools-packages
+                          %media-consumption-packages
+                          %audio-conversion-tools-packages
+                          %video-conversion-tools-packages
+                          %document-conversion-tools-packages
+                          %video-production-packages
+                          %document-authoring-packages
+                          %document-manipulation-packages
+                          %file-transfer-tools-packages
+                          %network-analysis-tools-packages
+                          %p2p-file-sharing-packages
+                          %network-utilities-packages
+
+                          
+                          %build-system-packages
+                          %debugging-tools-packages
+                          %memory-and-optimization-tools-packages
+                          %runtime-packages
+                          %tree-sitter-packages
+                          %guile-development-packages
+                          %rust-development-packages
+                          %python-development-packages
+                          %perl-development-packages
+                          %opencog-packages)))
 
     (services
      (append (list
@@ -349,12 +351,6 @@ import:
   write: yes
   log: ~/.config/beets/beets.log
 
-paths:
-  default: '%asciify{$albumartist}/[%if{$original_year,$original_year,$year}] %asciify{$album}/$if{$disc,$disc-}$track - %asciify{$title}'
-  singleton: '%asciify{Singles}/$track - %asciify{$title}'
-  comp: '%asciify{Compilations}/%asciify{$album} [$year]/$if{$disc,$disc-}$track - %asciify{$title}'
-  multidisc: '%asciify{$albumartist}/[%if{$original_year,$original_year,$year}] %asciify{$album}/CD $disc/$track - %asciify{$title}'
-
 per_disc_numbering: yes
 
 # Plugins for automatic metadata management, and file integrity checking
@@ -375,7 +371,7 @@ fetchart:
   (locale "en_US.utf8")
 
   (kernel linux)
-  (kernel-arguments (list "modprobe.blacklist=nouveau" "nvidia_drm.modeset=1"))
+  (kernel-arguments (list "modprobe.blacklist=nouveau" "nvidia_drm.modeset=1" "NVreg_EnableGpuFirmware=1"))
   (firmware (list linux-firmware))
   (initrd microcode-initrd)
 
@@ -425,13 +421,19 @@ fetchart:
                   (system? #t)
                   (name "realtime")) %base-groups))
 
-  (packages (append (list (specification->package "font-dejavu")
-                          (specification->package "font-iosevka-comfy")
-                          (specification->package "font-google-noto")
-                          (specification->package "font-google-noto-serif-cjk")
-                          (specification->package "font-google-noto-sans-cjk")
-                          (specification->package "fontconfig")
-                          (specification->package "pinentry")) %base-packages))
+  (packages (map replace-mesa (append %system-core-packages
+                                      %nvidia-gpu-packages
+                                      %secret-mgmt-packages
+                                      %system-monitoring-packages
+                                      %basic-filesystem-tools
+                                      %ssd-tools
+                                      %general-purpose-fonts
+                                      %document-fonts
+                                      %google-fonts
+                                      %iosevka-fonts
+                                      %unicode-fonts
+                                      %version-control-packages
+                                      %base-packages)))
 
   (services
    (append (list
