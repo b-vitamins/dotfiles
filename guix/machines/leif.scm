@@ -36,24 +36,25 @@
 
 (define %my-home-config
   (home-environment
-    (packages (append %system-core-packages
-                      %compression-tools-packages
-                      %filesystem-management-packages
-                      %terminal-tools-packages
-                      %network-tools-packages
-                      %development-tools-packages
-                      %rust-development-packages
-                      %python-development-packages
-                      %guile-development-packages
-                      %perl-development-packages
-                      %language-support-packages
-                      %system-monitoring-packages
-                      %security-tools-packages
-                      %media-tools-packages
-                      %desktop-environment-packages
-                      %document-formatting-packages))
+   (packages (append %terminal-tools-packages
+                     %desktop-utilities-packages
+                     %diagnostic-and-maintenance-tools
+                     %compression-tools-packages
+                     %media-consumption-packages
+                     %document-authoring-packages
+                     %file-transfer-tools-packages
+                     %p2p-file-sharing-packages
+                     %build-system-packages
+                     %debugging-tools-packages
+                     %memory-and-optimization-tools-packages
+                     %runtime-packages
+                     %tree-sitter-packages
+                     %guile-development-packages
+                     %rust-development-packages
+                     %python-development-packages
+                     %perl-development-packages))
 
-    (services
+   (services
      (append (list
               ;; Home Emacs Service
               (service my-home-emacs-service-type)
@@ -162,13 +163,19 @@
                   (system? #t)
                   (name "realtime")) %base-groups))
 
-  (packages (append (list (specification->package "font-dejavu")
-                          (specification->package "font-iosevka-comfy")
-                          (specification->package "font-google-noto")
-                          (specification->package "font-google-noto-serif-cjk")
-                          (specification->package "font-google-noto-sans-cjk")
-                          (specification->package "fontconfig")
-                          (specification->package "pinentry")) %base-packages))
+  (packages (append %system-core-packages
+                    %nvidia-gpu-packages
+                    %secret-mgmt-packages
+                    %system-monitoring-packages
+                    %basic-filesystem-tools
+                    %ssd-tools
+                    %general-purpose-fonts
+                    %document-fonts
+                    %google-fonts
+                    %iosevka-fonts
+                    %unicode-fonts
+                    %version-control-packages
+                    %base-packages))
 
   (services
    (append (list
