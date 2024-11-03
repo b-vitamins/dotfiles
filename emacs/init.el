@@ -808,7 +808,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
                                                         :fileskip0 t
                                                         :level nil
                                                         :indent t
-                                                        :narrow 50!
+                                                        :narrow 80!
                                                         :tcolumns 3
                                                         :link t)
             deadline-warning-days 1
