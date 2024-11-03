@@ -324,7 +324,8 @@
                                       'ext4))
                         (type "ext4"))
                        (file-system
-                        (device "//u429656-sub1.your-storagebox.de/guix-publish")
+                        (device "//u429656-sub1.your-storagebox.de/u429656-sub1/samba/zstd")
                         (options "uid=guix-publish,gid=guix-publish,credentials=/root/samba.credentials")
                         (mount-point "/var/cache/publish/zstd")
+                        (mount? #f)
                         (type "cifs")) %base-file-systems)))
