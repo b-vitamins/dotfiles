@@ -269,8 +269,6 @@ table ip nat {
                           %network-analysis-tools-packages
                           %p2p-file-sharing-packages
                           %network-utilities-packages
-
-                          
                           %build-system-packages
                           %debugging-tools-packages
                           %memory-and-optimization-tools-packages
@@ -421,19 +419,20 @@ fetchart:
                   (system? #t)
                   (name "realtime")) %base-groups))
 
-  (packages (map replace-mesa (append %system-core-packages
-                                      %nvidia-gpu-packages
-                                      %secret-mgmt-packages
-                                      %system-monitoring-packages
-                                      %basic-filesystem-tools
-                                      %ssd-tools
-                                      %general-purpose-fonts
-                                      %document-fonts
-                                      %google-fonts
-                                      %iosevka-fonts
-                                      %unicode-fonts
-                                      %version-control-packages
-                                      %base-packages)))
+  (packages (map replace-mesa
+                 (append %system-core-packages
+                         %nvidia-gpu-packages
+                         %secret-mgmt-packages
+                         %system-monitoring-packages
+                         %basic-filesystem-tools
+                         %ssd-tools
+                         %general-purpose-fonts
+                         %document-fonts
+                         %google-fonts
+                         %iosevka-fonts
+                         %unicode-fonts
+                         %version-control-packages
+                         %base-packages)))
 
   (services
    (append (list
