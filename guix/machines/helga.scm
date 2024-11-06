@@ -328,6 +328,6 @@
                        (file-system
                         (mount-point "/")
                         (device (uuid
-                                 "02404b5d-4886-403c-bd8d-c9afb0b0f418"
+                                 "02404b5d-4886-403c-bd8d-c9afb00bf418"
                                  'ext4))
                         (type "ext4")) %base-file-systems)))
