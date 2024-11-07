@@ -330,5 +330,25 @@ the BUFFER in the selected window if conditions are met."
               (message "Package version not found for %s" package-name))))
         (message "Removed %d duplicate packages" duplicate-count)))))
 
+(with-eval-after-load 'bibtex
+	(declare-function bibtex-reformat "bibtex")
+  (defun bv-bibtex-reformat-file-or-directory (path)
+    "Reformat BibTeX entries in a specified file or all .bib files in a directory.
+If PATH is a file, apply `bibtex-reformat' on that file and save it.
+If PATH is a directory, recursively apply `bibtex-reformat' on each .bib file."
+    (interactive "FEnter file or directory path: ")
+    (if (file-directory-p path)
+        ;; If path is a directory, process all .bib files recursively
+        (dolist (file (directory-files-recursively path "\\.bib\\'"))
+          (with-current-buffer (find-file-noselect file)
+            (bibtex-reformat)
+            (save-buffer)
+            (kill-buffer)))
+      ;; If path is a file, process it directly
+      (with-current-buffer (find-file-noselect path)
+        (bibtex-reformat)
+        (save-buffer)
+        (kill-buffer)))))
+
 (provide 'bv-essentials)
 ;;; bv-essentials.el ends here
