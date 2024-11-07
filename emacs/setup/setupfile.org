@@ -30,6 +30,7 @@
 #+LATEX_HEADER: \usepackage{tabularx}
 #+LATEX_HEADER: \usepackage{blkarray, bigstrut}     % for block arrays and spacing
 #+LATEX_HEADER: \usepackage{dsfont}
+#+LATEX_HEADER: \usepackage{braket}
 
 # Some commands and operators
 #+LATEX_HEADER: \newcommand{\minus}{\scalebox{0.8}{\(-\)}}
