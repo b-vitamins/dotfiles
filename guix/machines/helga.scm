@@ -295,24 +295,23 @@
 
   ;; Swap space configuration
   (swap-devices (list (swap-space
-                       (target (uuid
-                                "3ba2c551-b0a6-4cd4-bd4e-f7587ca93cf9")))))
+                        (target (uuid "3ba2c551-b0a6-4cd4-bd4e-f7587ca93cf9")))))
 
   ;; File system configuration
   (file-systems (cons* (file-system
-                        (mount-point "/boot/efi")
-                        (device (uuid "87BA-E400"
-                                      'fat32))
-                        (type "vfat"))
-;;                       (file-system
-;;                        (device "//u429656-sub1.your-storagebox.de/u429656-sub1/samba/zstd")
-;;                        (options "uid=guix-publish,gid=guix-publish,credentials=/root/samba.credentials")
-;;                        (mount-point "/var/cache/publish/zstd")
-;;                        (mount? #f)
-;;                        (type "cifs"))
+                         (mount-point "/boot/efi")
+                         (device (uuid "87BA-E400"
+                                       'fat32))
+                         (type "vfat"))
+                       ;; (file-system
+                       ;; (device "//u429656-sub1.your-storagebox.de/u429656-sub1/samba/zstd")
+                       ;; (options "uid=guix-publish,gid=guix-publish,credentials=/root/samba.credentials")
+                       ;; (mount-point "/var/cache/publish/zstd")
+                       ;; (mount? #f)
+                       ;; (type "cifs"))
                        (file-system
-                        (mount-point "/")
-                        (device (uuid
-                                 "81c2c491-4197-4236-bc08-4f575770de66"
-                                 'ext4))
-                        (type "ext4")) %base-file-systems)))
+                         (mount-point "/")
+                         (device (uuid "81c2c491-4197-4236-bc08-4f575770de66"
+                                       'ext4))
+                         (type "ext4"))
+                       %base-file-systems)))
