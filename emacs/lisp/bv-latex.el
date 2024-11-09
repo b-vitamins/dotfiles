@@ -400,7 +400,7 @@ buffer named BUFFER-NAME."
      ((string-equal machine-name "ragnar")
       (plist-put org-format-latex-options :scale 1.5))
      ((string-equal machine-name "leif")
-      (plist-put org-format-latex-options :scale 1.5))
+      (plist-put org-format-latex-options :scale 2.4))
      ((string-equal machine-name "freydis")
       (plist-put org-format-latex-options :scale 3.0))
      (t
