@@ -36,25 +36,28 @@
 
 (define %my-home-config
   (home-environment
-   (packages (append %terminal-tools-packages
-                     %desktop-utilities-packages
-                     %diagnostic-and-maintenance-tools
-                     %compression-tools-packages
-                     %media-consumption-packages
-                     %document-authoring-packages
-                     %file-transfer-tools-packages
-                     %p2p-file-sharing-packages
-                     %build-system-packages
-                     %debugging-tools-packages
-                     %memory-and-optimization-tools-packages
-                     %runtime-packages
-                     %tree-sitter-packages
-                     %guile-development-packages
-                     %rust-development-packages
-                     %python-development-packages
-                     %perl-development-packages))
+    (packages (append %terminal-tools-packages
+                      %guile-development-packages
+                      %media-consumption-packages
+                      %audio-conversion-tools-packages
+                      %video-conversion-tools-packages
+                      %document-conversion-tools-packages
+                      %graphic-production-packages
+                      %audio-production-packages
+                      %video-production-packages
+                      %document-authoring-packages
+                      %document-manipulation-packages
+                      %file-transfer-tools-packages
+                      %p2p-file-sharing-packages
+                      %version-control-packages
+                      %network-utilities-packages
+                      %compression-tools-packages
+                      %build-system-packages
+                      %basic-filesystem-tools
+                      %diagnostic-and-maintenance-tools
+                      %ssd-tools))
 
-   (services
+    (services
      (append (list
               ;; Home Emacs Service
               (service my-home-emacs-service-type)
@@ -164,17 +167,14 @@
                   (name "realtime")) %base-groups))
 
   (packages (append %system-core-packages
-                    %nvidia-gpu-packages
                     %secret-mgmt-packages
-                    %system-monitoring-packages
-                    %basic-filesystem-tools
-                    %ssd-tools
                     %general-purpose-fonts
-                    %document-fonts
                     %google-fonts
+                    %cjk-fonts
                     %iosevka-fonts
-                    %unicode-fonts
-                    %version-control-packages
+                    %monospace-fonts
+                    %document-fonts
+                    %desktop-utilities-packages
                     %base-packages))
 
   (services
