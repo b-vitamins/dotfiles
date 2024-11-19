@@ -3,6 +3,7 @@
              (gnu services avahi)
              (gnu services certbot)
              (gnu services cuirass)
+             (gnu services databases)
              (gnu services mcron)
              (gnu services networking)
              (gnu services ssh)
@@ -170,6 +171,11 @@
                                                                          "substitutes.myguix.bvits.in"))
                                                               (deploy-hook
                                                                %nginx-deploy-hook))))))
+         ;; PostgreSQL database service
+         (service postgresql-service-type
+                  (postgresql-configuration (postgresql (specification->package
+                                                         "postgresql"))))
+
          ;; Cuirass for CI builds
          (service cuirass-service-type
                   (cuirass-configuration (remote-server (cuirass-remote-server-configuration
