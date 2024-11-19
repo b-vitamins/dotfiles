@@ -315,7 +315,7 @@
                                        'ext4))
                          (type "ext4"))
                        (file-system
-                         (mount-point "/var/cache/publish")
+                         (mount-point "/var/cache/publish/zstd")
                          (device (uuid "f7058e11-7a2b-4650-8f4b-c414254a1448"
                                        'ext4))
                          (type "ext4")) %base-file-systems)))
