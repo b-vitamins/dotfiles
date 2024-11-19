@@ -49,7 +49,7 @@
                                                                 ("https://ci.guix.gnu.org"
                                                                  "https://substitutes.myguix.bvits.in"))
                                                                (systems '("x86_64-linux"))
-                                                               (workers 2)))
+                                                               (workers 1)))
                  ;; OpenSSH for remote access
                  (service openssh-service-type
                           (openssh-configuration (authorized-keys `(("b" ,(local-file
@@ -71,7 +71,7 @@
                                                                       %default-authorized-guix-keys
                                                                       (list (local-file
                                                                              "../../keys/guix/myguix-cuirass-server-signing-key.pub"))))
-                                                    (extra-options '("--max-jobs=4"
+                                                    (extra-options '("--max-jobs=1"
                                                                      "--cores=16")))))))
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
@@ -79,7 +79,7 @@
                 (keyboard-layout keyboard-layout)))
   (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
   (swap-devices (list (swap-space
-                        (target (uuid "94606287-e361-49fd-8bb5-178d22e90650")))))
+                        (target (uuid "22f7360c-5978-4c3e-954b-8fab6213dcde")))))
 
   ;; The list of file systems that get "mounted".  The unique
   ;; file system identifiers there ("UUIDs") can be obtained
@@ -91,6 +91,6 @@
                          (type "vfat"))
                        (file-system
                          (mount-point "/")
-                         (device (uuid "7914b638-0067-49e6-aa3b-79a52010799c"
+                         (device (uuid "ae3725bb-022c-4599-93b7-e229cb747a78"
                                        'ext4))
                          (type "ext4")) %base-file-systems)))
