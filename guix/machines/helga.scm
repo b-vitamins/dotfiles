@@ -295,7 +295,7 @@
 
   ;; Swap space configuration
   (swap-devices (list (swap-space
-                        (target (uuid "3ba2c551-b0a6-4cd4-bd4e-f7587ca93cf9")))))
+                        (target (uuid "eb5bd25d-5e41-4020-93d6-b44515562714")))))
 
   ;; File system configuration
   (file-systems (cons* (file-system
@@ -303,15 +303,13 @@
                          (device (uuid "87BA-E400"
                                        'fat32))
                          (type "vfat"))
-                       ;; (file-system
-                       ;; (device "//u429656-sub1.your-storagebox.de/u429656-sub1/samba/zstd")
-                       ;; (options "uid=guix-publish,gid=guix-publish,credentials=/root/samba.credentials")
-                       ;; (mount-point "/var/cache/publish/zstd")
-                       ;; (mount? #f)
-                       ;; (type "cifs"))
                        (file-system
                          (mount-point "/")
-                         (device (uuid "81c2c491-4197-4236-bc08-4f575770de66"
+                         (device (uuid "1d8f08f6-5889-49ec-8520-1fa617d4305f"
                                        'ext4))
                          (type "ext4"))
-                       %base-file-systems)))
+                       (file-system
+                         (mount-point "/var/cache/publish")
+                         (device (uuid "f7058e11-7a2b-4650-8f4b-c414254a1448"
+                                       'ext4))
+                         (type "ext4")) %base-file-systems)))
