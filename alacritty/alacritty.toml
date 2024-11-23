@@ -1,6 +1,18 @@
 # Alacritty Terminal Configuration
 
-# Colors settings
+[debug]
+render_timer = false
+persistent_logging = false
+log_level = "Warn"
+print_events = false
+
+[window]
+dimensions = { columns = 0, lines = 0 }
+decorations = "full"
+dynamic_padding = false
+startup_mode = "Windowed"
+padding = { x = 5, y = 3 }
+
 [colors]
 draw_bold_text_with_bright_colors = true
 
@@ -28,11 +40,9 @@ yellow = "#ECBE7B"
 background = "#1a1a1a"
 foreground = "#d8dee9"
 
-# Environment settings
 [env]
 TERM = "xterm-256color"
 
-# Font settings
 [font]
 size = 12.0
 
@@ -52,63 +62,142 @@ style = "Light Oblique"
 family = "Iosevka Comfy"
 style = "Light"
 
-# Keyboard bindings
+[cursor]
+style = "Block"
+unfocused_hollow = true
+
+[selection]
+semantic_escape_chars = ",│`|:\"' ()[]{}<>"
+save_to_clipboard = true
+
+[scrolling]
+history = 100000
+multiplier = 3
+
+[mouse]
+hide_when_typing = false
+
 [[keyboard.bindings]]
-key = "W"
+key = "A"
+mods = "Control"
+action = "ScrollToTop"
+
+[[keyboard.bindings]]
+key = "E"
+mods = "Control"
+action = "ScrollToBottom"
+
+[[keyboard.bindings]]
+key = "F"
+mods = "Control"
+action = "ScrollLineDown"
+
+[[keyboard.bindings]]
+key = "B"
+mods = "Control"
+action = "ScrollLineUp"
+
+[[keyboard.bindings]]
+key = "V"
+mods = "Control"
+action = "ScrollPageDown"
+
+[[keyboard.bindings]]
+key = "V"
 mods = "Alt"
-action = "Copy"
+action = "ScrollPageUp"
+
+[[keyboard.bindings]]
+key = "L"
+mods = "Control"
+action = "ClearLogNotice"
+
+[[keyboard.bindings]]
+key = "R"
+mods = "Control"
+action = "SearchBackward"
+
+[[keyboard.bindings]]
+key = "S"
+mods = "Control"
+action = "SearchForward"
+
+[[keyboard.bindings]]
+key = "K"
+mods = "Control"
+action = "ClearHistory"
 
 [[keyboard.bindings]]
 key = "Y"
-mods = "Alt"
+mods = "Control"
 action = "Paste"
 
 [[keyboard.bindings]]
-key = "Right"
+key = "W"
 mods = "Control"
+action = "Copy"
+
+[[keyboard.bindings]]
+key = "X"
+mods = "Control|Alt"
+action = "Quit"
+
+[[keyboard.bindings]]
+key = "T"
+mods = "Control|Alt"
+action = "SpawnNewInstance"
+
+[[keyboard.bindings]]
+key = "Equals"
+mods = "Control|Shift"
 action = "IncreaseFontSize"
 
 [[keyboard.bindings]]
-key = "Left"
-mods = "Control"
+key = "Minus"
+mods = "Control|Shift"
 action = "DecreaseFontSize"
 
 [[keyboard.bindings]]
+key = "Key0"
+mods = "Control|Shift"
+action = "ResetFontSize"
+
+[[keyboard.bindings]]
+key = "C"
+mods = "Control|Shift"
+action = "Copy"
+
+[[keyboard.bindings]]
+key = "V"
+mods = "Control|Shift"
+action = "Paste"
+
+[[keyboard.bindings]]
 key = "PageUp"
-mode = "~Alt"
 mods = "None"
 action = "ScrollPageUp"
 
 [[keyboard.bindings]]
 key = "PageDown"
-mode = "~Alt"
 mods = "None"
 action = "ScrollPageDown"
 
 [[keyboard.bindings]]
 key = "Home"
-mode = "~Alt"
 mods = "Shift"
 action = "ScrollToTop"
 
 [[keyboard.bindings]]
 key = "End"
-mode = "~Alt"
 mods = "Shift"
 action = "ScrollToBottom"
 
-# Scrolling configuration
-[scrolling]
-history = 100000
-multiplier = 3
+[[keyboard.bindings]]
+key = "Tab"
+mods = "Shift"
+chars = '\x1b[Z'
 
-# Window settings
-[window]
-decorations = "full"
-dynamic_padding = true
-startup_mode = "Windowed"
-padding = { x = 5, y = 3 }
-
-[window.dimensions]
-columns = 100
-lines = 25
+[[keyboard.bindings]]
+key = "Backspace"
+mods = "Alt"
+chars = '\x1b\x7f'
