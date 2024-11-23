@@ -1,203 +1,181 @@
 # Alacritty Terminal Configuration
 
-[debug]
-render_timer = false
-persistent_logging = false
-log_level = "Warn"
-print_events = false
-
-[window]
-dimensions = { columns = 0, lines = 0 }
-decorations = "full"
-dynamic_padding = false
-startup_mode = "Windowed"
-padding = { x = 5, y = 3 }
-
-[colors]
-draw_bold_text_with_bright_colors = true
-
-[colors.bright]
-black = "#4c566a"
-blue = "#51afef"
-cyan = "#46D9FF"
-green = "#99bb66"
-magenta = "#c678dd"
-red = "#ff6655"
-white = "#eceff4"
-yellow = "#ECBE7B"
-
-[colors.normal]
-black = "#1a1a1a"
-blue = "#51afef"
-cyan = "#46D9FF"
-green = "#98be65"
-magenta = "#c678dd"
-red = "#ff6c6b"
-white = "#e5e9f0"
-yellow = "#ECBE7B"
-
-[colors.primary]
-background = "#1a1a1a"
-foreground = "#d8dee9"
-
 [env]
 TERM = "xterm-256color"
 
+[window]
+dimensions = { columns = 0, lines = 0 }
+position = "None"
+padding = { x = 5, y = 3 }
+dynamic_padding = false
+decorations = "Full"
+opacity = 1.0
+blur = true
+startup_mode = "Windowed"
+title = "Alacritty"
+dynamic_title = true
+decorations_theme_variant = "Dark"
+
+[scrolling]
+history = 10000
+multiplier = 3
+
 [font]
 size = 12.0
-
-[font.bold]
-family = "Iosevka Comfy"
-style = "Regular"
-
-[font.bold_italic]
-family = "Iosevka"
-style = "Light Italic"
-
-[font.italic]
-family = "Iosevka Comfy"
-style = "Light Oblique"
+offset = { x = 0, y = 0}
 
 [font.normal]
 family = "Iosevka Comfy"
 style = "Light"
 
-[cursor]
-style = "Block"
-unfocused_hollow = true
+[font.bold]
+family = "Iosevka Comfy"
+style = "Regular"
+
+[font.italic]
+family = "Iosevka Comfy"
+style = "Light Oblique"
+
+[font.bold_italic]
+family = "Iosevka"
+style = "Light Italic"
+
+[colors]
+draw_bold_text_with_bright_colors = true
+
+[colors.primary]
+background = "#1a1a1a"
+foreground = "#e5e9f0"
+
+[colors.search]
+matches = { foreground = "#1a1a1a", background = "#ff6c6b" }
+focused_match = { foreground = "#1a1a1a", background = "#e0af68" }
+
+[colors.hints]
+start = { foreground = "#1a1a1a", background = "#9ece6a" }
+end = { foreground = "#1a1a1a", background = "#7aa2f7" }
+
+[colors.normal]
+black = "#1a1a1a"
+red = "#ff6c6b"
+green = "#9ece6a"
+yellow = "#e0af68"
+blue = "#7aa2f7"
+magenta = "#c678dd"
+cyan = "#46d9ff"
+white = "#e5e9f0"
+
+[colors.bright]
+black = "#414868"
+red = "#ff7a93"
+green = "#b9f27c"
+yellow = "#ffca80"
+blue = "#51afef"
+magenta = "#c99efc"
+cyan = "#86e1fc"
+white = "#eceff4"
+
+[colors.dim]
+black = "#121212"
+red = "#d15c5b"
+green = "#7aa85c"
+yellow = "#c99a56"
+blue = "#5c7eae"
+magenta = "#a16aa3"
+cyan = "#3ba2c9"
+white = "#b4bcc6"
+
+[bell]
+animation = "EaseOut"
+duration = 150
+color = "#ff7a93"
+command = "None"
 
 [selection]
-semantic_escape_chars = ",│`|:\"' ()[]{}<>"
+semantic_escape_chars = ",│`|:\"' ()[]{}<>\\t"
 save_to_clipboard = true
 
-[scrolling]
-history = 100000
-multiplier = 3
+[cursor]
+style = { shape = "Beam", blinking = "On" }
+vi_mode_style = "None"
+blink_interval = 750
+blink_timeout = 5
+unfocused_hollow = false
+thickness = 0.2
+
+[terminal]
+osc52 = "CopyPaste"
+
+[shell]
+program = "/bin/zsh"
+args = ["-l"]
 
 [mouse]
 hide_when_typing = false
+bindings = [
+    { mouse = "Right", mods = "Control", action = "Paste" },
+    { mouse = "Middle", mods = "None", action = "Paste" },
+    { mouse = "Left", mods = "Shift", action = "ExpandSelection" }
+]
 
-[[keyboard.bindings]]
-key = "A"
-mods = "Control"
-action = "ScrollToTop"
+[hints]
+alphabet = "asdfghjklqwertyuiopzxcvbnm"
 
-[[keyboard.bindings]]
-key = "E"
-mods = "Control"
-action = "ScrollToBottom"
+[[hints.enabled]]
+command = "xdg-open"
+hyperlinks = true
+post_processing = true
+persist = false
+mouse.enabled = true
+binding = { key = "O", mods = "Control|Shift" }
+regex = "(ipfs:|ipns:|magnet:|mailto:|gemini://|gopher://|https://|http://|news:|file:|git://|ssh:|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^⟨⟩`]+"
 
-[[keyboard.bindings]]
-key = "F"
-mods = "Control"
-action = "ScrollLineDown"
+[keyboard]
+bindings = [
+    # Clipboard
+    { key = "Y", mods = "Control", action = "Paste" },
+    { key = "V", mods = "Control|Shift", action = "Paste" },
+    { key = "W", mods = "Control", action = "Copy" },
+    { key = "C", mods = "Control|Shift", action = "Copy" },
+    { key = "C", mods = "Shift", action = "CopySelection" },
+    { key = "V", mods = "Shift", action = "PasteSelection" },
+    # Font Size
+    { key = "Equals", mods = "Control|Shift", action = "IncreaseFontSize" },
+    { key = "Minus", mods = "Control|Shift", action = "DecreaseFontSize" },
+    { key = "Key0", mods = "Control|Shift", action = "ResetFontSize" },
+    # Scrolling
+    { key = "V", mods = "Alt", action = "ScrollPageUp" },
+    { key = "V", mods = "Control", action = "ScrollPageDown" },
+    { key = "PageUp", mods = "None", action = "ScrollPageUp" },
+    { key = "PageDown", mods = "None", action = "ScrollPageDown" },
+    { key = "P", mods = "Control", action = "ScrollLineUp" },
+    { key = "N", mods = "Control", action = "ScrollLineDown" },
+    { key = "<", mods = "Control|Shift", action = "ScrollToTop" },
+    { key = ">", mods = "Shift", action = "ScrollToBottom" },
+    { key = "PageUp", mods = "Shift", action = "ScrollHalfPageUp" },
+    { key = "PageDown", mods = "Shift", action = "ScrollHalfPageDown" },
+    # History and Clearing
+    { key = "L", mods = "Control|Shift", action = "ClearLogNotice" },
+    { key = "L", mods = "Control", action = "ReceiveChar" },
+    # Window Management
+    { key = "T", mods = "Control|Alt", action = "SpawnNewInstance" },
+    { key = "F11", mods = "None", action = "ToggleFullscreen" },
+    { key = "Z", mods = "Control|Shift", action = "ToggleMaximized" },
+    # Search
+    { key = "R", mods = "Control", action = "SearchBackward" },
+    { key = "S", mods = "Control", action = "SearchForward" },
+    { key = "D", mods = "Control|Shift", action = "SearchClear" },
+    { key = "O", mods = "Control|Shift", action = "SearchNext" },
+    { key = "I", mods = "Control|Shift", action = "SearchPrevious" },
+    { key = "H", mods = "Control|Shift", action = "SearchHistoryPrevious" },
+    { key = "L", mods = "Control|Shift", action = "SearchHistoryNext" },
+    # URL Opening
+    { key = "O", mods = "Alt", action = "Open" },
+]
 
-[[keyboard.bindings]]
-key = "B"
-mods = "Control"
-action = "ScrollLineUp"
-
-[[keyboard.bindings]]
-key = "V"
-mods = "Control"
-action = "ScrollPageDown"
-
-[[keyboard.bindings]]
-key = "V"
-mods = "Alt"
-action = "ScrollPageUp"
-
-[[keyboard.bindings]]
-key = "L"
-mods = "Control"
-action = "ClearLogNotice"
-
-[[keyboard.bindings]]
-key = "R"
-mods = "Control"
-action = "SearchBackward"
-
-[[keyboard.bindings]]
-key = "S"
-mods = "Control"
-action = "SearchForward"
-
-[[keyboard.bindings]]
-key = "K"
-mods = "Control"
-action = "ClearHistory"
-
-[[keyboard.bindings]]
-key = "Y"
-mods = "Control"
-action = "Paste"
-
-[[keyboard.bindings]]
-key = "W"
-mods = "Control"
-action = "Copy"
-
-[[keyboard.bindings]]
-key = "X"
-mods = "Control|Alt"
-action = "Quit"
-
-[[keyboard.bindings]]
-key = "T"
-mods = "Control|Alt"
-action = "SpawnNewInstance"
-
-[[keyboard.bindings]]
-key = "Equals"
-mods = "Control|Shift"
-action = "IncreaseFontSize"
-
-[[keyboard.bindings]]
-key = "Minus"
-mods = "Control|Shift"
-action = "DecreaseFontSize"
-
-[[keyboard.bindings]]
-key = "Key0"
-mods = "Control|Shift"
-action = "ResetFontSize"
-
-[[keyboard.bindings]]
-key = "C"
-mods = "Control|Shift"
-action = "Copy"
-
-[[keyboard.bindings]]
-key = "V"
-mods = "Control|Shift"
-action = "Paste"
-
-[[keyboard.bindings]]
-key = "PageUp"
-mods = "None"
-action = "ScrollPageUp"
-
-[[keyboard.bindings]]
-key = "PageDown"
-mods = "None"
-action = "ScrollPageDown"
-
-[[keyboard.bindings]]
-key = "Home"
-mods = "Shift"
-action = "ScrollToTop"
-
-[[keyboard.bindings]]
-key = "End"
-mods = "Shift"
-action = "ScrollToBottom"
-
-[[keyboard.bindings]]
-key = "Tab"
-mods = "Shift"
-chars = '\x1b[Z'
-
-[[keyboard.bindings]]
-key = "Backspace"
-mods = "Alt"
-chars = '\x1b\x7f'
+[debug]
+render_timer = false
+persistent_logging = false
+log_level = "Warn"
+print_events = false
+prefer_egl = true
