@@ -142,13 +142,21 @@
                           (specification->package "wget")
                           (specification->package "curl")
                           (specification->package "emacs-no-x-toolkit")
+                          (specification->package "htop")
                           (specification->package "nmap")
                           (specification->package "screen")
                           (specification->package "zstd")
                           (specification->package "coreutils")
                           (specification->package "bind")
                           (specification->package "cifs-utils")
+                          (specification->package "ncdu")
+                          (specification->package "rsync")
+                          (specification->package "smartmontools")
                           (specification->package "font-dejavu")
+                          (specification->package "font-iosevka-comfy")
+                          (specification->package "font-google-noto")
+                          (specification->package "font-google-noto-serif-cjk")
+                          (specification->package "font-google-noto-sans-cjk")
                           (specification->package "fontconfig"))
                     %base-packages))
 
@@ -179,7 +187,6 @@
                                                          (trigger-url
                                                           "http://localhost:8080")))
                                          (specifications %cuirass-specs)))
-
          ;; Guix publish service
          (service guix-publish-service-type
                   (guix-publish-configuration (compression '(("zstd" 19)))
@@ -292,18 +299,23 @@
   ;; Initrd modules for virtio SCSI support
   (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
 
+  ;; Swap space configuration
+  (swap-devices (list (swap-space
+                        (target (uuid "eb5bd25d-5e41-4020-93d6-b44515562714")))))
+
   ;; File system configuration
-  (file-systems (append (list (file-system
-                                (mount-point "/boot/efi")
-                                (device (uuid "0D74-66AF"
-                                              'fat32))
-                                (type "vfat"))
-                              (file-system
-                                (device (file-system-label "my-root"))
-                                (mount-point "/")
-                                (type "ext4"))
-                              (file-system
-                                (device (file-system-label "my-home"))
-                                (mount-point "/home")
-                                (type "ext4")))
-                              %base-file-systems)))
+  (file-systems (cons* (file-system
+                         (mount-point "/boot/efi")
+                         (device (uuid "87BA-E400"
+                                       'fat32))
+                         (type "vfat"))
+                       (file-system
+                         (mount-point "/")
+                         (device (uuid "1d8f08f6-5889-49ec-8520-1fa617d4305f"
+                                       'ext4))
+                         (type "ext4"))
+                       (file-system
+                         (mount-point "/var/cache/publish/zstd")
+                         (device (uuid "f7058e11-7a2b-4650-8f4b-c414254a1448"
+                                       'ext4))
+                         (type "ext4")) %base-file-systems)))
