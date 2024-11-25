@@ -106,10 +106,6 @@ thickness = 0.2
 [terminal]
 osc52 = "CopyPaste"
 
-[shell]
-program = "/bin/zsh"
-args = ["-l"]
-
 [mouse]
 hide_when_typing = false
 bindings = [
@@ -137,8 +133,6 @@ bindings = [
     { key = "V", mods = "Control|Shift", action = "Paste" },
     { key = "W", mods = "Control", action = "Copy" },
     { key = "C", mods = "Control|Shift", action = "Copy" },
-    { key = "C", mods = "Shift", action = "CopySelection" },
-    { key = "V", mods = "Shift", action = "PasteSelection" },
     # Font Size
     { key = "Equals", mods = "Control|Shift", action = "IncreaseFontSize" },
     { key = "Minus", mods = "Control|Shift", action = "DecreaseFontSize" },
