@@ -292,8 +292,8 @@
 
   ;; Bootloader configuration
   (bootloader (bootloader-configuration
-                (bootloader grub-efi-bootloader)
-                (targets (list "/boot/efi"))
+                (bootloader grub-bootloader)
+                (targets (list "/dev/sda"))
                 (keyboard-layout keyboard-layout)))
 
   ;; Initrd modules for virtio SCSI support
@@ -301,21 +301,16 @@
 
   ;; Swap space configuration
   (swap-devices (list (swap-space
-                        (target (uuid "eb5bd25d-5e41-4020-93d6-b44515562714")))))
+                        (target (uuid "688f9fd0-7dd9-4006-be47-f8250dbc9680")))))
 
   ;; File system configuration
   (file-systems (cons* (file-system
-                         (mount-point "/boot/efi")
-                         (device (uuid "87BA-E400"
-                                       'fat32))
-                         (type "vfat"))
-                       (file-system
                          (mount-point "/")
-                         (device (uuid "1d8f08f6-5889-49ec-8520-1fa617d4305f"
+                         (device (uuid "807e0f09-5c7a-4a74-94d3-aab662cc0411"
                                        'ext4))
                          (type "ext4"))
                        (file-system
                          (mount-point "/var/cache/publish/zstd")
-                         (device (uuid "f7058e11-7a2b-4650-8f4b-c414254a1448"
+                         (device (uuid "da58a899-8d80-4917-b585-115048349436"
                                        'ext4))
                          (type "ext4")) %base-file-systems)))
