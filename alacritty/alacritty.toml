@@ -85,12 +85,6 @@ magenta = "#a16aa3"
 cyan = "#3ba2c9"
 white = "#b4bcc6"
 
-[bell]
-animation = "EaseOut"
-duration = 150
-color = "#ff7a93"
-command = "None"
-
 [selection]
 semantic_escape_chars = ",│`|:\"' ()[]{}<>\\t"
 save_to_clipboard = true
@@ -138,16 +132,14 @@ bindings = [
     { key = "Minus", mods = "Control|Shift", action = "DecreaseFontSize" },
     { key = "Key0", mods = "Control|Shift", action = "ResetFontSize" },
     # Scrolling
-    { key = "V", mods = "Alt", action = "ScrollPageUp" },
-    { key = "V", mods = "Control", action = "ScrollPageDown" },
     { key = "PageUp", mods = "None", action = "ScrollPageUp" },
     { key = "PageDown", mods = "None", action = "ScrollPageDown" },
+    { key = "P", mods = "Shift", action = "ScrollHalfPageUp" },
+    { key = "N", mods = "Shift", action = "ScrollHalfPageDown" },
     { key = "P", mods = "Control", action = "ScrollLineUp" },
     { key = "N", mods = "Control", action = "ScrollLineDown" },
-    { key = "<", mods = "Control|Shift", action = "ScrollToTop" },
-    { key = ">", mods = "Shift", action = "ScrollToBottom" },
-    { key = "PageUp", mods = "Shift", action = "ScrollHalfPageUp" },
-    { key = "PageDown", mods = "Shift", action = "ScrollHalfPageDown" },
+    { key = "P", mods = "Control|Shift", action = "ScrollToTop" },
+    { key = "N", mods = "Control|Shift", action = "ScrollToBottom" },
     # History and Clearing
     { key = "L", mods = "Control|Shift", action = "ClearLogNotice" },
     { key = "L", mods = "Control", action = "ReceiveChar" },
