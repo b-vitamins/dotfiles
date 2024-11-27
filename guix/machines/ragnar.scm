@@ -141,8 +141,7 @@
   (firmware (list linux-firmware))
   (initrd microcode-initrd)
 
-  (keyboard-layout (keyboard-layout "us"
-                                    "altgr-intl"
+  (keyboard-layout (keyboard-layout "us" "altgr-intl"
                                     #:options '("ctrl:nocaps")))
 
   (bootloader (bootloader-configuration
