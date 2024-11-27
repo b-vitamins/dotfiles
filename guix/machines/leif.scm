@@ -58,6 +58,14 @@
               (service home-mcron-service-type
                        (home-mcron-configuration (jobs (list
                                                         %garbage-collector-job))))
+              ;; Home Files Service
+              (simple-service 'my-home-files-service
+		                          home-files-service-type
+		                          `((".gitconfig" ,(local-file "../../.gitconfig"))))
+              ;; Config Files Service
+              (simple-service 'my-config-files-service
+		                          home-xdg-configuration-files-service-type
+		                          `(("alacritty/alacritty.toml" ,(local-file "../../alacritty/alacritty.toml"))))
 
               ;; Secure Shell
               (service home-openssh-service-type
@@ -198,32 +206,23 @@
                                                            (specification->package
                                                             "foomatic-filters")))))
 
-            ;; Networking Setup
-            (service network-manager-service-type
-                     (network-manager-configuration (vpn-plugins (list (specification->package
-                                                                        "network-manager-openvpn")
-                                                                       (specification->package
-                                                                        "network-manager-openconnect")))))
-            (service wpa-supplicant-service-type)
-            (simple-service 'network-manager-applet profile-service-type
-                            (list (specification->package
-                                   "network-manager-applet")))
-            (service modem-manager-service-type)
-            (service usb-modeswitch-service-type)
-
             ;; Guix Services
             (service guix-home-service-type
                      `(("b" ,%my-home-config)))
 
             ;; Networking Services
-            (service avahi-service-type)
             (service nftables-service-type)
-            (service ntp-service-type)
             (service openssh-service-type)
 
             ;; Miscellaneous Services
             (service sysctl-service-type
                      (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1"))
                                                       %default-sysctl-settings)))))
-           %my-desktop-services))
+           (modify-services %my-desktop-services
+             (console-font-service-type config =>
+                                        (map (lambda (tty)
+                                               (cons tty
+                                                     (file-append (specification->package "font-terminus")
+                                                                  "/share/consolefonts/ter-132n")))
+                                             '("tty1" "tty2" "tty3"))))))
   (name-service-switch %mdns-host-lookup-nss))
