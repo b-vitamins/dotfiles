@@ -248,9 +248,7 @@
                                       (authorized-keys (append
                                                         %default-authorized-guix-keys
                                                         (list (local-file
-                                                               "../../keys/guix/floki.pub")
-                                                              (local-file
-                                                               "../../keys/guix/ragnar.pub"))))))
+                                                               "../../keys/guix/floki.pub"))))))
          (service nscd-service-type)
          (service rottlog-service-type)
          ;; Periodically delete old build logs.
