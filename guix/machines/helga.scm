@@ -293,16 +293,11 @@
 
   ;; Swap space configuration
   (swap-devices (list (swap-space
-                        (target (uuid "688f9fd0-7dd9-4006-be47-f8250dbc9680")))))
+                        (target (uuid "938ed311-5878-40a8-94d5-521c7deb364d")))))
 
   ;; File system configuration
   (file-systems (cons* (file-system
                          (mount-point "/")
-                         (device (uuid "807e0f09-5c7a-4a74-94d3-aab662cc0411"
-                                       'ext4))
-                         (type "ext4"))
-                       (file-system
-                         (mount-point "/var/cache/publish/zstd")
-                         (device (uuid "da58a899-8d80-4917-b585-115048349436"
+                         (device (uuid "06b9f2fe-7c78-4257-864e-9b5bda7a04e0"
                                        'ext4))
                          (type "ext4")) %base-file-systems)))
