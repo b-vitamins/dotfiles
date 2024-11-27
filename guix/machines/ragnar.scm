@@ -143,7 +143,6 @@
 
   (keyboard-layout (keyboard-layout "us"
                                     "altgr-intl"
-                                    #:model "apple"
                                     #:options '("ctrl:nocaps")))
 
   (bootloader (bootloader-configuration
