@@ -235,10 +235,13 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 
   ;; ---- File Associations ----
   (add-to-list 'auto-mode-alist '("\\.gscm\\'" . scheme-mode)) ;; Open `.gscm` files in `scheme-mode`.
+  (add-to-list 'auto-mode-alist '("zshenv\\'" . sh-mode))      ;; Open `zshenv` files in `sh-mode`.
+  (add-to-list 'auto-mode-alist '("zprofile\\'" . sh-mode))    ;; Open `zprofile` files in `sh-mode`.
+  (add-to-list 'auto-mode-alist '("zlogin\\'" . sh-mode))      ;; Open `zlogin` files in `sh-mode`.
   (add-to-list 'auto-mode-alist '("zshrc\\'" . sh-mode))       ;; Open `zshrc` files in `sh-mode`.
+  (add-to-list 'auto-mode-alist '("zlogout\\'" . sh-mode))     ;; Open `zlogout` files in `sh-mode`.
   (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))     ;; Open `.txt` files in `org-mode`.
-
-  (log-init-message "    File associations set for `.gscm` and `zshrc`.")
+  (log-init-message "    File associations set.")
 
   ;; ---- Additional Settings ----
   (:set-default
@@ -282,7 +285,10 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 
 (setup whoami
   (:set-default user-full-name "Ayan Das"
-                user-mail-address "bvits@riseup.net")
+                user-mail-address "bvits@riseup.net"
+                copyright-names-regexp
+                (format "%s <%s>" user-full-name user-mail-address))
+  (:require guix-copyright)
   (log-init-message (format "User: %s, Email: %s" user-full-name user-mail-address)))
 
 ;; Setup keybindings for bv-essentials
@@ -376,7 +382,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 
 ;; Setup display time format in the mode-line.
 (setup display-time-format
-  (:option display-time-format "%d %b %H:%M:%S"
+  (:option display-time-format "%d %b %a %H:%M"
            display-time-24hr-format t
            display-time-interval 1
            display-time-day-and-date t)
@@ -569,23 +575,24 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   (exec-path-from-shell-initialize)
   (log-init-message "Successfully set up exec-path-from-shell to sync environment variables."))
 
-;; Setup geiser-guile with exec-path integration for Guile environment variables.
 (setup (:straight-if geiser-guile bv-not-guix-p)
-  (:load-after exec-path-from-shell)
-  (:push-to exec-path-from-shell-variables
-            (:elements "GUILE_LOAD_PATH"))
-  (exec-path-from-shell-initialize)
-  (:option geiser-guile-load-init-file t                       ;; Load Guile init file in Geiser.
-           geiser-guile-load-path (split-string (getenv "GUILE_LOAD_PATH") path-separator) ;; Set the Guile load path from environment.
-           geiser-repl-add-project-paths t)                    ;; Automatically add project paths to Geiser REPL.
+	(:load-after exec-path-from-shell)
+	(:push-to exec-path-from-shell-variables
+						(:elements "GUILE_LOAD_PATH"))
+	(exec-path-from-shell-initialize)
+	(:option geiser-guile-load-init-file t
+					 geiser-guile-load-path (split-string (getenv "GUILE_LOAD_PATH") path-separator)
+					 geiser-repl-add-project-paths t)
   (:require geiser-guile)
-  (log-init-message "Successfully set up Geiser with Guile support and environment integration."))
+  (log-init-message "Successfully setup geiser-guile"))
 
 ;; Setup guix on Guix systems.
 (setup (:and (not bv-not-guix-p) guix)
   (:load-after geiser-mode)
   (:require guix)
   (:option* program "guile")
+  (:with-hook scheme-mode-hook
+		(:hook guix-devel-mode))
   (log-init-message "Successfully set up Guix on a Guix system."))
 
 ;; Setup vterm for terminal emulation within Emacs.
@@ -621,12 +628,12 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 ;; Setup `windsize` for window resizing.
 (setup (:straight-if (windsize :type git :flavor melpa :host github :repo "grammati/windsize") bv-not-guix-p)
   (:require windsize)
-  (:option* cols 2                                      ;; Adjust window by 2 columns.
-            rows 2)                                     ;; Adjust window by 2 rows.
-  (:global "S-M-<left>" windsize-left                   ;; Shrink window to the left.
-           "S-M-<right>" windsize-right                 ;; Expand window to the right.
-           "S-M-<up>" windsize-up                       ;; Shrink window upward.
-           "S-M-<down>" windsize-down)                  ;; Expand window downward.
+  (:option* cols 2                                    ;; Adjust window by 2 columns.
+            rows 2)                                   ;; Adjust window by 2 rows.
+  (:global "M-<left>" windsize-left                   ;; Shrink window to the left.
+           "M-<right>" windsize-right                 ;; Expand window to the right.
+           "M-<up>" windsize-up                       ;; Shrink window upward.
+           "M-<down>" windsize-down)                  ;; Expand window downward.
   (log-init-message "Successfully set up `windsize` for window resizing."))
 
 ;; Setup `ace-window` for fast window switching.
@@ -693,26 +700,28 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 								(direction . right))
 							 )))
 
-(setup (:straight-if olivetti bv-not-guix-p)
-  (:option* body-width 120)
-  (:require olivetti)
-  (:global "C-c o" olivetti-mode)
-  (message "Successfully setup olivetti-mode"))
+;; Setup `olivetti` for distraction-free writing.
+(setup (:straight-if olivetti bv-not-guix-p)             ;; Install `olivetti` package conditionally if `bv-not-guix-p` is true.
+  (:option* body-width 100)                              ;; Set the body width for focused writing.
+  (:require olivetti)                                    ;; Require `olivetti` to use its features.
+  (:global "C-c o" olivetti-mode)                        ;; Bind `C-c o` to toggle `olivetti-mode`.
+  (log-init-message "Successfully set up `olivetti-mode' for a nice writing environment."))
 
-(setup (:straight-if which-key bv-not-guix-p)
-  (:require which-key)
-  (:option* idle-delay 1.5
-            side-window-location 'right
-            popup-type 'side-window
-            side-window-max-width 0.40
-            max-description-length 75
-            max-display-columns 1
-            sort-order 'which-key-local-then-key-order
-            use-C-h-commands t
-            show-remaining-keys t)
-	(:with-hook after-init-hook
-		(:hook which-key-mode))
-  (message "Successfully setup which-key"))
+;; Setup `which-key` for displaying available keybindings.
+(setup (:straight-if which-key bv-not-guix-p)            ;; Install `which-key` package conditionally if `bv-not-guix-p` is true.
+  (:require which-key)                                   ;; Require `which-key` to use its features.
+  (:option* idle-delay 1.5                               ;; Set delay (in seconds) before `which-key` pops up.
+            side-window-location 'right                  ;; Display `which-key` on the right side of the frame.
+            popup-type 'side-window                      ;; Use side-window for displaying `which-key`.
+            side-window-max-width 0.40                   ;; Set the maximum width for the side-window (40% of the frame).
+            max-description-length 75                    ;; Limit the description length of displayed keybindings.
+            max-display-columns 1                        ;; Limit the number of columns displayed.
+            sort-order 'which-key-local-then-key-order   ;; Sort by local bindings first, then key order.
+            use-C-h-commands t                           ;; Enable `C-h` help commands in `which-key`.
+            show-remaining-keys t)                       ;; Show remaining keys that do not fit in the popup.
+  (:with-hook after-init-hook                            ;; Enable `which-key-mode` after Emacs initialization.
+    (:hook which-key-mode))
+  (log-init-message "Successfully set up `which-key' for displaying available keybindings."))
 
 (setup org
   (:require org ox-latex)
@@ -791,7 +800,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 
   ;; Agenda and Task Management
   (:require bv-file-navigation)
-  (:option* agenda-files '("~/documents/main")
+  (:option* agenda-files '("~/documents/main" "~/documents/slipbox/notes")
             agenda-skip-deadline-prewarning-if-scheduled nil
             agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline
             agenda-columns-add-appointments-to-effort-sum t
@@ -802,7 +811,8 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
             agenda-clockreport-parameter-plist '(:scope bv-clockable-org-files
                                                         :maxlevel 3
                                                         :block thisweek
-                                                        :filetitle t
+                                                        :filetitle nil
+                                                        :hidefiles t
                                                         :emphasize t
                                                         :stepskip0 t
                                                         :fileskip0 t
@@ -824,9 +834,6 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   ;; Logging and Archiving
   (:option* log-done 'time
             export-kill-after-export t)
-
-  (:option* latex-create-formula-image-program 'dvipng
-            preview-latex-default-process 'dvipng)
 
   ;; LaTeX and Image Export Settings
   (:push-to org-preview-latex-process-alist
@@ -850,9 +857,9 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 										 :image-input-type "dvi"
 										 :image-output-type "png"
 										 :image-size-adjust (1.0 . 1.0)
-										 :latex-compiler ("lualatex --output-format=dvi -interaction nonstopmode -output-directory %o %f")
-										 :image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f")
-										 :transparent-image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f"))))
+	 									 :latex-compiler ("lualatex --output-format=dvi -interaction nonstopmode -output-directory %o %f")
+	 									 :image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f")
+	 									 :transparent-image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f"))))
 
   ;; LaTeX Configuration
   (:option* latex-default-class "article"
@@ -861,8 +868,9 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
                                 "biber %b"
                                 "lualatex -shell-escape -interaction nonstopmode %f"
                                 "lualatex -shell-escape -interaction nonstopmode %f")
-            latex-create-formula-image-program 'dvipng
             preview-latex-image-directory "~/pictures/.images/latex-previews/"
+            latex-create-formula-image-program 'dvipng
+            preview-latex-default-process 'dvipng
             highlight-latex-and-related (quote (native latex script entities)))
 
 	;; Source: https://tecosaur.github.io/emacs-config/config.html#prettier-highlighting
@@ -912,7 +920,8 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 	 )
   (:global "C-c l" org-store-link
            "C-c a" org-agenda
-           "C-c c" org-capture)
+           "C-c c" org-capture
+           "C-c i" org-id-get-create)
   (message "Successfully setup org-mode"))
 
 (setup org-faces
@@ -1295,29 +1304,6 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 	(:with-hook after-init-hook
 		(:hook yas-reload-all))
   (message "Successfully setup yasnippets"))
-
-(setup (:straight-if geiser bv-not-guix-p)
-  (:option geiser-default-implementation 'guile
-					 geiser-active-implementations '(guile))
-  (:push-to geiser-implementations-alist
-						(:elements
-						 (((regexp "\\.scm$") guile))))
-(:push-to geiser-implementations-alist
-						(:elements
-						 (((regexp "\\.gscm$") guile))))
-  (:require geiser)
-  (message "Successfully setup geiser"))
-
-(setup (:straight-if geiser-guile bv-not-guix-p)
-	(:load-after exec-path-from-shell)
-	(:push-to exec-path-from-shell-variables
-						(:elements "GUILE_LOAD_PATH"))
-	(exec-path-from-shell-initialize)
-	(:option geiser-guile-load-init-file t
-					 geiser-guile-load-path (split-string (getenv "GUILE_LOAD_PATH") path-separator)
-					 geiser-repl-add-project-paths t)
-  (:require geiser-guile)
-  (message "Successfully setup geiser-guile"))
 
 (setup (:straight-if lsp-mode bv-not-guix-p)
   (:hook-into python-mode
