@@ -74,5 +74,5 @@
 # Bibliography Management
 #+LATEX_HEADER: \usepackage{csquotes}
 #+LATEX_HEADER: \usepackage[backend=biber]{biblatex}
-#+LATEX_HEADER: \addbibresource{~/slipbox/bibliographies/working.bib}
-#+bibliography: ~/slipbox/bibliographies/working.bib
+#+LATEX_HEADER: \addbibresource{~/documents/slipbox/bibliographies/working.bib}
+#+bibliography: ~/documents/slipbox/bibliographies/working.bib
