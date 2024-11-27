@@ -49,7 +49,7 @@
                                                                 ("https://ci.guix.gnu.org"
                                                                  "https://substitutes.myguix.bvits.in"))
                                                                (systems '("x86_64-linux"))
-                                                               (workers 1)))
+                                                               (workers 4)))
                  ;; OpenSSH for remote access
                  (service openssh-service-type
                           (openssh-configuration (authorized-keys `(("b" ,(local-file
@@ -70,9 +70,7 @@
                                                     (authorized-keys (append
                                                                       %default-authorized-guix-keys
                                                                       (list (local-file
-                                                                             "../../keys/guix/myguix-cuirass-server-signing-key.pub"))))
-                                                    (extra-options '("--max-jobs=1"
-                                                                     "--cores=16")))))))
+                                                                             "../../keys/guix/helga.pub")))))))))
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
                 (targets (list "/boot/efi"))
