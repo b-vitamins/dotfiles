@@ -76,6 +76,20 @@
               (service home-mcron-service-type
                        (home-mcron-configuration (jobs (list
                                                         %garbage-collector-job))))
+              ;; Home Files Service
+              (simple-service 'my-home-files-service
+		                          home-files-service-type
+		                          `((".gitconfig" ,(local-file "../../.gitconfig"))))
+              ;; Config Files Service
+              (simple-service 'my-config-files-service
+		                          home-xdg-configuration-files-service-type
+		                          `(("alacritty/alacritty.toml" ,(local-file "../../alacritty/alacritty.toml"))
+                                ("mpv/input.conf" ,(local-file "../../mpv/input.conf"))
+                                ("mpv/input.conf" ,(local-file "../../mpv/input.conf"))))
+
+(service 
+                 `(("gdb/gdbinit" ,%default-gdbinit)
+                   ("nano/nanorc" ,%default-nanorc)))
 
               ;; Secure Shell
               (service home-openssh-service-type
@@ -91,16 +105,10 @@
                                                                                "~/.ssh/id_ed25519"))
                                                                 (openssh-host (name
                                                                                "ci.myguix.bvits.in")
-
-                                                                              
                                                                               (user
                                                                                "b")
-
-                                                                              
                                                                               (port
                                                                                2123)
-
-                                                                              
                                                                               (identity-file
                                                                                "~/.ssh/id_ed25519"))))
                                                    (authorized-keys (list (local-file
@@ -223,25 +231,10 @@
                  (service cups-service-type
                           (cups-configuration (web-interface? #t)))
 
-                 ;; Networking Setup
-                 (service network-manager-service-type
-                          (network-manager-configuration (vpn-plugins (list (specification->package
-                                                                             "network-manager-openvpn")
-                                                                            (specification->package
-                                                                             "network-manager-openconnect")))))
-                 (service wpa-supplicant-service-type)
-                 (simple-service 'network-manager-applet profile-service-type
-                                 (list (specification->package
-                                        "network-manager-applet")))
-                 (service modem-manager-service-type)
-                 (service usb-modeswitch-service-type)
-                 (service openssh-service-type)
-
                  ;; Networking Services
-                 (service avahi-service-type)
+                 (service openssh-service-type)
                  (service nftables-service-type)
-                 (service ntp-service-type)
-
+                 
                  ;; Database Services
                  (service mysql-service-type)
                  (service redis-service-type)
@@ -276,11 +269,5 @@
                                 oci-meilisearch-service-type
                                 oci-weaviate-service-type
                                 oci-neo4j-service-type)))
-           (modify-services %my-desktop-services
-             (guix-service-type config =>
-                                (guix-configuration (inherit config)
-                                                    (authorized-keys (append
-                                                                      %default-authorized-guix-keys
-                                                                      (list (local-file
-                                                                             "../../keys/guix/helga.pub")))))))))
+           %my-desktop-services))
   (name-service-switch %mdns-host-lookup-nss))
