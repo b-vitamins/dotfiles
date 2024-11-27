@@ -146,17 +146,7 @@
                           (specification->package "nmap")
                           (specification->package "screen")
                           (specification->package "zstd")
-                          (specification->package "coreutils")
-                          (specification->package "bind")
-                          (specification->package "cifs-utils")
-                          (specification->package "ncdu")
-                          (specification->package "rsync")
-                          (specification->package "smartmontools")
                           (specification->package "font-dejavu")
-                          (specification->package "font-iosevka-comfy")
-                          (specification->package "font-google-noto")
-                          (specification->package "font-google-noto-serif-cjk")
-                          (specification->package "font-google-noto-sans-cjk")
                           (specification->package "fontconfig"))
                     %base-packages))
 
@@ -258,7 +248,9 @@
                                       (authorized-keys (append
                                                         %default-authorized-guix-keys
                                                         (list (local-file
-                                                               "../../keys/guix/myguix-cuirass-worker-signing-key.pub"))))))
+                                                               "../../keys/guix/floki.pub")
+                                                              (local-file
+                                                               "../../keys/guix/ragnar.pub"))))))
          (service nscd-service-type)
          (service rottlog-service-type)
          ;; Periodically delete old build logs.
