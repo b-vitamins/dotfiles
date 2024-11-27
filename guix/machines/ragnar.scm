@@ -262,20 +262,6 @@
                  (service guix-home-service-type
                           `(("b" ,%my-home-config)))
 
-                 ;; CI Services
-                 (service cuirass-remote-worker-service-type
-                          (cuirass-remote-worker-configuration (private-key
-                                                                "/etc/guix/signing-key.sec")
-                                                               (public-key
-                                                                "/etc/guix/signing-key.pub")
-                                                               (server
-                                                                "5.75.139.97:5555")
-                                                               (substitute-urls '
-                                                                ("https://ci.guix.gnu.org"
-                                                                 "https://substitutes.myguix.bvits.in"))
-                                                               (systems '("x86_64-linux"))
-                                                               (workers 4)))
-
                  ;; Miscellaneous Services
                  (service sysctl-service-type
                           (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
@@ -296,7 +282,5 @@
                                                     (authorized-keys (append
                                                                       %default-authorized-guix-keys
                                                                       (list (local-file
-                                                                             "../../keys/guix/helga.pub")
-                                                                            (local-file
-                                                                             "../../keys/guix/floki.pub")))))))))
+                                                                             "../../keys/guix/helga.pub")))))))))
   (name-service-switch %mdns-host-lookup-nss))
