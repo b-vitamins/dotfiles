@@ -134,8 +134,6 @@ bindings = [
     # Scrolling
     { key = "PageUp", mods = "None", action = "ScrollPageUp" },
     { key = "PageDown", mods = "None", action = "ScrollPageDown" },
-    { key = "P", mods = "Shift", action = "ScrollHalfPageUp" },
-    { key = "N", mods = "Shift", action = "ScrollHalfPageDown" },
     { key = "P", mods = "Control", action = "ScrollLineUp" },
     { key = "N", mods = "Control", action = "ScrollLineDown" },
     { key = "P", mods = "Control|Shift", action = "ScrollToTop" },
