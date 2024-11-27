@@ -18,8 +18,9 @@
              (gnu system install)
              (gnu services avahi)
              (gnu services cups)
-             (gnu services ssh)
              (gnu services desktop)
+             (gnu services guix)
+             (gnu services ssh)
              (gnu services xorg)
              (gnu services networking)
              (gnu services sysctl)
@@ -36,26 +37,16 @@
 
 (define %my-home-config
   (home-environment
-    (packages (append %terminal-tools-packages
-                      %guile-development-packages
-                      %media-consumption-packages
+    (packages (append %media-consumption-packages
                       %audio-conversion-tools-packages
                       %video-conversion-tools-packages
-                      %document-conversion-tools-packages
-                      %graphic-production-packages
-                      %audio-production-packages
-                      %video-production-packages
                       %document-authoring-packages
                       %document-manipulation-packages
                       %file-transfer-tools-packages
                       %p2p-file-sharing-packages
-                      %version-control-packages
-                      %network-utilities-packages
-                      %compression-tools-packages
-                      %build-system-packages
-                      %basic-filesystem-tools
-                      %diagnostic-and-maintenance-tools
-                      %ssd-tools))
+                      %guile-development-packages
+                      %rust-development-packages
+                      %python-development-packages))
 
     (services
      (append (list
@@ -129,7 +120,9 @@
   (firmware (list linux-firmware sof-firmware))
   (initrd microcode-initrd)
 
-  (keyboard-layout (keyboard-layout "us" "altgr-intl"
+  (keyboard-layout (keyboard-layout "us"
+                                    "altgr-intl"
+                                    #:model "thinkpad"
                                     #:options '("ctrl:nocaps"
                                                 "altwin:swap_alt_win")))
 
@@ -168,6 +161,10 @@
 
   (packages (append %system-core-packages
                     %secret-mgmt-packages
+                    %bluetooth-packages
+                    %sound-system-packages
+                    %search-and-index-packages
+                    %terminal-tools-packages
                     %general-purpose-fonts
                     %google-fonts
                     %cjk-fonts
@@ -175,6 +172,13 @@
                     %monospace-fonts
                     %document-fonts
                     %desktop-utilities-packages
+                    %version-control-packages
+                    %network-utilities-packages
+                    %compression-tools-packages
+                    %build-system-packages
+                    %basic-filesystem-tools
+                    %diagnostic-and-maintenance-tools
+                    %ssd-tools
                     %base-packages))
 
   (services
