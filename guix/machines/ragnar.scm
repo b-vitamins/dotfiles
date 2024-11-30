@@ -57,16 +57,27 @@
 
 (define %my-home-config
   (home-environment
-    (packages (append %media-consumption-packages
-                      %audio-conversion-tools-packages
-                      %video-conversion-tools-packages
-                      %document-authoring-packages
-                      %document-manipulation-packages
-                      %file-transfer-tools-packages
-                      %p2p-file-sharing-packages
-                      %guile-development-packages
-                      %rust-development-packages
-                      %python-development-packages))
+    (packages (append
+               ;; Document bundles
+               %document-conversion-packages
+               %document-production-packages
+               ;; Media and graphic bundles
+               %media-packages
+               %graphics-packages
+               ;; Audio bundles
+               %audio-conversion-packages
+               %audio-production-packages
+               ;; Video bundles
+               %video-conversion-packages
+               %video-production-packages
+               ;; Development bundles
+               %guile-packages
+               %rust-packages
+               %python-packages
+               %perl-packages
+               ;; Search and Index bundles
+               %search-packages
+               %opencog-packages))
 
     (services
      (append (list
@@ -77,19 +88,17 @@
                        (home-mcron-configuration (jobs (list
                                                         %garbage-collector-job))))
               ;; Home Files Service
-              (simple-service 'my-home-files-service
-		                          home-files-service-type
-		                          `((".gitconfig" ,(local-file "../../.gitconfig"))))
+              (simple-service 'my-home-files-service home-files-service-type
+                              `((".gitconfig" ,(local-file "../../gitconfig"))))
               ;; Config Files Service
               (simple-service 'my-config-files-service
-		                          home-xdg-configuration-files-service-type
-		                          `(("alacritty/alacritty.toml" ,(local-file "../../alacritty/alacritty.toml"))
-                                ("mpv/input.conf" ,(local-file "../../mpv/input.conf"))
-                                ("mpv/input.conf" ,(local-file "../../mpv/input.conf"))))
-
-(service 
-                 `(("gdb/gdbinit" ,%default-gdbinit)
-                   ("nano/nanorc" ,%default-nanorc)))
+                              home-xdg-configuration-files-service-type
+                              `(("alacritty/alacritty.toml" ,(local-file
+                                                              "../../alacritty/alacritty.toml"))
+                                ("mpv/input.conf" ,(local-file
+                                                    "../../mpv/input.conf"))
+                                ("mpv/mpv.conf" ,(local-file
+                                                  "../../mpv/mpv.conf"))))
 
               ;; Secure Shell
               (service home-openssh-service-type
@@ -105,10 +114,16 @@
                                                                                "~/.ssh/id_ed25519"))
                                                                 (openssh-host (name
                                                                                "ci.myguix.bvits.in")
+
+                                                                              
                                                                               (user
                                                                                "b")
+
+                                                                              
                                                                               (port
                                                                                2123)
+
+                                                                              
                                                                               (identity-file
                                                                                "~/.ssh/id_ed25519"))))
                                                    (authorized-keys (list (local-file
@@ -161,9 +176,13 @@
   (file-systems (append (list (file-system
                                 (device (file-system-label "my-root"))
                                 (mount-point "/")
-                                (type "btrfs"))
+                                (type "ext4"))
                               (file-system
-                                (device (uuid "B224-27F3"
+                                (device (file-system-label "my-data"))
+                                (mount-point "/data")
+                                (type "ext4"))
+                              (file-system
+                                (device (uuid "16DB-9FE4"
                                               'fat))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
@@ -190,40 +209,45 @@
                   (system? #t)
                   (name "realtime")) %base-groups))
 
-  (packages (append %system-core-packages
-                    %nvidia-core-packages
-                    %cuda-accelerated-packages
-                    %secret-mgmt-packages
-                    %bluetooth-packages
-                    %sound-system-packages
-                    %search-and-index-packages
-                    %terminal-tools-packages
-                    %general-purpose-fonts
-                    %google-fonts
-                    %cjk-fonts
-                    %iosevka-fonts
-                    %monospace-fonts
-                    %document-fonts
-                    %desktop-utilities-packages
-                    %version-control-packages
-                    %network-utilities-packages
-                    %compression-tools-packages
-                    %build-system-packages
-                    %basic-filesystem-tools
-                    %diagnostic-and-maintenance-tools
-                    %ssd-tools
-                    %base-packages))
+  (packages (append
+             ;; Essential bundles
+             %core-packages
+             %monitoring-packages
+             %versioning-packages
+             %compression-packages
+             %network-packages
+             ;; Desktop bundles
+             %desktop-packages
+             %audio-packages
+             %bluetooth-packages
+             ;; File system bundles
+             %basic-filesystem-packages
+             %advanced-filesystem-packages
+             %remote-filesystem-packages
+             %file-transfer-packages
+             ;; Development packages
+             %development-packages
+             %cuda-packages
+             %tree-sitter-packages
+             ;; Font bundles
+             %general-fonts
+             %document-fonts
+             %adobe-fonts
+             %google-fonts
+             %fira-fonts
+             %iosevka-fonts
+             %monospace-fonts
+             %sans-fonts
+             %serif-fonts
+             %cjk-fonts
+             %unicode-fonts
+             %base-packages))
   (services
    (append (list (service gnome-desktop-service-type)
-                 (service nvidia-service-type
-                          (nvidia-configuration (driver nvda-recommended)
-                                                (firmware
-                                                 nvidia-firmware-recommended)
-                                                (module
-                                                 nvidia-module-recommended)))
+                 (service nvidia-service-type)
                  (set-xorg-configuration
                   (xorg-configuration (keyboard-layout keyboard-layout)
-                                      (modules (cons nvda-recommended
+                                      (modules (cons nvda
                                                      %default-xorg-modules))
                                       (drivers '("nvidia"))))
 
@@ -234,7 +258,7 @@
                  ;; Networking Services
                  (service openssh-service-type)
                  (service nftables-service-type)
-                 
+
                  ;; Database Services
                  (service mysql-service-type)
                  (service redis-service-type)
@@ -268,6 +292,5 @@
                           (list oci-grobid-service-type
                                 oci-meilisearch-service-type
                                 oci-weaviate-service-type
-                                oci-neo4j-service-type)))
-           %my-desktop-services))
+                                oci-neo4j-service-type))) %my-desktop-services))
   (name-service-switch %mdns-host-lookup-nss))
