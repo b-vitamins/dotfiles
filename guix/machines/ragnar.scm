@@ -293,4 +293,8 @@
                           (list oci-grobid-service-type
                                 oci-meilisearch-service-type
                                 oci-weaviate-service-type
-                                oci-neo4j-service-type))) %my-desktop-services)))
+                                oci-neo4j-service-type)))
+           (modify-services %my-desktop-services
+             (gdm-service-type config =>
+                               (gdm-configuration (inherit config)
+                                                  (wayland? #f)))))))
