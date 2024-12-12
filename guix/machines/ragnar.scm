@@ -21,7 +21,6 @@
              (gnu services dbus)
              (gnu services desktop)
              (gnu services docker)
-             (gnu services docker)
              (gnu services file-sharing)
              (gnu services guix)
              (gnu services linux)
@@ -158,7 +157,8 @@
   (locale "en_US.utf8")
 
   (kernel linux)
-  (kernel-arguments (list "modprobe.blacklist=nouveau" "nvidia_drm.modeset=1"))
+  (kernel-arguments (list "modprobe.blacklist=nouveau,amdgpu,radeon" "nvidia_drm.modeset=1"
+                          "nvidia.NVreg_EnableGpuFirmware=1"))
   (kernel-loadable-modules (list (specification->package
                                   "v4l2loopback-linux-module")))
   (firmware (list linux-firmware))
@@ -182,7 +182,7 @@
                                 (mount-point "/data")
                                 (type "ext4"))
                               (file-system
-                                (device (uuid "16DB-9FE4"
+                                (device (uuid "2BB3-1B5D"
                                               'fat))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
