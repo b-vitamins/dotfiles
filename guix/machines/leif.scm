@@ -4,6 +4,8 @@
              (gnu home services mcron)
              (gnu home services ssh)
              (gnu home services desktop)
+             (gnu services docker)
+             (gnu home services)
              (gnu home services media)
              (gnu home services music)
              (gnu home services dict)
@@ -33,20 +35,25 @@
              (myguix system install)
              (myguix packages linux)
              (myguix system linux-initrd)
+             (myguix services oci-containers)
              (srfi srfi-1))
 
 (define %my-home-config
   (home-environment
-    (packages (append %media-consumption-packages
-                      %audio-conversion-tools-packages
-                      %video-conversion-tools-packages
-                      %document-authoring-packages
-                      %document-manipulation-packages
-                      %file-transfer-tools-packages
-                      %p2p-file-sharing-packages
-                      %guile-development-packages
-                      %rust-development-packages
-                      %python-development-packages))
+    
+    (packages (append
+               ;; Document bundles
+               %document-conversion-packages
+               %document-production-packages
+               ;; Media and graphic bundles
+               %media-packages
+               %graphics-packages
+               ;; Development bundles
+               %guile-packages
+               %python-packages
+               %perl-packages
+               ;; Search and Index bundles
+               %search-packages))
 
     (services
      (append (list
@@ -59,13 +66,13 @@
                        (home-mcron-configuration (jobs (list
                                                         %garbage-collector-job))))
               ;; Home Files Service
-              (simple-service 'my-home-files-service
-		                          home-files-service-type
-		                          `((".gitconfig" ,(local-file "../../.gitconfig"))))
+              (simple-service 'my-home-files-service home-files-service-type
+                              `((".gitconfig" ,(local-file "../../gitconfig"))))
               ;; Config Files Service
               (simple-service 'my-config-files-service
-		                          home-xdg-configuration-files-service-type
-		                          `(("alacritty/alacritty.toml" ,(local-file "../../alacritty/alacritty.toml"))))
+                              home-xdg-configuration-files-service-type
+                              `(("alacritty/alacritty.toml" ,(local-file
+                                                              "../../alacritty/alacritty.toml"))))
 
               ;; Secure Shell
               (service home-openssh-service-type
@@ -167,27 +174,28 @@
                   (system? #t)
                   (name "realtime")) %base-groups))
 
-  (packages (append %system-core-packages
-                    %secret-mgmt-packages
-                    %bluetooth-packages
-                    %sound-system-packages
-                    %search-and-index-packages
-                    %terminal-tools-packages
-                    %general-purpose-fonts
-                    %google-fonts
-                    %cjk-fonts
-                    %iosevka-fonts
-                    %monospace-fonts
-                    %document-fonts
-                    %desktop-utilities-packages
-                    %version-control-packages
-                    %network-utilities-packages
-                    %compression-tools-packages
-                    %build-system-packages
-                    %basic-filesystem-tools
-                    %diagnostic-and-maintenance-tools
-                    %ssd-tools
-                    %base-packages))
+  (packages (append
+             ;; Essential bundles
+             %core-packages
+             %versioning-packages
+             %compression-packages
+             %network-packages
+             ;; Desktop bundles
+             %desktop-packages
+             %audio-packages
+             %bluetooth-packages
+             ;; File system bundles
+             %basic-filesystem-packages
+             %file-transfer-packages
+             ;; Font bundles
+             %general-fonts
+             %document-fonts
+             %google-fonts
+             %iosevka-fonts
+             %monospace-fonts
+             %cjk-fonts
+             %unicode-fonts
+             %base-packages))
 
   (services
    (append (list
@@ -198,13 +206,7 @@
 
             ;; Printing Services
             (service cups-service-type
-                     (cups-configuration (web-interface? #t)
-                                         (extensions (list (specification->package
-                                                            "cups-filters")
-                                                           (specification->package
-                                                            "brlaser")
-                                                           (specification->package
-                                                            "foomatic-filters")))))
+                     (cups-configuration (web-interface? #t)))
 
             ;; Guix Services
             (service guix-home-service-type
@@ -214,6 +216,12 @@
             (service nftables-service-type)
             (service openssh-service-type)
 
+            ;; Container Services
+            (service containerd-service-type)
+            (service docker-service-type)
+            (service oci-container-service-type
+                     (list oci-grobid-service-type))
+
             ;; Miscellaneous Services
             (service sysctl-service-type
                      (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1"))
@@ -222,7 +230,7 @@
              (console-font-service-type config =>
                                         (map (lambda (tty)
                                                (cons tty
-                                                     (file-append (specification->package "font-terminus")
-                                                                  "/share/consolefonts/ter-132n")))
-                                             '("tty1" "tty2" "tty3"))))))
-  (name-service-switch %mdns-host-lookup-nss))
+                                                     (file-append (specification->package
+                                                                   "font-terminus")
+                                                      "/share/consolefonts/ter-132n")))
+                                             '("tty1" "tty2" "tty3")))))))
