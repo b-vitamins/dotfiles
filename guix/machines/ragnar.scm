@@ -157,7 +157,8 @@
   (locale "en_US.utf8")
 
   (kernel linux)
-  (kernel-arguments (list "modprobe.blacklist=nouveau,amdgpu,radeon" "nvidia_drm.modeset=1"
+  (kernel-arguments (list "modprobe.blacklist=nouveau,amdgpu,radeon"
+                          "nvidia_drm.modeset=1"
                           "nvidia.NVreg_EnableGpuFirmware=1"))
   (kernel-loadable-modules (list (specification->package
                                   "v4l2loopback-linux-module")))
@@ -182,8 +183,8 @@
                                 (mount-point "/data")
                                 (type "ext4"))
                               (file-system
-                                (device (uuid "2BB3-1B5D"
-                                              'fat))
+                                (device (uuid "4426-CA38"
+                                              'fat32))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
 
@@ -292,5 +293,4 @@
                           (list oci-grobid-service-type
                                 oci-meilisearch-service-type
                                 oci-weaviate-service-type
-                                oci-neo4j-service-type))) %my-desktop-services))
-  (name-service-switch %mdns-host-lookup-nss))
+                                oci-neo4j-service-type))) %my-desktop-services)))
