@@ -52,19 +52,14 @@ if [ "$GUIX_ONLY" = false ]; then
         ["$DOTFILES_DIR/emacs/early-init.el"]="~/.config/emacs/early-init.el"
         ["$DOTFILES_DIR/emacs/lisp"]="~/.config/emacs/lisp"
         ["$DOTFILES_DIR/emacs/setup"]="~/.config/emacs/setup"
-        ["$DOTFILES_DIR/alacritty/alacritty.toml"]="~/.config/alacritty/alacritty.toml"
-        ["$DOTFILES_DIR/.gitconfig"]="~/.gitconfig"
     )
 fi
 
 # Add hostname-dependent Guix symlinks
-GUIX_MACHINE_DIR="$DOTFILES_DIR/guix/machines/$HOSTNAME"
+GUIX_MACHINE_DIR="$DOTFILES_DIR/guix/machines"
 if [ -d "$GUIX_MACHINE_DIR" ]; then
     links["$DOTFILES_DIR/guix/channels.scm"]="~/.config/guix/channels.scm"
-    links["$GUIX_MACHINE_DIR/config.scm"]="~/.config/guix/config.scm"
-    if [ -f "$GUIX_MACHINE_DIR/home-config.scm" ]; then
-        links["$GUIX_MACHINE_DIR/home-config.scm"]="~/.config/guix/home-config.scm"
-    fi
+    links["$GUIX_MACHINE_DIR/$HOSTNAME.scm"]="~/.config/guix/config.scm"
 else
     echo "Warning: No configuration found for hostname '$HOSTNAME'. Skipping Guix links."
 fi
