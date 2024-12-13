@@ -157,8 +157,7 @@
   (locale "en_US.utf8")
 
   (kernel linux)
-  (kernel-arguments (list "modprobe.blacklist=nouveau,amdgpu,radeon"
-                          "nvidia_drm.modeset=1"
+  (kernel-arguments (list "modprobe.blacklist=nouveau" "nvidia_drm.modeset=1"
                           "nvidia.NVreg_EnableGpuFirmware=1"))
   (kernel-loadable-modules (list (specification->package
                                   "v4l2loopback-linux-module")))
@@ -293,8 +292,4 @@
                           (list oci-grobid-service-type
                                 oci-meilisearch-service-type
                                 oci-weaviate-service-type
-                                oci-neo4j-service-type)))
-           (modify-services %my-desktop-services
-             (gdm-service-type config =>
-                               (gdm-configuration (inherit config)
-                                                  (wayland? #f)))))))
+                                oci-neo4j-service-type))) %my-desktop-services)))
