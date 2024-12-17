@@ -27,6 +27,17 @@
   (label (string-append "GNU Guix "
                         (package-version guix)))
 
+  (firmware '())
+
+  (bootloader (bootloader-configuration
+                (bootloader grub-bootloader)
+                (targets '("/dev/vda"))
+                (terminal-outputs '(console))))
+  (file-systems (cons (file-system
+                        (mount-point "/")
+                        (device "/dev/vda2")
+                        (type "ext4")) %base-file-systems))
+
   ;; The list of user accounts ('root' is implicit).
   (users (cons (user-account
                  (name "guest")
@@ -71,17 +82,15 @@
                                                                  "https://substitutes.myguix.bvits.in"))
                                                                (systems '("x86_64-linux"))
                                                                (workers 2)))
+                 (service dhcp-client-service-type)
+                 (service ntp-service-type)
                  ;; OpenSSH for remote access
                  (service openssh-service-type
-                          (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                           "../../keys/ssh/helga.pub"))))
-                                                 (password-authentication? #f)))
+                          (openssh-configuration
+                           (allow-empty-passwords? #t)
+                           (permit-root-login #t)))
                  (simple-service 'cron-jobs mcron-service-type
-                                 (list garbage-collector-job))
-                 (service wpa-supplicant-service-type)
-                 (service network-manager-service-type)
-                 (service ntp-service-type)
-                 (service gpm-service-type))
+                                 (list garbage-collector-job)))
 
            ;; This is the default list of services we
            ;; are appending to.
@@ -91,15 +100,4 @@
                                                     (authorized-keys (append
                                                                       %default-authorized-guix-keys
                                                                       (list (local-file
-                                                                             "../../keys/guix/helga.pub")))))))))
-
-  ;; Below we assume /dev/vda is the VM's hard disk.
-  ;; Adjust as needed.
-  (bootloader (bootloader-configuration
-                (bootloader grub-bootloader)
-                (targets '("/dev/vda"))
-                (terminal-outputs '(console))))
-  (file-systems (cons (file-system
-                        (mount-point "/")
-                        (device "/dev/vda2")
-                        (type "ext4")) %base-file-systems)))
+                                                                             "../../keys/guix/helga.pub"))))))))))
