@@ -36,6 +36,15 @@
                                read)))
                     (kill pid SIGHUP))))
 
+;; Run the garbe collector every day at 4:00 AM
+(define garbage-collector-job
+  #~(job "0 4 * * *" "guix gc"))
+
+;; CIFS mount disappears often
+(define mount-all-job
+  #~(job "0 * * * *" "mount --all"
+         #:user "root"))
+
 ;; Define Nginx server blocks for the CI and substitute services
 (define %ci-server-block
   (nginx-server-configuration (server-name '("ci.myguix.bvits.in"))
@@ -165,6 +174,17 @@
          (service postgresql-service-type
                   (postgresql-configuration (postgresql (specification->package
                                                          "postgresql"))))
+         (service postgresql-role-service-type)
+
+         (service iptables-service-type
+                  (iptables-configuration (ipv4-rules (plain-file
+                                                       "iptables.rules"
+                                                       "*filter
+-A INPUT -p tcp --dport 5522 ! -s 127.0.0.1 -j REJECT
+-A INPUT -p tcp --dport 5555:5558 ! -s 127.0.0.1 -j REJECT
+-A INPUT -p tcp --dport 8080:8081 ! -s 127.0.0.1 -j REJECT
+COMMIT
+"))))
 
          ;; Cuirass for CI builds
          (service cuirass-service-type
@@ -179,9 +199,13 @@
                                          (specifications %cuirass-specs)))
          ;; Guix publish service
          (service guix-publish-service-type
-                  (guix-publish-configuration (compression '(("zstd" 19)))
-                                              (cache "/var/cache/publish")
-                                              (port 8080)))
+                  (guix-publish-configuration
+                   ;; Requires manual: sudo mkdir /var/cache/publish
+                   ;; sudo chown -R guix-publish:guix-publish /var/cache/publish
+                   (cache "/var/cache/publish")
+                   (compression '(("zstd" 19)))
+                   (port 8080)))
+
          ;; Nginx web server for CI and substitute services
          (service nginx-service-type
                   (nginx-configuration (upstream-blocks (list (nginx-upstream-configuration
@@ -205,11 +229,7 @@
                   (openssh-configuration (authorized-keys `(("b" ,(local-file
                                                                    "../../keys/ssh/ragnar.pub"))
                                                             ("b" ,(local-file
-                                                                   "../../keys/ssh/leif.pub"))
-                                                            ("b" ,(local-file
-                                                                   "../../keys/ssh/bjorn.pub"))
-                                                            ("b" ,(local-file
-                                                                   "../../keys/ssh/freydis.pub"))))
+                                                                   "../../keys/ssh/leif.pub"))))
                                          (password-authentication? #f)
                                          (port-number 2123)))
          ;; NTP for time synchronization
@@ -243,6 +263,40 @@
          (service static-networking-service-type
                   (list %loopback-static-networking))
          (service urandom-seed-service-type)
+         (simple-service 'floki shepherd-root-service-type
+                         (list (shepherd-service (requirement '(file-systems
+                                                                networking))
+                                                 (provision '(floki))
+                                                 (documentation
+                                                  "Runs the qemu VM specified in floki.scm")
+                                                 (start (with-service-gexp-modules #~(begin
+                                                                                       (lambda _
+                                                                                         (let 
+                                                                                              (
+                                                                                               (cmd
+                                                                                                (list #$
+                                                                                                 (file-append
+                                                                                                  qemu
+                                                                                                  "/bin/qemu-system-x86_64")
+                                                                                                 "-enable-kvm"
+                                                                                                 "-nographic"
+                                                                                                 "-m"
+                                                                                                 "50G"
+                                                                                                 "-smp"
+                                                                                                 "8"
+                                                                                                 "-device"
+                                                                                                 "e1000,netdev=net0"
+                                                                                                 "-netdev"
+                                                                                                 "user,id=net0,hostfwd=tcp::5522-:22,hostfwd=tcp::5558-:5558"
+                                                                                                 "-drive"
+                                                                                                 "file=/data/floki.qcow2,if=virtio,cache=writeback,werror=report"
+                                                                                                 "-serial"
+                                                                                                 "mon:stdio")))
+                                                                                           
+                                                                                           (fork+exec-command
+                                                                                            cmd
+                                                                                            #:log-file
+                                                                                            "/var/log/floki.log")))))))))
          (service guix-service-type
                   (guix-configuration (generate-substitute-key? #f)
                                       (authorized-keys (append
@@ -280,22 +334,25 @@
          (simple-service 'my-cron-jobs mcron-service-type
                          (list garbage-collector-job))))
 
-  ;; Bootloader configuration
   (bootloader (bootloader-configuration
-                (bootloader grub-bootloader)
-                (targets (list "/dev/sda"))
+                (bootloader grub-efi-bootloader)
+                (targets (list "/boot/efi"))
                 (keyboard-layout keyboard-layout)))
-
-  ;; Initrd modules for virtio SCSI support
-  (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
-
-  ;; Swap space configuration
   (swap-devices (list (swap-space
-                        (target (uuid "938ed311-5878-40a8-94d5-521c7deb364d")))))
+                        (target (uuid "b6a84834-c082-4f7a-87e8-9c02475b36ee")))))
 
-  ;; File system configuration
   (file-systems (cons* (file-system
+                         (mount-point "/boot/efi")
+                         (device (uuid "9E00-9B3E"
+                                       'fat32))
+                         (type "vfat"))
+                       (file-system
                          (mount-point "/")
-                         (device (uuid "06b9f2fe-7c78-4257-864e-9b5bda7a04e0"
+                         (device (uuid "8e5a6a8c-6c21-4352-9bda-274656be30f1"
+                                       'ext4))
+                         (type "ext4"))
+                       (file-system
+                         (mount-point "/data")
+                         (device (uuid "be4313ab-fb8f-44a5-8255-5bad09832265"
                                        'ext4))
                          (type "ext4")) %base-file-systems)))
