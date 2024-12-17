@@ -36,14 +36,33 @@
                                read)))
                     (kill pid SIGHUP))))
 
+
 ;; Run the garbe collector every day at 4:00 AM
 (define garbage-collector-job
-  #~(job "0 4 * * *" "guix gc"))
+  #~(job "0 4 * * *"
+         "guix gc"))
 
 ;; CIFS mount disappears often
 (define mount-all-job
-  #~(job "0 * * * *" "mount --all"
+  #~(job "0 * * * *"
+         "mount --all"
          #:user "root"))
+
+(define-public default-module-filter
+  (match-lambda
+    (('guix 'config) #f)
+    (('guix _ ...) #t)
+    (('gnu _ ...) #t)
+    (('myguix _ ...) #t)
+    (_ #f)))
+
+(define-syntax-rule (with-service-gexp-modules body ...)
+  (with-imported-modules (source-module-closure
+                          (append '((gnu build shepherd))
+                                  ;; This %default-modules is from (gnu services shepherd).
+                                  %default-modules)
+                          #:select? default-module-filter)
+    body ...))
 
 ;; Define Nginx server blocks for the CI and substitute services
 (define %ci-server-block
