@@ -401,7 +401,6 @@ COMMIT
                                                             ("vm.max_map_count" . "262144"))
                                                    %default-sysctl-settings))))
          (service spice-vdagent-service-type)
-         (service inputattach-service-type)
          (service containerd-service-type)
          (service docker-service-type)
          (service oci-container-service-type
