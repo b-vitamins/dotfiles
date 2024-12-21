@@ -18,6 +18,7 @@
              (myguix packages base)
              (myguix packages linux)
              (myguix system linux-initrd)
+             (myguix services oci-containers)
              (guix modules)
              (ice-9 match)
              (srfi srfi-1))
@@ -404,8 +405,7 @@ COMMIT
          (service containerd-service-type)
          (service docker-service-type)
          (service oci-container-service-type
-                  (list oci-grobid-service-type oci-meilisearch-service-type
-                        oci-weaviate-service-type oci-neo4j-service-type))))
+                  (list oci-grobid-service-type))))
 
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
