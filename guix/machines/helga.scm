@@ -18,6 +18,7 @@
              (myguix packages base)
              (myguix packages linux)
              (myguix system linux-initrd)
+             (myguix services desktop)
              (myguix services oci-containers)
              (guix modules)
              (ice-9 match)
@@ -176,6 +177,7 @@
 
     (services
      (append (list (service my-home-emacs-service-type)
+                   (service home-syncthing-service-type)
                    (service home-mcron-service-type
                             (home-mcron-configuration (jobs (list
                                                              garbage-collector-job)))))
@@ -223,189 +225,139 @@
 
   ;; System services
   (services
-   (list (service avahi-service-type)
-         ;; Certbot for handling SSL certificates
-         (service certbot-service-type
-                  (certbot-configuration (email "bvits@riseup.net")
-                                         (certificates (list (certificate-configuration
-                                                              (domains '("ci.myguix.bvits.in"
-                                                                         "substitutes.myguix.bvits.in"))
-                                                              (deploy-hook
-                                                               %nginx-deploy-hook))))))
-         ;; PostgreSQL database service
-         (service postgresql-service-type
-                  (postgresql-configuration (postgresql (specification->package
-                                                         "postgresql"))))
-         (service postgresql-role-service-type)
+   (append (list (service avahi-service-type)
+                 ;; Certbot for handling SSL certificates
+                 (service certbot-service-type
+                          (certbot-configuration (email "bvits@riseup.net")
+                                                 (certificates (list (certificate-configuration
+                                                                      (domains '
+                                                                       ("ci.myguix.bvits.in"
+                                                                        "substitutes.myguix.bvits.in"))
+                                                                      (deploy-hook
+                                                                       %nginx-deploy-hook))))))
+                 ;; PostgreSQL database service
+                 (service postgresql-service-type
+                          (postgresql-configuration (postgresql (specification->package
+                                                                 "postgresql"))))
+                 (service postgresql-role-service-type)
 
-         (service iptables-service-type
-                  (iptables-configuration (ipv4-rules (plain-file
-                                                       "iptables.rules"
-                                                       "*filter
+                 (service iptables-service-type
+                          (iptables-configuration (ipv4-rules (plain-file
+                                                               "iptables.rules"
+                                                               "*filter
 -A INPUT -p tcp --dport 5522 ! -s 127.0.0.1 -j REJECT
 -A INPUT -p tcp --dport 5555:5558 ! -s 127.0.0.1 -j REJECT
 -A INPUT -p tcp --dport 8080:8081 ! -s 127.0.0.1 -j REJECT
 COMMIT
 "))))
 
-         ;; Cuirass for CI builds
-         (service cuirass-service-type
-                  (cuirass-configuration (remote-server (cuirass-remote-server-configuration
-                                                         (private-key
-                                                          "/etc/guix/signing-key.sec")
-                                                         (public-key
-                                                          "/etc/guix/signing-key.pub")
-                                                         (publish? #f)
-                                                         (trigger-url
-                                                          "http://localhost:8080")))
-                                         (specifications %cuirass-specs)))
-         ;; Guix publish service
-         (service guix-publish-service-type
-                  (guix-publish-configuration
-                   ;; Requires manual: sudo mkdir /var/cache/publish
-                   ;; sudo chown -R guix-publish:guix-publish /var/cache/publish
-                   (cache "/var/cache/publish")
-                   (compression '(("zstd" 19)))
-                   (port 8080)))
+                 ;; Cuirass for CI builds
+                 (service cuirass-service-type
+                          (cuirass-configuration (remote-server (cuirass-remote-server-configuration
+                                                                 (private-key
+                                                                  "/etc/guix/signing-key.sec")
+                                                                 (public-key
+                                                                  "/etc/guix/signing-key.pub")
+                                                                 (publish? #f)
+                                                                 (trigger-url
+                                                                  "http://localhost:8080")))
+                                                 (specifications
+                                                  %cuirass-specs)))
+                 ;; Guix publish service
+                 (service guix-publish-service-type
+                          (guix-publish-configuration
+                           ;; Requires manual: sudo mkdir /var/cache/publish
+                           ;; sudo chown -R guix-publish:guix-publish /var/cache/publish
+                           (cache "/var/cache/publish")
+                           (compression '(("zstd" 19)))
+                           (port 8080)))
 
-         ;; Nginx web server for CI and substitute services
-         (service nginx-service-type
-                  (nginx-configuration (upstream-blocks (list (nginx-upstream-configuration
-                                                               (name
-                                                                "guix-cuirass")
-                                                               (servers (list
+                 ;; Nginx web server for CI and substitute services
+                 (service nginx-service-type
+                          (nginx-configuration (upstream-blocks (list (nginx-upstream-configuration
+                                                                       (name
+                                                                        "guix-cuirass")
+                                                                       (servers
+                                                                        (list
                                                                          "localhost:8081")))
-                                                              (nginx-upstream-configuration
-                                                               (name
-                                                                "guix-publish")
-                                                               (servers (list
+                                                                      (nginx-upstream-configuration
+                                                                       (name
+                                                                        "guix-publish")
+                                                                       (servers
+                                                                        (list
                                                                          "localhost:8080")))))
-                                       (server-blocks (list
-                                                       %nginx-redirect-server-block
-                                                       %ci-server-block
-                                                       %substitutes-server-block))))
-         (service wpa-supplicant-service-type)
-         (service network-manager-service-type)
-         ;; OpenSSH for remote access
-         (service openssh-service-type
-                  (openssh-configuration (authorized-keys `(("b" ,(local-file
-                                                                   "../../keys/ssh/ragnar.pub"))
-                                                            ("b" ,(local-file
-                                                                   "../../keys/ssh/leif.pub"))))
-                                         (password-authentication? #f)
-                                         (port-number 2123)))
-         ;; NTP for time synchronization
-         (service ntp-service-type)
-         (service login-service-type)
-         (service virtual-terminal-service-type)
-         (service console-font-service-type
-                  (map (lambda (tty)
-                         (cons tty %default-console-font))
-                       '("tty1" "tty2" "tty3")))
-         ;; Kmscon for a better console experience with hardware acceleration on tty1
-         (service kmscon-service-type
-                  (kmscon-configuration (virtual-terminal "tty1")
-                                        (hardware-acceleration? #t)
-                                        (font-engine "pango")
-                                        (font-size 12)
-                                        (keyboard-layout keyboard-layout)))
+                                               (server-blocks (list
+                                                               %nginx-redirect-server-block
+                                                               %ci-server-block
+                                                               %substitutes-server-block))))
+                 (simple-service 'floki shepherd-root-service-type
+                                 (list (shepherd-service (requirement '(file-systems
+                                                                        networking))
+                                                         (provision '(floki))
+                                                         (documentation
+                                                          "Runs the qemu VM specified in floki.scm")
+                                                         (start (with-service-gexp-modules #~(begin
+                                                                                               (lambda _
+                                                                                                 (let 
+                                                                                                      (
+                                                                                                       (cmd
+                                                                                                        (list #$
+                                                                                                         (file-append
+                                                                                                          qemu
+                                                                                                          "/bin/qemu-system-x86_64")
+                                                                                                         "-enable-kvm"
+                                                                                                         "-nographic"
+                                                                                                         "-m"
+                                                                                                         "50G"
+                                                                                                         "-smp"
+                                                                                                         "8"
+                                                                                                         "-device"
+                                                                                                         "e1000,netdev=net0"
+                                                                                                         "-netdev"
+                                                                                                         "user,id=net0,hostfwd=tcp::5522-:22,hostfwd=tcp::5558-:5558"
+                                                                                                         "-drive"
+                                                                                                         "file=/data/floki.qcow2,if=virtio,cache=writeback,werror=report"
+                                                                                                         "-serial"
+                                                                                                         "mon:stdio")))
+                                                                                                   
+                                                                                                   
+                                                                                                   (fork+exec-command
+                                                                                                    cmd
+                                                                                                    #:log-file
+                                                                                                    "/var/log/floki.log")))))))))
+                 ;; Networking Services
+                 (service openssh-service-type)
 
-         (service syslog-service-type)
-         (service agetty-service-type
-                  (agetty-configuration (extra-options '("-L")) ;no carrier detect
-                                        (term "vt100")
-                                        (tty #f) ;automatic
-                                        (shepherd-requirement '(syslogd))))
+                 ;; Virtualization Services
+                 (service libvirt-service-type
+                          (libvirt-configuration (tls-port "16555")))
 
-         (service mingetty-service-type
-                  (mingetty-configuration (tty "tty2")))
-         (service mingetty-service-type
-                  (mingetty-configuration (tty "tty3")))
+                 ;; Linux Services
+                 (service earlyoom-service-type)
+                 (service zram-device-service-type)
 
-         (service static-networking-service-type
-                  (list %loopback-static-networking))
-         (service urandom-seed-service-type)
-         (service libvirt-service-type
-                  (libvirt-configuration (tls-port "16555")))
-         (simple-service 'floki shepherd-root-service-type
-                         (list (shepherd-service (requirement '(file-systems
-                                                                networking))
-                                                 (provision '(floki))
-                                                 (documentation
-                                                  "Runs the qemu VM specified in floki.scm")
-                                                 (start (with-service-gexp-modules #~(begin
-                                                                                       (lambda _
-                                                                                         (let 
-                                                                                              (
-                                                                                               (cmd
-                                                                                                (list #$
-                                                                                                 (file-append
-                                                                                                  qemu
-                                                                                                  "/bin/qemu-system-x86_64")
-                                                                                                 "-enable-kvm"
-                                                                                                 "-nographic"
-                                                                                                 "-m"
-                                                                                                 "50G"
-                                                                                                 "-smp"
-                                                                                                 "8"
-                                                                                                 "-device"
-                                                                                                 "e1000,netdev=net0"
-                                                                                                 "-netdev"
-                                                                                                 "user,id=net0,hostfwd=tcp::5522-:22,hostfwd=tcp::5558-:5558"
-                                                                                                 "-drive"
-                                                                                                 "file=/data/floki.qcow2,if=virtio,cache=writeback,werror=report"
-                                                                                                 "-serial"
-                                                                                                 "mon:stdio")))
-                                                                                           
-                                                                                           
-                                                                                           (fork+exec-command
-                                                                                            cmd
-                                                                                            #:log-file
-                                                                                            "/var/log/floki.log")))))))))
-         (service guix-service-type
-                  (guix-configuration (generate-substitute-key? #f)
-                                      (authorized-keys (append
-                                                        %default-authorized-guix-keys
-                                                        (list (local-file
-                                                               "../../keys/guix/floki.pub"))))))
-         (service nscd-service-type)
-         (service rottlog-service-type)
-         ;; Periodically delete old build logs.
-         (service log-cleanup-service-type
-                  (log-cleanup-configuration (directory "/var/log/guix/drvs")))
-         ;; The LVM2 rules are needed as soon as LVM2 or the device-mapper is
-         ;; used, so enable them by default.  The FUSE and ALSA rules are
-         ;; less critical, but handy.
-         (service udev-service-type
-                  (udev-configuration (rules (list (specification->package
-                                                    "lvm2")
-                                                   (specification->package
-                                                    "fuse")
-                                                   (specification->package
-                                                    "alsa-utils")
-                                                   (specification->package
-                                                    "crda")))))
-         (service special-files-service-type
-                  `(("/bin/sh" ,(file-append (specification->package "bash")
-                                             "/bin/sh"))
-                    ("/bin/bash" ,(file-append (specification->package "bash")
-                                               "/bin/bash"))
-                    ("/bin/zsh" ,(file-append (specification->package "zsh")
-                                              "/bin/zsh"))
-                    ("/bin/perl" ,(file-append (specification->package "perl")
-                                               "/bin/perl"))
-                    ("/usr/bin/env" ,(file-append coreutils "/bin/env"))))
-         (service guix-home-service-type
-                  `(("b" ,%my-home-config)))
-         (service sysctl-service-type
-                  (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
-                                                            ("vm.max_map_count" . "262144"))
-                                                   %default-sysctl-settings))))
-         (service spice-vdagent-service-type)
-         (service containerd-service-type)
-         (service docker-service-type)
-         (service oci-container-service-type
-                  (list oci-grobid-service-type))))
+                 ;; Guix Services
+                 (service guix-home-service-type
+                          `(("b" ,%my-home-config)))
+
+                 (service guix-service-type
+                          (guix-configuration (generate-substitute-key? #f)
+                                              (authorized-keys (append
+                                                                %default-authorized-guix-keys
+                                                                (list (local-file
+                                                                       "../../keys/guix/floki.pub"))))))
+                 (service guix-home-service-type
+                          `(("b" ,%my-home-config)))
+                 (service sysctl-service-type
+                          (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
+                                                                    ("vm.max_map_count" . "262144"))
+                                                           %default-sysctl-settings))))
+                 (service spice-vdagent-service-type)
+                 (service containerd-service-type)
+                 (service docker-service-type)
+                 (service oci-container-service-type
+                          (list oci-grobid-service-type)))
+           %my-desktop-services))
 
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
