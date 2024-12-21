@@ -350,12 +350,14 @@ COMMIT
                  (service oci-container-service-type
                           (list oci-grobid-service-type)))
            (modify-services %my-desktop-services
-             (service guix-service-type
-                      (guix-configuration (generate-substitute-key? #f)
-                                          (authorized-keys (append
-                                                            %default-authorized-guix-keys
-                                                            (list (local-file
-                                                                   "../../keys/guix/floki.pub")))))))))
+             (guix-service-type config =>
+                                (guix-configuration (inherit config)
+                                                    (generate-substitute-key?
+                                                                              #f)
+                                                    (authorized-keys (append
+                                                                      %default-authorized-guix-keys
+                                                                      (list (local-file
+                                                                             "../../keys/guix/floki.pub")))))))))
 
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
