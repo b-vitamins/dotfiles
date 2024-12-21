@@ -342,7 +342,7 @@ COMMIT
                           (list oci-grobid-service-type)))
            (modify-services %my-desktop-services
              ;; Guix publish service
-             (guix-publish-service-type config
+             (guix-publish-service-type config =>
                                         (guix-publish-configuration
                                          ;; Requires manual: sudo mkdir /var/cache/publish
                                          ;; sudo chown -R guix-publish:guix-publish /var/cache/publish
