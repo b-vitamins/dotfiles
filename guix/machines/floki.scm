@@ -20,8 +20,7 @@
   (locale "en_US.utf8")
 
   (keyboard-layout (keyboard-layout "us" "altgr-intl"
-                                    #:options '("ctrl:nocaps"
-                                                "altwin:swap_alt_win")))
+                                    #:options '("ctrl:nocaps")))
 
   ;; Label for the GRUB boot menu.
   (label (string-append "GNU Guix "
@@ -81,14 +80,13 @@
                                                                 ("https://ci.guix.gnu.org"
                                                                  "https://substitutes.myguix.bvits.in"))
                                                                (systems '("x86_64-linux"))
-                                                               (workers 2)))
+                                                               (workers 4)))
                  (service dhcp-client-service-type)
                  (service ntp-service-type)
                  ;; OpenSSH for remote access
                  (service openssh-service-type
-                          (openssh-configuration
-                           (allow-empty-passwords? #t)
-                           (permit-root-login #t)))
+                          (openssh-configuration (allow-empty-passwords? #t)
+                                                 (permit-root-login #t)))
                  (simple-service 'cron-jobs mcron-service-type
                                  (list garbage-collector-job)))
 
