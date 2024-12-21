@@ -340,14 +340,6 @@ COMMIT
                  (service guix-home-service-type
                           `(("b" ,%my-home-config)))
 
-                 (service guix-service-type
-                          (guix-configuration (generate-substitute-key? #f)
-                                              (authorized-keys (append
-                                                                %default-authorized-guix-keys
-                                                                (list (local-file
-                                                                       "../../keys/guix/floki.pub"))))))
-                 (service guix-home-service-type
-                          `(("b" ,%my-home-config)))
                  (service sysctl-service-type
                           (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
                                                                     ("vm.max_map_count" . "262144"))
@@ -357,7 +349,13 @@ COMMIT
                  (service docker-service-type)
                  (service oci-container-service-type
                           (list oci-grobid-service-type)))
-           %my-desktop-services))
+           (modify-services %my-desktop-services
+             (service guix-service-type
+                      (guix-configuration (generate-substitute-key? #f)
+                                          (authorized-keys (append
+                                                            %default-authorized-guix-keys
+                                                            (list (local-file
+                                                                   "../../keys/guix/floki.pub")))))))))
 
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
