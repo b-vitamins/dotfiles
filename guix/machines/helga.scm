@@ -1,15 +1,44 @@
-;; -*- mode: scheme; -*-
+; -*- mode: scheme; -*-
 (use-modules (gnu)
-             (gnu services avahi)
-             (gnu services certbot)
-             (gnu services cuirass)
-             (gnu services databases)
-             (gnu services mcron)
-             (gnu services networking)
-             (gnu services ssh)
-             (gnu services web)
-             (gnu services admin)
-             (gnu services sysctl))
+             (gnu home)
+             (gnu home services)
+             (gnu home services desktop)
+             (gnu home services dict)
+             (gnu home services mcron)
+             (gnu home services media)
+             (gnu home services music)
+             (gnu home services shells)
+             (gnu home services sound)
+             (gnu home services ssh)
+             (gnu home services syncthing)
+             (gnu packages databases)
+             (gnu packages virtualization)
+             (myguix home)
+             (myguix home services emacs)
+             (myguix packages base)
+             (myguix packages linux)
+             (myguix system linux-initrd)
+             (guix modules)
+             (ice-9 match)
+             (srfi srfi-1))
+
+(use-service-modules admin
+                     avahi
+                     certbot
+                     dbus
+                     docker
+                     guix
+                     linux
+                     spice
+                     virtualization
+                     cuirass
+                     databases
+                     mcron
+                     networking
+                     shepherd
+                     ssh
+                     web
+                     sysctl)
 
 ;; Define Cuirass specifications for building the 'myguix' channel
 (define %cuirass-specs
@@ -36,33 +65,34 @@
                                read)))
                     (kill pid SIGHUP))))
 
-
 ;; Run the garbe collector every day at 4:00 AM
 (define garbage-collector-job
-  #~(job "0 4 * * *"
-         "guix gc"))
+  #~(job "0 4 * * *" "guix gc"))
 
 ;; CIFS mount disappears often
 (define mount-all-job
-  #~(job "0 * * * *"
-         "mount --all"
+  #~(job "0 * * * *" "mount --all"
          #:user "root"))
 
 (define-public default-module-filter
   (match-lambda
-    (('guix 'config) #f)
-    (('guix _ ...) #t)
-    (('gnu _ ...) #t)
-    (('myguix _ ...) #t)
+    (('guix 'config)
+     #f)
+    (('guix _ ...)
+     #t)
+    (('gnu _ ...)
+     #t)
+    (('myguix _ ...)
+     #t)
     (_ #f)))
 
 (define-syntax-rule (with-service-gexp-modules body ...)
-  (with-imported-modules (source-module-closure
-                          (append '((gnu build shepherd))
-                                  ;; This %default-modules is from (gnu services shepherd).
-                                  %default-modules)
-                          #:select? default-module-filter)
-    body ...))
+  (with-imported-modules (source-module-closure (append '((gnu build shepherd))
+                                                        ;; This %default-modules is from (gnu services shepherd).
+                                                        %default-modules)
+                                                #:select?
+                                                default-module-filter) body
+                         ...))
 
 ;; Define Nginx server blocks for the CI and substitute services
 (define %ci-server-block
@@ -139,21 +169,29 @@
                               (raw-content (list
                                             "return 308 https://$host$request_uri;"))))
 
-(define garbage-collector-job
-  ;; Collect garbage 5 minutes after midnight every day.
-  ;; The job's action is a shell command.
-  #~(job "5 0 * * *" ;Vixie cron syntax
-         "guix gc -F 10G"))
+(define %my-home-config
+  (home-environment
+    (packages (append %guile-packages))
+
+    (services
+     (append (list (service my-home-emacs-service-type)
+                   (service home-mcron-service-type
+                            (home-mcron-configuration (jobs (list
+                                                             garbage-collector-job)))))
+             %my-home-services))))
 
 ;; Main operating system configuration
 (operating-system
   (host-name "helga")
   (locale "en_US.utf8")
   (timezone "Asia/Kolkata")
+  (kernel linux)
+  (firmware (list linux-firmware))
+  (initrd microcode-initrd)
+
   ;; Updated keyboard layout with custom options
   (keyboard-layout (keyboard-layout "us" "altgr-intl"
-                                    #:options '("ctrl:nocaps"
-                                                "altwin:swap_alt_win")))
+                                    #:options '("ctrl:nocaps")))
   ;; User accounts with a custom shell for the 'b' user
   (users (cons* (user-account
                   (name "b")
@@ -162,8 +200,12 @@
                   (home-directory "/home/b")
                   (shell (file-append (specification->package "zsh")
                                       "/bin/zsh"))
-                  (supplementary-groups '("wheel" "netdev" "audio" "video")))
-                %base-user-accounts))
+                  (supplementary-groups '("wheel" "netdev"
+                                          "audio"
+                                          "video"
+                                          "kvm"
+                                          "docker"
+                                          "libvirt"))) %base-user-accounts))
 
   ;; System-wide packages
   (packages (append (list (specification->package "git")
@@ -282,6 +324,8 @@ COMMIT
          (service static-networking-service-type
                   (list %loopback-static-networking))
          (service urandom-seed-service-type)
+         (service libvirt-service-type
+                  (libvirt-configuration (tls-port "16555")))
          (simple-service 'floki shepherd-root-service-type
                          (list (shepherd-service (requirement '(file-systems
                                                                 networking))
@@ -312,6 +356,7 @@ COMMIT
                                                                                                  "-serial"
                                                                                                  "mon:stdio")))
                                                                                            
+                                                                                           
                                                                                            (fork+exec-command
                                                                                             cmd
                                                                                             #:log-file
@@ -339,7 +384,6 @@ COMMIT
                                                     "alsa-utils")
                                                    (specification->package
                                                     "crda")))))
-         (service sysctl-service-type)
          (service special-files-service-type
                   `(("/bin/sh" ,(file-append (specification->package "bash")
                                              "/bin/sh"))
@@ -350,8 +394,19 @@ COMMIT
                     ("/bin/perl" ,(file-append (specification->package "perl")
                                                "/bin/perl"))
                     ("/usr/bin/env" ,(file-append coreutils "/bin/env"))))
-         (simple-service 'my-cron-jobs mcron-service-type
-                         (list garbage-collector-job))))
+         (service guix-home-service-type
+                  `(("b" ,%my-home-config)))
+         (service sysctl-service-type
+                  (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
+                                                            ("vm.max_map_count" . "262144"))
+                                                   %default-sysctl-settings))))
+         (service spice-vdagent-service-type)
+         (service inputattach-service-type)
+         (service containerd-service-type)
+         (service docker-service-type)
+         (service oci-container-service-type
+                  (list oci-grobid-service-type oci-meilisearch-service-type
+                        oci-weaviate-service-type oci-neo4j-service-type))))
 
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
