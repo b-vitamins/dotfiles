@@ -263,15 +263,6 @@ COMMIT
                                                                   "http://localhost:8080")))
                                                  (specifications
                                                   %cuirass-specs)))
-                 ;; Guix publish service
-                 (service guix-publish-service-type
-                          (guix-publish-configuration
-                           ;; Requires manual: sudo mkdir /var/cache/publish
-                           ;; sudo chown -R guix-publish:guix-publish /var/cache/publish
-                           (cache "/var/cache/publish")
-                           (compression '(("zstd" 19)))
-                           (port 8080)))
-
                  ;; Nginx web server for CI and substitute services
                  (service nginx-service-type
                           (nginx-configuration (upstream-blocks (list (nginx-upstream-configuration
@@ -350,6 +341,15 @@ COMMIT
                  (service oci-container-service-type
                           (list oci-grobid-service-type)))
            (modify-services %my-desktop-services
+             ;; Guix publish service
+             (guix-publish-service-type config
+                                        (guix-publish-configuration
+                                         ;; Requires manual: sudo mkdir /var/cache/publish
+                                         ;; sudo chown -R guix-publish:guix-publish /var/cache/publish
+                                         (inherit config)
+                                         (cache "/var/cache/publish")
+                                         (compression '(("zstd" 19)))
+                                         (port 8080)))
              (guix-service-type config =>
                                 (guix-configuration (inherit config)
                                                     (generate-substitute-key?
