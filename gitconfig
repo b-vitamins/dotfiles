@@ -1,8 +1,0 @@
-[user]
-	email = bvits@riseup.net
-	name = Ayan Das
-	signingkey = 883BCA6BD275A5F2673CC5DD2AD32FC02A5001F7
-[init]
-	defaultBranch = master
-[commit]
-	gpgsign = true
