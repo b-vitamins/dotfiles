@@ -1,0 +1,9 @@
+{
+  "runtimes": {
+    "nvidia": {
+      "path": "/run/current-system/profile/bin/nvidia-container-runtime",
+      "args": [],
+      "runtimeType": "io.containerd.runc.v2"
+    }
+  }
+}
