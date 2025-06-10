@@ -1,0 +1,340 @@
+# ~/.gitattributes - Global Git attributes configuration
+
+# ===========================================
+# === AUTO-DETECT & NORMALIZE LINE ENDINGS ===
+# ===========================================
+* text=auto
+
+# =======================
+# === SOURCE CODE ===
+# =======================
+# C/C++
+*.c text diff=cpp
+*.h text diff=cpp
+*.cpp text diff=cpp
+*.hpp text diff=cpp
+*.cc text diff=cpp
+*.cxx text diff=cpp
+*.hxx text diff=cpp
+*.ino text diff=cpp
+
+# Scripting
+*.py text diff=python eol=lf
+*.rb text diff=ruby eol=lf
+*.pl text diff=perl eol=lf
+*.php text diff=php
+*.lua text diff=lua
+
+# JVM Languages
+*.java text diff=java
+*.scala text diff=java
+*.kt text diff=java
+*.groovy text diff=java
+
+# Web/JavaScript
+*.js text diff=javascript
+*.ts text diff=javascript
+*.jsx text diff=javascript
+*.tsx text diff=javascript
+*.mjs text eol=lf
+*.vue text
+
+# Rust/Go
+*.rs text diff=rust
+*.go text diff=golang
+
+# Lisp/Scheme (Guix!)
+*.scm text diff=scheme eol=lf
+*.lisp text diff=lisp
+*.el text diff=elisp
+*.elc binary
+*.clj text diff=clojure
+*.cljs text diff=clojure
+*.rkt text diff=scheme
+*.ss text diff=scheme
+
+# Shell scripts (always LF)
+*.sh text eol=lf diff=bash
+*.bash text eol=lf diff=bash
+*.zsh text eol=lf diff=bash
+*.fish text eol=lf diff=bash
+.bashrc text eol=lf
+.zshrc text eol=lf
+.profile text eol=lf
+
+# =======================
+# === GUIX SPECIFIC ===
+# =======================
+*.drv text eol=lf
+*.patch text eol=lf -whitespace
+*.diff text eol=lf -whitespace
+guix.scm text diff=scheme
+manifest.scm text diff=scheme
+channels.scm text diff=scheme
+
+# =======================
+# === DOCUMENTATION ===
+# =======================
+*.md text diff=markdown
+*.markdown text diff=markdown
+*.mdown text diff=markdown
+*.mkd text diff=markdown
+*.mdx text diff=markdown
+*.tex text diff=tex
+*.adoc text
+*.asciidoc text
+*.rst text
+*.txt text
+*.org text
+*.pod text diff=perl
+*.textile text
+README* text
+AUTHORS text
+CHANGELOG* text
+CHANGES* text
+CONTRIBUTING* text
+COPYING* text
+COPYRIGHT* text
+INSTALL* text
+LICENSE* text
+NEWS* text
+THANKS* text
+TODO* text
+HACKING* text
+
+# =======================
+# === CONFIGURATION ===
+# =======================
+*.json text eol=lf
+*.json5 text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+*.ini text
+*.cfg text
+*.conf text
+*.config text
+*.properties text
+*.xml text diff=xml
+
+# Git
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.gitconfig text eol=lf
+.gitmodules text eol=lf
+.mailmap text eol=lf
+
+# Editor
+.editorconfig text eol=lf
+.dir-locals.el text diff=elisp
+.envrc text eol=lf
+.tool-versions text eol=lf
+
+# CI/CD
+.travis.yml text eol=lf
+.gitlab-ci.yml text eol=lf
+.github/*.yml text eol=lf
+Jenkinsfile text
+
+# =======================
+# === BUILD FILES ===
+# =======================
+# Make - must use tabs
+Makefile text eol=lf whitespace=tab-in-indent
+makefile text eol=lf whitespace=tab-in-indent
+GNUmakefile text eol=lf whitespace=tab-in-indent
+*.mk text eol=lf whitespace=tab-in-indent
+*.make text eol=lf whitespace=tab-in-indent
+*.mak text eol=lf whitespace=tab-in-indent
+
+# Build configs
+CMakeLists.txt text eol=lf
+*.cmake text eol=lf
+configure text eol=lf
+configure.ac text eol=lf
+Makefile.am text eol=lf
+*.pro text
+*.pri text
+
+# =======================
+# === DOCKER ===
+# =======================
+Dockerfile* text eol=lf
+.dockerignore text eol=lf
+docker-compose*.yml text eol=lf
+
+# =======================
+# === WEB ASSETS ===
+# =======================
+*.html text diff=html
+*.htm text diff=html
+*.xhtml text diff=html
+*.css text diff=css
+*.scss text diff=css
+*.sass text diff=css
+*.less text diff=css
+*.styl text diff=css
+*.svg text
+# Minified files
+*.min.js binary
+*.min.css binary
+*.min.html binary
+
+# =======================
+# === BINARY FILES ===
+# =======================
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.webp binary
+*.bmp binary
+*.tiff binary
+*.tif binary
+*.psd binary
+*.ai binary
+*.eps binary
+
+# Fonts
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+
+# Audio/Video
+*.mp3 binary
+*.mp4 binary
+*.ogg binary
+*.ogv binary
+*.flac binary
+*.wav binary
+*.avi binary
+*.mov binary
+*.mkv binary
+*.webm binary
+*.m4a binary
+*.m4v binary
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+*.bz2 binary
+*.xz binary
+*.7z binary
+*.rar binary
+*.tgz binary
+*.jar binary
+*.war binary
+*.ear binary
+
+# Documents
+*.pdf binary
+*.doc binary
+*.docx binary
+*.xls binary
+*.xlsx binary
+*.ppt binary
+*.pptx binary
+*.odt binary
+*.ods binary
+*.odp binary
+*.epub binary
+
+# Executables
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.app binary
+*.deb binary
+*.rpm binary
+*.dmg binary
+*.pkg binary
+*.msi binary
+
+# Data
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+*.rdb binary
+*.dump binary
+
+# =======================
+# === SPECIAL HANDLING ===
+# =======================
+# Windows scripts (CRLF)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Lock files - treat as binary to avoid conflicts
+package-lock.json binary -diff linguist-generated
+yarn.lock binary -diff linguist-generated
+Gemfile.lock binary -diff linguist-generated
+poetry.lock binary -diff linguist-generated
+Cargo.lock binary -diff linguist-generated
+composer.lock binary -diff linguist-generated
+go.sum binary -diff linguist-generated
+pnpm-lock.yaml binary -diff linguist-generated
+
+# Generated files
+*.generated.* linguist-generated
+*_generated.* linguist-generated
+*.auto.* linguist-generated
+*.min.js linguist-generated
+*.min.css linguist-generated
+
+# =======================
+# === EXPORT IGNORE ===
+# =======================
+# Don't include in archives
+.gitattributes export-ignore
+.gitignore export-ignore
+.gitmodules export-ignore
+.github/ export-ignore
+.gitlab/ export-ignore
+.travis.yml export-ignore
+.gitlab-ci.yml export-ignore
+tests/ export-ignore
+test/ export-ignore
+spec/ export-ignore
+docs/ export-ignore
+examples/ export-ignore
+benchmarks/ export-ignore
+*.md export-ignore
+.editorconfig export-ignore
+.eslintrc* export-ignore
+.prettierrc* export-ignore
+.dir-locals.el export-ignore
+
+# =======================
+# === MERGE STRATEGIES ===
+# =======================
+# Version files - always use 'ours' in merge conflicts
+VERSION merge=ours
+version.txt merge=ours
+package.json merge=ours
+
+# =======================
+# === LINGUIST OVERRIDES ===
+# =======================
+# Ensure proper language detection
+*.h linguist-language=C
+*.scm linguist-language=Scheme
+*.el linguist-language=Emacs-Lisp
+Makefile.* linguist-language=Makefile
+*.pl linguist-language=Perl
+
+# Vendored
+vendor/* linguist-vendored
+third_party/* linguist-vendored
+node_modules/* linguist-vendored
+
+# Documentation
+docs/* linguist-documentation
+*.md linguist-documentation

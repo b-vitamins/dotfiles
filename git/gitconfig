@@ -1,0 +1,353 @@
+# ~/.gitconfig - Optimized for Guix development and patch submission
+
+[user]
+	email = bvits@riseup.net
+	name = Ayan Das
+	signingkey = 883BCA6BD275A5F2673CC5DD2AD32FC02A5001F7
+
+[init]
+	defaultBranch = master
+	templatedir = ~/.git-templates
+
+[commit]
+	gpgsign = true
+	verbose = true                    # Show diff in commit message editor
+
+[core]
+	editor = emacsclient -c           # Open in new Emacs frame
+	autocrlf = input                  # Handle line endings properly
+	whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+	excludesfile = ~/.gitignore
+	pager = less -FRX                 # Or 'delta' if you use git from terminal
+	attributesfile = ~/.gitattributes
+	compression = 9                   # Maximum compression
+	precomposeUnicode = true          # Fix Mac Unicode issues
+	quotepath = false                 # Display unicode filenames properly
+	preloadindex = true               # Faster status/diff
+	fscache = true                    # Filesystem cache
+	untrackedCache = true             # Speed up status
+
+# === EMAIL & PATCH SUBMISSION ===
+[sendemail]
+	from = Ayan Das <bvits@riseup.net>
+	smtpserver = mail.riseup.net
+	smtpserverport = 587
+	smtpencryption = tls
+	smtpuser = bvits@riseup.net
+	confirm = auto                    # Auto-confirm sending
+	chainreplyto = false              # Don't chain replies
+	annotate = true                   # Open editor before sending
+	suppresscc = self                 # Don't CC yourself
+	assume8bitEncoding = utf-8        # Handle unicode properly
+	transferEncoding = 8bit
+	thread = true                     # Thread patches properly
+
+[format]
+	pretty = fuller                   # More detailed log format
+	signOff = true                    # Auto add Signed-off-by
+	coverLetter = auto                # Generate cover letter when needed
+	numbered = true                   # Number patches [PATCH 1/n]
+	thread = shallow                  # Thread patches properly
+	suffix = .patch                   # Extension for patches
+
+# === MERGE & DIFF ===
+[merge]
+	tool = ediff                      # Use Emacs ediff for merging
+	conflictstyle = diff3             # Show common ancestor in conflicts
+	log = true                        # Include branch descriptions
+
+[mergetool "ediff"]
+	cmd = emacsclient -c -a \"\" --eval \"(ediff-merge-files-with-ancestor \\\"$LOCAL\\\" \\\"$REMOTE\\\" \\\"$BASE\\\" nil \\\"$MERGED\\\")\"
+	trustExitCode = true
+
+[mergetool]
+	prompt = false                    # Don't prompt before each merge
+	keepBackup = false                # Don't create .orig files
+
+[diff]
+	tool = ediff                      # Use Emacs ediff for diffs
+	algorithm = histogram             # Better diff algorithm
+	colorMoved = default              # Highlight moved lines
+	colorMovedWS = allow-indentation-change
+	mnemonicprefix = true             # Use i/w/c/o instead of a/b
+	renames = copies                  # Detect copies as well as renames
+	submodule = log                   # Show submodule changes
+
+[difftool "ediff"]
+	cmd = emacsclient -c -a \"\" --eval \"(ediff-files \\\"$LOCAL\\\" \\\"$REMOTE\\\")\"
+
+[difftool]
+	prompt = false
+
+# === COLORS ===
+[color]
+	ui = auto
+	diff = auto
+	status = auto
+	branch = auto
+	interactive = auto
+	grep = auto
+	showbranch = auto
+
+[color "diff"]
+	meta = yellow bold
+	frag = magenta bold
+	old = red bold
+	new = green bold
+	whitespace = red reverse
+
+[color "status"]
+	added = green
+	changed = yellow
+	untracked = red
+
+# === PUSH, PULL, FETCH ===
+[push]
+	default = simple
+	autoSetupRemote = true            # Automatically set up remote tracking
+	followTags = true                 # Push annotated tags with commits
+
+[pull]
+	rebase = true                     # Rebase instead of merge
+	ff = only                         # Fast-forward only
+
+[fetch]
+	prune = true                      # Remove deleted remote branches
+	pruneTags = true                  # Remove deleted remote tags
+	parallel = 0                      # Use all available cores
+
+# === REBASE & STASH ===
+[rebase]
+	autoStash = true                  # Automatically stash/unstash
+	autoSquash = true                 # Auto-apply fixup!/squash! commits
+	stat = true                       # Show diffstat of rebase
+	instructionFormat = "[%an] %s"    # Show author in rebase todo
+
+[stash]
+	showIncludeUntracked = true       # Show untracked files in stash
+	showPatch = true                  # Show patch by default
+
+# === STATUS & LOG ===
+[status]
+	short = true                      # Compact status output
+	branch = true                     # Show branch info
+	showStash = true                  # Show stash count
+	submoduleSummary = true           # Show submodule summary
+
+[log]
+	date = relative                   # Human-readable dates
+	decorate = full                   # Show all refs
+	follow = true                     # Follow renames
+	abbrevCommit = true               # Short commit hashes
+
+# === GREP & HELP ===
+[grep]
+	lineNumber = true                 # Show line numbers
+	extendedRegexp = true             # Use extended regex
+	heading = true                    # Group by file
+
+[help]
+	autocorrect = 20                  # Auto-run corrected command after 2s
+
+# === ADVANCED FEATURES ===
+[rerere]
+	enabled = true                    # Remember resolved conflicts
+	autoUpdate = true                 # Auto-stage resolved conflicts
+
+[credential]
+	helper = cache --timeout=3600     # Cache credentials for 1 hour
+
+[url "git@github.com:"]
+	insteadOf = https://github.com/   # Always use SSH for GitHub
+	pushInsteadOf = https://github.com/
+
+[url "git@gitlab.com:"]
+	insteadOf = https://gitlab.com/
+	pushInsteadOf = https://gitlab.com/
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+
+# === TERMINAL OPTIMIZATIONS ===
+[pager]
+	branch = false                    # Don't page branch list
+	stash = false                     # Don't page stash list
+	config = false                    # Don't page config output
+	tag = false                       # Don't page tag list
+
+[interactive]
+	singleKey = true                  # Single key prompts in terminal
+
+[advice]
+	waitingForEditor = false          # Less verbose when opening editor
+	statusHints = false               # Less verbose status
+	commitBeforeMerge = false         # Less merge noise
+	detachedHead = false              # Less checkout noise
+
+# === PERFORMANCE ===
+[pack]
+	threads = 0                       # Use all CPU cores
+	windowMemory = 256m               # More memory for better deltas
+
+[feature]
+	manyFiles = true                  # Optimizations for large repos
+	experimental = true               # Enable experimental features
+
+[protocol]
+	version = 2                       # Faster fetches
+
+# =====================================
+# === ALIASES - ORGANIZED BY PURPOSE ===
+# =====================================
+
+[alias]
+	# === BASIC SHORTCUTS ===
+	s = status -sb
+	st = status
+	ci = commit
+	co = checkout
+	br = branch
+	cp = cherry-pick
+	cl = clone
+	d = diff
+	dc = diff --cached
+	ds = diff --staged
+	dw = diff --word-diff
+	dt = difftool
+	
+	# === COMMIT HELPERS ===
+	cm = commit -m
+	cma = commit -am
+	amend = commit --amend --no-edit
+	amendit = commit --amend
+	fixup = commit --fixup
+	squash = commit --squash
+	unstage = reset HEAD --
+	uncommit = reset --soft HEAD~1
+	
+	# === LOGGING & HISTORY ===
+	l = log --pretty=format:'%C(yellow)%h%Creset %C(blue)%ad%Creset %C(green)%<(10,trunc)%an%Creset %s%C(auto)%d%Creset' --date=short --graph
+	ll = log --pretty=format:'%C(yellow)%h%Creset %C(blue)%ad%Creset %C(green)%<(10,trunc)%an%Creset %s%C(auto)%d%Creset' --date=short --graph --stat
+	lg = log --color --graph --pretty=format:'%C(yellow)%h%Creset -%C(auto)%d%Creset %s %C(green)(%cr) %C(blue)<%an>%Creset' --abbrev-commit
+	last = log -1 HEAD --stat
+	recent = log --oneline -10
+	today = log --since=midnight --author='Ayan Das' --oneline
+	tree = log --graph --all --decorate --oneline
+	standup = !git log --since=yesterday --author=\"`git config user.name`\" --pretty=short
+	
+	# === BRANCH MANAGEMENT ===
+	branches = branch -a
+	remotes = remote -v
+	brd = branch -d
+	brD = branch -D
+	# List branches sorted by last modified
+	brs = for-each-ref --sort='-committerdate' --format='%(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) - %(color:green)(%(committerdate:relative))%(color:reset)' refs/heads/
+	# Delete merged branches
+	bdm = "!git branch --merged | grep -v '\\*\\|master\\|main\\|develop' | xargs -n 1 git branch -d"
+	
+	# === GUIX PATCH WORKFLOW ===
+	# Generate patches for submission
+	patches = format-patch --cover-letter --base=auto --stat --patience
+	
+	# Quick patch generation against origin/master
+	guix-patches = "!git format-patch --cover-letter --base=origin/master --subject-prefix='PATCH' origin/master..HEAD"
+	
+	# Test patches before sending
+	test-patches = "!f() { \
+		git checkout -b test-patches-$(date +%s) origin/master && \
+		if git am $1; then \
+			echo '✓ Patches apply cleanly!'; \
+			git checkout - && \
+			git branch -D test-patches-*; \
+		else \
+			echo '✗ Patches failed!'; \
+			git am --abort; \
+			git checkout - && \
+			git branch -D test-patches-*; \
+			return 1; \
+		fi \
+	}; f"
+	
+	# Send patches (with dry-run option)
+	send-patches-dry = send-email --dry-run --to=guix-patches@gnu.org
+	send-patches = send-email --to=guix-patches@gnu.org
+	
+	# Check what will be sent
+	check-patches = "!f() { \
+		echo 'Patches to be sent:'; \
+		ls -la *.patch 2>/dev/null || echo 'No patches in current directory'; \
+	}; f"
+	
+	# Show commits that will be patches
+	show-commits = "!git log --oneline --reverse origin/master..HEAD"
+	
+	# === STASHING ===
+	sl = stash list
+	sa = stash apply
+	ss = stash save
+	sp = stash pop
+	sd = stash drop
+	sshow = stash show -p
+	# Snapshot (stash but keep working)
+	snapshot = !git stash push -m "snapshot: $(date)" && git stash apply "stash@{0}"
+	
+	# === WORKING WITH REMOTES ===
+	up = pull --rebase --prune
+	push-new = push -u origin HEAD
+	sync = !git pull --rebase && git push
+	# Reset to remote state
+	reset-to-remote = !git fetch origin && git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+	
+	# === FINDING THINGS ===
+	# Find branches containing commit
+	fb = "!f() { git branch -a --contains $1; }; f"
+	# Find tags containing commit
+	ft = "!f() { git describe --always --contains $1; }; f"
+	# Find commits by message
+	fm = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
+	# Find commits by code
+	fc = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
+	
+	# === INTERACTIVE REBASE ===
+	ri = rebase -i
+	rim = rebase -i origin/master
+	rc = rebase --continue
+	ra = rebase --abort
+	rs = rebase --skip
+	
+	# === MAINTENANCE ===
+	# Optimize repository
+	optimize = !git prune && git gc --aggressive && git repack -Ad && git prune-packed
+	# Check for whitespace errors
+	check-whitespace = diff --check HEAD^
+	# Clean test branches
+	clean-test = "!git branch | grep 'test-patches-' | xargs -r git branch -D"
+	
+	# === REPORTS ===
+	# List contributors
+	contributors = shortlog --summary --numbered
+	# File change frequency
+	churn = !git log --all -M -C --name-only --format='format:' "$@" | sort | grep -v '^$' | uniq -c | sort -rn | head -20
+	# Show aliases
+	aliases = !git config --list | grep 'alias\\.' | sed 's/alias\\.\\([^=]*\\)=\\(.*\\)/\\1\\ \t => \\2/' | sort
+	
+	# === EMACS INTEGRATION ===
+	# Open conflicted files in Emacs
+	fix = "!f() { emacsclient -c $(git diff --name-only --diff-filter=U); }; f"
+	# Edit git config
+	ec = "!f() { emacsclient -c $(git rev-parse --show-toplevel)/.git/config; }; f"
+	eg = "!f() { emacsclient -c ~/.gitconfig; }; f"
+	
+	# === QUICK INFO ===
+	info = !echo "Repo: $(basename $(git rev-parse --show-toplevel))" && \
+	        echo "Branch: $(git rev-parse --abbrev-ref HEAD)" && \
+	        echo "Remote: $(git remote get-url origin 2>/dev/null || echo 'No remote')" && \
+	        echo "Last commit: $(git log -1 --format='%h - %s (%cr)')"
+	
+	# === ASSUME UNCHANGED ===
+	assume = update-index --assume-unchanged
+	unassume = update-index --no-assume-unchanged
+	assumed = "!git ls-files -v | grep ^h | cut -c 3-"
