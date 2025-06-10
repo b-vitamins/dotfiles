@@ -62,7 +62,7 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
 
     ;; Check if the lisp/ directory exists before adding it to `load-path`.
     (when (file-directory-p elisp-dir)
-      (add-to-list 'load-path elisp-dir)
+n      (add-to-list 'load-path elisp-dir)
       (log-init-message "lisp/ directory added to load-path: %s" elisp-dir)
 
       ;; List and log all .el files in the lisp/ directory to the *Messages* buffer.
@@ -644,61 +644,6 @@ FORMAT-STRING is the message to display, with optional ARGS for formatting."
   (:global "M-o" ace-window)                            ;; Activate `ace-window` with `M-o`.
   (ace-window-display-mode 1)
   (log-init-message "Successfully set up `ace-window` for fast window switching."))
-
-(setup
-		;; Makes switch-to-buffer commands respect display actions for a more intuitive window management.
-		(:set switch-to-buffer-obey-display-actions t)
-		(:push-to display-buffer-alist
-							(:elements
-							 ((or (major-mode . Info-mode)
-										(major-mode . help-mode))
-								(display-buffer-in-side-window)
-								(reusable-frames . visible)
-								(side . right)
-								(slot . 0)
-								(window-width . 0.4)
-								(window-parameters . ((display-buffer-reuse-window . t))))
-							 ((or (major-mode . org-agenda-mode)
-										(major-mode . org-capture-mode)
-										(major-mode . org-roam-mode))
-								(display-buffer-in-side-window)
-								(side . right)
-								(slot . 1)
-								(window-width . 0.4)
-								(window-parameters . ((no-delete-other-windows . t))))
-							 ("\\*vterm\\*" display-buffer-reuse-mode-window
-								;; change to `t' to not reuse same window
-								(inhibit-same-window . nil)
-								(mode vterm-mode vterm-copy-mode))
-							 (,(rx (| "*xref*"
-												"*grep*"
-												"*Occur*"))
-								display-buffer-reuse-window
-								(inhibit-same-window . nil))
-							 ((derived-mode . magit-mode)
-								(display-buffer-reuse-mode-window
-								 display-buffer-in-direction)
-								(mode magit-mode)
-								(window . root)
-								(window-width . 0.33)
-								(direction . left))
-							 (compiltation-mode
-								(display-buffer-no-window)
-								(allow-no-window . t))
-							 ("\\*e?shell\\*" display-buffer-in-direction
-								(direction . bottom)
-								(window . root)
-								(window-height . 0.3))
-							 (,(rx (| "*compilation*" "*grep*"))
-								(display-buffer-in-side-window)
-								(side . right)
-								(slot . 2)
-								(window-parameters . ((no-delete-other-windows . t)))
-								(window-width . 80))
-							 ("^test[-_]"
-								display-buffer-in-direction
-								(direction . right))
-							 )))
 
 ;; Setup `olivetti` for distraction-free writing.
 (setup (:straight-if olivetti bv-not-guix-p)             ;; Install `olivetti` package conditionally if `bv-not-guix-p` is true.
