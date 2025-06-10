@@ -1,89 +1,113 @@
-# Alacritty Terminal Configuration
-
 [env]
 TERM = "xterm-256color"
 
 [window]
-dimensions = { columns = 0, lines = 0 }
+dimensions = { columns = 100, lines = 30 }
 position = "None"
-padding = { x = 5, y = 3 }
-dynamic_padding = false
+padding = { x = 12, y = 10 }
+dynamic_padding = true
 decorations = "Full"
-opacity = 1.0
+opacity = 0.98
 blur = true
 startup_mode = "Windowed"
-title = "Alacritty"
+title = "Terminal"
 dynamic_title = true
 decorations_theme_variant = "Dark"
+option_as_alt = "Both"
 
 [scrolling]
-history = 10000
+history = 100000
 multiplier = 3
 
 [font]
-size = 12.0
-offset = { x = 0, y = 0}
+size = 13.0
+offset = { x = 0, y = 2 }
+glyph_offset = { x = 0, y = 1 }
+builtin_box_drawing = true
 
 [font.normal]
-family = "Iosevka Comfy"
-style = "Light"
-
-[font.bold]
-family = "Iosevka Comfy"
+family = "SF Mono"
 style = "Regular"
 
+[font.bold]
+family = "SF Mono"
+style = "Semibold"
+
 [font.italic]
-family = "Iosevka Comfy"
-style = "Light Oblique"
+family = "SF Mono"
+style = "Regular Italic"
 
 [font.bold_italic]
-family = "Iosevka"
-style = "Light Italic"
+family = "SF Mono"
+style = "Semibold Italic"
 
 [colors]
-draw_bold_text_with_bright_colors = true
+draw_bold_text_with_bright_colors = false
+transparent_background_colors = true
 
 [colors.primary]
-background = "#1a1a1a"
-foreground = "#e5e9f0"
+background = "#0e1419"
+foreground = "#d8dee9"
+dim_foreground = "#a5abb6"
+bright_foreground = "#eceff4"
+
+[colors.cursor]
+text = "#0e1419"
+cursor = "#d8dee9"
+
+[colors.vi_mode_cursor]
+text = "#0e1419"
+cursor = "#81a1c1"
 
 [colors.search]
-matches = { foreground = "#1a1a1a", background = "#ff6c6b" }
-focused_match = { foreground = "#1a1a1a", background = "#e0af68" }
+matches = { foreground = "#0e1419", background = "#88c0d0" }
+focused_match = { foreground = "#0e1419", background = "#ebcb8b" }
 
 [colors.hints]
-start = { foreground = "#1a1a1a", background = "#9ece6a" }
-end = { foreground = "#1a1a1a", background = "#7aa2f7" }
+start = { foreground = "#0e1419", background = "#a3be8c" }
+end = { foreground = "#0e1419", background = "#81a1c1" }
+
+[colors.line_indicator]
+foreground = "None"
+background = "None"
+
+[colors.footer_bar]
+foreground = "#d8dee9"
+background = "#434c5e"
+
+[colors.selection]
+text = "CellForeground"
+background = "#2e3440"
 
 [colors.normal]
-black = "#1a1a1a"
-red = "#ff6c6b"
-green = "#9ece6a"
-yellow = "#e0af68"
-blue = "#7aa2f7"
-magenta = "#c678dd"
-cyan = "#46d9ff"
-white = "#e5e9f0"
+black = "#0e1419"
+red = "#ef5350"
+green = "#66bb6a"
+yellow = "#ffca28"
+blue = "#42a5f5"
+magenta = "#ab47bc"
+cyan = "#26c6da"
+white = "#cfd8dc"
 
 [colors.bright]
-black = "#414868"
-red = "#ff7a93"
-green = "#b9f27c"
-yellow = "#ffca80"
-blue = "#51afef"
-magenta = "#c99efc"
-cyan = "#86e1fc"
-white = "#eceff4"
+black = "#546e7a"
+red = "#ef5350"
+green = "#66bb6a"
+yellow = "#ffee58"
+blue = "#64b5f6"
+magenta = "#ba68c8"
+cyan = "#4dd0e1"
+white = "#eceff1"
 
 [colors.dim]
-black = "#121212"
-red = "#d15c5b"
-green = "#7aa85c"
-yellow = "#c99a56"
-blue = "#5c7eae"
-magenta = "#a16aa3"
-cyan = "#3ba2c9"
-white = "#b4bcc6"
+black = "#263238"
+red = "#d32f2f"
+green = "#388e3c"
+yellow = "#f57c00"
+blue = "#1976d2"
+magenta = "#7b1fa2"
+cyan = "#0097a7"
+white = "#90a4ae"
 
 [selection]
 semantic_escape_chars = ",│`|:\"' ()[]{}<>\\t"
@@ -91,19 +115,19 @@ save_to_clipboard = true
 
 [cursor]
 style = { shape = "Beam", blinking = "On" }
-vi_mode_style = "None"
-blink_interval = 750
-blink_timeout = 5
-unfocused_hollow = false
-thickness = 0.2
+vi_mode_style = { shape = "Block", blinking = "On" }
+blink_interval = 600
+blink_timeout = 0
+unfocused_hollow = true
+thickness = 0.15
 
 [terminal]
 osc52 = "CopyPaste"
 
 [mouse]
-hide_when_typing = false
+hide_when_typing = true
 bindings = [
-    { mouse = "Right", mods = "Control", action = "Paste" },
+    { mouse = "Right", mods = "None", action = "Paste" },
     { mouse = "Middle", mods = "None", action = "Paste" },
     { mouse = "Left", mods = "Shift", action = "ExpandSelection" }
 ]
@@ -117,44 +141,92 @@ hyperlinks = true
 post_processing = true
 persist = false
 mouse.enabled = true
-binding = { key = "O", mods = "Control|Shift" }
+binding = { key = "U", mods = "Control|Shift" }
 regex = "(ipfs:|ipns:|magnet:|mailto:|gemini://|gopher://|https://|http://|news:|file:|git://|ssh:|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^⟨⟩`]+"
 
 [keyboard]
 bindings = [
-    # Clipboard
-    { key = "Y", mods = "Control", action = "Paste" },
+    # Emacs Navigation - Core bindings
+    { key = "A", mods = "Control", chars = "\u0001" },  # Beginning of line (C-a)
+    { key = "E", mods = "Control", chars = "\u0005" },  # End of line (C-e)
+    { key = "K", mods = "Control", chars = "\u000b" },  # Kill to end of line (C-k)
+    { key = "F", mods = "Alt", chars = "\u001bf" },     # Forward word (M-f)
+    { key = "B", mods = "Alt", chars = "\u001bb" },     # Backward word (M-b)
+    
+    # Additional Emacs bindings
+    { key = "D", mods = "Control", chars = "\u0004" },  # Delete char forward (C-d)
+    { key = "H", mods = "Control", chars = "\u0008" },  # Delete char backward (C-h)
+    { key = "W", mods = "Control", chars = "\u0017" },  # Kill word backward (C-w)
+    { key = "U", mods = "Control", chars = "\u0015" },  # Kill to beginning of line (C-u)
+    { key = "Y", mods = "Control", chars = "\u0019" },  # Yank/paste (C-y)
+    { key = "D", mods = "Alt", chars = "\u001bd" },     # Kill word forward (M-d)
+    { key = "T", mods = "Control", chars = "\u0014" },  # Transpose chars (C-t)
+    { key = "P", mods = "Control", chars = "\u0010" },  # Previous history (C-p)
+    { key = "N", mods = "Control", chars = "\u000e" },  # Next history (C-n)
+    { key = "F", mods = "Control", chars = "\u0006" },  # Forward char (C-f)
+    { key = "B", mods = "Control", chars = "\u0002" },  # Backward char (C-b)
+    { key = "G", mods = "Control", chars = "\u0007" },  # Cancel (C-g)
+    { key = "L", mods = "Control", chars = "\u000c" },  # Clear screen (C-l)
+    { key = "R", mods = "Control", chars = "\u0012" },  # Reverse search (C-r)
+    { key = "S", mods = "Control", chars = "\u0013" },  # Forward search (C-s)
+    { key = "Space", mods = "Control", chars = "\u0000" }, # Set mark (C-space)
+    { key = "Slash", mods = "Control", chars = "\u001f" }, # Undo (C-/)
+    { key = "X", mods = "Control", chars = "\u0018" },  # C-x prefix
+    
+    # Alt/Meta navigation
+    { key = "Left", mods = "Alt", chars = "\u001bb" },  # Alt-Left = backward word
+    { key = "Right", mods = "Alt", chars = "\u001bf" }, # Alt-Right = forward word
+    { key = "A", mods = "Alt", chars = "\u001ba" },     # Beginning of sentence (M-a)
+    { key = "E", mods = "Alt", chars = "\u001be" },     # End of sentence (M-e)
+    { key = "LBracket", mods = "Alt", chars = "\u001b[" }, # Backward paragraph (M-[)
+    { key = "RBracket", mods = "Alt", chars = "\u001b]" }, # Forward paragraph (M-])
+    { key = "Comma", mods = "Alt|Shift", chars = "\u001b<" },  # Beginning of buffer (M-<)
+    { key = "Period", mods = "Alt|Shift", chars = "\u001b>" }, # End of buffer (M->)
+    { key = "V", mods = "Alt", chars = "\u001bv" },     # Page up (M-v)
+    { key = "W", mods = "Alt", chars = "\u001bw" },     # Copy region (M-w)
+    { key = "Y", mods = "Alt", chars = "\u001by" },     # Yank pop (M-y)
+    { key = "Backspace", mods = "Alt", chars = "\u001b\u007f" }, # Backward kill word
+    { key = "Delete", mods = "Alt", chars = "\u001bd" }, # Forward kill word
+    { key = "U", mods = "Alt", chars = "\u001bu" },     # Uppercase word (M-u)
+    { key = "L", mods = "Alt", chars = "\u001bl" },     # Lowercase word (M-l)
+    { key = "C", mods = "Alt", chars = "\u001bc" },     # Capitalize word (M-c)
+    { key = "T", mods = "Alt", chars = "\u001bt" },     # Transpose words (M-t)
+    
+    # Clipboard - Emacs style
+    { key = "V", mods = "Control", action = "Paste" },
+    { key = "C", mods = "Control", action = "Copy" },
     { key = "V", mods = "Control|Shift", action = "Paste" },
-    { key = "W", mods = "Control", action = "Copy" },
     { key = "C", mods = "Control|Shift", action = "Copy" },
+    { key = "Insert", mods = "Shift", action = "Paste" },
+    { key = "Insert", mods = "Control", action = "Copy" },
+    
     # Font Size
-    { key = "Equals", mods = "Control|Shift", action = "IncreaseFontSize" },
-    { key = "Minus", mods = "Control|Shift", action = "DecreaseFontSize" },
-    { key = "Key0", mods = "Control|Shift", action = "ResetFontSize" },
+    { key = "Plus", mods = "Control", action = "IncreaseFontSize" },
+    { key = "Equals", mods = "Control", action = "IncreaseFontSize" },
+    { key = "Minus", mods = "Control", action = "DecreaseFontSize" },
+    { key = "Key0", mods = "Control", action = "ResetFontSize" },
+    
     # Scrolling
-    { key = "PageUp", mods = "None", action = "ScrollPageUp" },
-    { key = "PageDown", mods = "None", action = "ScrollPageDown" },
-    { key = "P", mods = "Control", action = "ScrollLineUp" },
-    { key = "N", mods = "Control", action = "ScrollLineDown" },
-    { key = "P", mods = "Control|Shift", action = "ScrollToTop" },
-    { key = "N", mods = "Control|Shift", action = "ScrollToBottom" },
-    # History and Clearing
-    { key = "L", mods = "Control|Shift", action = "ClearLogNotice" },
-    { key = "L", mods = "Control", action = "ReceiveChar" },
+    { key = "PageUp", mods = "Shift", action = "ScrollPageUp" },
+    { key = "PageDown", mods = "Shift", action = "ScrollPageDown" },
+    { key = "Home", mods = "Shift", action = "ScrollToTop" },
+    { key = "End", mods = "Shift", action = "ScrollToBottom" },
+    { key = "Up", mods = "Control|Shift", action = "ScrollLineUp" },
+    { key = "Down", mods = "Control|Shift", action = "ScrollLineDown" },
+    { key = "V", mods = "Control", action = "ScrollPageDown" }, # Emacs-style page down
+    
     # Window Management
-    { key = "T", mods = "Control|Alt", action = "SpawnNewInstance" },
-    { key = "F11", mods = "None", action = "ToggleFullscreen" },
-    { key = "Z", mods = "Control|Shift", action = "ToggleMaximized" },
-    # Search
-    { key = "R", mods = "Control", action = "SearchBackward" },
-    { key = "S", mods = "Control", action = "SearchForward" },
-    { key = "D", mods = "Control|Shift", action = "SearchClear" },
-    { key = "O", mods = "Control|Shift", action = "SearchNext" },
-    { key = "I", mods = "Control|Shift", action = "SearchPrevious" },
-    { key = "H", mods = "Control|Shift", action = "SearchHistoryPrevious" },
-    { key = "L", mods = "Control|Shift", action = "SearchHistoryNext" },
-    # URL Opening
-    { key = "O", mods = "Alt", action = "Open" },
+    { key = "N", mods = "Control|Shift", action = "SpawnNewInstance" },
+    { key = "Return", mods = "Control|Shift", action = "ToggleFullscreen" },
+    { key = "M", mods = "Control|Shift", action = "ToggleMaximized" },
+    
+    # Tab navigation (for multiplexers)
+    { key = "Tab", mods = "Control", chars = "\u001b[9;5u" },
+    { key = "Tab", mods = "Control|Shift", chars = "\u001b[9;6u" },
+    
+    # Disable Vi mode (conflicts with Emacs)
+    # { key = "Space", mods = "Control|Shift", mode = "~Search", action = "ToggleViMode" },
+    # { key = "Escape", mode = "~Search", action = "ToggleViMode" },
 ]
 
 [debug]
