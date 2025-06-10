@@ -225,7 +225,7 @@
 
   ;; System services
   (services
-   (append (list ;; Certbot for handling SSL certificates
+   (append (list ;Certbot for handling SSL certificates
                  (service certbot-service-type
                           (certbot-configuration (email "bvits@riseup.net")
                                                  (certificates (list (certificate-configuration

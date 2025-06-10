@@ -10,12 +10,17 @@
              (gnu home services sound)
              (gnu home services ssh)
              (gnu home services syncthing)
+             (gnu packages display-managers)
+             (gnu packages fonts)
+             (gnu packages linux)
              (gnu packages networking)
              (gnu packages sync)
              (gnu packages video)
              (gnu packages gnome)
+             (gnu packages gnome-xyz)
              (gnu services)
              (gnu services avahi)
+             (gnu services cuirass)
              (gnu services cups)
              (gnu services databases)
              (gnu services dbus)
@@ -25,6 +30,7 @@
              (gnu services guix)
              (gnu services linux)
              (gnu services networking)
+             (gnu services sddm)
              (gnu services spice)
              (gnu services ssh)
              (gnu services sysctl)
@@ -40,10 +46,12 @@
              (guix deprecation)
              (guix gexp)
              (myguix home)
+             (myguix utils)
              (myguix home services emacs)
              (myguix packages base)
              (myguix packages linux)
              (myguix packages nvidia)
+             (myguix packages productivity)
              (myguix packages python-pqrs)
              (myguix packages video)
              (myguix services desktop)
@@ -52,14 +60,26 @@
              (myguix services oci-containers)
              (myguix system install)
              (myguix system linux-initrd)
-             (srfi srfi-1))
+             (srfi srfi-1)
+             (ice-9 match))
+
+(define %pg-pass-file
+  "/var/lib/postgresql/airflow.pwd")
+(define pg-pass
+  (read-secret %pg-pass-file))
+
+(define (extract-propagated-inputs package)
+  ;; Drop input labels.  Attempt to support outputs.
+  (map (match-lambda
+         ((_ (? package? pkg))
+          pkg)
+         ((_ (? package? pkg) output)
+          (list pkg output)))
+       (package-propagated-inputs package)))
 
 (define %my-home-config
   (home-environment
     (packages (append
-               ;; Document bundles
-               %document-conversion-packages
-               %document-production-packages
                ;; Media and graphic bundles
                %media-packages
                %graphics-packages
@@ -68,15 +88,7 @@
                %audio-production-packages
                ;; Video bundles
                %video-conversion-packages
-               %video-production-packages
-               ;; Development bundles
-               %guile-packages
-               %rust-packages
-               %python-packages
-               %perl-packages
-               ;; Search and Index bundles
-               %search-packages
-               %opencog-packages))
+               %video-production-packages))
 
     (services
      (append (list
@@ -88,7 +100,9 @@
                                                         %garbage-collector-job))))
               ;; Home Files Service
               (simple-service 'my-home-files-service home-files-service-type
-                              `((".gitconfig" ,(local-file "../../gitconfig"))))
+                              `((".gitconfig" ,(local-file "../../git/gitconfig"))
+				(".gitignore" ,(local-file "../../git/gitignore"))
+				(".gitattributes" ,(local-file "../../git/gitattributes"))))
               ;; Config Files Service
               (simple-service 'my-config-files-service
                               home-xdg-configuration-files-service-type
@@ -97,7 +111,10 @@
                                 ("mpv/input.conf" ,(local-file
                                                     "../../mpv/input.conf"))
                                 ("mpv/mpv.conf" ,(local-file
-                                                  "../../mpv/mpv.conf"))))
+                                                  "../../mpv/mpv.conf"))
+                                ("mpv/shaders" ,(local-file
+                                                 "../../mpv/shaders"
+                                                 #:recursive? #t))))
 
               ;; Secure Shell
               (service home-openssh-service-type
@@ -157,12 +174,20 @@
   (locale "en_US.utf8")
 
   (kernel linux)
-  (kernel-arguments (list "modprobe.blacklist=nouveau" "nvidia_drm.modeset=1"
-                          "nvidia.NVreg_EnableGpuFirmware=1"))
-  (kernel-loadable-modules (list (specification->package
-                                  "v4l2loopback-linux-module")))
+  (kernel-arguments (append '("modprobe.blacklist=nouveau"
+                              "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1")
+                            %default-kernel-arguments))
+  (kernel-loadable-modules (list v4l2loopback-linux-module nvidia-module))
   (firmware (list linux-firmware))
-  (initrd microcode-initrd)
+  (initrd (lambda (file-systems . rest)
+            (apply microcode-initrd
+                   file-systems
+                   #:initrd base-initrd
+                   #:microcode-packages (list amd-microcode intel-microcode)
+                   #:linux-modules '("nvidia" "nvidia_modeset"
+                                     "nvidia_peermem" "nvidia_uvm"
+                                     "nvidia_drm")
+                   rest)))
 
   (keyboard-layout (keyboard-layout "us" "altgr-intl"
                                     #:options '("ctrl:nocaps")))
@@ -209,47 +234,88 @@
                   (system? #t)
                   (name "realtime")) %base-groups))
 
-  (packages (append
-             ;; Essential bundles
-             %core-packages
-             %monitoring-packages
-             %versioning-packages
-             %compression-packages
-             %network-packages
-             ;; Desktop bundles
-             %desktop-packages
-             %audio-packages
-             %bluetooth-packages
-             ;; File system bundles
-             %basic-filesystem-packages
-             %advanced-filesystem-packages
-             %remote-filesystem-packages
-             %file-transfer-packages
-             ;; Development packages
-             %development-packages
-             %cuda-packages
-             %tree-sitter-packages
-             ;; Font bundles
-             %general-fonts
-             %document-fonts
-             %adobe-fonts
-             %google-fonts
-             %fira-fonts
-             %iosevka-fonts
-             %monospace-fonts
-             %sans-fonts
-             %serif-fonts
-             %cjk-fonts
-             %unicode-fonts
-             %base-packages))
+  (packages (append %compression-packages %rust-packages
+                    (map replace-mesa
+                         (append
+                          ;; Essential bundles
+                          %core-packages
+                          %monitoring-packages
+                          %versioning-packages
+                          %network-packages
+                          ;; Desktop bundles
+                          %desktop-packages
+                          %audio-packages
+                          %bluetooth-packages
+                          %my-gnome-shell-assets
+                          ;; File system bundles
+                          %basic-filesystem-packages
+                          %advanced-filesystem-packages
+                          %remote-filesystem-packages
+                          %file-transfer-packages
+                          ;; Development packages
+                          %development-packages
+                          %cuda-packages
+                          %guile-packages
+                          %python-packages
+                          %perl-packages
+                          %tree-sitter-packages
+                          ;; Document bundles
+                          %document-conversion-packages
+                          %document-production-packages
+                          ;; Font bundles
+                          %general-fonts
+                          %document-fonts
+                          %adobe-fonts
+                          %apple-fonts
+                          %google-fonts
+                          %fira-fonts
+                          %iosevka-fonts
+                          %monospace-fonts
+                          %microsoft-fonts
+                          %sans-fonts
+                          %serif-fonts
+                          %cjk-fonts
+                          %unicode-fonts
+                          %base-packages))))
   (services
-   (append (list (service gnome-desktop-service-type)
+   (append (list (service gnome-desktop-service-type
+                          (gnome-desktop-configuration (core-services (map
+                                                                       replace-mesa
+                                                                       (extract-propagated-inputs
+                                                                        gnome-meta-core-services)))
+                                                       (shell (map
+                                                               replace-mesa
+                                                               (extract-propagated-inputs
+                                                                gnome-meta-core-shell)))
+                                                       (utilities (map
+                                                                   replace-mesa
+                                                                   (extract-propagated-inputs
+                                                                    gnome-meta-core-utilities)))
+                                                       (extra-packages (map
+                                                                        replace-mesa
+                                                                        (extract-propagated-inputs
+                                                                         gnome-essential-extras)))))
+                 (service gdm-service-type
+                          (gdm-configuration (gdm (replace-mesa gdm))
+                                             (gnome-shell-assets (map
+                                                                  replace-mesa
+                                                                  %my-gnome-shell-assets))
+                                             (xorg-configuration (xorg-configuration
+                                                                  (modules (cons
+                                                                            nvda
+                                                                            %default-xorg-modules))
+                                                                  (drivers '("nvidia"))))))
                  (service nvidia-service-type)
                  (set-xorg-configuration
                   (xorg-configuration (keyboard-layout keyboard-layout)
                                       (modules (cons nvda
                                                      %default-xorg-modules))
                                       (drivers '("nvidia"))))
+                 (service upower-service-type
+                          (upower-configuration (upower (replace-mesa upower))))
+
+                 (service gvfs-service-type
+                          (gvfs-configuration (gvfs (replace-mesa gvfs))))
 
                  ;; Printing Services
                  (service cups-service-type
@@ -258,10 +324,41 @@
                  ;; Networking Services
                  (service openssh-service-type)
                  (service nftables-service-type)
+                 (service network-manager-service-type
+                          (network-manager-configuration (network-manager (replace-mesa
+                                                                           network-manager))
+                                                         (vpn-plugins (map
+                                                                       replace-mesa
+                                                                       (list
+                                                                        network-manager-openvpn
+                                                                        network-manager-openconnect)))))
 
                  ;; Database Services
                  (service mysql-service-type)
                  (service redis-service-type)
+                 (service postgresql-service-type
+                          (postgresql-configuration (postgresql (specification->package
+                                                                 "postgresql"))
+                                                    (config-file (postgresql-config-file
+                                                                  (hba-file (plain-file
+                                                                             "pg_hba.conf"
+                                                                             "
+local   all         postgres               peer
+host    airflow     airflow  127.0.0.1/32  md5
+host    airflow     airflow  ::1/128       md5
+"))))))
+
+                 (service postgresql-role-service-type
+                          (postgresql-role-configuration (roles (list (postgresql-role
+                                                                       (name
+                                                                        "airflow")
+                                                                       (password-file
+                                                                        %pg-pass-file)
+                                                                       (permissions '
+                                                                        (createdb
+                                                                         login))
+                                                                       (create-database?
+                                                                        #t))))))
 
                  ;; Desktop Services
                  (simple-service 'blueman dbus-root-service-type
@@ -287,9 +384,19 @@
                  (service spice-vdagent-service-type)
                  (service inputattach-service-type)
                  (service containerd-service-type)
-                 (service docker-service-type)
+                 (service docker-service-type
+                          (docker-configuration (config-file (local-file
+                                                              "../files/daemon.json"))))
                  (service oci-container-service-type
-                          (list oci-grobid-service-type
+                          (list oci-airflow-service-type
                                 oci-meilisearch-service-type
-                                oci-weaviate-service-type
-                                oci-neo4j-service-type))) %my-desktop-services)))
+                                oci-grobid-service-type
+                                oci-neo4j-service-type
+                                oci-qdrant-service-type
+                                oci-minio-service-type)))
+           (modify-services %my-desktop-services
+             (delete gvfs-service-type)
+             (delete upower-service-type)
+             (delete gdm-service-type)
+             (delete network-manager-service-type))))
+  (name-service-switch %mdns-host-lookup-nss))

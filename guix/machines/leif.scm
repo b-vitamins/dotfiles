@@ -48,10 +48,6 @@
                ;; Media and graphic bundles
                %media-packages
                %graphics-packages
-               ;; Development bundles
-               %guile-packages
-               %python-packages
-               %perl-packages
                ;; Search and Index bundles
                %search-packages))
 
@@ -187,6 +183,10 @@
              ;; File system bundles
              %basic-filesystem-packages
              %file-transfer-packages
+             ;; Development packages
+             %guile-packages
+             %python-packages
+             %perl-packages
              ;; Font bundles
              %general-fonts
              %document-fonts
@@ -233,4 +233,5 @@
                                                      (file-append (specification->package
                                                                    "font-terminus")
                                                       "/share/consolefonts/ter-132n")))
-                                             '("tty1" "tty2" "tty3")))))))
+                                             '("tty1" "tty2" "tty3"))))))
+  (name-service-switch %mdns-host-lookup-nss))
