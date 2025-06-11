@@ -8,25 +8,50 @@ set -euo pipefail
 # provisioning while internet access is available.
 
 # Variables
-APT_PACKAGES=(\
-    git gnupg pass stow \
-    build-essential \
+CORE_PACKAGES=(git gnupg pass stow build-essential \
     dconf-cli gsettings-desktop-schemas xdg-utils \
-    python3 python3-pip pyside2-tools qttools5-dev-tools \
-    xvfb emacs
-)
+    python3 python3-pip)
+
+EXTRA_PACKAGES=(pyside2-tools qttools5-dev-tools xvfb emacs)
+
+APT_INSTALL_OPTS=(--yes --no-install-recommends)
 
 GUIX_VERSION="1.4.0"
 
+usage() {
+    cat <<EOF
+Usage: $0 [--minimal] [--help]
+
+  --minimal   Install a smaller package set
+  --help      Show this help message
+EOF
+}
+
 main() {
+    local minimal=false
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --minimal) minimal=true ; shift ;;
+            --help) usage ; exit 0 ;;
+            *) echo "Unknown option: $1"; usage; exit 1 ;;
+        esac
+    done
+
     echo "Updating package lists..."
     sudo apt-get update -y
-    echo "Installing packages: ${APT_PACKAGES[*]}"
-    sudo apt-get install -y "${APT_PACKAGES[@]}"
+
+    local packages=("${CORE_PACKAGES[@]}")
+    if [[ $minimal == false ]]; then
+        packages+=("${EXTRA_PACKAGES[@]}")
+    fi
+
+    echo "Installing packages: ${packages[*]}"
+    sudo apt-get install "${APT_INSTALL_OPTS[@]}" "${packages[@]}"
 
     install_guix
 
-    echo "Environment setup complete." 
+    echo "Environment setup complete."
 }
 
 install_guix() {
