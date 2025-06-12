@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Pruned deprecated and platform-specific options from `git/gitconfig`.
 ### Fixed
 - Balanced parentheses in `emacs/lisp/bv-core.el`.
+- Added missing closing parenthesis in `bv-core.el` to fix initialization error.
 - Added `bv-leader` macro and corrected quoting in completion and writing modules.
 - Prevented startup errors when optional packages are missing.
 - Closed unmatched parentheses in `bv-research.el` and removed invalid key binding from `bv-productivity.el`.

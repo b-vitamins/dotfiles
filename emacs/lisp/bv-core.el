@@ -257,6 +257,7 @@ BINDINGS is a flat list of key/command pairs."
              bv-config-values)
 
     (display-buffer (current-buffer))))
+  )
 
 (provide 'bv-core)
 ;;; bv-core.el ends here
