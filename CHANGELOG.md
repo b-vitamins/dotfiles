@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Pruned deprecated and platform-specific options from `git/gitconfig`.
 ### Fixed
 - Balanced parentheses in `emacs/lisp/bv-core.el`.
+- Prevented startup errors when optional packages are missing.
+- Closed unmatched parentheses in `bv-research.el` and removed invalid key binding from `bv-productivity.el`.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.

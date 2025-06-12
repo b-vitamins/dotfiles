@@ -288,7 +288,9 @@ Install from https://github.com/zotero/translation-server")))
             (progn
               (find-file (car notes))
               (org-noter))
-          (message "Create a note first with citar-open-notes")))))
+  (message "Create a note first with citar-open-notes"))))
+  )
+)
 
 ;;;; Org Ref (Alternative - disabled by default)
 (use-package org-ref
