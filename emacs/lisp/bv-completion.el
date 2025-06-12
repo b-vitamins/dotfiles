@@ -152,8 +152,8 @@
   (setq marginalia-align-offset 1)
 
   ;; Custom annotators
-  (add-to-list 'marginalia-prompt-categories '\("\\<buffer\\>" . buffer))
-  (add-to-list 'marginalia-prompt-categories '\("\\<file\\>" . file))
+  (add-to-list 'marginalia-prompt-categories '("\\<buffer\\>" . buffer))
+  (add-to-list 'marginalia-prompt-categories '("\\<file\\>" . file))
 
   (marginalia-mode 1))
 

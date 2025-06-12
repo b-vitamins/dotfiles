@@ -203,6 +203,20 @@
   "Ensure X is a list."
   (if (listp x) x (list x)))
 
+;;;; Keybinding Helpers
+
+(defmacro bv-leader (&rest bindings)
+  "Bind key sequences in `bv-app-map`.
+BINDINGS is a flat list of key/command pairs."
+  (declare (indent 1))
+  (let (forms)
+    (while bindings
+      (let ((key (pop bindings))
+            (cmd (pop bindings)))
+        (when (and cmd (not (keywordp cmd)))
+          (push `(define-key bv-app-map (kbd ,key) ,cmd) forms)))
+    `(progn ,@(nreverse forms))))
+
 ;;;; Package Management Helpers
 
 (defun bv-package-installed-p (package)
