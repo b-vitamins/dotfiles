@@ -8,3 +8,6 @@
 Run `./setup-dev.sh` to install required packages and the optional Guix
 toolchain. Pass `--minimal` to skip heavier packages or `--help` for
 usage details.
+
+## Emacs
+Configuration files live under the `emacs/` directory.
