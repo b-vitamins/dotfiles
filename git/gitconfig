@@ -20,11 +20,8 @@
 	pager = less -FRX
 	attributesfile = ~/.gitattributes
 	compression = 9
-	precomposeUnicode = true
 	quotepath = false
 	preloadindex = true
-	fscache = true
-	untrackedCache = true
 
 [i18n]
 	commitEncoding = utf-8

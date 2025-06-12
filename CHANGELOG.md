@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Phase 4 modules are now enabled in `init.el`.
 - Phase 5 modules are now enabled in `init.el`.
 - Removed URL rewrite aliases from `git/gitconfig`.
+- Pruned deprecated and platform-specific options from `git/gitconfig`.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
