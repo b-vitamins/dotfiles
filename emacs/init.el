@@ -155,7 +155,7 @@
                        (lambda (a b) (> (cdr a) (cdr b)))))
     (message "  %-20s %.3fs" (car entry) (cdr entry))))
 
-;;;; MODULES STRIPPED - NO LOADING
+;;;; Module loading
 
 ;; Phase 1: Foundation (Critical)
 (bv-require bv-core)
@@ -171,15 +171,15 @@
       (bv-require bv-development)
       (bv-require bv-git))))
 
-;; Phase 3: Language Support (High) - DISABLED
-;; (with-eval-after-load 'bv-development
-;;   (run-with-idle-timer 0.5 nil
-;;     (lambda ()
-;;       (bv-require bv-lang-python noerror)
-;;       (bv-require bv-lang-rust noerror)
-;;       (bv-require bv-lang-lisp)
-;;       (bv-require bv-lang-systems noerror)
-;;       (bv-require bv-lang-haskell noerror))))
+;; Phase 3: Language Support (High)
+(with-eval-after-load 'bv-development
+  (run-with-idle-timer 0.5 nil
+    (lambda ()
+      (bv-require bv-lang-python noerror)
+      (bv-require bv-lang-rust noerror)
+      (bv-require bv-lang-lisp)
+      (bv-require bv-lang-systems noerror)
+      (bv-require bv-lang-haskell noerror))))
 
 ;; Phase 4: Research Infrastructure (High) - DISABLED but functions kept
 (defun bv-load-research-features ()
