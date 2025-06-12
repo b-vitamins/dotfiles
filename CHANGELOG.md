@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Removed URL rewrite aliases from `git/gitconfig`.
 - Pruned deprecated and platform-specific options from `git/gitconfig`.
 ### Fixed
+- Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
+  prevented productivity modules from loading.
 - Balanced parentheses in `emacs/lisp/bv-core.el`.
 - Added missing closing parenthesis in `bv-core.el` to fix initialization error.
 - Added `bv-leader` macro and corrected quoting in completion and writing modules.
