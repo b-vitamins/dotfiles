@@ -13,7 +13,7 @@
 	verbose = true
 
 [core]
-	editor = emacsclient -c
+        editor = emacsclient -c -a ""
 	autocrlf = input
 	whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
 	excludesfile = ~/.gitignore
@@ -30,13 +30,6 @@
 	commitEncoding = utf-8
 	logOutputEncoding = utf-8
 
-[branch "master"]
-	rebase = true
-	pushRemote = no_push
-
-[branch "main"]
-	rebase = true
-	pushRemote = no_push
 
 [sendemail]
 	from = Ayan Das <bvits@riseup.net>
@@ -151,14 +144,14 @@
 	heading = true
 
 [help]
-	autocorrect = 20
+	autocorrect = 0
 
 [rerere]
 	enabled = true
 	autoUpdate = true
 
 [credential]
-	helper = cache --timeout=3600
+	helper = cache --timeout=21600
 
 [filter "lfs"]
 	clean = git-lfs clean -- %f
@@ -172,11 +165,8 @@
 	config = false
 	tag = false
 
-[interactive]
-	singleKey = true
-
 [advice]
-	waitingForEditor = false
+        waitingForEditor = false
 	statusHints = false
 	commitBeforeMerge = false
 	detachedHead = false
@@ -187,7 +177,6 @@
 
 [feature]
 	manyFiles = true
-	experimental = true
 
 [protocol]
 	version = 2
