@@ -111,16 +111,11 @@
           (writing . "You are a writing assistant. Help improve clarity and style.")
           (research . "You are a research assistant. Provide accurate, well-sourced information.")))
   
-  :bind (("C-c g g" . gptel)
-         ("C-c g s" . gptel-send)
-         ("C-c g m" . gptel-menu)
-         ("C-c g r" . gptel-rewrite)
-         ("C-c g a" . gptel-add)
-         ("C-c g f" . gptel-refactor-or-rewrite)))
+  ;; Keybindings provided via `bv-leader`. Remove conflicting global bindings.
+  )
 
 (use-package gptel-quick
-  :after gptel
-  :bind ("C-c g q" . gptel-quick))
+  :after gptel)
 
 ;;; Calculator
 (use-package calc
