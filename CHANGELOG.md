@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed syntax error in `bv-writing.el` at line 118 caused by unmatched closing bracket.
 - Resolved keybinding conflict in `bv-communication.el` where 'w' was used as both a command and prefix key.
 - Fixed `org-clocking-p` error in `bv-productivity.el` mode-line indicator by adding proper function existence check.
+- Replaced multimedia configuration to resolve `M m` prefix key error.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.

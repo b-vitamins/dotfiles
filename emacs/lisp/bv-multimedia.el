@@ -135,16 +135,19 @@ _l_: playlist    _q_: quit
                          "scrot %s"))))
     (shell-command (format command filename))
     (message "Screenshot saved: %s" filename)
-    (kill-new filename))))
+    (kill-new filename)))
 
 ;;; Global Keybindings
 (with-eval-after-load 'bv-core
-  (bv-leader
-    "M" '(:ignore t :which-key "multimedia")
-    "M m" #'bv-multimedia-hydra/body
-    "M o" #'bv-multimedia-open-externally
-    "M u" #'bv-multimedia-play-url
-    "M s" #'bv-multimedia-screenshot))
+  ;; Create multimedia prefix map
+  (define-prefix-command 'bv-multimedia-map)
+  (define-key bv-app-map "M" 'bv-multimedia-map)
+  
+  ;; Bind multimedia commands
+  (define-key bv-multimedia-map "m" #'bv-multimedia-hydra/body)
+  (define-key bv-multimedia-map "o" #'bv-multimedia-open-externally)
+  (define-key bv-multimedia-map "u" #'bv-multimedia-play-url)
+  (define-key bv-multimedia-map "s" #'bv-multimedia-screenshot))
 
 ;;;; Feature Definition
 (defun bv-multimedia-load ()
@@ -153,7 +156,7 @@ _l_: playlist    _q_: quit
   
   ;; Only start EMMS if music directory exists
   (when (file-directory-p bv-multimedia-music-directory)
-    (require 'emms-setup))
+    (require 'emms-setup nil t))
   
   (message "Multimedia tools loaded"))
 
