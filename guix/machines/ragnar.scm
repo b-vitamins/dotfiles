@@ -388,8 +388,7 @@ host    airflow     airflow  ::1/128       md5
                           (docker-configuration (config-file (local-file
                                                               "../files/daemon.json"))))
                  (service oci-container-service-type
-                          (list oci-airflow-service-type
-                                oci-meilisearch-service-type
+                          (list oci-meilisearch-service-type
                                 oci-grobid-service-type
                                 oci-neo4j-service-type
                                 oci-qdrant-service-type
