@@ -127,7 +127,7 @@
                         ,value
                         ,(if (symbolp predicate)
                              (symbol-name predicate)
-                           "custom predicate")))))
+                           "custom predicate"))))))
 
 (defun bv-validate-type (value type)
   "Validate that VALUE matches TYPE specification."
