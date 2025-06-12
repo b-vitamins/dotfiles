@@ -247,11 +247,11 @@
   (company-auctex-init))
 
 ;; CDLaTeX for fast math input
-(use-package cdlatex
-  :hook ((LaTeX-mode . cdlatex-mode)
-         (org-mode . org-cdlatex-mode))
-  :config
-  (setq cdlatex-paired-parens "$[{("))
+  (use-package cdlatex
+    :hook ((LaTeX-mode . cdlatex-mode)
+           (org-mode . org-cdlatex-mode))
+    :config
+    (setq cdlatex-paired-parens "$[{("))
 
 ;;; Markdown Support
 (use-package markdown-mode
@@ -328,7 +328,7 @@
   :hook ((text-mode . wc-mode)
          (LaTeX-mode . wc-mode))
   :config
-  (setq wc-modeline-format "[%tw/%gw]"))
+  (setq wc-modeline-format "[%tw/%gw]")
 
 ;;; Bibliography Management Integration
 (with-eval-after-load 'citar
