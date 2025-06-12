@@ -184,8 +184,10 @@
 
 ;; Auto-cleanup whitespace
 (when bv-auto-clean-whitespace
-  (use-package ws-butler
-    :hook ((text-mode prog-mode) . ws-butler-mode)))
+  (if (locate-library "ws-butler")
+      (use-package ws-butler
+        :hook ((text-mode prog-mode) . ws-butler-mode))
+    (add-hook 'before-save-hook #'delete-trailing-whitespace)))
 
 ;;;; Window and Buffer Management
 

@@ -130,8 +130,7 @@
   (setq calc-symbolic-mode t)
   (setq calc-display-trail nil)
   
-  :bind (("C-c k" . calc-dispatch)
-         ("C-x * *" . calc)))
+  :bind (("C-c k" . calc-dispatch)))
 
 (use-package calc-currency
   :after calc
