@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   balance in `bv-multimedia.el`.
 - Balanced unmatched parentheses across core and multimedia modules.
 - Guarded fringe configuration to avoid errors in non-graphical builds.
+- Fixed invalid dictionary syntax and stray parens in `bv-writing.el`.
+- Added prefix map to resolve `P P` keybinding error in `bv-productivity.el`.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.

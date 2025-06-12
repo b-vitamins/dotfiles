@@ -387,8 +387,9 @@ _q_: Quit
 
 ;;; Global Keybindings
 (with-eval-after-load 'bv-core
+  (define-prefix-command 'bv-productivity-map)
   (bv-leader
-    "P" '(:ignore t :which-key "productivity")
+    "P" 'bv-productivity-map
     "P P" #'bv-productivity-hydra/body
     "P g" #'gptel
     "P c" #'calc
