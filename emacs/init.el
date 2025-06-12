@@ -162,14 +162,14 @@
 (bv-require bv-defaults)
 (bv-require bv-ui)
 
-;; Phase 2: Core Productivity (Critical) - DISABLED
-;; (with-eval-after-load 'bv-core
-;;   (run-with-idle-timer 0.1 nil
-;;     (lambda ()
-;;       (bv-require bv-completion)
-;;       (bv-require bv-navigation)
-;;       (bv-require bv-development)
-;;       (bv-require bv-git))))
+;; Phase 2: Core Productivity (Critical)
+(with-eval-after-load 'bv-core
+  (run-with-idle-timer 0.1 nil
+    (lambda ()
+      (bv-require bv-completion)
+      (bv-require bv-navigation)
+      (bv-require bv-development)
+      (bv-require bv-git))))
 
 ;; Phase 3: Language Support (High) - DISABLED
 ;; (with-eval-after-load 'bv-development

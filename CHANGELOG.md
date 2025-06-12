@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 ### Added
 - Stripped Emacs configuration with core modules and UI defaults.
+- Core productivity modules for completion, navigation, development,
+  and Git integration. Phase 2 now enabled in `init.el`.
 ### Changed
 - Updated module comments to reflect Phase 1 is active.
 ### Removed
