@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - Phase 3 modules are now enabled in `init.el`.
 - Updated comments to reflect active module loading.
+- Documented that every pull request must update `CHANGELOG.md`.
 - Phase 4 modules are now enabled in `init.el`.
 - Phase 5 modules are now enabled in `init.el`.
 - Removed URL rewrite aliases from `git/gitconfig`.
