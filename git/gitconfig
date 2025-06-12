@@ -223,7 +223,7 @@
 	brd = branch -d
 	brD = branch -D
 	brs = for-each-ref --sort='-committerdate' --format='%(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) - %(color:green)(%(committerdate:relative))%(color:reset)' refs/heads/
-	bdm = "!git branch --merged | grep -v '\*\|master\|main\|develop' | xargs -n 1 git branch -d"
+	bdm = "!git branch --merged | grep -Ev '\\*|master|main|develop' | xargs -n 1 git branch -d"
 	files = "!f() { git diff --name-status $(git merge-base HEAD ${1:-master})..${1:-master}; }; f"
 
 # Guix patches
@@ -287,7 +287,7 @@
 # Reports
 	contributors = shortlog --summary --numbered
 	churn = !git log --all -M -C --name-only --format='format:' "$@" | sort | grep -v '^$' | uniq -c | sort -rn | head -20
-	aliases = !git config --list | grep 'alias\.' | sed 's/alias\.\([^=]*\)=\(.*\)/\1\ \t => \2/' | sort
+	aliases = "!git config --list | grep '^alias\\.' | awk -F= '{printf \"%s\t => %s\\n\", substr($1,7), $2}' | sort"
 
 # Emacs
 	fix = "!f() { emacsclient -c $(git diff --name-only --diff-filter=U); }; f"
