@@ -112,9 +112,9 @@
   (when (fboundp 'tool-bar-mode) (tool-bar-mode -1))
   (when (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 
-  ;; Set fringe width
-  (when bv-ui-fringes
-    (set-fringe-mode bv-ui-fringes))
+  ;; Set fringe width when available
+  (when (and bv-ui-fringes (fboundp 'set-fringe-style))
+    (set-fringe-style bv-ui-fringes))
 
   ;; Window dividers
   (setq window-divider-default-right-width bv-ui-margin)

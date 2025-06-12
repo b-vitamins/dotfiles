@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed duplicate multimedia playlist keybinding and ensured parentheses
   balance in `bv-multimedia.el`.
 - Balanced unmatched parentheses across core and multimedia modules.
+- Guarded fringe configuration to avoid errors in non-graphical builds.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
