@@ -115,7 +115,7 @@
   (when (eq bv-writing-spelling-program 'hunspell)
     (setq ispell-dictionary "en_US")
     (setq ispell-local-dictionary-alist
-          '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "['"]" nil ("-d" "en_US") nil utf-8))))
+          '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "['"]" nil ("-d" "en_US") nil utf-8)))
   
   (setq ispell-dictionary bv-writing-default-dictionary)
   (setq ispell-personal-dictionary bv-writing-personal-dictionary)
