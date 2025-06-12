@@ -179,7 +179,9 @@
       (bv-require bv-lang-rust noerror)
       (bv-require bv-lang-lisp)
       (bv-require bv-lang-systems noerror)
-      (bv-require bv-lang-haskell noerror))))
+      ;; Haskell support disabled
+      ;; (bv-require bv-lang-haskell noerror)
+      )))
 
 ;; Phase 4: Research Infrastructure (High)
 (with-eval-after-load 'bv-core

@@ -22,7 +22,6 @@
              (gnu packages graphics)
              (gnu packages gl)
              (gnu packages guile)
-             (gnu packages haskell)
              (gnu packages idris)
              (gnu packages tree-sitter)
              (myguix packages rust)
@@ -41,7 +40,7 @@
                             "rust:cargo" ;Rust's package manager and build system
                             "libtorch" ;The core library of PyTorch in C++
                             
-                            "ghc" ;Next generation Haskell Compiler
+                            ;; "ghc" removed
                             "idris" ;Functional programming language with dependent types
                             
                             "python" ;Interpreted, high-level, general-purpose programming language
@@ -101,7 +100,6 @@
                             "tree-sitter-javascript" ;Tree-sitter grammar for JavaScript programming language
                             "tree-sitter-java" ;Tree-sitter grammar for Java programming language
                             "tree-sitter-html" ;Tree-sitter grammar for HTML
-                            "tree-sitter-haskell" ;Tree-sitter grammar for Haskell programming language
                             "tree-sitter-gomod" ;Tree-sitter grammar for Go module files
                             "tree-sitter-go" ;Tree-sitter grammar for Go programming language
                             "tree-sitter-elm" ;Tree-sitter grammar for Elm programming language

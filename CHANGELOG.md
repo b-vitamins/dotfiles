@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Closed unmatched parentheses in `bv-research.el` and removed invalid key binding from `bv-productivity.el`.
 - Resolved syntax errors in `bv-lang-rust.el` and `bv-writing.el`.
 - Fixed project switching configuration type in `bv-navigation.el`.
+- Corrected dictionary list syntax and removed conflicting GPT keybindings.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
+- Eliminated Haskell configuration and packages.

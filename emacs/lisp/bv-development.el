@@ -194,7 +194,8 @@
           (go-mode go-ts-mode . ("gopls"))
           (java-mode java-ts-mode . ("jdtls"))
           ((ruby-mode ruby-ts-mode) . ("solargraph" "stdio"))
-          (haskell-mode . ("haskell-language-server-wrapper" "--lsp"))
+          ;; Haskell LSP disabled
+          ;; (haskell-mode . ("haskell-language-server-wrapper" "--lsp"))
           (nix-mode . ("nil"))))
 
   ;; Performance
