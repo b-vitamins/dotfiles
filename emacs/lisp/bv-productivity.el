@@ -98,21 +98,17 @@
                           nil standard-output nil
                           (cdr bv-productivity-gptel-api-key-command))))
          (unless (zerop exit)
-           (error "Failed to get gptel API key")))))
-  )
-  
+           (error "Failed to get gptel API key"))))))
+
   (setq gptel-api-key #'bv-productivity-gptel-get-api-key)
   (setq gptel-default-mode bv-productivity-gptel-default-mode)
   (setq gptel-model bv-productivity-gptel-model)
-  
+
   (setq gptel-directives
         '((default . "You are a helpful assistant.")
           (programming . "You are a programming assistant. Provide concise code examples.")
           (writing . "You are a writing assistant. Help improve clarity and style.")
-          (research . "You are a research assistant. Provide accurate, well-sourced information.")))
-  
-  ;; Keybindings provided via `bv-leader`. Remove conflicting global bindings.
-  )
+          (research . "You are a research assistant. Provide accurate, well-sourced information."))))
 
 (use-package gptel-quick
   :after gptel)
@@ -124,7 +120,7 @@
   (setq calc-algebraic-mode t)
   (setq calc-symbolic-mode t)
   (setq calc-display-trail nil)
-  
+
   :bind (("C-c k" . calc-dispatch)))
 
 (use-package calc-currency
@@ -136,7 +132,7 @@
                           (xdg-cache-home)))
   (setq calc-currency-base-currency bv-productivity-calc-currency)
   (setq calc-currency-update-interval bv-productivity-calc-currency-update-interval)
-  
+
   (add-hook 'calc-start-hook 'calc-currency-load))
 
 ;;; Desktop Notifications
@@ -145,38 +141,38 @@
   :init
   (defvar bv-ednc-map (make-sparse-keymap)
     "Keymap for EDNC commands.")
-  
+
   :config
   (ednc-mode 1)
-  
+
   (defun bv-ednc--notify ()
     "Display the latest EDNC notification."
     (when (ednc-notifications)
       (ednc-format-notification (car (ednc-notifications)))))
-  
+
   (defun bv-ednc-show-notification-log ()
     "Switch to the EDNC log buffer."
     (interactive)
     (when (get-buffer ednc-log-name)
       (switch-to-buffer ednc-log-name)))
-  
+
   (defun bv-ednc-dismiss-all-notifications ()
     "Dismiss all EDNC notifications."
     (interactive)
     (mapc 'ednc-dismiss-notification (cdr ednc--state)))
-  
+
   (defun bv-ednc-update-notifications (&rest _)
     "Update the display of EDNC notifications."
     (force-mode-line-update t))
-  
+
   (add-hook 'ednc-notification-presentation-functions
             #'bv-ednc-update-notifications)
-  
+
   (with-eval-after-load 'notifications
     (setq notifications-application-name bv-productivity-notifications-app-name)
     (when bv-productivity-notifications-icon
       (setq notifications-application-icon bv-productivity-notifications-icon)))
-  
+
   :bind-keymap ("C-c n" . bv-ednc-map)
   :bind (:map bv-ednc-map
               ("n" . ednc-pop-to-notification-in-log-buffer)
@@ -192,26 +188,26 @@
   (setq pomidor-break-seconds (* bv-productivity-pomodoro-short-break 60))
   (setq pomidor-long-break-seconds (* bv-productivity-pomodoro-long-break 60))
   (setq pomidor-breaks-before-long bv-productivity-pomodoro-long-break-after)
-  
+
   (setq pomidor-sound-tick nil)
   (setq pomidor-sound-tack nil)
   (setq pomidor-sound-overwork nil)
   (setq pomidor-sound-break-over nil)
-  
+
   (add-hook 'pomidor-break-start-hook
             (lambda ()
               (notifications-notify
                :title "Pomodoro Break"
                :body "Time for a break!"
                :app-name "Emacs Pomodoro")))
-  
+
   (add-hook 'pomidor-overwork-hook
             (lambda ()
               (notifications-notify
                :title "Pomodoro Complete"
                :body "Great work! Time to start break."
                :app-name "Emacs Pomodoro")))
-  
+
   :bind (("C-c p p" . pomidor)
          :map pomidor-mode-map
          ("q" . quit-window)
@@ -228,11 +224,11 @@
   (setq org-pomodoro-short-break-length bv-productivity-pomodoro-short-break)
   (setq org-pomodoro-long-break-length bv-productivity-pomodoro-long-break)
   (setq org-pomodoro-long-break-frequency bv-productivity-pomodoro-long-break-after)
-  
+
   (setq org-pomodoro-finished-sound-p t)
   (setq org-pomodoro-overtime-sound-p t)
   (setq org-pomodoro-clock-break t)
-  
+
   :bind (:map org-mode-map
               ("C-c p o" . org-pomodoro)))
 
@@ -247,14 +243,14 @@
   (setq org-clock-out-remove-zero-time-clocks t)
   (setq org-clock-report-include-clocking-task t)
   (setq org-clock-idle-time 10)
-  
+
   (setq org-clock-mode-line-total 'current)
   (setq org-clock-clocked-in-display 'mode-line)
-  
+
   (setq org-clock-auto-clock-resolution 'when-no-clock-is-running)
-  
+
   (org-clock-persistence-insinuate)
-  
+
   :bind (("C-c t i" . org-clock-in)
          ("C-c t o" . org-clock-out)
          ("C-c t c" . org-clock-in-last)
@@ -270,7 +266,7 @@
   (setq chronos-notification-type 'notifications)
   (setq chronos-shell-notify-command "")
   (setq chronos-expiry-functions '(chronos-desktop-notifications-notify))
-  
+
   :bind (("C-c t t" . chronos-add-timer)
          ("C-c t l" . chronos-list)))
 
@@ -312,25 +308,26 @@
 (defun bv-productivity-quick-note ()
   "Quickly capture a note with timestamp."
   (interactive)
-  (let* ((note (read-string "Quick note: "))
-         (timestamp (format-time-string "%Y-%m-%d %H:%M"))
-         (entry (format "* %s %s\n" timestamp note)))
+  (let ((note (read-string "Quick note: ")))
     (with-current-buffer (find-file-noselect bv-productivity-time-tracking-file)
       (goto-char (point-max))
-      (insert entry)
+      (unless (bolp) (newline))
+      (insert (format "** [%s] %s\n"
+                      (format-time-string "%Y-%m-%d %H:%M")
+                      note))
       (save-buffer))
     (message "Note captured: %s" note)))
 
 (defun bv-productivity-meeting-template ()
   "Insert meeting template."
   (interactive)
-  (insert (format "* Meeting: %s\n" (read-string "Meeting title: ")))
-  (insert (format "** Date: %s\n" (format-time-string "%Y-%m-%d %H:%M")))
+  (insert (format "* Meeting: %s\n" (read-string "Meeting topic: ")))
+  (insert (format "  :PROPERTIES:\n  :DATE: %s\n  :END:\n"
+                  (format-time-string "%Y-%m-%d %H:%M")))
   (insert "** Attendees:\n- \n")
   (insert "** Agenda:\n- \n")
   (insert "** Notes:\n\n")
-  (insert "** Action Items:\n- [ ] \n")
-  (insert "** Next Steps:\n- \n"))
+  (insert "** Action Items:\n- [ ] \n"))
 
 (defun bv-productivity-daily-review ()
   "Create daily review entry."
@@ -350,8 +347,8 @@
   (require 'org-clock)
   (let ((start (org-read-date nil nil "-mon"))
         (end (org-read-date nil nil "+sun")))
-    (org-clock-report 
-     nil 
+    (org-clock-report
+     nil
      (list :tstart start :tend end :maxlevel 3))))
 
 ;;; Hydra for Quick Access
@@ -388,17 +385,17 @@ _q_: Quit
 ;;; Global Keybindings
 (with-eval-after-load 'bv-core
   (define-prefix-command 'bv-productivity-map)
-  (bv-leader
-    "P" 'bv-productivity-map
-    "P P" #'bv-productivity-hydra/body
-    "P g" #'gptel
-    "P c" #'calc
-    "P p" #'pomidor
-    "P i" #'org-clock-in
-    "P o" #'org-clock-out
-    "P n" #'bv-productivity-quick-note
-    "P f" #'bv-productivity-focus-mode
-    "P t" #'chronos-add-timer))
+  (define-key bv-app-map "P" 'bv-productivity-map)
+
+  (define-key bv-productivity-map "P" #'bv-productivity-hydra/body)
+  (define-key bv-productivity-map "g" #'gptel)
+  (define-key bv-productivity-map "c" #'calc)
+  (define-key bv-productivity-map "p" #'pomidor)
+  (define-key bv-productivity-map "i" #'org-clock-in)
+  (define-key bv-productivity-map "o" #'org-clock-out)
+  (define-key bv-productivity-map "n" #'bv-productivity-quick-note)
+  (define-key bv-productivity-map "f" #'bv-productivity-focus-mode)
+  (define-key bv-productivity-map "t" #'chronos-add-timer))
 
 ;;; Mode Line Integration
 (defun bv-productivity-mode-line-indicator ()
@@ -407,8 +404,9 @@ _q_: Quit
     ;; Pomodoro indicator
     (when (and (boundp 'pomidor-timer) pomidor-timer)
       (push "[🍅]" indicators))
-    ;; Clock indicator
-    (when (org-clocking-p)
+    ;; Clock indicator - check if org-clock is loaded and clocking
+    (when (and (fboundp 'org-clocking-p)
+               (org-clocking-p))
       (push (format "[⏰ %s]" (org-clock-get-clock-string)) indicators))
     ;; Notification count
     (when (and (fboundp 'ednc-notifications) (ednc-notifications))
@@ -423,17 +421,19 @@ _q_: Quit
 (defun bv-productivity-load ()
   "Load productivity configuration."
   (add-to-list 'bv-enabled-features 'productivity)
-  
+
   ;; Create time log file if needed
   (unless (file-exists-p bv-productivity-time-tracking-file)
     (with-temp-file bv-productivity-time-tracking-file
       (insert "#+TITLE: Time Tracking Log\n")
       (insert "#+STARTUP: logdrawer\n\n")))
-  
+
   ;; Start notification service
   (when (display-graphic-p)
-    (ednc-mode 1))
-  
+    (require 'ednc nil t)
+    (when (fboundp 'ednc-mode)
+      (ednc-mode 1)))
+
   (message "Productivity tools loaded"))
 
 (provide 'bv-productivity)

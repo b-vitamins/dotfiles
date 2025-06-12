@@ -108,16 +108,15 @@
           ('aspell (executable-find "aspell"))
           ('hunspell (executable-find "hunspell"))
           (_ (executable-find "ispell"))))
-  
+
   (when (eq bv-writing-spelling-program 'aspell)
     (setq ispell-extra-args '("--sug-mode=ultra" "--lang=en_US")))
-  
+
   (when (eq bv-writing-spelling-program 'hunspell)
     (setq ispell-dictionary "en_US")
     (setq ispell-local-dictionary-alist
-          '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "['"]" nil ("-d" "en_US") nil utf-8)))
-    )
-  
+          '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "['']" nil ("-d" "en_US") nil utf-8))))
+
   (setq ispell-dictionary bv-writing-default-dictionary)
   (setq ispell-personal-dictionary bv-writing-personal-dictionary)
   (setq ispell-silently-savep t))
@@ -130,13 +129,13 @@
   (setq flyspell-issue-message-flag nil)
   (setq flyspell-issue-welcome-flag nil)
   (setq flyspell-large-region 1)
-  
+
   (dolist (hook '(org-mode-hook markdown-mode-hook))
     (add-hook hook
               (lambda ()
                 (setq flyspell-generic-check-word-predicate
                       'bv-writing-flyspell-generic-check-word-predicate))))
-  
+
   :bind (:map flyspell-mode-map
               ("C-;" . flyspell-correct-wrapper)))
 
@@ -185,31 +184,31 @@
   (setq TeX-parse-self t)
   (setq TeX-master nil)
   (setq-default TeX-engine bv-writing-latex-engine)
-  
+
   (setq LaTeX-section-hook
         '(LaTeX-section-heading
           LaTeX-section-title
           LaTeX-section-toc
           LaTeX-section-section
           LaTeX-section-label))
-  
+
   (setq TeX-PDF-mode t)
   (setq TeX-source-correlate-mode t)
   (setq TeX-source-correlate-method 'synctex)
-  
+
   (setq TeX-view-program-selection
         '((output-pdf "PDF Tools")
           (output-dvi "xdvi")))
   (setq TeX-view-program-list
         '(("PDF Tools" TeX-pdf-tools-sync-view)))
-  
+
   (setq LaTeX-clean-intermediate-suffixes
         '("\\.aux" "\\.bbl" "\\.blg" "\\.brf" "\\.fot"
           "\\.glo" "\\.gls" "\\.idx" "\\.ilg" "\\.ind"
           "\\.lof" "\\.log" "\\.lot" "\\.nav" "\\.out"
           "\\.snm" "\\.toc" "\\.url" "\\.synctex\\.gz"
           "\\.bcf" "\\.run\\.xml" "\\.fls" "\\.fdb_latexmk"))
-  
+
   (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
   (setq reftex-plug-into-AUCTeX t)
   (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
@@ -217,7 +216,7 @@
   (add-hook 'LaTeX-mode-hook 'visual-line-mode)
   (add-hook 'LaTeX-mode-hook 'flyspell-mode)
   (add-hook 'LaTeX-mode-hook 'LaTeX-preview-setup)
-  
+
   (setq LaTeX-section-list
         '(("part" 0)
           ("chapter" 1)
@@ -247,11 +246,11 @@
   (company-auctex-init))
 
 ;; CDLaTeX for fast math input
-  (use-package cdlatex
-    :hook ((LaTeX-mode . cdlatex-mode)
-           (org-mode . org-cdlatex-mode))
-    :config
-    (setq cdlatex-paired-parens "$[{("))
+(use-package cdlatex
+  :hook ((LaTeX-mode . cdlatex-mode)
+         (org-mode . org-cdlatex-mode))
+  :config
+  (setq cdlatex-paired-parens "$[{("))
 
 ;;; Markdown Support
 (use-package markdown-mode
@@ -259,76 +258,42 @@
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :init
-  (setq markdown-command
-        (cond ((executable-find "pandoc")
-               "pandoc -f markdown -t html5 --mathjax --highlight-style=pygments --standalone")
-              ((executable-find "markdown")
-               "markdown")
-              (t nil)))
+  (setq markdown-command "multimarkdown")
   :config
   (setq markdown-enable-math t)
   (setq markdown-enable-wiki-links t)
   (setq markdown-italic-underscore t)
   (setq markdown-asymmetric-header t)
-  (setq markdown-make-gfm-checkboxes-buttons t)
-  (setq markdown-gfm-uppercase-checkbox t)
   (setq markdown-fontify-code-blocks-natively t)
-  (setq markdown-hide-urls nil)
-  (setq markdown-indent-on-enter 'indent-and-new-item)
-  (setq markdown-preview-stylesheets
-        (list "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css"))
-  
-  :bind (:map markdown-mode-map
-              ("C-c C-e" . markdown-export)
-              ("C-c C-v" . markdown-preview)
-              ("C-c C-c m" . markdown-other-window)
-              ("C-c C-c p" . markdown-preview-mode)
-              ("C-c C-c l" . markdown-live-preview-mode)
-              ("C-c C-x C-i" . markdown-insert-image)))
+  (setq markdown-gfm-uppercase-checkbox t)
+  (setq markdown-gfm-checkbox-at-bol t)
 
-;; Pandoc integration
-(use-package pandoc-mode
-  :hook ((markdown-mode . pandoc-mode)
-         (org-mode . pandoc-mode))
-  :config
-  (setq pandoc-data-dir (expand-file-name "pandoc/" user-emacs-directory)))
+  (add-hook 'markdown-mode-hook 'flyspell-mode)
+  (add-hook 'markdown-mode-hook 'visual-line-mode))
 
-;; Table of contents for markdown
-(use-package markdown-toc
-  :after markdown-mode
-  :bind (:map markdown-mode-map
-              ("C-c C-x t" . markdown-toc-generate-or-refresh-toc)))
-
-;;; Academic Writing Tools
+;;; Academic Phrases
 (use-package academic-phrases
+  :defer t)
+
+;;; Bibliography Management Integration
+(use-package citar
   :defer t
-  :bind ("C-c w a" . academic-phrases)
-  :config
-  (setq academic-phrases-by-section t))
+  :custom
+  (citar-bibliography (list bv-writing-default-bibliography))
+  (citar-library-paths '("~/Documents/papers/"))
+  (citar-notes-paths '("~/Documents/notes/"))
+  :bind (("C-c b c" . citar-insert-citation)
+         ("C-c b r" . citar-insert-reference)
+         ("C-c b o" . citar-open)
+         ("C-c b n" . citar-open-notes)
+         ("C-c b f" . citar-open-files)))
 
-;; Better prose editing
-(use-package visual-fill-column
-  :hook ((text-mode . visual-fill-column-mode)
-         (org-mode . visual-fill-column-mode))
-  :config
-  (setq-default visual-fill-column-width 80)
-  (setq-default visual-fill-column-center-text t))
-
-;; Focus mode for writing
-(use-package olivetti
-  :defer t
-  :bind ("C-c w f" . olivetti-mode)
-  :config
-  (setq-default olivetti-body-width 80)
-  (setq olivetti-minimum-body-width 72)
-  (setq olivetti-style 'fancy))
-
-;; Word counting
+;;; Word Count
 (use-package wc-mode
   :hook ((text-mode . wc-mode)
          (LaTeX-mode . wc-mode))
   :config
-  (setq wc-modeline-format "[%tw/%gw]")
+  (setq wc-modeline-format "[%tw/%gw]"))
 
 ;;; Bibliography Management Integration
 (with-eval-after-load 'citar
@@ -414,37 +379,38 @@
 
 ;;; Global Keybindings
 (with-eval-after-load 'bv-core
-  (bv-leader
-    "w" '(:ignore t :which-key "writing")
-    "w c" #'bv-writing-insert-citation
-    "w e" #'bv-writing-export-to-pdf
-    "w g" #'bv-writing-check-grammar
-    "w s" #'flyspell-correct-wrapper
-    "w S" #'ispell-buffer
-    "w w" #'bv-writing-count-words-region
-    "w f" #'olivetti-mode
-    "w a" #'academic-phrases))
+  (define-prefix-command 'bv-writing-map)
+  (define-key bv-app-map "w" 'bv-writing-map)
+
+  (define-key bv-writing-map "c" #'bv-writing-insert-citation)
+  (define-key bv-writing-map "e" #'bv-writing-export-to-pdf)
+  (define-key bv-writing-map "g" #'bv-writing-check-grammar)
+  (define-key bv-writing-map "s" #'flyspell-correct-wrapper)
+  (define-key bv-writing-map "S" #'ispell-buffer)
+  (define-key bv-writing-map "w" #'bv-writing-count-words-region)
+  (define-key bv-writing-map "f" #'olivetti-mode)
+  (define-key bv-writing-map "a" #'academic-phrases))
 
 ;;;; Feature Definition
 (defun bv-writing-load ()
   "Load writing configuration."
   (add-to-list 'bv-enabled-features 'writing)
-  
+
   ;; Setup hooks
   (dolist (hook bv-writing-flyspell-prog-modes)
     (add-hook hook 'flyspell-prog-mode))
-  
+
   (dolist (hook bv-writing-flyspell-text-modes)
     (add-hook hook 'flyspell-mode))
-  
+
   (add-hook 'text-mode-hook #'bv-writing-text-mode-setup)
   (add-hook 'LaTeX-mode-hook #'bv-writing-latex-mode-setup)
-  
+
   ;; Create personal dictionary
   (let ((dict-dir (file-name-directory bv-writing-personal-dictionary)))
     (unless (file-exists-p dict-dir)
       (make-directory dict-dir t)))
-  
+
   (unless (file-exists-p bv-writing-personal-dictionary)
     (with-temp-file bv-writing-personal-dictionary
       (insert "personal_ws-1.1 en 0\n"))))

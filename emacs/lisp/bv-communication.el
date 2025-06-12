@@ -35,9 +35,9 @@ Recommended providers:
   (setq webpaste-paste-confirmation t)
   (setq webpaste-paste-raw-text t)
   (setq webpaste-return-url-type 'url)
-  
+
   (setq webpaste-add-line-numbers nil)
-  
+
   (setq webpaste-providers-alist
         '(("dpaste.com"
            :uri "https://dpaste.com/api/"
@@ -45,10 +45,9 @@ Recommended providers:
            :post-type "application/x-www-form-urlencoded"
            :success-lambda (lambda () (webpaste--return-url
                                        (concat "https://dpaste.com/"
-                                               (cdr (assoc 'slug (json-read)))))
-           )
+                                               (cdr (assoc 'slug (json-read))))))
            :format-url (lambda (url) url))
-          
+
           ("ix.io"
            :uri "http://ix.io"
            :post-field "f:1"
@@ -57,7 +56,7 @@ Recommended providers:
                                        (buffer-substring-no-properties
                                         (point-min) (point-max))))
            :format-url (lambda (url) url))
-          
+
           ("paste.rs"
            :uri "https://paste.rs"
            :post-type "text/plain"
@@ -65,10 +64,10 @@ Recommended providers:
                                        (buffer-substring-no-properties
                                         (point-min) (point-max))))
            :format-url (lambda (url) url))))
-  
-  :bind (("C-c w p" . webpaste-paste-region-or-buffer)
-         ("C-c w r" . webpaste-paste-region)
-         ("C-c w b" . webpaste-paste-buffer)))
+
+  :bind (("C-c C-w p" . webpaste-paste-region-or-buffer)
+         ("C-c C-w r" . webpaste-paste-region)
+         ("C-c C-w b" . webpaste-paste-buffer)))
 
 ;;; Email Integration (optional - uncomment if needed)
 ;; (use-package notmuch
@@ -125,13 +124,16 @@ Recommended providers:
 
 ;;; Global Keybindings
 (with-eval-after-load 'bv-core
-  (bv-leader
-    "w" '(:ignore t :which-key "webpaste/share")
-    "w p" #'webpaste-paste-region-or-buffer
-    "w r" #'webpaste-paste-region
-    "w b" #'webpaste-paste-buffer
-    "w l" #'bv-communication-yank-code-link
-    "w s" #'bv-communication-share-snippet))
+  ;; Create a prefix command for webpaste/share commands
+  (define-prefix-command 'bv-webpaste-map)
+  (define-key bv-app-map "W" 'bv-webpaste-map)
+
+  ;; Now bind the individual commands
+  (define-key bv-webpaste-map "p" #'webpaste-paste-region-or-buffer)
+  (define-key bv-webpaste-map "r" #'webpaste-paste-region)
+  (define-key bv-webpaste-map "b" #'webpaste-paste-buffer)
+  (define-key bv-webpaste-map "l" #'bv-communication-yank-code-link)
+  (define-key bv-webpaste-map "s" #'bv-communication-share-snippet))
 
 ;;;; Feature Definition
 (defun bv-communication-load ()
