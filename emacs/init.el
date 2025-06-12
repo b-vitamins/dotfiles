@@ -181,14 +181,14 @@
       (bv-require bv-lang-systems noerror)
       (bv-require bv-lang-haskell noerror))))
 
-;; Phase 4: Research Infrastructure (High) - DISABLED
-;; (with-eval-after-load 'bv-core
-;;   (run-with-idle-timer 1.0 nil
-;;     (lambda ()
-;;       (bv-require bv-org)
-;;       (bv-require bv-research)
-;;       (bv-require bv-reading)
-;;       (bv-require bv-writing))))
+;; Phase 4: Research Infrastructure (High)
+(with-eval-after-load 'bv-core
+  (run-with-idle-timer 1.0 nil
+    (lambda ()
+      (bv-require bv-org)
+      (bv-require bv-research)
+      (bv-require bv-reading)
+      (bv-require bv-writing))))
 
 ;; Phase 5: Extended Productivity (Medium) - DISABLED
 ;; (with-eval-after-load 'bv-core
