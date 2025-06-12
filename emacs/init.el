@@ -128,7 +128,7 @@
 (require 'cl-lib)
 
 (defvar bv-enabled-features '()
-  "List of enabled BV features.")
+  "List of enabled features.")
 
 (defvar bv-module-load-times '()
   "Alist of (module . load-time) for debugging.")
@@ -155,7 +155,7 @@
                        (lambda (a b) (> (cdr a) (cdr b)))))
     (message "  %-20s %.3fs" (car entry) (cdr entry))))
 
-;;;; Module loading
+;;;; Phased Module Loading
 
 ;; Phase 1: Foundation (Critical)
 (bv-require bv-core)
@@ -181,17 +181,49 @@
       (bv-require bv-lang-systems noerror)
       (bv-require bv-lang-haskell noerror))))
 
-;; Phase 4: Research Infrastructure (High) - DISABLED but functions kept
+;; Phase 4: Research Infrastructure (High) - DISABLED
+;; (with-eval-after-load 'bv-core
+;;   (run-with-idle-timer 1.0 nil
+;;     (lambda ()
+;;       (bv-require bv-org)
+;;       (bv-require bv-research)
+;;       (bv-require bv-reading)
+;;       (bv-require bv-writing))))
+
+;; Phase 5: Extended Productivity (Medium) - DISABLED
+;; (with-eval-after-load 'bv-core
+;;   (run-with-idle-timer 1.5 nil
+;;     (lambda ()
+;;       (bv-require bv-shell)
+;;       (bv-require bv-productivity)
+;;       (bv-require bv-communication)
+;;       (bv-require bv-multimedia))))
+
+;; Interactive loaders for disabled phases
 (defun bv-load-research-features ()
   "Load research-related features."
   (interactive)
-  (message "Research features disabled in stripped init"))
+  (bv-require bv-org)
+  (bv-require bv-research)
+  (bv-require bv-reading)
+  (bv-require bv-writing)
+  (message "Research features loaded"))
 
-;; Phase 5 & 6: Optional features - DISABLED but functions kept
-(defun bv-load-optional-features ()
-  "Load optional features."
+(defun bv-load-productivity-features ()
+  "Load extended productivity features."
   (interactive)
-  (message "Optional features disabled in stripped init"))
+  (bv-require bv-shell)
+  (bv-require bv-productivity)
+  (bv-require bv-communication)
+  (bv-require bv-multimedia)
+  (message "Extended productivity features loaded"))
+
+(defun bv-load-all-features ()
+  "Load all remaining features."
+  (interactive)
+  (bv-load-research-features)
+  (bv-load-productivity-features)
+  (message "All features loaded"))
 
 ;;;; Post-init setup
 ;; Load custom file if it exists
