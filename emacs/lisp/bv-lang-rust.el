@@ -218,7 +218,7 @@
     (when (file-directory-p examples-dir)
       (mapcar (lambda (f)
                 (file-name-sans-extension f))
-              (directory-files examples-dir nil "\\.rs$"))))))
+              (directory-files examples-dir nil "\\.rs$"))))
 
 ;;;; Rust Playground
 (defun bv-rust-playground ()

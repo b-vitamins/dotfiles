@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added `bv-leader` macro and corrected quoting in completion and writing modules.
 - Prevented startup errors when optional packages are missing.
 - Closed unmatched parentheses in `bv-research.el` and removed invalid key binding from `bv-productivity.el`.
+- Resolved syntax errors in `bv-lang-rust.el` and `bv-writing.el`.
+- Fixed project switching configuration type in `bv-navigation.el`.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.

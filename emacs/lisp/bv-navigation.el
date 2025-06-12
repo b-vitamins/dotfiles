@@ -21,12 +21,10 @@
   :type '(repeat string)
   :group 'bv-navigation)
 
-(bv-defcustom bv-project-switch-commands 'project-dired
-  "Default action when switching projects."
-  :type '(choice (const :tag "Dired" project-dired)
-                 (const :tag "Find file" project-find-file)
-                 (const :tag "Magit" magit-project-status)
-                 (const :tag "Eshell" project-eshell))
+(bv-defcustom bv-project-switch-commands '((project-dired "Dired"))
+  "Default actions when switching projects."
+  :type '(repeat (choice (list :tag "Entry" function string)
+                         function))
   :group 'bv-navigation)
 
 ;; Dired settings
