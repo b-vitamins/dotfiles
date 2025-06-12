@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Stripped Emacs configuration with core modules and UI defaults.
 - Core productivity modules for completion, navigation, development,
   and Git integration. Phase 2 now enabled in `init.el`.
+- Language support modules for Python, Rust, Lisp and C/C++.
 ### Changed
-- Updated module comments to reflect Phase 1 is active.
+- Phase 3 modules are now enabled in `init.el`.
+- Updated comments to reflect active module loading.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
