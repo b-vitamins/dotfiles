@@ -71,7 +71,7 @@
   
   :bind (("C-c e e" . emms)
          ("C-c e b" . emms-smart-browse)
-         ("C-c e p" . emms-playlist-mode-go)
+         ("C-c e l" . emms-playlist-mode-go)
          ("C-c e s" . emms-start)
          ("C-c e S" . emms-stop)
          ("C-c e n" . emms-next)
