@@ -214,7 +214,7 @@ BINDINGS is a flat list of key/command pairs."
       (let ((key (pop bindings))
             (cmd (pop bindings)))
         (when (and cmd (not (keywordp cmd)))
-          (push `(define-key bv-app-map (kbd ,key) ,cmd) forms)))
+          (push `(define-key bv-app-map (kbd ,key) ,cmd) forms))))
     `(progn ,@(nreverse forms))))
 
 ;;;; Package Management Helpers

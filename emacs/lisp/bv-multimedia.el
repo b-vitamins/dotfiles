@@ -135,7 +135,7 @@ _l_: playlist    _q_: quit
                          "scrot %s"))))
     (shell-command (format command filename))
     (message "Screenshot saved: %s" filename)
-    (kill-new filename)))
+    (kill-new filename))))
 
 ;;; Global Keybindings
 (with-eval-after-load 'bv-core

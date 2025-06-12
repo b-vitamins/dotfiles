@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Corrected dictionary list syntax and removed conflicting GPT keybindings.
 - Fixed duplicate multimedia playlist keybinding and ensured parentheses
   balance in `bv-multimedia.el`.
+- Balanced unmatched parentheses across core and multimedia modules.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
