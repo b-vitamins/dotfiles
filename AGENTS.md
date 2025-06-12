@@ -23,6 +23,8 @@ standards for commit messages, pull requests, and repository maintenance.
 - Regularly update package dependencies.
 - Remove unused files and code as discovered.
 - Record notable changes in `CHANGELOG.md` under the **Unreleased** section.
+- **Every pull request must update the changelog**. Even minor or documentation
+  changes require an entry summarizing the update.
 
 ## Versioning
 - Follow [Semantic Versioning](https://semver.org) using `MAJOR.MINOR.PATCH`.
