@@ -190,14 +190,14 @@
       (bv-require bv-reading)
       (bv-require bv-writing))))
 
-;; Phase 5: Extended Productivity (Medium) - DISABLED
-;; (with-eval-after-load 'bv-core
-;;   (run-with-idle-timer 1.5 nil
-;;     (lambda ()
-;;       (bv-require bv-shell)
-;;       (bv-require bv-productivity)
-;;       (bv-require bv-communication)
-;;       (bv-require bv-multimedia))))
+;; Phase 5: Extended Productivity (Medium)
+(with-eval-after-load 'bv-core
+  (run-with-idle-timer 1.5 nil
+    (lambda ()
+      (bv-require bv-shell)
+      (bv-require bv-productivity)
+      (bv-require bv-communication)
+      (bv-require bv-multimedia))))
 
 ;; Interactive loaders for disabled phases
 (defun bv-load-research-features ()
