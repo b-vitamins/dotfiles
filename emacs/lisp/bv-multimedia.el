@@ -34,14 +34,14 @@
   :init
   (unless (file-exists-p bv-multimedia-emms-directory)
     (make-directory bv-multimedia-emms-directory t))
-  
+
   :config
   (require 'emms-setup)
   (emms-all)
-  
+
   (setq emms-directory bv-multimedia-emms-directory)
   (setq emms-source-file-default-directory bv-multimedia-music-directory)
-  
+
   ;; Player configuration - use simplest available
   (setq emms-player-list
         (cond
@@ -52,23 +52,23 @@
          ((executable-find "vlc")
           '(emms-player-vlc))
          (t '(emms-player-mpd))))
-  
+
   (setq emms-info-functions
         '(emms-info-native
           emms-info-metaflac
           emms-info-ogginfo))
-  
+
   (setq emms-playlist-buffer-name "*Music*")
   (setq emms-playlist-mode-center-when-go t)
-  
+
   (setq emms-history-file
         (expand-file-name "history" emms-directory))
-  
+
   (setq emms-mode-line-mode-line-function 'emms-mode-line-playlist-current)
   (setq emms-mode-line-format " [%s]")
-  
+
   (setq emms-player-mpd-connect-function 'emms-player-mpd-connect)
-  
+
   :bind (("C-c e e" . emms)
          ("C-c e b" . emms-smart-browse)
          ("C-c e l" . emms-playlist-mode-go)
@@ -123,7 +123,7 @@ _l_: playlist    _q_: quit
   "Take a screenshot. With PREFIX, select region."
   (interactive "P")
   (let* ((timestamp (format-time-string "%Y%m%d-%H%M%S"))
-         (filename (expand-file-name 
+         (filename (expand-file-name
                     (format "screenshot-%s.png" timestamp)
                     "~/Pictures/"))
          (command (pcase system-type
@@ -132,7 +132,7 @@ _l_: playlist    _q_: quit
                                "screencapture %s"))
                     (_ (if prefix
                            "scrot -s %s"
-                         "scrot %s"))))
+                         "scrot %s")))))
     (shell-command (format command filename))
     (message "Screenshot saved: %s" filename)
     (kill-new filename)))
@@ -142,7 +142,7 @@ _l_: playlist    _q_: quit
   ;; Create multimedia prefix map
   (define-prefix-command 'bv-multimedia-map)
   (define-key bv-app-map "M" 'bv-multimedia-map)
-  
+
   ;; Bind multimedia commands
   (define-key bv-multimedia-map "m" #'bv-multimedia-hydra/body)
   (define-key bv-multimedia-map "o" #'bv-multimedia-open-externally)
@@ -153,11 +153,11 @@ _l_: playlist    _q_: quit
 (defun bv-multimedia-load ()
   "Load multimedia configuration."
   (add-to-list 'bv-enabled-features 'multimedia)
-  
+
   ;; Only start EMMS if music directory exists
   (when (file-directory-p bv-multimedia-music-directory)
     (require 'emms-setup nil t))
-  
+
   (message "Multimedia tools loaded"))
 
 (provide 'bv-multimedia)
