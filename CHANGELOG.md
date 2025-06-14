@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Checked for `git-gutter` before enabling hooks to avoid missing function errors.
 - Added Guix profile directories to `load-path` to resolve missing packages like
   `highlight-indent-guides`.
+- Guarded additional `prog-mode` hooks to defer loading optional packages.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
