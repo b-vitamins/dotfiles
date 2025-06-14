@@ -2,12 +2,29 @@
 
 ;;; Commentary:
 ;; Core infrastructure for Emacs configuration
-;; Feature system, configuration values, type validation
+;; Provides feature system, configuration values, and utilities
 
 ;;; Code:
 
 (require 'cl-lib)
 (require 'subr-x)
+
+;; Variables defined in init.el during bootstrap
+(defvar bv-emacs-dir)
+(defvar bv-lisp-dir)
+(defvar bv-var-dir)
+(defvar bv-etc-dir)
+
+;; Guix-specific paths (defined in init.el)
+(defvar bv-guix-system-profile)
+(defvar bv-guix-home-profile)
+(defvar bv-guix-user-profile)
+(defvar bv-system-lib-dir)
+(defvar bv-home-lib-dir)
+(defvar bv-system-bin-dir)
+(defvar bv-home-bin-dir)
+(defvar bv-system-share-dir)
+(defvar bv-home-share-dir)
 
 ;;;; Feature System
 
@@ -36,11 +53,10 @@
 (defmacro bv-when-feature (feature &rest body)
   "Execute BODY when FEATURE becomes available."
   (declare (indent 1))
-  (let ((feature-sym (if (symbolp feature) feature (eval feature))))
-    `(if (bv-feature-enabled-p ',feature-sym)
-         (progn ,@body)
-       (with-eval-after-load ',feature-sym
-         ,@body))))
+  `(if (bv-feature-enabled-p ',feature)
+       (progn ,@body)
+     (with-eval-after-load ',feature
+       ,@body)))
 
 ;;;; Configuration Value System
 
@@ -56,104 +72,39 @@
   (gethash key bv-config-values default))
 
 (defun bv-require-value (key &optional error-message)
-  "Get configuration value for KEY, error if not present."
+  "Get configuration value for KEY, error if not present.
+If ERROR-MESSAGE is provided, use it instead of the default error message."
   (let ((value (gethash key bv-config-values 'bv--not-found)))
     (if (eq value 'bv--not-found)
         (error (or error-message
                    (format "Required configuration value '%s' not provided" key)))
       value)))
 
-(defun bv-value-exists-p (key)
-  "Return non-nil if configuration KEY exists."
-  (not (eq (gethash key bv-config-values 'bv--not-found) 'bv--not-found)))
-
 (defmacro bv-with-value (key var &rest body)
-  "Bind VAR to the value of KEY and execute BODY."
+  "Bind VAR to the value of KEY and execute BODY if KEY exists."
   (declare (indent 2))
-  `(when-let ((,var (gethash ,key bv-config-values 'bv--not-found)))
-     (unless (eq ,var 'bv--not-found)
-       ,@body)))
+  (let ((val (gensym "val")))
+    `(let ((,val (gethash ',key bv-config-values 'bv--not-found)))
+       (unless (eq ,val 'bv--not-found)
+         (let ((,var ,val))
+           ,@body)))))
 
-;;;; Type Predicates and Validation
+;;;; Configuration Helpers
 
-;; Basic predicates
-(defun bv-path-p (x)
-  "Return non-nil if X is a valid path string."
-  (and (stringp x)
-       (not (string-empty-p x))))
+(defmacro bv-defcustom (name default docstring &rest args)
+  "Define a customizable variable NAME and register it in `bv-config-values'.
+NAME is the variable name, DEFAULT is its default value, and DOCSTRING
+is its documentation.  Additional ARGS are passed to `defcustom'."
+  (declare (doc-string 3) (indent 2))
+  (let* ((name-str (symbol-name name))
+         (value-key (if (string-prefix-p "bv-" name-str)
+                        (substring name-str 3)
+                      name-str)))
+    `(progn
+       (defcustom ,name ,default ,docstring ,@args)
+       (bv-set-value ',(intern value-key) ,name))))
 
-(defun bv-url-p (x)
-  "Return non-nil if X looks like a URL."
-  (and (stringp x)
-       (string-match-p "\\`\\(https?\\|ftp\\|file\\)://" x)))
-
-(defun bv-package-p (x)
-  "Return non-nil if X is a package symbol or '(package . min-version)."
-  (or (symbolp x)
-      (and (consp x)
-           (symbolp (car x))
-           (or (null (cdr x))
-               (stringp (cdr x))))))
-
-;; Maybe predicates (nil or type)
-(defun bv-maybe (predicate)
-  "Return a predicate that accepts nil or values satisfying PREDICATE."
-  (lambda (x)
-    (or (null x)
-        (funcall predicate x))))
-
-(defalias 'bv-maybe-string-p (bv-maybe #'stringp))
-(defalias 'bv-maybe-integer-p (bv-maybe #'integerp))
-(defalias 'bv-maybe-path-p (bv-maybe #'bv-path-p))
-(defalias 'bv-maybe-function-p (bv-maybe #'functionp))
-
-;; List predicates
-(defun bv-list-of (predicate)
-  "Return a predicate that checks if a value is a list of PREDICATE."
-  (lambda (x)
-    (and (listp x)
-         (cl-every predicate x))))
-
-(defalias 'bv-list-of-strings-p (bv-list-of #'stringp))
-(defalias 'bv-list-of-symbols-p (bv-list-of #'symbolp))
-(defalias 'bv-list-of-packages-p (bv-list-of #'bv-package-p))
-
-;; Validation helpers
-(defmacro bv-ensure (predicate value &optional error-message)
-  "Ensure VALUE satisfies PREDICATE, signal error otherwise."
-  `(unless (funcall ,predicate ,value)
-     (error (or ,error-message
-                (format "Value '%S' does not satisfy predicate '%s'"
-                        ,value
-                        ,(if (symbolp predicate)
-                             (symbol-name predicate)
-                           "custom predicate"))))))
-
-(defun bv-validate-type (value type)
-  "Validate that VALUE matches TYPE specification."
-  (cond
-   ((functionp type) (funcall type value))
-   ((eq type 'string) (stringp value))
-   ((eq type 'integer) (integerp value))
-   ((eq type 'boolean) (booleanp value))
-   ((eq type 'function) (functionp value))
-   ((eq type 'list) (listp value))
-   ((eq type 'alist) (and (listp value) (cl-every #'consp value)))
-   ((eq type 'plist) (and (listp value) (zerop (mod (length value) 2))))
-   (t (error "Unknown type specification: %s" type))))
-
-;;;; Conditional Loading Helpers
-
-(defmacro bv-when-packages (&rest packages-and-body)
-  "Execute body when all PACKAGES are available."
-  (let ((packages (if (listp (car packages-and-body))
-                      (car packages-and-body)
-                    (list (car packages-and-body))))
-        (body (if (listp (car packages-and-body))
-                  (cdr packages-and-body)
-                (cdr packages-and-body))))
-    `(when (cl-every #'featurep ',packages)
-       ,@body)))
+;;;; Utility Macros
 
 (defmacro bv-after-init (&rest body)
   "Execute BODY after Emacs initialization."
@@ -166,98 +117,145 @@
   (declare (indent 1))
   `(run-with-idle-timer ,delay nil (lambda () ,@body)))
 
-;;;; Configuration Helpers
-
-(defun bv-expand-config (config)
-  "Expand CONFIG value, evaluating functions with bv-config-values."
-  (if (functionp config)
-      (funcall config bv-config-values)
-    config))
-
-(defmacro bv-defcustom (name default docstring &rest args)
-  "Define a customizable variable and register it in bv-config-values."
-  (declare (doc-string 3) (indent 2))
-  (let* ((name-str (symbol-name name))
-         (value-key (if (string-prefix-p "bv-" name-str)
-                        (substring name-str 3)
-                      name-str)))
-    `(progn
-       (defcustom ,name ,default ,docstring ,@args)
-       (bv-set-value ',(intern value-key) ,name))))
-
-;;;; Utility Functions
-
-(defun bv-keyword-plist-p (plist)
-  "Return non-nil if PLIST is a valid keyword property list."
-  (and (listp plist)
-       (zerop (mod (length plist) 2))
-       (cl-loop for (key _) on plist by #'cddr
-                always (keywordp key))))
-
-(defun bv-alist-p (list)
-  "Return non-nil if LIST is an association list."
-  (and (listp list)
-       (cl-every (lambda (x) (and (consp x) (atom (car x)))) list)))
-
-(defun bv-ensure-list (x)
-  "Ensure X is a list."
-  (if (listp x) x (list x)))
+(defmacro bv-when-packages (&rest packages-and-body)
+  "Execute body when all PACKAGES are available.
+PACKAGES-AND-BODY can either be a list of packages followed by body forms,
+or a single package followed by body forms."
+  (let ((packages (if (listp (car packages-and-body))
+                      (car packages-and-body)
+                    (list (car packages-and-body))))
+        (body (if (listp (car packages-and-body))
+                  (cdr packages-and-body)
+                (cdr packages-and-body))))
+    `(when (cl-every #'featurep ',packages)
+       ,@body)))
 
 ;;;; Keybinding Helpers
 
 (defmacro bv-leader (&rest bindings)
   "Bind key sequences in `bv-app-map`.
 BINDINGS is a flat list of key/command pairs."
-  (declare (indent 1))
+  (declare (indent 0))
   (let (forms)
     (while bindings
       (let ((key (pop bindings))
             (cmd (pop bindings)))
-        (when (and cmd (not (keywordp cmd)))
+        (when (and key cmd)
           (push `(define-key bv-app-map (kbd ,key) ,cmd) forms))))
     `(progn ,@(nreverse forms))))
 
-;;;; Package Management Helpers
+;;;; Path and Directory Utilities
 
-(defun bv-package-installed-p (package)
-  "Return non-nil if PACKAGE is installed."
-  (if (consp package)
-      (package-installed-p (car package) (cdr package))
-    (package-installed-p package)))
+(defun bv-ensure-directory (dir)
+  "Ensure directory DIR exists, creating it if necessary."
+  (unless (file-directory-p dir)
+    (make-directory dir t)))
 
-(defun bv-ensure-packages (&rest packages)
-  "Ensure all PACKAGES are installed."
-  (dolist (package packages)
-    (unless (bv-package-installed-p package)
-      (package-refresh-contents)
-      (if (consp package)
-          (package-install (car package) (cdr package))
-        (package-install package)))))
+(defun bv-expand-etc-file (file)
+  "Expand FILE relative to etc directory."
+  (let ((etc-dir (bv-get-value 'etc-dir)))
+    (if etc-dir
+        (expand-file-name file etc-dir)
+      (expand-file-name file "~/.config/emacs/etc"))))
+
+(defun bv-expand-var-file (file)
+  "Expand FILE relative to var directory."
+  (let ((var-dir (bv-get-value 'var-dir)))
+    (if var-dir
+        (expand-file-name file var-dir)
+      (expand-file-name file "~/.cache/emacs/var"))))
+
+;; Guix path helpers
+(defun bv-expand-system-lib (file)
+  "Expand FILE relative to system lib directory."
+  (when (bv-get-value 'system-lib-dir)
+    (expand-file-name file (bv-get-value 'system-lib-dir))))
+
+(defun bv-expand-home-lib (file)
+  "Expand FILE relative to home lib directory."
+  (when (bv-get-value 'home-lib-dir)
+    (expand-file-name file (bv-get-value 'home-lib-dir))))
+
+(defun bv-expand-system-bin (file)
+  "Expand FILE relative to system bin directory."
+  (when (bv-get-value 'system-bin-dir)
+    (expand-file-name file (bv-get-value 'system-bin-dir))))
+
+(defun bv-expand-home-bin (file)
+  "Expand FILE relative to home bin directory."
+  (when (bv-get-value 'home-bin-dir)
+    (expand-file-name file (bv-get-value 'home-bin-dir))))
+
+(defun bv-expand-system-share (file)
+  "Expand FILE relative to system share directory."
+  (when (bv-get-value 'system-share-dir)
+    (expand-file-name file (bv-get-value 'system-share-dir))))
+
+(defun bv-expand-home-share (file)
+  "Expand FILE relative to home share directory."
+  (when (bv-get-value 'home-share-dir)
+    (expand-file-name file (bv-get-value 'home-share-dir))))
 
 ;;;; Development Helpers
 
 (defun bv-report-config ()
   "Report current configuration values and enabled features."
   (interactive)
-  (with-current-buffer (get-buffer-create "*Configuration Report*")
+  (with-current-buffer (get-buffer-create "*BV Configuration*")
     (erase-buffer)
-    (insert "Configuration Report\n")
-    (insert "===================\n\n")
+    (insert "BV Configuration Report\n")
+    (insert "======================\n\n")
 
     (insert "Enabled Features:\n")
-    (dolist (feature bv-enabled-features)
+    (dolist (feature (sort bv-enabled-features #'string<))
       (insert (format "  - %s\n" feature)))
 
     (insert "\nConfiguration Values:\n")
-    (maphash (lambda (key value)
-               (insert (format "  %s: %S\n" key
-                               (if (stringp value)
-                                   value
-                                 (prin1-to-string value)))))
-             bv-config-values)
+    (let ((keys '()))
+      (maphash (lambda (k _) (push k keys)) bv-config-values)
+      (dolist (key (sort keys #'string<))
+        (let ((value (gethash key bv-config-values)))
+          (insert (format "  %-20s: %S\n" key
+                          (if (stringp value)
+                              value
+                            (prin1-to-string value)))))))
 
-    (display-buffer (current-buffer)))
-  )
+    (goto-char (point-min))
+    (display-buffer (current-buffer))))
+
+;;;; Feature Registration
+
+(bv-register-feature 'bv-core)
+
+;; Export core directories (only if bound - for byte-compilation safety)
+(when (boundp 'bv-emacs-dir)
+  (bv-set-value 'emacs-dir bv-emacs-dir))
+(when (boundp 'bv-lisp-dir)
+  (bv-set-value 'lisp-dir bv-lisp-dir))
+(when (boundp 'bv-var-dir)
+  (bv-set-value 'var-dir bv-var-dir))
+(when (boundp 'bv-etc-dir)
+  (bv-set-value 'etc-dir bv-etc-dir))
+
+;; Export Guix paths (defined in init.el)
+(when (boundp 'bv-guix-system-profile)
+  (bv-set-value 'guix-system-profile bv-guix-system-profile))
+(when (boundp 'bv-guix-home-profile)
+  (bv-set-value 'guix-home-profile bv-guix-home-profile))
+(when (boundp 'bv-guix-user-profile)
+  (bv-set-value 'guix-user-profile bv-guix-user-profile))
+(when (boundp 'bv-system-lib-dir)
+  (bv-set-value 'system-lib-dir bv-system-lib-dir))
+(when (boundp 'bv-home-lib-dir)
+  (bv-set-value 'home-lib-dir bv-home-lib-dir))
+(when (boundp 'bv-system-bin-dir)
+  (bv-set-value 'system-bin-dir bv-system-bin-dir))
+(when (boundp 'bv-home-bin-dir)
+  (bv-set-value 'home-bin-dir bv-home-bin-dir))
+(when (boundp 'bv-system-share-dir)
+  (bv-set-value 'system-share-dir bv-system-share-dir))
+(when (boundp 'bv-home-share-dir)
+  (bv-set-value 'home-share-dir bv-home-share-dir))
 
 (provide 'bv-core)
 ;;; bv-core.el ends here

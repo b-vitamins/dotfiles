@@ -9,6 +9,51 @@
 
 (require 'bv-core)
 
+;;;; External Variable Declarations
+(defvar crm-separator)
+(defvar corfu--extra)
+(defvar savehist-additional-variables)
+(defvar xref-show-xrefs-function)
+(defvar xref-show-definitions-function)
+(defvar marginalia-annotators)
+(defvar vertico-grid-separator)
+(defvar vertico-grid-lookahead)
+
+;;;; Function Declarations
+;; Marginalia
+(declare-function marginalia-mode "marginalia" (&optional arg))
+(declare-function marginalia-cycle "marginalia" ())
+;; Nerd Icons
+(declare-function nerd-icons-completion-mode "nerd-icons-completion" (&optional arg))
+;; Consult
+(declare-function consult-grep "consult" (&optional dir initial))
+(declare-function consult-register-format "consult" (reg))
+(declare-function consult-xref "consult-xref" (fetcher &optional alist))
+(declare-function consult-narrow-help "consult" ())
+(declare-function consult-completion-in-region "consult" (start end collection &optional predicate))
+(declare-function corfu-enable-in-minibuffer "bv-completion" ())
+(declare-function corfu-move-to-minibuffer "bv-completion" ())
+;; Embark
+(declare-function embark--truncate-target "embark" (target))
+;; Which-key
+(declare-function which-key--hide-popup-ignore-command "which-key" ())
+(declare-function which-key--show-keymap "which-key" (keymap-name keymap &optional prior-args all no-paging filter))
+;; Vertico
+(declare-function crm-indicator "bv-completion" (args))
+(declare-function vertico-mode "vertico" (&optional arg))
+(declare-function vertico-multiform-mode "vertico-multiform" (&optional arg))
+;; Corfu
+(declare-function global-corfu-mode "corfu" (&optional arg))
+(declare-function corfu-terminal-mode "corfu-terminal" (&optional arg))
+(declare-function corfu-mode "corfu" (&optional arg))
+(declare-function corfu-history-mode "corfu-history" (&optional arg))
+(declare-function consult--project-root "consult" (&optional may-prompt))
+;; Cape
+(declare-function cape-wrap-silent "cape" (capf))
+(declare-function cape-wrap-purify "cape" (capf))
+;; Kind Icon
+(declare-function kind-icon-margin-formatter "kind-icon" (metadata))
+
 ;;;; Custom Variables
 
 (defgroup bv-completion nil
@@ -77,12 +122,7 @@
 
   ;; Better default UI
   (setq completions-format 'one-column)
-  (setq completions-header-format nil)
-
-  ;; Keybindings
-  (define-key minibuffer-mode-map (kbd "C-n") 'minibuffer-next-completion)
-  (define-key minibuffer-mode-map (kbd "C-p") 'minibuffer-previous-completion)
-  (define-key minibuffer-mode-map (kbd "M-RET") 'minibuffer-force-complete-and-exit))
+  (setq completions-header-format nil))
 
 ;;;; Orderless - Fuzzy Matching
 
@@ -91,7 +131,8 @@
   :config
   ;; Matching styles
   (setq orderless-matching-styles
-        '(orderless-prefixes
+        '(orderless-literal
+          orderless-prefixes
           orderless-regexp
           orderless-initialism
           orderless-flex))
@@ -135,7 +176,7 @@
           bv-orderless-without-literal-dispatcher))
 
   ;; Set as default
-  (setq completion-styles '(orderless basic))
+  (setq completion-styles '(orderless partial-completion basic))
   (setq completion-category-defaults nil)
   (setq completion-category-overrides
         '((file (styles . (orderless partial-completion)))
@@ -147,15 +188,38 @@
 (use-package marginalia
   :demand t
   :config
-  (setq marginalia-align bv-completion-annotations)
+  ;; Annotation levels - can cycle through heavy, light, or none
+  (setq marginalia-annotators '(marginalia-annotators-heavy
+                                marginalia-annotators-light
+                                nil))
+
+  ;; Alignment configuration
+  (setq marginalia-align bv-completion-annotations)  ; Configurable via custom var
   (setq marginalia-max-relative-age 0)
   (setq marginalia-align-offset 1)
 
-  ;; Custom annotators
-  (add-to-list 'marginalia-prompt-categories '("\\<buffer\\>" . buffer))
-  (add-to-list 'marginalia-prompt-categories '("\\<file\\>" . file))
+  ;; Custom annotators for better prompt detection
+  (add-to-list 'marginalia-prompt-categories '\("\\<buffer\\>" . buffer))
+  (add-to-list 'marginalia-prompt-categories '\("\\<file\\>" . file))
 
-  (marginalia-mode 1))
+  ;; Enable marginalia
+  (marginalia-mode 1)
+
+  ;; Optional: Add cycling command for annotation levels
+  (defun bv-marginalia-cycle ()
+    "Cycle between annotation levels."
+    (interactive)
+    (marginalia-cycle))
+
+  :bind (("M-A" . bv-marginalia-cycle)))
+
+;;;; Nerd Icons Completion
+
+(use-package nerd-icons-completion
+  :after marginalia
+  :demand t
+  :config
+  (nerd-icons-completion-mode))
 
 ;;;; Consult - Advanced Commands
 
@@ -167,13 +231,17 @@
          ("C-c m" . consult-man)
          ("C-c i" . consult-info)
          ([remap Info-search] . consult-info)
+         ;; Remapped bindings
+         ([remap switch-to-buffer] . consult-buffer)
+         ([remap goto-line] . consult-goto-line)
+         ([remap imenu] . consult-imenu)
+         ([remap project-switch-to-buffer] . consult-project-buffer)
+         ([remap recentf-open-files] . consult-recent-file)
          ;; C-x bindings
          ("C-x M-:" . consult-complex-command)
-         ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
          ("C-x r b" . consult-bookmark)
-         ("C-x p b" . consult-project-buffer)
          ("C-x C-r" . consult-recent-file)
          ;; Register access
          ("M-#" . consult-register-load)
@@ -183,24 +251,24 @@
          ("M-y" . consult-yank-pop)
          ;; M-g bindings
          ("M-g e" . consult-compile-error)
-         ("M-g f" . consult-flymake)
-         ("M-g g" . consult-goto-line)
-         ("M-g M-g" . consult-goto-line)
-         ("M-g o" . consult-outline)
-         ("M-g m" . consult-mark)
          ("M-g k" . consult-global-mark)
-         ("M-g i" . consult-imenu)
          ("M-g I" . consult-imenu-multi)
          ;; M-s bindings
          ("M-s d" . consult-find)
          ("M-s D" . consult-locate)
-         ("M-s g" . consult-grep)
+         ("M-s g" . (lambda () (interactive)
+                      (if (executable-find "rg")
+                          (consult-ripgrep)
+                        (consult-grep))))
          ("M-s G" . consult-git-grep)
          ("M-s r" . consult-ripgrep)
-         ("M-s l" . consult-line)
+         ("C-s" . consult-line)
          ("M-s L" . consult-line-multi)
          ("M-s k" . consult-keep-lines)
          ("M-s u" . consult-focus-lines)
+         ("M-s m" . consult-mark)
+         ("M-s o" . consult-outline)
+         ("M-s f" . consult-flymake)
          ;; Isearch integration
          ("M-s e" . consult-isearch-history)
          :map isearch-mode-map
@@ -209,8 +277,7 @@
          ("M-s l" . consult-line)
          ("M-s L" . consult-line-multi)
          :map minibuffer-local-map
-         ("M-s" . consult-history)
-         ("M-r" . consult-history))
+         ("C-r" . consult-history))
 
   :init
   (setq register-preview-delay 0.5
@@ -227,6 +294,27 @@
   (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
   (setq completion-in-region-function #'consult-completion-in-region)
+
+  ;; Fix for project.el compatibility - handle new project format
+  ;; This overrides consult's internal function to properly extract project roots
+  (defun consult--project-root (&optional may-prompt)
+    "Return project root as string, properly handling new project.el format."
+    (when-let ((proj (project-current may-prompt)))
+      (cond
+       ;; If project-root function exists (newer project.el), use it
+       ((fboundp 'project-root)
+        (project-root proj))
+       ;; Handle new format: (transient . "/path/to/project/")
+       ((and (consp proj) (stringp (cdr proj)))
+        (cdr proj))
+       ;; Handle old format: just a string
+       ((stringp proj)
+        proj)
+       ;; Fallback
+       (t nil))))
+
+  ;; Also set the public project function for other consult commands
+  (setq consult-project-function #'consult--project-root)
 
   ;; Buffer sources
   (setq consult-buffer-sources
@@ -259,7 +347,7 @@
   :config
   ;; Hide mode line in Embark buffers
   (add-to-list 'display-buffer-alist
-               '("\\`\\*Embark Collect \\(?:Live\\|Completions\\)\\*\\'"
+               '("\`\\*Embark Collect \\(?:Live\\|Completions\\)\\*\\'"
                  nil
                  (window-parameters (mode-line-format . none))))
 
@@ -292,23 +380,27 @@
 (use-package vertico
   :demand t
   :bind (:map vertico-map
+         ;; Navigation
+         ("C-j" . vertico-next)
+         ("C-k" . vertico-previous)
+         ("M-<" . vertico-first)
+         ("M->" . vertico-last)
+         ;; Actions
          ("RET" . vertico-directory-enter)
-         ("DEL" . vertico-directory-delete-char)
-         ("M-DEL" . vertico-directory-delete-word)
-         ("C-w" . vertico-directory-delete-word)
-         ("C-l" . vertico-directory-up)
+         ("TAB" . vertico-insert)
+         ;; Quick selection
          ("M-q" . vertico-quick-insert)
          ("C-M-n" . vertico-next-group)
-         ("C-M-p" . vertico-previous-group)
-         ("TAB" . vertico-insert)
-         ("C-g" . vertico-exit))
+         ("C-M-p" . vertico-previous-group))
 
   :init
   (setq vertico-cycle bv-completion-cycle)
   (setq vertico-resize nil)
   (setq vertico-count 12)
-  (setq vertico-grid-separator "       ")
-  (setq vertico-grid-lookahead 50)
+  (when (boundp 'vertico-grid-separator)
+    (setq vertico-grid-separator "       "))
+  (when (boundp 'vertico-grid-lookahead)
+    (setq vertico-grid-lookahead 50))
 
   :config
   (vertico-mode 1)
@@ -322,7 +414,7 @@
   (defun crm-indicator (args)
     (cons (format "[CRM%s] %s"
                   (replace-regexp-in-string
-                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" "" 
+                   "\\`\\[.*?]\*\\|\\[.*?]\*\\'" ""
                    crm-separator)
                   (car args))
           (cdr args)))
@@ -397,7 +489,8 @@
   :config
   ;; Terminal support
   (unless (display-graphic-p)
-    (corfu-terminal-mode +1))
+    (when (fboundp 'corfu-terminal-mode)
+      (corfu-terminal-mode +1)))
 
   ;; Minibuffer support
   (defun corfu-enable-in-minibuffer ()
@@ -411,9 +504,10 @@
   ;; Move to minibuffer
   (defun corfu-move-to-minibuffer ()
     (interactive)
-    (let ((completion-extra-properties corfu--extra)
-          completion-cycle-threshold completion-cycling)
-      (apply #'consult-completion-in-region completion-in-region--data)))
+    (when (boundp 'corfu--extra)
+      (let ((completion-extra-properties corfu--extra)
+            completion-cycle-threshold completion-cycling)
+        (apply #'consult-completion-in-region completion-in-region--data))))
   (define-key corfu-map "\M-m" #'corfu-move-to-minibuffer))
 
 ;; Corfu extensions
@@ -432,7 +526,8 @@
   :after corfu
   :config
   (with-eval-after-load 'savehist
-    (add-to-list 'savehist-additional-variables 'corfu-history))
+    (when (boundp 'savehist-additional-variables)
+      (add-to-list 'savehist-additional-variables 'corfu-history)))
   (corfu-history-mode))
 
 (use-package corfu-quick
@@ -469,15 +564,16 @@
 
 ;;;; Kind Icon - Icons in Completion
 
-(when (bv-value-exists-p 'bv-ui-enable-icons)
-  (use-package kind-icon
-    :after corfu
-    :custom
-    (kind-icon-default-face 'corfu-default)
-    (kind-icon-blend-background nil)
-    (kind-icon-blend-frac 0.08)
-    :config
-    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)))
+(use-package kind-icon
+  :after corfu
+  :demand t
+  :custom
+  (kind-icon-default-face 'corfu-default)
+  (kind-icon-blend-background nil)
+  (kind-icon-blend-frac 0.08)
+  (kind-icon-use-icons t)
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
 ;;;; Additional Optimizations
 
@@ -488,7 +584,7 @@
   (setq file-name-shadow-properties '(invisible t intangible t))
   (file-name-shadow-mode +1)
 
-  (setq insert-default-directory nil)
+  (setq insert-default-directory t)
   (setq completion-auto-help 'lazy)
   (setq completions-detailed t))
 
