@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   performance optimizations.
 - Replaced `init.el` with streamlined Guix-centric bootstrap.
 - Replaced `bv-core.el` with expanded configuration and path helpers.
+- Redesigned UI module with automatic theme switching and header line support.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
