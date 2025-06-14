@@ -51,3 +51,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
 - Eliminated Haskell configuration and packages.
+- Removed flymake-indicator package configuration.

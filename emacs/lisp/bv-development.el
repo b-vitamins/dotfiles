@@ -288,10 +288,6 @@
   ;; Don't popup automatically
   (remove-hook 'flymake-diagnostic-functions #'flymake-proc-legacy-flymake))
 
-;; Flymake indicators
-(use-package flymake-indicator
-  :after flymake
-  :hook (flymake-mode . flymake-indicator-mode))
 
 ;;;; Xref - Cross References
 
