@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Removed URL rewrite aliases from `git/gitconfig`.
 - Pruned deprecated and platform-specific options from `git/gitconfig`.
 - Removed Guix environment checks from `emacs/init.el`; rely on `EMACSLOADPATH`.
+- Replaced `emacs/early-init.el` with theme-aware flash prevention and
+  performance optimizations.
+- Replaced `init.el` with streamlined Guix-centric bootstrap.
+- Replaced `bv-core.el` with expanded configuration and path helpers.
+- Redesigned UI module with automatic theme switching and header line support.
 - Replaced `bv-completion.el` with modernized configuration.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
@@ -49,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added Guix profile directories to `load-path` to resolve missing packages like
   `highlight-indent-guides`.
 - Guarded additional `prog-mode` hooks to defer loading optional packages.
+- Replaced `bv-defaults.el` with streamlined configuration and modern defaults.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
