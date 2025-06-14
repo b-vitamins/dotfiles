@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Removed URL rewrite aliases from `git/gitconfig`.
 - Pruned deprecated and platform-specific options from `git/gitconfig`.
 - Removed Guix environment checks from `emacs/init.el`; rely on `EMACSLOADPATH`.
+- Replaced `bv-core.el` with expanded configuration and path helpers.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
