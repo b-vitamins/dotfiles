@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Replaced `emacs/early-init.el` with theme-aware flash prevention and
   performance optimizations.
 - Replaced `init.el` with streamlined Guix-centric bootstrap.
+- Replaced `bv-core.el` with expanded configuration and path helpers.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
