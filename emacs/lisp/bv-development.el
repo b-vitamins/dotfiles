@@ -92,7 +92,15 @@
 ;;;; Smartparens - Structural Editing
 
 (use-package smartparens
-  :hook ((prog-mode text-mode) . smartparens-mode)
+  :defer t
+  :init
+  (when (locate-library "smartparens")
+    (autoload 'smartparens-mode "smartparens" nil t)
+    (autoload 'smartparens-strict-mode "smartparens" nil t)
+    (dolist (hook '(prog-mode-hook text-mode-hook))
+      (add-hook hook #'smartparens-mode)
+      (when bv-dev-smartparens-strict
+        (add-hook hook #'smartparens-strict-mode))))
   :bind (:map smartparens-mode-map
          ;; Navigation
          ("C-M-f" . sp-forward-sexp)
@@ -122,12 +130,6 @@
          ("C-(" . sp-wrap-round)
          ("C-[" . sp-wrap-square)
          ("C-{" . sp-wrap-curly))
-  :init
-  ;; Strict mode setup
-  (when bv-dev-smartparens-strict
-    (dolist (hook '(prog-mode-hook text-mode-hook))
-      (add-hook hook #'smartparens-strict-mode)))
-
   :config
   ;; Load default configuration
   (require 'smartparens-config)
@@ -369,7 +371,11 @@
 
 ;; Highlight TODO keywords
 (use-package hl-todo
-  :hook (prog-mode . hl-todo-mode)
+  :defer t
+  :init
+  (when (locate-library "hl-todo")
+    (autoload 'hl-todo-mode "hl-todo" nil t)
+    (add-hook 'prog-mode-hook #'hl-todo-mode))
   :config
   (setq hl-todo-keyword-faces
         '(("TODO" . "#FF0000")
@@ -381,11 +387,20 @@
 
 ;; Rainbow delimiters
 (use-package rainbow-delimiters
-  :hook ((prog-mode conf-mode) . rainbow-delimiters-mode))
+  :defer t
+  :init
+  (when (locate-library "rainbow-delimiters")
+    (autoload 'rainbow-delimiters-mode "rainbow-delimiters" nil t)
+    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+    (add-hook 'conf-mode-hook #'rainbow-delimiters-mode)))
 
 ;; Indentation guides
 (use-package highlight-indent-guides
-  :hook (prog-mode . highlight-indent-guides-mode)
+  :defer t
+  :init
+  (when (locate-library "highlight-indent-guides")
+    (autoload 'highlight-indent-guides-mode "highlight-indent-guides" nil t)
+    (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
   :config
   (setq highlight-indent-guides-method 'character
         highlight-indent-guides-character ?\│
