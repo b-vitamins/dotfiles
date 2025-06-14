@@ -199,8 +199,8 @@
   (setq marginalia-align-offset 1)
 
   ;; Custom annotators for better prompt detection
-  (add-to-list 'marginalia-prompt-categories '\("\\<buffer\\>" . buffer))
-  (add-to-list 'marginalia-prompt-categories '\("\\<file\\>" . file))
+  (add-to-list 'marginalia-prompt-categories '("\\<buffer\\>" . buffer))
+  (add-to-list 'marginalia-prompt-categories '("\\<file\\>" . file))
 
   ;; Enable marginalia
   (marginalia-mode 1)
@@ -347,7 +347,7 @@
   :config
   ;; Hide mode line in Embark buffers
   (add-to-list 'display-buffer-alist
-               '("\`\\*Embark Collect \\(?:Live\\|Completions\\)\\*\\'"
+               '("\\`\\*Embark Collect \\(?:Live\\|Completions\\)\\*\\'"
                  nil
                  (window-parameters (mode-line-format . none))))
 
@@ -414,7 +414,7 @@
   (defun crm-indicator (args)
     (cons (format "[CRM%s] %s"
                   (replace-regexp-in-string
-                   "\\`\\[.*?]\*\\|\\[.*?]\*\\'" ""
+                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
                    crm-separator)
                   (car args))
           (cdr args)))

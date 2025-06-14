@@ -210,8 +210,8 @@ If URL is provided, use it as the recipe for installation."
 conses, where NAME is the function name that will be created and
 STRING is a single-character string that marks the opening character.
 
-  (def-pairs ((paren . "(")
-              (bracket . "["))
+  (def-pairs ((paren . \"(\")
+              (bracket . \"[\"))
 
 defines the functions WRAP-WITH-PAREN and WRAP-WITH-BRACKET,
 respectively."

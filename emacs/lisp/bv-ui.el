@@ -83,8 +83,8 @@
                                          (18 . dark-soft)
                                          (23 . dark))
   "Hours and theme types for automatic switching.
-Each element is (HOUR . TYPE) where TYPE is \='light, \='light-soft,
-\='dark, or \='dark-soft."
+Each element is (HOUR . TYPE) where TYPE is \\='light, \\='light-soft,
+\\='dark, or \\='dark-soft."
   :type '(alist :key-type integer
                 :value-type (choice (const light)
                                    (const light-soft)
@@ -264,7 +264,7 @@ Each element is (HOUR . TYPE) where TYPE is \='light, \='light-soft,
 ;;;; Theme System
 
 (defun bv-ui--get-theme-name (type)
-  "Get modus theme name for TYPE (\='light, \='light-soft, \='dark, \='dark-soft)."
+  "Get modus theme name for TYPE (\\='light, \\='light-soft, \\='dark, \\='dark-soft)."
   (pcase type
     ('light (if bv-ui-theme-deuteranopia
                 'modus-operandi-deuteranopia
@@ -325,7 +325,7 @@ Each element is (HOUR . TYPE) where TYPE is \='light, \='light-soft,
            (next-switch-min (or (cl-find-if (lambda (m) (> m current-total-min))
                                            (sort switch-times #'<))
                                ;; If no switch today, use first switch tomorrow
-                               (+ (* 24 60) (car (sort switch-times #'<))))
+                               (+ (* 24 60) (car (sort switch-times #'<)))))
            (delay-min (- next-switch-min current-total-min))
            (delay-sec (* delay-min 60)))
 

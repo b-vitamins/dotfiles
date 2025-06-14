@@ -124,8 +124,10 @@
                        (home-openssh-configuration (hosts (list (openssh-host (name
                                                                                "github.com")
 
+
                                                                               (user
                                                                                "git")
+
 
                                                                               (identity-file
                                                                                "~/.ssh/id_ed25519"))))
@@ -139,9 +141,6 @@
 
               ;; Sound Home Services
               (service home-pipewire-service-type)
-
-              ;; Media Home Services
-              ;; (service home-kodi-service-type)
 
               ;; Networking Home Services
               (service home-syncthing-service-type)
@@ -287,7 +286,7 @@
                                                                   (modules (cons
                                                                             nvda
                                                                             %default-xorg-modules))
-                                                                  (drivers '("nvidia")))))
+                                                                  (drivers '("nvidia"))))))
                  (service nvidia-service-type)
                  (set-xorg-configuration
                   (xorg-configuration (keyboard-layout keyboard-layout)

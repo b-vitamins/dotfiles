@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `highlight-indent-guides`.
 - Guarded additional `prog-mode` hooks to defer loading optional packages.
 - Replaced `bv-defaults.el` with streamlined configuration and modern defaults.
+- Balanced parentheses in various files.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.

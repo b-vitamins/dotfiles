@@ -132,7 +132,7 @@
                  (locate-dominating-file dir file))
                bv-project-root-files)))
     (when root
-      (cons 'transient (locate-dominating-file dir root))))
+      (cons 'transient (locate-dominating-file dir root)))))
 
 ;; Compilation buffer naming
 (defun bv-project-compilation-buffer-name (mode)
