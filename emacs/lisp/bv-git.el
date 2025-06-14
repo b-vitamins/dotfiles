@@ -1,34 +1,55 @@
 ;;; bv-git.el --- Version control with Git -*- lexical-binding: t -*-
-
 ;;; Commentary:
 ;; Comprehensive Git support with Magit, git-gutter, and related tools.
-
 ;;; Code:
-
 ;;;; Dependencies
 (require 'bv-core)
+
+;;;; External Variable Declarations
+(defvar git-gutter:update-hooks)
+(defvar git-gutter:update-commands)
+(defvar bv-toggle-map)
+(defvar embark-file-map)
+(defvar bv-cache-dir)
+
+;;;; Function Declarations
+;; git-link functions
+(declare-function git-link--exec "git-link" (&rest args))
+(declare-function git-link--branch "git-link" ())
+(declare-function git-link--relative-filename "git-link" ())
+(declare-function git-link--parse-remote "git-link" (url))
+(declare-function git-link "git-link" (&optional remote start end))
+(declare-function git-link-commit "git-link" (&optional remote))
+;; magit-todos
+(declare-function magit-todos-mode "magit-todos" (&optional arg))
+;; eshell
+(declare-function eshell/alias "em-alias" (&rest args))
+;; git-gutter
+(declare-function git-gutter:update-all-windows "git-gutter" ())
+(declare-function git-gutter:revert-hunk "git-gutter" ())
+(declare-function git-gutter:stage-hunk "git-gutter" ())
 
 ;;;; Custom Variables
 (defgroup bv-git nil
   "Git and version control configuration."
   :group 'bv)
 
-(defcustom bv-git-project-directory nil
+(bv-defcustom bv-git-project-directory nil
   "Directory where project repositories are stored."
   :type '(choice (const nil) directory)
   :group 'bv-git)
 
-(defcustom bv-git-enable-todos t
+(bv-defcustom bv-git-enable-todos t
   "Enable magit-todos integration."
   :type 'boolean
   :group 'bv-git)
 
-(defcustom bv-git-enable-gutter t
+(bv-defcustom bv-git-enable-gutter t
   "Enable git-gutter mode."
   :type 'boolean
   :group 'bv-git)
 
-(defcustom bv-git-gutter-update-on-focus t
+(bv-defcustom bv-git-gutter-update-on-focus t
   "Update git-gutter when window gains focus."
   :type 'boolean
   :group 'bv-git)
@@ -52,11 +73,12 @@
        (funcall f remote start end)
        (advice-remove 'git-link--last-commit
                       git-link--last-commit-from-remote))))
-  
+
   ;; Custom command that always includes commit hash
   (defun bv-git-link ()
     "Same as `git-link', but with commit hash specified."
     (interactive)
+    (defvar git-link-use-commit) ; Declare the variable
     (let ((git-link-use-commit t))
       (if (git-link--relative-filename)
           (call-interactively 'git-link)
@@ -65,6 +87,17 @@
 ;;;; Git Timemachine
 (use-package git-timemachine
   :defer t)
+
+;;;; Helper Functions (defined before git-gutter to avoid warnings)
+(defun bv-git-gutter-y-or-n-p (orig-fun &rest r)
+  "Use `y-or-n-p' instead of `yes-or-no-p' for ORIG-FUN with args R."
+  (cl-letf (((symbol-function 'yes-or-no-p) 'y-or-n-p))
+    (apply orig-fun r)))
+
+(defun bv-git-gutter-auto-stage (orig-fun &rest args)
+  "Auto-confirm git-gutter:stage-hunk for ORIG-FUN with ARGS."
+  (cl-letf (((symbol-function 'yes-or-no-p) (lambda (&rest _) t)))
+    (apply orig-fun args)))
 
 ;;;; Git Gutter
 (use-package git-gutter
@@ -83,26 +116,16 @@
   (when bv-git-gutter-update-on-focus
     (add-to-list 'git-gutter:update-hooks 'focus-in-hook))
   (add-to-list 'git-gutter:update-commands 'other-window)
-  
+
   ;; Update after magit operations
   (with-eval-after-load 'magit
     (add-hook 'magit-post-stage-hook 'git-gutter:update-all-windows)
     (add-hook 'magit-post-unstage-hook 'git-gutter:update-all-windows))
-  
+
   ;; Use y-or-n-p for revert-hunk
-  (defun bv-git-gutter-y-or-n-p (orig-fun &rest r)
-    "Use y-or-n-p instead of yes-or-no-p."
-    (cl-letf (((symbol-function 'yes-or-no-p) 'y-or-n-p))
-      (apply orig-fun r)))
-  
   (advice-add 'git-gutter:revert-hunk :around #'bv-git-gutter-y-or-n-p)
-  
+
   ;; Auto-confirm staging (no prompts)
-  (defun bv-git-gutter-auto-stage (orig-fun &rest args)
-    "Auto-confirm git-gutter:stage-hunk."
-    (cl-letf (((symbol-function 'yes-or-no-p) (lambda (&rest _) t)))
-      (apply orig-fun args)))
-  
   (advice-add 'git-gutter:stage-hunk :around #'bv-git-gutter-auto-stage))
 
 ;;;; Git Gutter Fringe
@@ -156,9 +179,8 @@
       (if bv-git-project-directory
           (expand-file-name dir bv-git-project-directory)
         dir)))
-  
   (setq magit-clone-default-directory 'bv-get-local-repo-path-from-url)
-  
+
   ;; Performance for large repos
   (setq magit-revision-insert-related-refs nil))
 
@@ -179,31 +201,32 @@
 ;;;; Keybindings
 (with-eval-after-load 'bv-core
   ;; Toggle git-gutter
-  (define-key bv-toggle-map "g" 'git-gutter-mode)
-  (define-key bv-toggle-map "G" 'global-git-gutter-mode))
+  (when (boundp 'bv-toggle-map)
+    (define-key bv-toggle-map "g" 'git-gutter-mode)
+    (define-key bv-toggle-map "G" 'global-git-gutter-mode)))
 
-;;;; Feature Definition
-(defun bv-git-load ()
-  "Load Git configuration."
-  (add-to-list 'bv-enabled-features 'git)
-  
-  ;; Git aliases for eshell
-  (with-eval-after-load 'em-alias
+;;;; Feature Registration
+(bv-register-feature 'bv-git)
+
+;;;; Integration with Other Features
+(bv-with-feature bv-navigation
+  (with-eval-after-load 'project
+    ;; Add magit-project-status to project commands
+    (define-key project-prefix-map "m" 'magit-project-status)))
+
+(bv-when-feature bv-completion
+  (with-eval-after-load 'embark
+    (when (boundp 'embark-file-map)
+      (define-key embark-file-map "g" 'magit-file-dispatch))))
+
+;;;; Git aliases for eshell
+(with-eval-after-load 'em-alias
+  (when (fboundp 'eshell/alias)
     (eshell/alias "gd" "magit-diff-unstaged")
     (eshell/alias "gs" "magit-status")
     (eshell/alias "gl" "magit-log-current")
     (eshell/alias "gp" "magit-push-current")
     (eshell/alias "gf" "magit-fetch")))
-
-;;;; Integration with Other Features
-(bv-with-feature project
-  (with-eval-after-load 'project
-    ;; Add magit-project-status to project commands
-    (define-key project-prefix-map "m" 'magit-project-status)))
-
-(bv-with-feature embark
-  (with-eval-after-load 'embark
-    (define-key embark-file-map "g" 'magit-file-dispatch)))
 
 (provide 'bv-git)
 ;;; bv-git.el ends here
