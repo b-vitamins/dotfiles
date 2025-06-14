@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added Guix profile directories to `load-path` to resolve missing packages like
   `highlight-indent-guides`.
 - Guarded additional `prog-mode` hooks to defer loading optional packages.
+- Replaced `bv-defaults.el` with streamlined configuration and modern defaults.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
