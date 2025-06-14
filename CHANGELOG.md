@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Replaced `bv-core.el` with expanded configuration and path helpers.
 - Redesigned UI module with automatic theme switching and header line support.
 - Replaced `bv-completion.el` with modernized configuration.
+- Replaced `bv-development.el` with simplified configuration.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
