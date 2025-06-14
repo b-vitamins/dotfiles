@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Replaced `bv-development.el` with simplified configuration.
 - Rewrote `bv-git.el` with improved Git integration.
 - Replaced `bv-navigation.el` with expanded project and window management features.
+- Updated `ragnar` system configuration.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
