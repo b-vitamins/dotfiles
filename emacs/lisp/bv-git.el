@@ -69,11 +69,13 @@
 ;;;; Git Gutter
 (use-package git-gutter
   :defer t
+  :commands git-gutter-mode
   :diminish git-gutter-mode
   :init
-  (when bv-git-enable-gutter
-    (add-hook 'prog-mode-hook 'git-gutter-mode)
-    (add-hook 'text-mode-hook 'git-gutter-mode))
+  (when (and bv-git-enable-gutter (locate-library "git-gutter"))
+    (autoload 'git-gutter-mode "git-gutter" nil t)
+    (add-hook 'prog-mode-hook #'git-gutter-mode)
+    (add-hook 'text-mode-hook #'git-gutter-mode))
   :custom
   (git-gutter:lighter " GG")
   :config

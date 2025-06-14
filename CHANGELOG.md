@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Resolved keybinding conflict in `bv-communication.el` where 'w' was used as both a command and prefix key.
 - Fixed `org-clocking-p` error in `bv-productivity.el` mode-line indicator by adding proper function existence check.
 - Replaced multimedia configuration to resolve `M m` prefix key error.
+- Checked for `git-gutter` before enabling hooks to avoid missing function errors.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
