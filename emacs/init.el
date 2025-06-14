@@ -40,49 +40,30 @@
 ;; Add lisp directory to load path
 (add-to-list 'load-path bv-lisp-dir)
 
-;; Include Guix profile packages
-(dolist (profile (list (getenv "GUIX_PROFILE")
-                       (expand-file-name "~/.guix-profile")
-                       (expand-file-name "~/.guix-home/profile")))
-  (let ((site-lisp (and profile
-                        (expand-file-name "share/emacs/site-lisp" profile))))
-    (when (file-directory-p site-lisp)
-      (add-to-list 'load-path site-lisp)
-      (let ((default-directory site-lisp))
-        (normal-top-level-add-to-load-path '("."))
-        (normal-top-level-add-subdirs-to-load-path)))))
 
 ;;;; Package management setup
-;; Skip package.el when using Guix
-(if (or (getenv "GUIX_ENVIRONMENT") 
-        (file-exists-p (expand-file-name "~/.guix-home")))
-    ;; Using Guix
-    (progn
-      (setq package--initialized t)
-      (message "Using Guix for package management"))
-  ;; Not using Guix - set up package.el
-  (require 'package)
+(require 'package)
 
-  ;; Package archives
-  (setq package-archives
-        '(("melpa" . "https://melpa.org/packages/")
-          ("gnu" . "https://elpa.gnu.org/packages/")
-          ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
+;; Package archives
+(setq package-archives
+      '(("melpa" . "https://melpa.org/packages/")
+        ("gnu" . "https://elpa.gnu.org/packages/")
+        ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
 
-  ;; Prioritize archives
-  (setq package-archive-priorities
-        '(("gnu" . 30)
-          ("melpa" . 20)
-          ("nongnu" . 10)))
+;; Prioritize archives
+(setq package-archive-priorities
+      '(("gnu" . 30)
+        ("melpa" . 20)
+        ("nongnu" . 10)))
 
-  ;; Initialize package.el
-  (setq package-user-dir (expand-file-name "elpa" bv-var-dir))
-  (package-initialize)
+;; Initialize package.el
+(setq package-user-dir (expand-file-name "elpa" bv-var-dir))
+(package-initialize)
 
-  ;; Bootstrap use-package
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package)))
+;; Bootstrap use-package
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
 
 ;; Configure use-package
 (eval-and-compile
