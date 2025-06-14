@@ -100,9 +100,12 @@
                                                         %garbage-collector-job))))
               ;; Home Files Service
               (simple-service 'my-home-files-service home-files-service-type
-                              `((".gitconfig" ,(local-file "../../git/gitconfig"))
-				(".gitignore" ,(local-file "../../git/gitignore"))
-				(".gitattributes" ,(local-file "../../git/gitattributes"))))
+                              `((".gitconfig" ,(local-file
+                                                "../../git/gitconfig"))
+                                (".gitignore" ,(local-file
+                                                "../../git/gitignore"))
+                                (".gitattributes" ,(local-file
+                                                    "../../git/gitattributes"))))
               ;; Config Files Service
               (simple-service 'my-config-files-service
                               home-xdg-configuration-files-service-type
@@ -121,33 +124,13 @@
                        (home-openssh-configuration (hosts (list (openssh-host (name
                                                                                "github.com")
 
-                                                                              
                                                                               (user
                                                                                "git")
 
-                                                                              
-                                                                              (identity-file
-                                                                               "~/.ssh/id_ed25519"))
-                                                                (openssh-host (name
-                                                                               "ci.myguix.bvits.in")
-
-                                                                              
-                                                                              (user
-                                                                               "b")
-
-                                                                              
-                                                                              (port
-                                                                               2123)
-
-                                                                              
                                                                               (identity-file
                                                                                "~/.ssh/id_ed25519"))))
                                                    (authorized-keys (list (local-file
-                                                                           "../../keys/ssh/ragnar.pub")
-                                                                          (local-file
-                                                                           "../../keys/ssh/freydis.pub")
-                                                                          (local-file
-                                                                           "../../keys/ssh/bjorn.pub")))
+                                                                           "../../keys/ssh/ragnar.pub")))
                                                    (add-keys-to-agent
                                                     "confirm")))
 
@@ -159,7 +142,7 @@
 
               ;; Media Home Services
               ;; (service home-kodi-service-type)
-              
+
               ;; Networking Home Services
               (service home-syncthing-service-type)
 
@@ -304,7 +287,7 @@
                                                                   (modules (cons
                                                                             nvda
                                                                             %default-xorg-modules))
-                                                                  (drivers '("nvidia"))))))
+                                                                  (drivers '("nvidia")))))
                  (service nvidia-service-type)
                  (set-xorg-configuration
                   (xorg-configuration (keyboard-layout keyboard-layout)
@@ -334,7 +317,6 @@
                                                                         network-manager-openconnect)))))
 
                  ;; Database Services
-                 (service mysql-service-type)
                  (service redis-service-type)
                  (service postgresql-service-type
                           (postgresql-configuration (postgresql (specification->package
@@ -344,8 +326,6 @@
                                                                              "pg_hba.conf"
                                                                              "
 local   all         postgres               peer
-host    airflow     airflow  127.0.0.1/32  md5
-host    airflow     airflow  ::1/128       md5
 "))))))
 
                  (service postgresql-role-service-type
@@ -389,10 +369,8 @@ host    airflow     airflow  ::1/128       md5
                                                               "../files/daemon.json"))))
                  (service oci-container-service-type
                           (list oci-meilisearch-service-type
-                                oci-grobid-service-type
-                                oci-neo4j-service-type
-                                oci-qdrant-service-type
-                                oci-minio-service-type)))
+                                oci-grobid-service-type oci-neo4j-service-type
+                                oci-qdrant-service-type oci-minio-service-type)))
            (modify-services %my-desktop-services
              (delete gvfs-service-type)
              (delete upower-service-type)
