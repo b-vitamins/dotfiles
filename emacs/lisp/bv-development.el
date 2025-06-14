@@ -138,8 +138,9 @@
   (when bv-dev-paredit-bindings
     (sp-use-paredit-bindings))
 
-  ;; Remove conflicting binding
-  (define-key smartparens-mode-map (kbd "M-s") nil)
+  ;; Remove conflicting binding using bind-key helper
+  (require 'bind-key)
+  (unbind-key "M-s" smartparens-mode-map)
 
   ;; Show smartparens mode
   (if bv-dev-smartparens-show-pairs

@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Balanced unmatched parentheses across core and multimedia modules.
 - Guarded fringe configuration to avoid errors in non-graphical builds.
 - Fixed invalid dictionary syntax and stray parens in `bv-writing.el`.
+- Removed invalid `M-s` unbinding that caused a smartparens error.
 - Added prefix map to resolve `P P` keybinding error in `bv-productivity.el`.
 - Fixed syntax error in `bv-writing.el` at line 118 caused by unmatched closing bracket.
 - Resolved keybinding conflict in `bv-communication.el` where 'w' was used as both a command and prefix key.
