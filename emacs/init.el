@@ -40,6 +40,18 @@
 ;; Add lisp directory to load path
 (add-to-list 'load-path bv-lisp-dir)
 
+;; Include Guix profile packages
+(dolist (profile (list (getenv "GUIX_PROFILE")
+                       (expand-file-name "~/.guix-profile")
+                       (expand-file-name "~/.guix-home/profile")))
+  (let ((site-lisp (and profile
+                        (expand-file-name "share/emacs/site-lisp" profile))))
+    (when (file-directory-p site-lisp)
+      (add-to-list 'load-path site-lisp)
+      (let ((default-directory site-lisp))
+        (normal-top-level-add-to-load-path '("."))
+        (normal-top-level-add-subdirs-to-load-path)))))
+
 ;;;; Package management setup
 ;; Skip package.el when using Guix
 (if (or (getenv "GUIX_ENVIRONMENT") 
