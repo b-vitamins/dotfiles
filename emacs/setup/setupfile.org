@@ -1,0 +1,95 @@
+# Consolidated LaTeX headers and Org settings for use across Org files
+# Inspired by EFLS from Emacs Stack Exchange
+# https://emacs.stackexchange.com/questions/41697/reducing-latex-header-clutter-at-the-top-of-my-org-files
+#
+# Usage: Add the following line to any Org file:
+#     #+SETUPFILE: .config/emacs/setup/setupfile.org
+
+# =====================================================================
+# ORG-MODE SETTINGS
+# =====================================================================
+#+STARTUP: overview hideblocks hidestars indent latexpreview
+#+OPTIONS: toc:nil todo:nil ^:{}
+
+# =====================================================================
+# DOCUMENT LAYOUT AND TYPOGRAPHY
+# =====================================================================
+#+LATEX_HEADER: \usepackage[margin=0.9in]{geometry}  % Page margins
+#+LATEX_HEADER: \usepackage{tgpagella}              % TeX Gyre Pagella font
+#+LATEX_HEADER: \usepackage{mathpazo}               % Palatino math font
+#+LATEX_HEADER: \usepackage{microtype}              % Microtypography improvements
+
+# =====================================================================
+# MATHEMATICS PACKAGES
+# =====================================================================
+# Note: mathtools automatically loads amsmath, so we don't need both
+#+LATEX_HEADER: \usepackage{mathtools}              % Enhanced math (includes amsmath)
+#+LATEX_HEADER: \usepackage{amsfonts}               % Math fonts
+#+LATEX_HEADER: \usepackage{amssymb}                % Math symbols
+#+LATEX_HEADER: \usepackage{amsthm}                 % Theorem environments
+#+LATEX_HEADER: \usepackage{mathrsfs}               % Script math font (\mathscr)
+#+LATEX_HEADER: \usepackage{dsfont}                 % Double stroke font (\mathds)
+#+LATEX_HEADER: \usepackage{braket}                 % Dirac notation
+
+# =====================================================================
+# SCIENCE AND UNITS
+# =====================================================================
+#+LATEX_HEADER: \usepackage{siunitx}                % SI units and number formatting
+
+# =====================================================================
+# TABLES AND ARRAYS
+# =====================================================================
+#+LATEX_HEADER: \usepackage{tabularx}               % Tables with adjustable columns
+#+LATEX_HEADER: \usepackage{blkarray, bigstrut}     % Block arrays and spacing
+
+# =====================================================================
+# GRAPHICS AND FIGURES
+# =====================================================================
+#+LATEX_HEADER: \usepackage{graphicx}               % Enhanced graphics support
+#+LATEX_HEADER: \usepackage{subcaption}             % Subfigures and subcaptions
+#+LATEX_HEADER: \usepackage{tikz}                   % Vector graphics
+#+LATEX_HEADER: \usepackage{pgfplots}               % Plots and charts
+#+LATEX_HEADER: \pgfplotsset{compat=newest}         % Use newest features
+#+LATEX_HEADER: \usetikzlibrary{calc, positioning, babel, quotes, patterns}
+#+LATEX_HEADER: \usetikzlibrary{arrows.meta, shapes.geometric}
+#+LATEX_HEADER: \usepgfplotslibrary{fillbetween}    % Fill area between plots
+
+# =====================================================================
+# LANGUAGE AND LOCALIZATION
+# =====================================================================
+#+LATEX_HEADER: \usepackage[english]{babel}         % Language support
+
+# =====================================================================
+# THEOREM-LIKE ENVIRONMENTS
+# =====================================================================
+#+LATEX_HEADER: \newtheorem{axiom}{Axiom}
+#+LATEX_HEADER: \newtheorem{postulate}{Postulate}
+#+LATEX_HEADER: \newtheorem{definition}{Definition}
+#+LATEX_HEADER: \newtheorem{lemma}{Lemma}
+#+LATEX_HEADER: \newtheorem{theorem}{Theorem}
+#+LATEX_HEADER: \newtheorem{corollary}{Corollary}
+#+LATEX_HEADER: \newtheorem*{remark}{Remark}
+
+# =====================================================================
+# CUSTOM COMMANDS AND OPERATORS
+# =====================================================================
+#+LATEX_HEADER: \newcommand{\minus}{\scalebox{0.8}{\(-\)}}
+#+LATEX_HEADER: \newcommand{\plus}{\scalebox{0.6}{\(+\)}}
+#+LATEX_HEADER: \DeclareMathOperator{\sech}{sech}
+#+LATEX_HEADER: \DeclareMathOperator{\sgn}{sgn}
+#+LATEX_HEADER: \DeclareMathOperator{\tr}{Tr}
+
+# =====================================================================
+# BIBLIOGRAPHY MANAGEMENT
+# =====================================================================
+#+LATEX_HEADER: \usepackage{csquotes}               % Context-sensitive quotes
+#+LATEX_HEADER: \usepackage[backend=biber]{biblatex}
+#+LATEX_HEADER: \addbibresource{~/documents/slipbox/bibliographies/working.bib}
+#+bibliography: ~/documents/slipbox/bibliographies/working.bib
+
+# =====================================================================
+# HYPERLINKS AND CROSS-REFERENCES
+# =====================================================================
+# Note: hyperref should be loaded near the end, cleveref after hyperref
+#+LATEX_HEADER: \usepackage[hidelinks]{hyperref}    % Hyperlinks without boxes
+#+LATEX_HEADER: \usepackage{cleveref}               % Smart cross-references
