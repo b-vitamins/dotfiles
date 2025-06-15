@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Language support modules for Python, Rust, Lisp and C/C++.
 - Research modules for Org, research, reading, and writing.
 - Shell, productivity, communication and multimedia modules.
+- Integration with Minions to declutter Emacs mode line.
+- Extensive enhancements to Org-mode configuration, including expanded TODO keywords, habit tracking, and LaTeX support.
+- Comprehensive research workflow setup using Org Roam and Citar with enhanced PDF and citation management.
+- Org-LaTeX setup file (`setupfile.org`) for consistent document headers and settings across Org documents.
 ### Changed
 - Phase 3 modules are now enabled in `init.el`.
 - Updated comments to reflect active module loading.
@@ -34,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Rewrote `bv-git.el` with improved Git integration.
 - Replaced `bv-navigation.el` with expanded project and window management features.
 - Updated `ragnar` system configuration.
+- Delayed loading of research-related modules (`bv-org`, `bv-research`) in `init.el`.
+- Default font updated to "SF Mono" with adjusted sizing for improved readability.
+- Mode line time display reformatted for clarity and frequent updating.
+- Org Roam capture templates expanded to include literature notes, concepts, problems, and timed tasks.
+- Improved bibliographic integration in Citar with custom icon indicators.
+- Enhanced Org Roam node display with backlink counts and directory context.
+- Reorganized idle-time loading sections in `init.el` for clearer module initialization.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
@@ -62,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Guarded additional `prog-mode` hooks to defer loading optional packages.
 - Replaced `bv-defaults.el` with streamlined configuration and modern defaults.
 - Balanced parentheses in various files.
+- Resolved minor syntax and keybinding conflicts in `bv-research.el` and `bv-ui.el`.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
