@@ -9,15 +9,21 @@
 (require 'bv-core)
 
 ;;;; External Variable Declarations
+(defvar display-time-format)
 (defvar display-time-24hr-format)
 (defvar display-time-default-load-average)
+(defvar display-time-interval)
 (defvar modus-themes-mode-line)
+(defvar minions-mode-line-lighter)
+(defvar minions-mode-line-delimiters)
+(defvar minions-prominent-modes)
 
 ;;;; Function Declarations
 (declare-function modus-themes-toggle "modus-themes" ())
 (declare-function modus-themes-with-colors "modus-themes" (&rest body))
 (declare-function nerd-icons-install-fonts "nerd-icons" (&optional arg))
 (declare-function display-time-mode "time" (&optional arg))
+(declare-function minions-mode "minions" (&optional arg))
 
 ;;;; Custom Variables
 
@@ -93,13 +99,13 @@ Each element is (HOUR . TYPE) where TYPE is \\='light, \\='light-soft,
   :group 'bv-ui)
 
 ;; Font settings
-(bv-defcustom bv-ui-font-family nil
+(bv-defcustom bv-ui-font-family "SF Mono"
   "Font family to use.  Set to nil to use system default."
   :type '(choice (const :tag "System default" nil)
                  (string :tag "Font family"))
   :group 'bv-ui)
 
-(bv-defcustom bv-ui-font-size 12
+(bv-defcustom bv-ui-font-size 11
   "Font size in points."
   :type 'integer
   :group 'bv-ui)
@@ -108,6 +114,18 @@ Each element is (HOUR . TYPE) where TYPE is \\='light, \\='light-soft,
 (bv-defcustom bv-ui-which-key-idle-delay 1.0
   "Delay before which-key popup appears."
   :type 'number
+  :group 'bv-ui)
+
+;; Minions settings
+(bv-defcustom bv-ui-prominent-modes '(flymake-mode
+                                      eglot-mode
+                                      lsp-mode
+                                      flycheck-mode
+                                      projectile-mode
+                                      envrc-mode
+                                      compilation-minor-mode)
+  "Minor modes that should remain visible in the mode line."
+  :type '(repeat symbol)
   :group 'bv-ui)
 
 ;;;; Internal Variables
@@ -477,13 +495,23 @@ Note: On some systems, you may need to restart Emacs for this to take effect."
 ;; Clean mode line
 (setq mode-line-compact 'long)
 
-;; Time in mode line
-(when (boundp 'display-time-24hr-format)
-  (setq display-time-24hr-format t))
-(when (boundp 'display-time-default-load-average)
-  (setq display-time-default-load-average nil))
-(when (fboundp 'display-time-mode)
-  (display-time-mode 1))
+;; Hide minor modes with minions
+(use-package minions
+  :ensure nil
+  :demand t
+  :config
+  (setq minions-mode-line-lighter "…"
+        minions-mode-line-delimiters '("" . "")
+        ;; Keep important modes visible
+        minions-prominent-modes bv-ui-prominent-modes)
+  (minions-mode 1))
+
+;; Time in mode line - format as "Sun Jun 15 13:02:52"
+(setq display-time-format "%a %b %d %H:%M:%S"
+      display-time-24hr-format t
+      display-time-default-load-average nil
+      display-time-interval 1)
+(display-time-mode 1)
 
 ;;;; Additional UI Settings
 
