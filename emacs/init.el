@@ -173,19 +173,21 @@
      (bv-require bv-development)
      (bv-require bv-git)))
 
+;; Research tools (load after 1.0s idle)
+(run-with-idle-timer 1.0 nil
+   (lambda ()
+     (bv-require bv-org)
+     (bv-require bv-research)
+;;     (bv-require bv-reading)
+;;     (bv-require bv-writing)
+     ))
+
 ;; Language support (load after 0.5s idle)
 ;; (run-with-idle-timer 0.5 nil
 ;;   (lambda ()
 ;;     (bv-require bv-lang-lisp)
 ;;     (bv-require bv-lang-python noerror)
 ;;     (bv-require bv-lang-rust noerror)))
-
-;; Research tools (load after 1.0s idle)
-;; (run-with-idle-timer 1.0 nil
-;;   (lambda ()
-;;     (bv-require bv-org)
-;;     (bv-require bv-research)
-;;     (bv-require bv-writing)))
 
 ;;;; Interactive Module Loaders
 (defun bv-load-all-modules ()
