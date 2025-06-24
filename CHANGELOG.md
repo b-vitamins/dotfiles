@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Comprehensive research workflow setup using Org Roam and Citar with enhanced PDF and citation management.
 - Org-LaTeX setup file (`setupfile.org`) for consistent document headers and settings across Org documents.
 - Comprehensive test suite for `bv-core.el` with 25+ unit tests covering configuration values, feature system, path utilities, macros, and timer management.
+- Transient-based menu interface (`bv-transient.el`) providing interactive access to configuration management, feature registration, path operations, and developer tools.
+- Complete test suite for `bv-transient.el` with mock-based testing covering interactive commands, value manipulation, feature management, and development utilities.
 ### Changed
 - Phase 3 modules are now enabled in `init.el`.
 - Updated comments to reflect active module loading.
