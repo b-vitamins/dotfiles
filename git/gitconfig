@@ -1,303 +1,286 @@
-# ~/.gitconfig
-
 [user]
-	email = bvits@riseup.net
-	name = Ayan Das
-	signingkey = 883BCA6BD275A5F2673CC5DD2AD32FC02A5001F7
+    email = bvits@riseup.net
+    name = Ayan Das
+    signingkey = 883BCA6BD275A5F2673CC5DD2AD32FC02A5001F7
 
 [init]
-	defaultBranch = master
+    defaultBranch = master
 
 [commit]
-	gpgsign = true
-	verbose = true
+    gpgsign = true
+    verbose = true
 
 [core]
-        editor = emacsclient -c -a ""
-	autocrlf = input
-	whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
-	excludesfile = ~/.gitignore
-	pager = less -FRX
-	attributesfile = ~/.gitattributes
-	compression = 9
-	quotepath = false
-	preloadindex = true
+    editor = emacsclient -c -a ""
+    autocrlf = false
+    whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+    excludesfile = ~/.gitignore
+    pager = less -FRX
+    attributesfile = ~/.gitattributes
+    compression = 9
+    quotepath = false
+    preloadindex = true
 
 [i18n]
-	commitEncoding = utf-8
-	logOutputEncoding = utf-8
-
+    commitEncoding = utf-8
+    logOutputEncoding = utf-8
 
 [sendemail]
-	from = Ayan Das <bvits@riseup.net>
-	smtpserver = mail.riseup.net
-	smtpserverport = 587
-	smtpencryption = tls
-	smtpuser = bvits@riseup.net
-	confirm = auto
-	chainreplyto = false
-	annotate = true
-	suppresscc = self
-	assume8bitEncoding = utf-8
-	transferEncoding = 8bit
-	thread = true
+    from = Ayan Das <bvits@riseup.net>
+    smtpserver = mail.riseup.net
+    smtpserverport = 587
+    smtpencryption = tls
+    smtpuser = bvits@riseup.net
+    confirm = auto
+    chainreplyto = false
+    annotate = true
+    suppresscc = self
+    assume8bitEncoding = utf-8
+    transferEncoding = 8bit
+    thread = true
+    to = guix-patches@gnu.org
+    headerCmd = etc/teams.scm cc-members-header-cmd
 
 [format]
-	pretty = fuller
-	signOff = true
-	coverLetter = auto
-	numbered = true
-	thread = shallow
-	suffix = .patch
+    pretty = fuller
+    signOff = true
+    coverLetter = auto
+    numbered = true
+    thread = shallow
+    suffix = .patch
 
 [merge]
-	tool = ediff
-	conflictstyle = diff3
-	log = true
+    tool = ediff
+    conflictstyle = diff3
+    log = true
 
 [mergetool "ediff"]
-	cmd = emacsclient -c -a "" --eval "(ediff-merge-files-with-ancestor \"$LOCAL\" \"$REMOTE\" \"$BASE\" nil \"$MERGED\")"
-	trustExitCode = true
+    cmd = emacsclient -c -a "" --eval "(ediff-merge-files-with-ancestor \"$LOCAL\" \"$REMOTE\" \"$BASE\" nil \"$MERGED\")"
+    trustExitCode = true
 
 [mergetool]
-	prompt = false
-	keepBackup = false
+    prompt = false
+    keepBackup = false
 
 [diff]
-	tool = ediff
-	algorithm = histogram
-	colorMoved = default
-	colorMovedWS = allow-indentation-change
-	mnemonicprefix = true
-	renames = copies
-	submodule = log
+    tool = ediff
+    algorithm = histogram
+    colorMoved = default
+    colorMovedWS = allow-indentation-change
+    mnemonicprefix = true
+    renames = copies
+    submodule = log
 
 [difftool "ediff"]
-	cmd = emacsclient -c -a "" --eval "(ediff-files \"$LOCAL\" \"$REMOTE\")"
+    cmd = emacsclient -c -a "" --eval "(ediff-files \"$LOCAL\" \"$REMOTE\")"
 
 [difftool]
-	prompt = false
+    prompt = false
 
 [color]
-	ui = auto
-	diff = auto
-	status = auto
-	branch = auto
-	interactive = auto
-	grep = auto
-	showbranch = auto
+    ui = auto
+    diff = auto
+    status = auto
+    branch = auto
+    interactive = auto
+    grep = auto
+    showbranch = auto
 
 [color "diff"]
-	meta = yellow bold
-	frag = magenta bold
-	old = red bold
-	new = green bold
-	whitespace = red reverse
+    meta = yellow bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+    whitespace = red reverse
 
 [color "status"]
-	added = green
-	changed = yellow
-	untracked = red
+    added = green
+    changed = yellow
+    untracked = red
 
 [push]
-	default = simple
-	autoSetupRemote = true
-	followTags = true
+    default = simple
+    autoSetupRemote = true
+    followTags = true
 
 [pull]
-	rebase = true
-	ff = only
+    rebase = true
+    ff = only
 
 [fetch]
-	prune = true
-	pruneTags = true
-	parallel = 0
+    prune = true
+    pruneTags = true
+    parallel = 0
 
 [rebase]
-	autoStash = true
-	autoSquash = true
-	stat = true
-	instructionFormat = "[%an] %s"
+    autoStash = true
+    autoSquash = true
+    stat = true
+    instructionFormat = "[%an] %s"
 
 [stash]
-	showIncludeUntracked = true
-	showPatch = true
+    showIncludeUntracked = true
+    showPatch = true
 
 [status]
-	short = true
-	branch = true
-	showStash = true
-	submoduleSummary = true
+    short = true
+    branch = true
+    showStash = true
+    submoduleSummary = true
 
 [log]
-	date = relative
-	decorate = full
-	follow = true
-	abbrevCommit = true
+    date = relative
+    decorate = full
+    follow = true
+    abbrevCommit = true
 
 [grep]
-	lineNumber = true
-	extendedRegexp = true
-	heading = true
+    lineNumber = true
+    extendedRegexp = true
+    heading = true
 
 [help]
-	autocorrect = 0
+    autocorrect = 0
 
 [rerere]
-	enabled = true
-	autoUpdate = true
+    enabled = true
+    autoUpdate = true
 
 [credential]
-	helper = cache --timeout=21600
+    helper = cache --timeout=21600
 
 [filter "lfs"]
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
-	required = true
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
 
 [pager]
-	branch = false
-	stash = false
-	config = false
-	tag = false
+    branch = false
+    stash = false
+    config = false
+    tag = false
 
 [advice]
-        waitingForEditor = false
-	statusHints = false
-	commitBeforeMerge = false
-	detachedHead = false
+    waitingForEditor = false
+    statusHints = false
+    commitBeforeMerge = false
+    detachedHead = false
 
 [pack]
-	threads = 0
-	windowMemory = 256m
+    threads = 0
+    windowMemory = 256m
 
 [feature]
-	manyFiles = true
+    manyFiles = true
 
 [protocol]
-	version = 2
+    version = 2
 
 [alias]
-# Basic
-	s = status -sb
-	st = status
-	ci = commit
-	co = checkout
-	br = branch
-	cp = cherry-pick
-	cl = clone
-	d = diff
-	dc = diff --cached
-	ds = diff --staged
-	dw = diff --word-diff
-	dt = difftool
+    # Basic commands
+    s = status -sb
+    st = status
+    ci = commit
+    co = checkout
+    br = branch
+    cp = cherry-pick
+    cl = clone
+    d = diff
+    dc = diff --cached
+    ds = diff --staged
+    dw = diff --word-diff
+    dt = difftool
 
-# Commits
-	cm = commit -m
-	cma = commit -am
-	amend = commit --amend --no-edit
-	amendit = commit --amend
-	fixup = commit --fixup
-	squash = commit --squash
-	unstage = reset HEAD --
-	uncommit = reset --soft HEAD~1
-	patch = add -p
+    # Commit operations
+    cm = commit -m
+    cma = commit -am
+    amend = commit --amend --no-edit
+    amendit = commit --amend
+    fixup = commit --fixup
+    squash = commit --squash
+    unstage = reset HEAD --
+    uncommit = reset --soft HEAD~1
+    patch = add -p
 
-# Logging
-	l = log --pretty=format:'%C(yellow)%h%Creset %C(blue)%ad%Creset %C(green)%<(10,trunc)%an%Creset %s%C(auto)%d%Creset' --date=short --graph
-	ll = log --pretty=format:'%C(yellow)%h%Creset %C(blue)%ad%Creset %C(green)%<(10,trunc)%an%Creset %s%C(auto)%d%Creset' --date=short --graph --stat
-	lg = log --color --graph --pretty=format:'%C(yellow)%h%Creset -%C(auto)%d%Creset %s %C(green)(%cr) %C(blue)<%an>%Creset' --abbrev-commit
-	last = log -1 HEAD --stat
-	recent = log --oneline -10
-	today = log --since=midnight --author='Ayan Das' --oneline
-	tree = log --graph --all --decorate --oneline
-	standup = !git log --since=yesterday --author="`git config user.name`" --pretty=short
+    # Logging and history
+    l = log --pretty=format:'%C(yellow)%h%Creset %C(blue)%ad%Creset %C(green)%<(10,trunc)%an%Creset %s%C(auto)%d%Creset' --date=short --graph
+    ll = log --pretty=format:'%C(yellow)%h%Creset %C(blue)%ad%Creset %C(green)%<(10,trunc)%an%Creset %s%C(auto)%d%Creset' --date=short --graph --stat
+    lg = log --color --graph --pretty=format:'%C(yellow)%h%Creset -%C(auto)%d%Creset %s %C(green)(%cr) %C(blue)<%an>%Creset' --abbrev-commit
+    last = log -1 HEAD --stat
+    recent = log --oneline -10
+    today = log --since=midnight --author='Ayan Das' --oneline
+    tree = log --graph --all --decorate --oneline
+    standup = !git log --since=yesterday --author="`git config user.name`" --pretty=short
 
-# Branches
-	branches = branch -a
-	remotes = remote -v
-	brd = branch -d
-	brD = branch -D
-	brs = for-each-ref --sort='-committerdate' --format='%(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) - %(color:green)(%(committerdate:relative))%(color:reset)' refs/heads/
-	bdm = "!git branch --merged | grep -Ev '\\*|master|main|develop' | xargs -n 1 git branch -d"
-	files = "!f() { git diff --name-status $(git merge-base HEAD ${1:-master})..${1:-master}; }; f"
+    # Branch management
+    branches = branch -a
+    remotes = remote -v
+    brd = branch -d
+    brD = branch -D
+    brs = for-each-ref --sort='-committerdate' --format='%(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) - %(color:green)(%(committerdate:relative))%(color:reset)' refs/heads/
+    bdm = "!git branch --merged | grep -Ev '\\*|master|main|develop' | xargs -n 1 git branch -d"
+    files = "!f() { git diff --name-status $(git merge-base HEAD ${1:-master})..${1:-master}; }; f"
 
-# Guix patches
-	patches = format-patch --cover-letter --base=auto --stat --patience
-	guix-patches = "!git format-patch --cover-letter --base=origin/master --subject-prefix='PATCH' origin/master..HEAD"
-	test-patches = "!f() { \
-	git checkout -b test-patches-$(date +%s) origin/master && \
-	if git am $1; then \
-	echo '✓ Patches apply cleanly!'; \
-	git checkout - && \
-	git branch -D test-patches-*; \
-	else \
-	echo '✗ Patches failed!'; \
-	git am --abort; \
-	git checkout - && \
-	git branch -D test-patches-*; \
-	return 1; \
-	fi \
-	}; f"
-	send-patches-dry = send-email --dry-run --to=guix-patches@gnu.org
-	send-patches = send-email --to=guix-patches@gnu.org
-	check-patches = "!f() { \
-	echo 'Patches to be sent:'; \
-	ls -la *.patch 2>/dev/null || echo 'No patches in current directory'; \
-	}; f"
-	show-commits = "!git log --oneline --reverse origin/master..HEAD"
+    # Guix-specific patch operations
+    patches = format-patch --cover-letter --base=auto --stat --patience
+    guix-patches = "!git format-patch --cover-letter --base=origin/master --subject-prefix='PATCH' origin/master..HEAD"
+    test-patches = "!f() { git checkout -b test-patches-$(date +%s) origin/master && if git am $1; then echo '✓ Patches apply cleanly!'; git checkout - && git branch -D test-patches-*; else echo '✗ Patches failed!'; git am --abort; git checkout - && git branch -D test-patches-*; return 1; fi }; f"
+    send-patches-dry = send-email --dry-run
+    send-patches = send-email
+    check-patches = "!f() { echo 'Patches to be sent:'; ls -la *.patch 2>/dev/null || echo 'No patches in current directory'; }; f"
+    show-commits = "!git log --oneline --reverse origin/master..HEAD"
+    send-to-bug = "!f() { git send-email --to=$1@debbugs.gnu.org $2; }; f"
+    send-v2 = "!f() { git format-patch --cover-letter --base=origin/master --subject-prefix='PATCH v2' origin/master..HEAD; }; f"
+    send-v3 = "!f() { git format-patch --cover-letter --base=origin/master --subject-prefix='PATCH v3' origin/master..HEAD; }; f"
 
-# Stashing
-	sl = stash list
-	sa = stash apply
-	ss = stash save
-	sp = stash pop
-	sd = stash drop
-	sshow = stash show -p
-	snapshot = !git stash push -m "snapshot: $(date)" && git stash apply "stash@{0}"
+    # Stash operations
+    sl = stash list
+    sa = stash apply
+    ss = stash save
+    sp = stash pop
+    sd = stash drop
+    sshow = stash show -p
+    snapshot = !git stash push -m "snapshot: $(date)" && git stash apply "stash@{0}"
 
-# Remotes
-	up = pull --rebase --prune
-	push-new = push -u origin HEAD
-	sync = !git pull --rebase && git push
-	reset-to-remote = !git fetch origin && git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+    # Remote operations
+    up = pull --rebase --prune
+    push-new = push -u origin HEAD
+    sync = !git pull --rebase && git push
+    reset-to-remote = !git fetch origin && git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
 
-# Finding
-	fb = "!f() { git branch -a --contains $1; }; f"
-	ft = "!f() { git describe --always --contains $1; }; f"
-	fm = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
-	fc = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
+    # Search and find operations
+    fb = "!f() { git branch -a --contains $1; }; f"
+    ft = "!f() { git describe --always --contains $1; }; f"
+    fm = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
+    fc = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
 
-# Rebase
-	ri = rebase -i
-	rim = rebase -i origin/master
-	rc = rebase --continue
-	ra = rebase --abort
-	rs = rebase --skip
+    # Rebase operations
+    ri = rebase -i
+    rim = rebase -i origin/master
+    rc = rebase --continue
+    ra = rebase --abort
+    rs = rebase --skip
 
-# Maintenance
-	optimize = !git prune && git gc --aggressive && git repack -Ad && git prune-packed
-	check-whitespace = diff --check HEAD^
-	clean-test = "!git branch | grep 'test-patches-' | xargs -r git branch -D"
+    # Repository maintenance
+    optimize = !git prune && git gc --aggressive && git repack -Ad && git prune-packed
+    check-whitespace = diff --check HEAD^
+    clean-test = "!git branch | grep 'test-patches-' | xargs -r git branch -D"
 
-# Reports
-	contributors = shortlog --summary --numbered
-	churn = !git log --all -M -C --name-only --format='format:' "$@" | sort | grep -v '^$' | uniq -c | sort -rn | head -20
-	aliases = "!git config --list | grep '^alias\\.' | awk -F= '{printf \"%s\t => %s\\n\", substr($1,7), $2}' | sort"
+    # Statistics and reports
+    contributors = shortlog --summary --numbered
+    churn = "!git log --all -M -C --name-only --format='format:' \"$@\" | sort | grep -v '^$' | uniq -c | sort -rn | head -20"
+    aliases = "!git config --list | grep '^alias\\.' | awk -F= '{printf \"%s\\t => %s\\n\", substr($1,7), $2}' | sort"
 
-# Emacs
-	fix = "!f() { emacsclient -c $(git diff --name-only --diff-filter=U); }; f"
-	ec = "!f() { emacsclient -c $(git rev-parse --show-toplevel)/.git/config; }; f"
-	eg = "!f() { emacsclient -c ~/.gitconfig; }; f"
+    # Emacs integration
+    fix = "!f() { emacsclient -c $(git diff --name-only --diff-filter=U); }; f"
+    ec = "!f() { emacsclient -c $(git rev-parse --show-toplevel)/.git/config; }; f"
+    eg = "!f() { emacsclient -c ~/.gitconfig; }; f"
 
-# Info
-	info = !echo "Repo: $(basename $(git rev-parse --show-toplevel))" && \
-	        echo "Branch: $(git rev-parse --abbrev-ref HEAD)" && \
-	        echo "Remote: $(git remote get-url origin 2>/dev/null || echo 'No remote')" && \
-	        echo "Last commit: $(git log -1 --format='%h - %s (%cr)')"
+    # Repository information
+    info = !echo "Repo: $(basename $(git rev-parse --show-toplevel))" && echo "Branch: $(git rev-parse --abbrev-ref HEAD)" && echo "Remote: $(git remote get-url origin 2>/dev/null || echo 'No remote')" && echo "Last commit: $(git log -1 --format='%h - %s (%cr)')"
 
-# Assume unchanged
-	assume = update-index --assume-unchanged
-	unassume = update-index --no-assume-unchanged
-	assumed = "!git ls-files -v | grep ^h | cut -c 3-"
+    # File tracking operations
+    assume = update-index --assume-unchanged
+    unassume = update-index --no-assume-unchanged
+    assumed = "!git ls-files -v | grep ^h | cut -c 3-"
