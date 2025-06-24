@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Reformatted `git/gitconfig` with consistent indentation, updated autocrlf setting to false, added new Guix patch aliases, and reorganized alias sections with comments.
 - Enhanced `git/gitattributes` with improved Guix-specific file handling, including patch/diff binary treatment, enhanced Scheme file detection, and Texinfo documentation support.
 - Added GROBID configuration file (`grobid/grobid.yaml`) with optimized settings for academic document processing, including deep learning model configurations and bibliographic consolidation.
+- Enhanced `scripts/style.scm` with command-line argument support for flexible file and directory processing, including help/version options and improved error handling.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
