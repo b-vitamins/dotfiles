@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Improved bibliographic integration in Citar with custom icon indicators.
 - Enhanced Org Roam node display with backlink counts and directory context.
 - Reorganized idle-time loading sections in `init.el` for clearer module initialization.
+- Expanded `bv-core.el` with comprehensive feature system, XDG compliance, circular dependency detection, and improved path utilities.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
