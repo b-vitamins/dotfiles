@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Complete test suite for `bv-transient.el` with mock-based testing covering interactive commands, value manipulation, feature management, and development utilities.
 - Better defaults module (`bv-defaults.el`) providing sensible Emacs configurations with XDG-compliant file handling, modern editing defaults, enhanced keybindings, and automatic whitespace management.
 - Comprehensive test suite for `bv-defaults.el` with 20+ unit tests covering directory infrastructure, custom variables, keymaps, file handling, whitespace management, and toggle commands.
+- Comprehensive test suite for `bv-ui.el` with 50+ unit tests covering theme system, font configuration, mode line management, timer scheduling, and interactive commands.
 ### Changed
 - Phase 3 modules are now enabled in `init.el`.
 - Updated comments to reflect active module loading.
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Replaced `bv-navigation.el` with expanded project and window management features.
 - Replaced `bv-core.el` with expanded configuration and path helpers.
 - Redesigned UI module with automatic theme switching and header line support.
+- Major refactor of `bv-ui.el` with comprehensive UI configuration system including environment variable support, compatibility layer for Emacs 30+, enhanced theme switching with time-based automation, improved font management, configurable window decorations, and extensive documentation.
 - Replaced `bv-completion.el` with modernized configuration.
 - Replaced `bv-development.el` with simplified configuration.
 - Rewrote `bv-git.el` with improved Git integration.
