@@ -1,0 +1,188 @@
+# ---------------------------------------------------------------------------
+# 0. Early initialisation
+# ---------------------------------------------------------------------------
+# Load the basic autoloadable zsh modules only once.
+autoload -Uz add-zsh-hook compinit promptinit colors
+promptinit           # enable the built‑in prompt framework (we'll override)
+compinit -C          # initialise completion (use the compiled cache if any)
+
+# Direnv ‑‑ makes `guix shell` environments (and any other .envrc) automatic
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook zsh)"           # <-- *** required for direnv ***
+  export DIRENV_LOG_FORMAT=""        # be quiet unless something goes wrong
+fi
+
+# ---------------------------------------------------------------------------
+# 1. Shell behaviour & history
+# ---------------------------------------------------------------------------
+# Increase history size and keep it consistent across sessions
+HISTSIZE=10000
+SAVEHIST=10000
+
+setopt NO_BEEP               # shhh 🦉
+setopt EXTENDED_GLOB         # zsh's powerful globbing
+setopt NO_CLOBBER            # don't overwrite files with > by accident
+setopt HIST_IGNORE_DUPS      # no duplicate adjacent history entries
+setopt HIST_IGNORE_SPACE     # lines starting with space aren't saved
+setopt HIST_REDUCE_BLANKS    # trim superfluous spaces
+setopt HIST_VERIFY           # edit a recalled history line before executing
+setopt INC_APPEND_HISTORY    # write as soon as a line is executed
+setopt APPEND_HISTORY        # and append rather than overwrite
+setopt AUTO_CD               # "cd foo" → "foo"
+setopt AUTO_PUSHD            # pushd when cd'ing so you can use popd
+setopt PUSHD_IGNORE_DUPS     # no duplicate entries in the stack
+setopt NO_SHARE_HISTORY      # don't share in‑memory history across sessions
+setopt NO_HUP                # don't kill background jobs when shell exits
+
+# ---------------------------------------------------------------------------
+# 2. Completion system tuning
+# ---------------------------------------------------------------------------
+zstyle ':completion:*' menu select
+zstyle ':completion:*' list-suffixes yes
+zstyle ':completion:*' expand yes
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh"
+
+# ---------------------------------------------------------------------------
+# 3. Colours (built‑in table) & terminal title support
+# ---------------------------------------------------------------------------
+colors
+
+# Put directory in terminal title (useful in tabs)
+case $TERM in
+  (xterm*|rxvt*|terminator*|alacritty|tmux*)
+    precmd() { print -Pn "\e]0;%n@%m: %~\a"; }
+  ;;
+esac
+
+# ---------------------------------------------------------------------------
+# 4. Prompt
+# ---------------------------------------------------------------------------
+#   Shows "環境" (environment) when $GUIX_ENVIRONMENT is set (direnv/guix shell)
+#   Shows "カオス" (chaos) otherwise.
+#   Toggle timestamp with Ctrl‑Space.
+
+SHOW_TIMESTAMP=0   # default: timestamps off
+
+function is_utf8_locale() {
+  [[ "${LC_ALL:-}${LANG:-}${GDM_LANG:-}" =~ [Uu][Tt][Ff]-?8 ]]
+}
+
+function prompt_env_precmd() {
+  local display_time prompt_path prompt_status
+  [[ "$SHOW_TIMESTAMP" -eq 1 ]] && display_time="%F{#ECBE7B}%D{%H:%M:%S}%f %F{#88c0d0}%D{%d %b}%f "
+
+  # Abbreviate path to at most two components (like %2~)
+  prompt_path="%2~"
+
+  if is_utf8_locale; then
+    if [[ -n "$GUIX_ENVIRONMENT" ]]; then
+      PROMPT="${display_time}%F{#51afef}環境%f %F{#98be65}${prompt_path}%f %F{#ff6c6b}>%f "
+    else
+      PROMPT="${display_time}%F{#ff6c6b}カオス%f %F{#98be65}${prompt_path}%f %F{#51afef}>%f "
+    fi
+  else
+    # Fallback for non‑UTF‑8 locales
+    if [[ -n "$GUIX_ENVIRONMENT" ]]; then
+      PROMPT="${display_time}%F{39}%n@%m%f %F{34}${prompt_path}%f %F{220}[env]%f %F{160}>%f "
+    else
+      PROMPT="${display_time}%F{39}%n@%m%f %F{34}${prompt_path}%f %F{160}>%f "
+    fi
+  fi
+}
+
+# Toggle showing timestamp in prompt (Ctrl‑Space)
+function toggle_timestamp {
+  SHOW_TIMESTAMP=$((1 - SHOW_TIMESTAMP))
+  prompt_env_precmd
+  zle reset-prompt
+}
+zle -N toggle_timestamp
+bindkey '^@' toggle_timestamp        # Ctrl‑Space because Ctrl‑@ is ^@
+
+# Every second, make sure the prompt remains fresh (for the env indicator)
+TRAPALRM() { zle reset-prompt }
+TMOUT=1                               # generate the ALRM signal once per sec
+
+add-zsh-hook precmd prompt_env_precmd # recalc prompt every command
+
+# ---------------------------------------------------------------------------
+# 5. Widgets & key‑bindings
+# ---------------------------------------------------------------------------
+# Re‑use Emacs‑style navigation plus a few handy extras
+zle -N edit-command-line
+bindkey -e                     # start from emacs keymap
+bindkey '^X^E' edit-command-line
+bindkey '^A' beginning-of-line
+bindkey '^E' end-of-line
+bindkey '^K' kill-line
+bindkey '^[b' backward-word
+bindkey '^[f' forward-word
+bindkey '^[d' kill-word
+bindkey '^R' history-incremental-search-backward
+bindkey '^S' history-incremental-search-forward
+
+# ---------------------------------------------------------------------------
+# 6. Environment variables
+# ---------------------------------------------------------------------------
+export LD_LIBRARY_PATH="$LIBRARY_PATH"   # mirror LIBRARY_PATH for mixed builds
+
+# ---------------------------------------------------------------------------
+# 7. Aliases
+# ---------------------------------------------------------------------------
+# LS & friends with colour
+alias ls='ls --color=auto'
+alias ll='ls -lh --color=auto'
+alias la='ls -A --color=auto'
+alias l='ls -CF --color=auto'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+alias diff='diff --color=auto'
+
+# Quick navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias -- -='cd -'
+
+# Editor shortcuts
+alias e='emacs'
+alias ec='emacsclient -c'
+alias em='emacs -nw'
+alias v='$EDITOR'
+
+# Git quality‑of‑life
+alias g='git'
+alias gs='git status -sb'
+alias gl='git log --oneline -10'
+alias gd='git diff'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gu='git pull'
+
+# Project‑specific helpers
+alias fmtmyguix='guile $HOME/projects/dotfiles/scripts/style.scm $HOME/projects/myguix'
+
+# Utilities
+alias h='history | tail -20'
+alias path='echo $PATH | tr ":" "\n"'
+alias mkdir='mkdir -p'
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+alias mount='mount | column -t'
+alias python='python3'
+alias c='claude'
+
+# Guix mirror sync
+alias sync-guix='(cd ~/projects/guix-mirror && git fetch upstream && git merge upstream/master && git push origin master)'
+
+# ---------------------------------------------------------------------------
+# 8. End — tidy up
+# ---------------------------------------------------------------------------
+unsetopt PROMPT_SUBST  # safety: ensure no unknown prompt substitutions linger
+
+# vim: ft=zsh sw=2 ts=2 et

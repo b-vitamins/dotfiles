@@ -1,0 +1,7 @@
+source "$HOME/.profile"
+PROMPT="%F{39}%n@%m%f %F{34}%~%f %F{160}>%f "
+export HISTSIZE="50000"
+export HISTFILE="$HOME/.config/zsh/.zhistory"
+export SAVEHIST="50000"
+export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket 2>/dev/null)"
+export GPG_TTY="$(tty 2>/dev/null || echo "")"
