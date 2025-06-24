@@ -13,6 +13,7 @@
 
 # But don't ignore these files and directories
 !/zsh/zshrc
+!/zsh/zshenv
 !/zsh/zprofile
 !/zsh/lscolors.sh
 !/zsh/scripts/
