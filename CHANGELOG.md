@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Enhanced `git/gitattributes` with improved Guix-specific file handling, including patch/diff binary treatment, enhanced Scheme file detection, and Texinfo documentation support.
 - Added GROBID configuration file (`grobid/grobid.yaml`) with optimized settings for academic document processing, including deep learning model configurations and bibliographic consolidation.
 - Enhanced `scripts/style.scm` with command-line argument support for flexible file and directory processing, including help/version options and improved error handling.
+- Renamed `scripts/deduplicate.scm` to `scripts/dedup.scm` for brevity while maintaining the same Guix package deduplication functionality.
 - Added Zsh configuration with modern shell setup including direnv integration, UTF-8 Japanese prompt indicators, completion system tuning, and quality-of-life aliases for navigation, Git, and utilities.
 - Updated `.gitignore` to allow `zsh/zshenv` file for environment variable configuration.
 ### Fixed
