@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Extensive enhancements to Org-mode configuration, including expanded TODO keywords, habit tracking, and LaTeX support.
 - Comprehensive research workflow setup using Org Roam and Citar with enhanced PDF and citation management.
 - Org-LaTeX setup file (`setupfile.org`) for consistent document headers and settings across Org documents.
+- Comprehensive test suite for `bv-core.el` with 25+ unit tests covering configuration values, feature system, path utilities, macros, and timer management.
 ### Changed
 - Phase 3 modules are now enabled in `init.el`.
 - Updated comments to reflect active module loading.
