@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Expanded `bv-core.el` with comprehensive feature system, XDG compliance, circular dependency detection, and improved path utilities.
 - Enhanced `bv-transient.el` with cache directory management integration, adding "Open Cache Dir" and "Reset Cache Dirs" commands to the advanced menu.
 - Reformatted `git/gitconfig` with consistent indentation, updated autocrlf setting to false, added new Guix patch aliases, and reorganized alias sections with comments.
+- Enhanced `git/gitattributes` with improved Guix-specific file handling, including patch/diff binary treatment, enhanced Scheme file detection, and Texinfo documentation support.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.

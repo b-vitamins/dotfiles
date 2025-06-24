@@ -56,11 +56,14 @@
 
 # Guix
 *.drv text eol=lf
-*.patch text eol=lf -whitespace
-*.diff text eol=lf -whitespace
-guix.scm text diff=scheme
-manifest.scm text diff=scheme
-channels.scm text diff=scheme
+*.patch -text -whitespace
+*.diff -text -whitespace
+guix.scm text diff=scheme eol=lf
+manifest.scm text diff=scheme eol=lf
+channels.scm text diff=scheme eol=lf
+*.texi text diff=texinfo eol=lf
+*.texi.in text diff=texinfo eol=lf
+*.scm.in text diff=scheme eol=lf
 
 # Documentation
 *.md text diff=markdown
