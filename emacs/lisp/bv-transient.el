@@ -55,6 +55,8 @@
 (declare-function with-help-window "help" (buffer-or-name &rest body))
 (declare-function transient-quit-one "transient" ())
 (declare-function help-mode "help-mode" ())
+(declare-function bv-defaults-open-cache-dir "bv-defaults" ())
+(declare-function bv-defaults-reset-cache-dirs "bv-defaults" ())
 
 ;; Compatibility layer for Emacs 30+ changes
 (eval-and-compile
@@ -316,7 +318,9 @@ Reports success or failure after the operation."
     ("pv" "Expand var/..." bv-menu-expand-var)
     ("ps" "Expand system/..." bv-menu-expand-system)
     ("ph" "Expand home/..." bv-menu-expand-home)
-    ("pd" "Ensure Dir..." bv-menu-ensure-directory)]
+    ("pd" "Ensure Dir..." bv-menu-ensure-directory)
+    ("pc" "Open Cache Dir" bv-defaults-open-cache-dir)
+    ("pr" "Reset Cache Dirs" bv-defaults-reset-cache-dirs)]
 
    ["Development"
     :class transient-column

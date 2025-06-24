@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Enhanced Org Roam node display with backlink counts and directory context.
 - Reorganized idle-time loading sections in `init.el` for clearer module initialization.
 - Expanded `bv-core.el` with comprehensive feature system, XDG compliance, circular dependency detection, and improved path utilities.
+- Enhanced `bv-transient.el` with cache directory management integration, adding "Open Cache Dir" and "Reset Cache Dirs" commands to the advanced menu.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.
