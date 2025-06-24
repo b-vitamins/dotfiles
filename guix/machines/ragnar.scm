@@ -3,6 +3,7 @@
              (gnu home services)
              (gnu home services desktop)
              (gnu home services dict)
+             (gnu home services gnupg)
              (gnu home services mcron)
              (gnu home services media)
              (gnu home services music)
@@ -10,14 +11,17 @@
              (gnu home services sound)
              (gnu home services ssh)
              (gnu home services syncthing)
+             (gnu home services xdg)
              (gnu packages display-managers)
              (gnu packages fonts)
+             (gnu packages gnupg)
              (gnu packages linux)
              (gnu packages networking)
              (gnu packages sync)
              (gnu packages video)
              (gnu packages gnome)
              (gnu packages gnome-xyz)
+             (gnu packages shellutils)
              (gnu services)
              (gnu services avahi)
              (gnu services cuirass)
@@ -63,20 +67,23 @@
              (srfi srfi-1)
              (ice-9 match))
 
-(define %pg-pass-file
-  "/var/lib/postgresql/airflow.pwd")
-(define pg-pass
-  (read-secret %pg-pass-file))
+(define-public %default-dotguile
+  (plain-file "guile" "(use-modules (ice-9 readline)
+                           (ice-9 colorized))
+(activate-readline)
+(activate-colorized)"))
 
-(define (extract-propagated-inputs package)
-  ;; Drop input labels.  Attempt to support outputs.
-  (map (match-lambda
-         ((_ (? package? pkg))
-          pkg)
-         ((_ (? package? pkg) output)
-          (list pkg output)))
-       (package-propagated-inputs package)))
+(define-public %default-gdbinit
+  (plain-file "gdbinit" "set history save on
+set history filename ~/.local/state/gdb_history
+set history size 10000"))
 
+(define-public %default-nanorc
+  (plain-file "nanorc" "set positionlog
+set historylog
+set suspendable"))
+
+;;; Home configuration
 (define %my-home-config
   (home-environment
     (packages (append
@@ -91,64 +98,158 @@
                %video-production-packages))
 
     (services
-     (append (list
-              ;; Home Emacs Service
-              (service my-home-emacs-service-type)
-              ;; Scheduled User’s Job Execution
-              (service home-mcron-service-type
-                       (home-mcron-configuration (jobs (list
-                                                        %garbage-collector-job))))
-              ;; Home Files Service
-              (simple-service 'my-home-files-service home-files-service-type
-                              `((".gitconfig" ,(local-file
-                                                "../../git/gitconfig"))
-                                (".gitignore" ,(local-file
-                                                "../../git/gitignore"))
-                                (".gitattributes" ,(local-file
-                                                    "../../git/gitattributes"))))
-              ;; Config Files Service
-              (simple-service 'my-config-files-service
-                              home-xdg-configuration-files-service-type
-                              `(("alacritty/alacritty.toml" ,(local-file
-                                                              "../../alacritty/alacritty.toml"))
-                                ("mpv/input.conf" ,(local-file
-                                                    "../../mpv/input.conf"))
-                                ("mpv/mpv.conf" ,(local-file
-                                                  "../../mpv/mpv.conf"))
-                                ("mpv/shaders" ,(local-file
-                                                 "../../mpv/shaders"
-                                                 #:recursive? #t))))
+     (list
+      ;; Start with the base services from myguix
+      (service home-files-service-type
+               `((".guile" ,%default-dotguile)))
 
-              ;; Secure Shell
-              (service home-openssh-service-type
-                       (home-openssh-configuration (hosts (list (openssh-host (name
-                                                                               "github.com")
+      (service home-xdg-configuration-files-service-type
+               `(("gdb/gdbinit" ,%default-gdbinit)
+                 ("nano/nanorc" ,%default-nanorc)))
 
+      (service home-xdg-user-directories-service-type
+               (home-xdg-user-directories-configuration (desktop
+                                                         "$HOME/desktop")
+                                                        (documents
+                                                         "$HOME/documents")
+                                                        (download
+                                                         "$HOME/downloads")
+                                                        (music "$HOME/music")
+                                                        (pictures
+                                                         "$HOME/pictures")
+                                                        (publicshare
+                                                         "$HOME/public")
+                                                        (templates
+                                                         "$HOME/templates")
+                                                        (videos "$HOME/videos")))
+      (service my-home-emacs-service-type)
 
-                                                                              (user
-                                                                               "git")
+      (service home-inputrc-service-type
+               (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")
+                                                           ("TAB" . "menu-complete")))
+                                           (variables `(("bell-style" . "visible")
+                                                        ("editing-mode" . "emacs")
+                                                        ("show-all-if-ambiguous" . #t)
+                                                        ("mark-symlinked-directories" . #t)
+                                                        ("visible-stats" . #t)
+                                                        ("colored-stats" . #t)
+                                                        ("colored-completion-prefix" . #t)
+                                                        ("menu-complete-display-prefix" . #t)))))
 
+      ;; Scheduled User's Job Execution
+      (service home-mcron-service-type
+               (home-mcron-configuration (jobs (list %garbage-collector-job))))
 
-                                                                              (identity-file
-                                                                               "~/.ssh/id_ed25519"))))
-                                                   (authorized-keys (list (local-file
-                                                                           "../../keys/ssh/ragnar.pub")))
-                                                   (add-keys-to-agent
-                                                    "confirm")))
+      ;; Configuration files
+      ;; Using simple-service to extend the existing home-files-service-type
+      (simple-service 'ragnar-dotfiles home-files-service-type
+                      `((".gitconfig" ,(local-file "../../git/gitconfig"))
+                        (".gitignore" ,(local-file "../../git/gitignore"))
+                        (".gitattributes" ,(local-file
+                                            "../../git/gitattributes"))))
 
-              ;; Desktop Home Services
-              (service home-dbus-service-type)
+      ;; XDG configuration files
+      (simple-service 'ragnar-xdg-config
+                      home-xdg-configuration-files-service-type
+                      `( ;Files from dotfiles repository
+                         ("alacritty/alacritty.toml" ,(local-file
+                                                       "../../alacritty/alacritty.toml"))
+                        ("mpv/input.conf" ,(local-file "../../mpv/input.conf"))
+                        ("mpv/mpv.conf" ,(local-file "../../mpv/mpv.conf"))
+                        ("mpv/shaders" ,(local-file "../../mpv/shaders"
+                                                    #:recursive? #t))))
 
-              ;; Sound Home Services
-              (service home-pipewire-service-type)
+      ;; Zsh configuration
+      (service home-zsh-service-type
+               (home-zsh-configuration (xdg-flavor? #t)
+                                       (zshenv (list (local-file
+                                                      "../../zsh/zshenv"
+                                                      "zshenv"
+                                                      #:recursive? #t)))
+                                       (zshrc (list
+                                               ;; Load main zshrc
+                                               (local-file "../../zsh/zshrc"
+                                                           "zshrc"
+                                                           #:recursive? #t)
 
-              ;; Networking Home Services
-              (service home-syncthing-service-type)
+                                               ;; Zsh plugins
+                                               (mixed-text-file
+                                                "zsh-syntax-highlighting"
+                                                "source "
+                                                zsh-syntax-highlighting
+                                                "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")
 
-              ;; Miscellaneous Home Services
-              (service home-beets-service-type
-                       (home-beets-configuration (directory "/home/b/music"))))
-             %my-home-services))))
+                                               (mixed-text-file
+                                                "zsh-history-substring-search"
+                                                "source "
+                                                zsh-history-substring-search
+                                                "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
+
+                                               (mixed-text-file
+                                                "zsh-completions" "fpath+=\""
+                                                zsh-completions
+                                                "/share/zsh/site-functions\"")
+
+                                               (mixed-text-file
+                                                "zsh-autosuggestions"
+                                                "source " zsh-autosuggestions
+                                                "/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh")
+
+                                               (mixed-text-file "zsh-autopair"
+                                                "source " zsh-autopair
+                                                "/share/zsh/plugins/zsh-autopair/zsh-autopair.zsh")))))
+
+      ;; GPG Agent
+      (service home-gpg-agent-service-type
+               (home-gpg-agent-configuration (pinentry-program (file-append
+                                                                pinentry-gnome3
+                                                                "/bin/pinentry-gnome3"))
+                                             (ssh-support? #t)
+                                             (default-cache-ttl 28800) ;8 hours
+                                             (max-cache-ttl 86400) ;24 hours
+                                             (default-cache-ttl-ssh 28800)
+                                             (max-cache-ttl-ssh 86400)
+                                             (extra-content
+                                              "enable-ssh-support
+allow-loopback-pinentry
+allow-preset-passphrase")))
+
+      ;; SSH configuration
+      (service home-openssh-service-type
+               (home-openssh-configuration (hosts (list (openssh-host (name
+                                                                       "github.com")
+                                                                      (user
+                                                                       "git")
+                                                                      (identity-file
+                                                                       "~/.ssh/id_ed25519")
+                                                                      (port 22)
+                                                                      (extra-content
+                                                                       "
+  ControlMaster auto
+  ControlPath ~/.ssh/control-%C
+  ControlPersist 10m"))
+                                                        (openssh-host (name
+                                                                       "gitlab.com")
+                                                                      (user
+                                                                       "git")
+                                                                      (identity-file
+                                                                       "~/.ssh/id_ed25519"))))
+                                           (authorized-keys (list (local-file
+                                                                   "../../keys/ssh/ragnar.pub")))
+                                           (add-keys-to-agent "confirm")))
+
+      ;; Desktop Home Services
+      (service home-dbus-service-type)
+
+      ;; Sound Home Services
+      (service home-pipewire-service-type)
+
+      ;; Networking Home Services
+      (service home-syncthing-service-type)
+
+      ;; Miscellaneous Home Services
+      (service home-beets-service-type
+               (home-beets-configuration (directory "/home/b/music")))))))
 
 (operating-system
   (host-name "ragnar")
@@ -216,72 +317,52 @@
                   (system? #t)
                   (name "realtime")) %base-groups))
 
-  (packages (append %compression-packages %rust-packages
-                    (map replace-mesa
-                         (append
-                          ;; Essential bundles
-                          %core-packages
-                          %monitoring-packages
-                          %versioning-packages
-                          %network-packages
-                          ;; Desktop bundles
-                          %desktop-packages
-                          %audio-packages
-                          %bluetooth-packages
-                          %my-gnome-shell-assets
-                          ;; File system bundles
-                          %basic-filesystem-packages
-                          %advanced-filesystem-packages
-                          %remote-filesystem-packages
-                          %file-transfer-packages
-                          ;; Development packages
-                          %development-packages
-                          %cuda-packages
-                          %guile-packages
-                          %python-packages
-                          %perl-packages
-                          %tree-sitter-packages
-                          ;; Document bundles
-                          %document-conversion-packages
-                          %document-production-packages
-                          ;; Font bundles
-                          %general-fonts
-                          %document-fonts
-                          %adobe-fonts
-                          %apple-fonts
-                          %google-fonts
-                          %fira-fonts
-                          %iosevka-fonts
-                          %monospace-fonts
-                          %microsoft-fonts
-                          %sans-fonts
-                          %serif-fonts
-                          %cjk-fonts
-                          %unicode-fonts
-                          %base-packages))))
+  (packages (append %compression-packages
+                    %rust-packages
+                    ;; Essential bundles
+                    %core-packages
+                    %monitoring-packages
+                    %versioning-packages
+                    %network-packages
+                    ;; Desktop bundles
+                    %desktop-packages
+                    %audio-packages
+                    %bluetooth-packages
+                    ;; File system bundles
+                    %basic-filesystem-packages
+                    %advanced-filesystem-packages
+                    %remote-filesystem-packages
+                    %file-transfer-packages
+                    ;; Development packages
+                    %development-packages
+                    %cuda-packages
+                    %guile-packages
+                    %python-packages
+                    %perl-packages
+                    %tree-sitter-packages
+                    ;; Document bundles
+                    %document-conversion-packages
+                    %document-production-packages
+                    ;; Font bundles
+                    %general-fonts
+                    %document-fonts
+                    %adobe-fonts
+                    %apple-fonts
+                    %google-fonts
+                    %fira-fonts
+                    %iosevka-fonts
+                    %monospace-fonts
+                    %microsoft-fonts
+                    %sans-fonts
+                    %serif-fonts
+                    %cjk-fonts
+                    %unicode-fonts
+                    %base-packages))
   (services
-   (append (list (service gnome-desktop-service-type
-                          (gnome-desktop-configuration (core-services (map
-                                                                       replace-mesa
-                                                                       (extract-propagated-inputs
-                                                                        gnome-meta-core-services)))
-                                                       (shell (map
-                                                               replace-mesa
-                                                               (extract-propagated-inputs
-                                                                gnome-meta-core-shell)))
-                                                       (utilities (map
-                                                                   replace-mesa
-                                                                   (extract-propagated-inputs
-                                                                    gnome-meta-core-utilities)))
-                                                       (extra-packages (map
-                                                                        replace-mesa
-                                                                        (extract-propagated-inputs
-                                                                         gnome-essential-extras)))))
+   (append (list (service gnome-desktop-service-type)
                  (service gdm-service-type
-                          (gdm-configuration (gdm (replace-mesa gdm))
-                                             (gnome-shell-assets (map
-                                                                  replace-mesa
-                                                                  %my-gnome-shell-assets))
+                          (gdm-configuration (gnome-shell-assets
+                                              %my-gnome-shell-assets)
                                              (xorg-configuration (xorg-configuration
                                                                   (modules (cons
                                                                             nvda
@@ -293,12 +374,6 @@
                                       (modules (cons nvda
                                                      %default-xorg-modules))
                                       (drivers '("nvidia"))))
-                 (service upower-service-type
-                          (upower-configuration (upower (replace-mesa upower))))
-
-                 (service gvfs-service-type
-                          (gvfs-configuration (gvfs (replace-mesa gvfs))))
-
                  ;; Printing Services
                  (service cups-service-type
                           (cups-configuration (web-interface? #t)))
@@ -307,13 +382,9 @@
                  (service openssh-service-type)
                  (service nftables-service-type)
                  (service network-manager-service-type
-                          (network-manager-configuration (network-manager (replace-mesa
-                                                                           network-manager))
-                                                         (vpn-plugins (map
-                                                                       replace-mesa
-                                                                       (list
-                                                                        network-manager-openvpn
-                                                                        network-manager-openconnect)))))
+                          (network-manager-configuration (vpn-plugins (list
+                                                                       network-manager-openvpn
+                                                                       network-manager-openconnect))))
 
                  ;; Database Services
                  (service redis-service-type)
@@ -326,18 +397,6 @@
                                                                              "
 local   all         postgres               peer
 "))))))
-
-                 (service postgresql-role-service-type
-                          (postgresql-role-configuration (roles (list (postgresql-role
-                                                                       (name
-                                                                        "airflow")
-                                                                       (password-file
-                                                                        %pg-pass-file)
-                                                                       (permissions '
-                                                                        (createdb
-                                                                         login))
-                                                                       (create-database?
-                                                                        #t))))))
 
                  ;; Desktop Services
                  (simple-service 'blueman dbus-root-service-type
@@ -371,8 +430,6 @@ local   all         postgres               peer
                                 oci-grobid-service-type oci-neo4j-service-type
                                 oci-qdrant-service-type oci-minio-service-type)))
            (modify-services %my-desktop-services
-             (delete gvfs-service-type)
-             (delete upower-service-type)
              (delete gdm-service-type)
              (delete network-manager-service-type))))
   (name-service-switch %mdns-host-lookup-nss))
