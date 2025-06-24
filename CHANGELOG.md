@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Renamed `scripts/deduplicate.scm` to `scripts/dedup.scm` for brevity while maintaining the same Guix package deduplication functionality.
 - Added Zsh configuration with modern shell setup including direnv integration, UTF-8 Japanese prompt indicators, completion system tuning, and quality-of-life aliases for navigation, Git, and utilities.
 - Updated `.gitignore` to allow `zsh/zshenv` file for environment variable configuration.
+- Enhanced `alacritty/alacritty.toml` with improved keyboard bindings including Ctrl+C interrupt signal support and consistent formatting throughout configuration sections.
 ### Fixed
 - Addressed syntax errors in `bv-writing.el` and `bv-core.el` that
   prevented productivity modules from loading.

@@ -150,9 +150,10 @@ bindings = [
     { key = "A", mods = "Control", chars = "\u0001" },  # Beginning of line (C-a)
     { key = "E", mods = "Control", chars = "\u0005" },  # End of line (C-e)
     { key = "K", mods = "Control", chars = "\u000b" },  # Kill to end of line (C-k)
+    { key = "C", mods = "Control", chars = "\u0003" },  # Interrupt signal (C-c)
     { key = "F", mods = "Alt", chars = "\u001bf" },     # Forward word (M-f)
     { key = "B", mods = "Alt", chars = "\u001bb" },     # Backward word (M-b)
-    
+
     # Additional Emacs bindings
     { key = "D", mods = "Control", chars = "\u0004" },  # Delete char forward (C-d)
     { key = "H", mods = "Control", chars = "\u0008" },  # Delete char backward (C-h)
@@ -172,7 +173,7 @@ bindings = [
     { key = "Space", mods = "Control", chars = "\u0000" }, # Set mark (C-space)
     { key = "Slash", mods = "Control", chars = "\u001f" }, # Undo (C-/)
     { key = "X", mods = "Control", chars = "\u0018" },  # C-x prefix
-    
+
     # Alt/Meta navigation
     { key = "Left", mods = "Alt", chars = "\u001bb" },  # Alt-Left = backward word
     { key = "Right", mods = "Alt", chars = "\u001bf" }, # Alt-Right = forward word
@@ -191,7 +192,7 @@ bindings = [
     { key = "L", mods = "Alt", chars = "\u001bl" },     # Lowercase word (M-l)
     { key = "C", mods = "Alt", chars = "\u001bc" },     # Capitalize word (M-c)
     { key = "T", mods = "Alt", chars = "\u001bt" },     # Transpose words (M-t)
-    
+
     # Clipboard - Emacs style
     { key = "V", mods = "Control", action = "Paste" },
     { key = "C", mods = "Control", action = "Copy" },
@@ -199,13 +200,13 @@ bindings = [
     { key = "C", mods = "Control|Shift", action = "Copy" },
     { key = "Insert", mods = "Shift", action = "Paste" },
     { key = "Insert", mods = "Control", action = "Copy" },
-    
+
     # Font Size
     { key = "Plus", mods = "Control", action = "IncreaseFontSize" },
     { key = "Equals", mods = "Control", action = "IncreaseFontSize" },
     { key = "Minus", mods = "Control", action = "DecreaseFontSize" },
     { key = "Key0", mods = "Control", action = "ResetFontSize" },
-    
+
     # Scrolling
     { key = "PageUp", mods = "Shift", action = "ScrollPageUp" },
     { key = "PageDown", mods = "Shift", action = "ScrollPageDown" },
@@ -214,16 +215,16 @@ bindings = [
     { key = "Up", mods = "Control|Shift", action = "ScrollLineUp" },
     { key = "Down", mods = "Control|Shift", action = "ScrollLineDown" },
     { key = "V", mods = "Control", action = "ScrollPageDown" }, # Emacs-style page down
-    
+
     # Window Management
     { key = "N", mods = "Control|Shift", action = "SpawnNewInstance" },
     { key = "Return", mods = "Control|Shift", action = "ToggleFullscreen" },
     { key = "M", mods = "Control|Shift", action = "ToggleMaximized" },
-    
+
     # Tab navigation (for multiplexers)
     { key = "Tab", mods = "Control", chars = "\u001b[9;5u" },
     { key = "Tab", mods = "Control|Shift", chars = "\u001b[9;6u" },
-    
+
     # Disable Vi mode (conflicts with Emacs)
     # { key = "Space", mods = "Control|Shift", mode = "~Search", action = "ToggleViMode" },
     # { key = "Escape", mode = "~Search", action = "ToggleViMode" },
