@@ -12,7 +12,7 @@
 
 [core]
     editor = emacsclient -c -a ""
-    autocrlf = false
+    autocrlf = input
     whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
     excludesfile = ~/.gitignore
     pager = less -FRX
