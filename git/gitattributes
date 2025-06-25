@@ -1,6 +1,6 @@
 # ~/.gitattributes
 
-* text=auto
+* -text
 
 # Source code
 *.c text diff=cpp
@@ -37,7 +37,7 @@
 *.rs text diff=rust
 *.go text diff=golang
 
-*.scm text diff=scheme eol=lf
+*.scm -text diff=scheme
 *.lisp text diff=lisp
 *.el text diff=elisp
 *.elc binary
