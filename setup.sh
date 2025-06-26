@@ -194,4 +194,14 @@ for src in "${!links[@]}"; do
     fi
 done
 
+# Install git hooks if in the repository and not in guix-only mode
+if [ "$GUIX_ONLY" = false ] && [ -d "$DOTFILES_DIR/.git" ]; then
+    echo "Installing git hooks..."
+    if [ "$DRY_RUN" = false ]; then
+        "$DOTFILES_DIR/git/hooks/install.sh"
+    else
+        echo " (would install git hooks)"
+    fi
+fi
+
 echo "Symlink setup complete."
