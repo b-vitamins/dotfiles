@@ -834,8 +834,8 @@ collation-server = utf8mb4_unicode_ci")))
                                                                       "--exclude=node_modules"
                                                                       "--exclude=.git"
                                                                       "--exclude=target"
-                                                                      "--exclude=__pycache__")))))))
-                 (modify-services %my-desktop-services
-                   (delete gdm-service-type)
-                   (delete network-manager-service-type)))))
+                                                                      "--exclude=__pycache__"))))))))
+           (modify-services %my-desktop-services
+             (delete gdm-service-type)
+             (delete network-manager-service-type))))
   (name-service-switch %mdns-host-lookup-nss))
