@@ -118,6 +118,10 @@ thickness = 0.15
 [terminal]
 osc52 = "CopyPaste"
 
+[shell]
+program = "/run/current-system/profile/bin/zsh"
+args = ["-l"]
+
 [mouse]
 hide_when_typing = true
 bindings = [
