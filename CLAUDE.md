@@ -144,6 +144,17 @@ The Guix system configuration uses:
 4. **Documentation**: Update relevant README files when adding features
 5. **Machine-Specific**: Test changes on target machine before committing
 
+## Git Commit Guidelines
+
+**CRITICAL**: Before committing, ALWAYS:
+1. Run `git status` to review what will be committed
+2. Use `git add <specific-files>` instead of `git add -A` or `git add .`
+3. If you see many unrelated files staged (especially emacs/), STOP and unstage them
+4. Only commit files you explicitly modified for the current task
+5. When in doubt, commit files one at a time
+
+**Common Pitfall**: The emacs/ directory often has many uncommitted changes from ongoing work. Never accidentally commit these unless specifically working on emacs configuration.
+
 ## Current Machines
 
 - `mileva`: Primary development workstation (64GB RAM, RTX 3060, multiple NVMe drives)
