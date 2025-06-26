@@ -40,6 +40,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Replaced `bv-core.el` with expanded configuration and path helpers.
 - Redesigned UI module with automatic theme switching and header line support.
 - Major refactor of `bv-ui.el` with comprehensive UI configuration system including environment variable support, compatibility layer for Emacs 30+, enhanced theme switching with time-based automation, improved font management, configurable window decorations, and extensive documentation.
+- Removed obsolete machine configurations for `leibniz` and manifests for haskell-manifest.scm, julia-manifest.scm, guile-manifest.scm, scientific-manifest.scm.
+- Added new machine configurations for `mileva` (AMD Ryzen 9 5900X workstation) and `spärck` (ThinkPad laptop).
+- Enhanced `mileva` home configuration with zprofile and fzf-tab integration.
+- Enhanced `spärck` home configuration with comprehensive services.
+- Optimized MPV configuration for RTX 3060 with GPU shaders and hardware acceleration.
+- Completely rewrote Alacritty configuration for better Emacs workflow integration and improved keybindings.
+- Complete rewrite of Zsh configuration with modern shell experience including advanced prompt, completion system, and plugin management.
+- Added public SSH keys for new machines.
+- Implemented git hooks for code quality and commit standards.
+- Enhanced setup script with automatic git hook installation.
+- Comprehensive update to .gitignore for modern development workflows.
+- Streamlined README with focus on hot paths and better navigation.
+- Updated CLAUDE.md with current context and comprehensive style guidelines.
 - Replaced `bv-completion.el` with modernized configuration.
 - Replaced `bv-development.el` with simplified configuration.
 - Rewrote `bv-git.el` with improved Git integration.
@@ -92,6 +105,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Replaced `bv-defaults.el` with streamlined configuration and modern defaults.
 - Balanced parentheses in various files.
 - Resolved minor syntax and keybinding conflicts in `bv-research.el` and `bv-ui.el`.
+- Updated variable names in Emacs writing configuration for consistency.
+- Corrected indentation in mileva system services configuration.
 ### Removed
 - Old Emacs configuration to prepare for a new setup.
 - Removed Airflow container service from `ragnar` machine.
