@@ -3,10 +3,13 @@
              (gnu home)
              (gnu packages base)
              (gnu packages docker)
+             (gnu packages gnupg)
+             (gnu packages shellutils)
              (gnu home services mcron)
              (gnu home services ssh)
              (gnu home services gnupg)
              (gnu home services desktop)
+             (gnu home services xdg)
              (gnu services docker)
              (gnu home services)
              (gnu home services media)
@@ -48,6 +51,22 @@
              (myguix services oci-containers)
              (srfi srfi-1))
 
+(define-public %default-dotguile
+  (plain-file "guile" "(use-modules (ice-9 readline)
+                           (ice-9 colorized))
+(activate-readline)
+(activate-colorized)"))
+
+(define-public %default-gdbinit
+  (plain-file "gdbinit" "set history save on
+set history filename ~/.local/state/gdb_history
+set history size 10000"))
+
+(define-public %default-nanorc
+  (plain-file "nanorc" "set positionlog
+set historylog
+set suspendable"))
+
 (define %my-home-config
   (home-environment
     
@@ -86,21 +105,93 @@
                                                 (number->string (max 1
                                                                      (- (current-processor-count)
                                                                         2)))))
+                                ("CMAKE_GENERATOR" . "Ninja")
                                 ;; XDG paths
                                 ("XDG_DATA_DIRS" . "$XDG_DATA_DIRS:$HOME/.local/share")
                                 ;; Python
                                 ("PYTHONDONTWRITEBYTECODE" . "1")
+                                ("PYTHONUNBUFFERED" . "1")
+                                ;; Rust
+                                ("CARGO_HOME" . "$XDG_DATA_HOME/cargo")
+                                ("RUSTUP_HOME" . "$XDG_DATA_HOME/rustup")
+                                ;; Go
+                                ("GOPATH" . "$XDG_DATA_HOME/go")
+                                ;; Node.js
+                                ("NPM_CONFIG_USERCONFIG" . "$XDG_CONFIG_HOME/npm/npmrc")
+                                ("NPM_CONFIG_CACHE" . "$XDG_CACHE_HOME/npm")
                                 ;; Wayland
                                 ("MOZ_ENABLE_WAYLAND" . "1")
                                 ("QT_QPA_PLATFORM" . "wayland;xcb")
                                 ("_JAVA_AWT_WM_NONREPARENTING" . #t)))
 
               ;; Home Files Service
+              (service home-files-service-type
+                       `((".guile" ,%default-dotguile)))
+
               (simple-service 'my-home-files-service home-files-service-type
                               `((".gitconfig" ,(local-file
                                                 "../../git/gitconfig"
                                                 "gitconfig"
-                                                #:recursive? #f))))
+                                                #:recursive? #f))
+                                (".gitignore" ,(local-file
+                                                "../../git/gitignore"
+                                                "gitignore"
+                                                #:recursive? #f))
+                                (".gitattributes" ,(local-file
+                                                    "../../git/gitattributes"
+                                                    "gitattributes"
+                                                    #:recursive? #f))))
+
+              ;; XDG configuration
+              (service home-xdg-configuration-files-service-type
+                       `(("gdb/gdbinit" ,%default-gdbinit)
+                         ("nano/nanorc" ,%default-nanorc)))
+
+              (service home-xdg-user-directories-service-type
+                       (home-xdg-user-directories-configuration (desktop
+                                                                 "$HOME/desktop")
+                                                                (documents
+                                                                 "$HOME/documents")
+                                                                (download
+                                                                 "$HOME/downloads")
+                                                                (music
+                                                                 "$HOME/music")
+                                                                (pictures
+                                                                 "$HOME/pictures")
+                                                                (publicshare
+                                                                 "$HOME/public")
+                                                                (templates
+                                                                 "$HOME/templates")
+                                                                (videos
+                                                                 "$HOME/videos")))
+
+              ;; Default applications (XDG MIME associations)
+              (simple-service 'default-applications
+                              home-xdg-configuration-files-service-type
+                              `(("mimeapps.list" ,(plain-file "mimeapps.list"
+                                                   "[Default Applications]
+text/html=firefox.desktop
+x-scheme-handler/http=firefox.desktop
+x-scheme-handler/https=firefox.desktop
+x-scheme-handler/about=firefox.desktop
+x-scheme-handler/unknown=firefox.desktop
+application/pdf=org.gnome.Evince.desktop
+image/png=org.gnome.eog.desktop
+image/jpeg=org.gnome.eog.desktop
+image/gif=org.gnome.eog.desktop
+image/webp=org.gnome.eog.desktop
+video/mp4=mpv.desktop
+video/x-matroska=mpv.desktop
+video/webm=mpv.desktop
+audio/mpeg=mpv.desktop
+audio/flac=mpv.desktop
+text/plain=emacsclient.desktop
+text/x-c=emacsclient.desktop
+text/x-python=emacsclient.desktop
+application/x-shellscript=emacsclient.desktop
+inode/directory=org.gnome.Nautilus.desktop
+"))))
+
               ;; Config Files Service
               (simple-service 'my-config-files-service
                               home-xdg-configuration-files-service-type
@@ -199,6 +290,73 @@ allow-preset-passphrase")))
               
               ;; Networking Home Services
               (service home-syncthing-service-type)
+
+              ;; Input configuration
+              (service home-inputrc-service-type
+                       (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")
+                                                                   ("TAB" . "menu-complete")))
+                                                   (variables `(("bell-style" . "visible")
+                                                                ("editing-mode" . "emacs")
+                                                                ("show-all-if-ambiguous" . #t)
+                                                                ("mark-symlinked-directories" . #t)
+                                                                ("visible-stats" . #t)
+                                                                ("colored-stats" . #t)
+                                                                ("colored-completion-prefix" . #t)
+                                                                ("menu-complete-display-prefix" . #t)))))
+
+              ;; Zsh configuration
+              (service home-zsh-service-type
+                       (home-zsh-configuration (xdg-flavor? #t)
+                                               (zshenv (list (local-file
+                                                              "../../zsh/zshenv"
+                                                              "zshenv"
+                                                              #:recursive? #f)))
+                                               (zprofile (list (local-file
+                                                                "../../zsh/zprofile"
+                                                                "zprofile"
+                                                                #:recursive?
+                                                                #f)))
+                                               (zshrc (list
+                                                       ;; Load main zshrc
+                                                       (local-file
+                                                        "../../zsh/zshrc"
+                                                        "zshrc"
+                                                        #:recursive? #f)
+
+                                                       ;; Zsh plugins
+                                                       (mixed-text-file
+                                                        "zsh-syntax-highlighting"
+                                                        "source "
+                                                        zsh-syntax-highlighting
+                                                        "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")
+
+                                                       (mixed-text-file
+                                                        "zsh-history-substring-search"
+                                                        "source "
+                                                        zsh-history-substring-search
+                                                        "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
+
+                                                       (mixed-text-file
+                                                        "zsh-completions"
+                                                        "fpath+=\""
+                                                        zsh-completions
+                                                        "/share/zsh/site-functions\"")
+
+                                                       (mixed-text-file
+                                                        "zsh-autosuggestions"
+                                                        "source "
+                                                        zsh-autosuggestions
+                                                        "/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh")
+
+                                                       (mixed-text-file
+                                                        "zsh-autopair"
+                                                        "source " zsh-autopair
+                                                        "/share/zsh/plugins/zsh-autopair/zsh-autopair.zsh")
+
+                                                       (mixed-text-file
+                                                        "fzf-tab" "source "
+                                                        fzf-tab
+                                                        "/share/fzf-tab/fzf-tab.plugin.zsh")))))
 
               ;; Miscellaneous Home Services
               (service home-beets-service-type
