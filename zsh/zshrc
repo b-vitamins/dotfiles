@@ -1,8 +1,6 @@
 #!/usr/bin/env zsh
 # zmodload zsh/zprof  # Uncomment to profile startup time
 
-[[ $ZSH_EVAL_CONTEXT == toplevel:* ]] || return
-
 mkdir -p "$XDG_CACHE_HOME/zsh/zcompcache" "$XDG_CACHE_HOME/zsh/tmp"
 
 # Core modules
