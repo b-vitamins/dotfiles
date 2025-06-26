@@ -26,6 +26,8 @@
              (gnu packages python)
              (gnu packages docker)
              (gnu packages base)
+             (gnu packages databases)
+             (gnu packages package-management)
              (gnu services)
              (gnu services admin)
              (gnu services base)
@@ -49,6 +51,7 @@
              (gnu services backup)
              (gnu services virtualization)
              (gnu services cuirass)
+             (gnu services web)
              (gnu services xorg)
              (gnu system)
              (gnu system install)
@@ -76,7 +79,8 @@
              (myguix system install)
              (myguix system linux-initrd)
              (srfi srfi-1)
-             (ice-9 match))
+             (ice-9 match)
+             (ice-9 threads))
 
 (define-public %default-dotguile
   (plain-file "guile" "(use-modules (ice-9 readline)
@@ -438,15 +442,11 @@ allow-preset-passphrase")))
                                          "realtime"
                                          "lp"
                                          "audio"
-                                         "video"
-                                         "seat"))) %base-user-accounts))
+                                         "video"))) %base-user-accounts))
 
   (groups (cons* (user-group
                    (system? #t)
-                   (name "realtime"))
-                 (user-group
-                   (system? #t)
-                   (name "seat")) %base-groups))
+                   (name "realtime")) %base-groups))
 
   (packages (append
              ;; Core System
@@ -668,13 +668,13 @@ collation-server = utf8mb4_unicode_ci")))
                                                   (avoid-regexp
                                                    "^(sshd|guix-daemon|postgres|mysql|redis-server)$")
                                                   (show-debug-messages? #f))) ;Less verbose
-                 
+
                  (service zram-device-service-type
                           (zram-device-configuration (size "8G") ;8GB compressed swap (64GB RAM)
                                                      (compression-algorithm 'zstd) ;Better compression ratio
                                                      (memory-limit "16G") ;Max 16GB uncompressed
                                                      (priority 100))) ;High priority
-                 
+
                  (service fstrim-service-type
                           (fstrim-configuration (schedule "0 0 * * 0") ;Weekly on Sunday at midnight
                                                 (verbose? #f)))
@@ -719,7 +719,6 @@ collation-server = utf8mb4_unicode_ci")))
                                                  "/var/lib/vnstat")
                                                 (save-interval 5)
                                                 (bandwidth-detection? #t)
-                                                (max-bw `(("enp4s0" . 10000))) ;10 Gbps for main ethernet
                                                 (use-logging 2)))
 
                  ;; Miscellaneous Services
@@ -778,16 +777,6 @@ collation-server = utf8mb4_unicode_ci")))
                                                              coreutils
                                                              "/bin/rm") "-rf"
                                                      "/home/b/.nv/ComputeCache"))))
-
-                 ;; Extended log rotation for additional services
-                 (simple-service 'additional-log-rotation
-                                 log-rotation-service-type
-                                 (log-rotation-configuration (inherit (log-rotation-configuration))
-                                                             (external-log-files '
-                                                              ("/var/log/postgresql/*.log"
-                                                               "/var/log/mysql/*.log"
-                                                               "/var/log/nvidia-installer.log"
-                                                               "/var/log/docker/*.log"))))
 
                  ;; Environment variables for Wayland preference
                  (simple-service 'wayland-environment
