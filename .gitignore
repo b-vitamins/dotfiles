@@ -1,20 +1,267 @@
-# Ignore everything in the 'emacs' directory
-/emacs/*
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
 
-# But don't ignore these files and directories
+# Editor temporary files
+*~
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+\#*\#
+.\#*
+.projectile
+.dir-locals.el
+
+# Emacs specific
+/emacs/auto-save-list/
+/emacs/elpa/
+/emacs/eln-cache/
+/emacs/transient/
+/emacs/recentf
+/emacs/bookmarks
+/emacs/projects
+/emacs/eshell/
+/emacs/url/
+/emacs/server/
+/emacs/request/
+/emacs/network-security.data
+/emacs/tramp
+/emacs/.cache/
+/emacs/var/
+/emacs/etc/
+/emacs/custom.el
+/emacs/init.elc
+/emacs/early-init.elc
+*.elc
+
+# But keep configuration
 !/emacs/init.el
 !/emacs/early-init.el
 !/emacs/lisp/
 !/emacs/setup/
 !/emacs/scripts/
 
-# Ignore everything in the 'zsh' directory
-/zsh/*
+# Zsh
+/zsh/.zhistory
+/zsh/.zcompdump*
+/zsh/.zsh_sessions/
+/zsh/zcompcache/
 
-# But don't ignore these files and directories
-!/zsh/zshrc
-!/zsh/zshenv
-!/zsh/zprofile
-!/zsh/lscolors.sh
-!/zsh/scripts/
-!/zsh/functions/
+# SSH (never commit private keys!)
+/ssh/id_*
+!/ssh/id_*.pub
+/ssh/known_hosts
+/ssh/authorized_keys
+/ssh/config.d/*_local
+
+# GPG (never commit private keys!)
+/gnupg/private-keys-v1.d/
+/gnupg/openpgp-revocs.d/
+/gnupg/pubring.kbx~
+/gnupg/trustdb.gpg
+/gnupg/random_seed
+/gnupg/.#*
+/gnupg/S.gpg-agent*
+/gnupg/sshcontrol
+
+# Git
+/git/gitconfig.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Logs
+*.log
+logs/
+
+# Secrets and credentials
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/
+
+# Build outputs
+build/
+dist/
+out/
+*.o
+*.a
+
+# Cache directories
+.cache/
+cache/
+tmp/
+temp/
+
+# Backup files
+backup/
+backups/
+*.backup
+*.old
+
+# Local overrides
+*.local
+local/
+
+# IDE specific
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon\r
+
+# Linux
+.directory
+.Trash-*
+.nfs*
+
+# Windows
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Temporary files
+*.pid
+*.seed
+*.pid.lock
+
+# Archives
+*.7z
+*.jar
+*.rar
+*.zip
+*.gz
+*.gzip
+*.tgz
+*.bzip
+*.bzip2
+*.bz2
+*.xz
+*.lzma
+*.cab
+*.iso
+*.tar
+*.dmg
+*.xpi
+*.gem
+*.egg
+*.deb
+*.rpm
+
+# Databases
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+
+# Media files (usually don't belong in dotfiles)
+*.mp3
+*.mp4
+*.avi
+*.mkv
+*.mov
+*.wmv
+*.flv
+*.webm
+*.m4a
+*.flac
+*.wav
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.ico
+*.svg
+*.webp
+
+# Documents (usually don't belong in dotfiles)
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.odt
+
+# Guix
+/guix/current
+/guix/extra-profiles/
+
+# Machine-specific
+*.machine-specific
+machine-specific/
+
+# Symlinks that setup.sh creates (no need to track)
+.profile
+
+# Claude/AI
+.claude/
+CLAUDE.md.backup*
+
+# Other
+.wget-hsts
+.bash_history
+.lesshst
+.viminfo
