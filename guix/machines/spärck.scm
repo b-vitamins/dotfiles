@@ -693,13 +693,13 @@ host    all             all             ::1/128                 md5"))
                                                                (extra-flags '("--exclude-caches"
                                                                               "--exclude=node_modules"
                                                                               "--exclude=.git"
-                                                                              "--exclude=target")))))))
-            (modify-services %my-desktop-services
-              (console-font-service-type config =>
-                                         (map (lambda (tty)
-                                                (cons tty
-                                                      (file-append (specification->package
-                                                                    "font-terminus")
-                                                       "/share/consolefonts/ter-132n")))
-                                              '("tty1" "tty2" "tty3")))))))
+                                                                              "--exclude=target"))))))))
+           (modify-services %my-desktop-services
+             (console-font-service-type config =>
+                                        (map (lambda (tty)
+                                               (cons tty
+                                                     (file-append (specification->package
+                                                                   "font-terminus")
+                                                      "/share/consolefonts/ter-132n")))
+                                             '("tty1" "tty2" "tty3"))))))
   (name-service-switch %mdns-host-lookup-nss))
