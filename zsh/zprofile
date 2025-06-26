@@ -1,2 +1,0 @@
-# Source general profile if it exists
-[[ -f "$HOME/.profile" ]] && source "$HOME/.profile"

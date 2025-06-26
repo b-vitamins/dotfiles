@@ -257,10 +257,6 @@ inode/directory=org.gnome.Nautilus.desktop
                                                       "../../zsh/zshenv"
                                                       "zshenv"
                                                       #:recursive? #f)))
-                                       (zprofile (list (local-file
-                                                        "../../zsh/zprofile"
-                                                        "zprofile"
-                                                        #:recursive? #f)))
                                        (zshrc (list
                                                ;; Load main zshrc
                                                (local-file "../../zsh/zshrc"
