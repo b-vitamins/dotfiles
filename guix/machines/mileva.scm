@@ -296,7 +296,7 @@ inode/directory=org.gnome.Nautilus.desktop
 
                                                (mixed-text-file "fzf-tab"
                                                 "source " fzf-tab
-                                                "/share/fzf-tab/fzf-tab.plugin.zsh")))))
+                                                "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")))))
 
       ;; GPG Agent
       (service home-gpg-agent-service-type

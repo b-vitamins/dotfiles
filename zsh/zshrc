@@ -193,6 +193,8 @@ bindkey '^@' toggle_prompt_mode
 # Key bindings ---
 
 bindkey -e
+autoload -Uz edit-command-line
+zle -N edit-command-line
 bindkey '^X^E' edit-command-line
 bindkey '^K' kill-line
 bindkey '^U' backward-kill-line
@@ -220,7 +222,20 @@ fi
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
 ZSH_AUTOSUGGEST_STRATEGY=(history completion match_prev_cmd)
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
-bindkey '^[[Z' autosuggest-accept
+
+# Bind autosuggest-accept after the plugin is loaded
+if (( $+widgets[autosuggest-accept] )); then
+  bindkey '^[[Z' autosuggest-accept
+else
+  # Defer binding until after plugins are loaded
+  add-zsh-hook precmd _bind_autosuggest_accept
+  _bind_autosuggest_accept() {
+    if (( $+widgets[autosuggest-accept] )); then
+      bindkey '^[[Z' autosuggest-accept
+      add-zsh-hook -d precmd _bind_autosuggest_accept
+    fi
+  }
+fi
 
 # Aliases & functions ---
 
