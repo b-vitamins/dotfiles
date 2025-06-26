@@ -253,6 +253,10 @@ inode/directory=org.gnome.Nautilus.desktop
                                                       "../../zsh/zshenv"
                                                       "zshenv"
                                                       #:recursive? #f)))
+                                       (zprofile (list (local-file
+                                                        "../../zsh/zprofile"
+                                                        "zprofile"
+                                                        #:recursive? #f)))
                                        (zshrc (list
                                                ;; Load main zshrc
                                                (local-file "../../zsh/zshrc"
@@ -284,7 +288,11 @@ inode/directory=org.gnome.Nautilus.desktop
 
                                                (mixed-text-file "zsh-autopair"
                                                 "source " zsh-autopair
-                                                "/share/zsh/plugins/zsh-autopair/zsh-autopair.zsh")))))
+                                                "/share/zsh/plugins/zsh-autopair/zsh-autopair.zsh")
+
+                                               (mixed-text-file "fzf-tab"
+                                                "source " fzf-tab
+                                                "/share/fzf-tab/fzf-tab.plugin.zsh")))))
 
       ;; GPG Agent
       (service home-gpg-agent-service-type
