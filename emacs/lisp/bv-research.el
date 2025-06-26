@@ -11,7 +11,7 @@
 
 ;;;; External variable declarations
 (defvar bv-app-map)
-(defvar bv-cache-dir)
+(defvar bv-cache-directory)
 (defvar org-roam-dailies-directory)
 (defvar org-roam-dailies-capture-templates)
 (defvar tempel-template-sources)
@@ -105,7 +105,7 @@
   :group 'bv-research)
 
 (defcustom bv-research-cache-dir
-  (expand-file-name "research" (or (bound-and-true-p bv-cache-dir)
+  (expand-file-name "research" (or (bound-and-true-p bv-cache-directory)
                                     (expand-file-name "bv-cache" user-emacs-directory)))
   "Cache directory for research data."
   :type 'directory
@@ -205,10 +205,14 @@
         (expand-file-name "org-roam.db" bv-research-cache-dir))
 
   ;; Custom slug generation
-  (defun bv-research-org-roam-slug (title)
-    "Generate a slug from TITLE, replacing underscores with hyphens."
-    (let ((slug-trim-chars '(768 769 770 771 772 774 775 776 777 778 779 780
-                             795 803 804 805 807 813 814 816 817)))
+  (defun bv-research-org-roam-slug (title-or-node)
+    "Generate a slug from TITLE-OR-NODE, replacing underscores with hyphens."
+    (let* ((title (if (stringp title-or-node)
+                      title-or-node
+                    ;; If it's a node object, extract the title
+                    (org-roam-node-title title-or-node)))
+           (slug-trim-chars '(768 769 770 771 772 774 775 776 777 778 779 780
+                                  795 803 804 805 807 813 814 816 817)))
       (cl-flet* ((nonspacing-mark-p (char) (memq char slug-trim-chars))
                  (strip-nonspacing-marks (s)
                    (string-glyph-compose

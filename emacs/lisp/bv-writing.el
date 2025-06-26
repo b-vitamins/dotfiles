@@ -8,6 +8,31 @@
 
 (require 'bv-core)
 
+;;;; External Variable Declarations
+(defvar LaTeX-section-hook)
+(defvar LaTeX-clean-intermediate-suffixes)
+(defvar LaTeX-section-list)
+(defvar reftex-plug-into-AUCTeX)
+(defvar markdown-gfm-checkbox-at-bol)
+(defvar bv-app-map)
+
+;;;; Function Declarations
+(declare-function auctex-latexmk-setup "auctex-latexmk" ())
+(declare-function company-auctex-init "company-auctex" ())
+(declare-function markdown-export "markdown-mode" ())
+(declare-function TeX-command-master "tex-buf" (&optional override-confirm))
+(declare-function olivetti-mode "olivetti" (&optional arg))
+(declare-function academic-phrases "academic-phrases" ())
+(declare-function org-export-dispatch "ox" (&optional arg))
+(declare-function LaTeX-math-mode "latex" (&optional arg))
+(declare-function TeX-fold-mode "tex-fold" (&optional arg))
+(declare-function LaTeX-preview-setup "preview" ())
+(declare-function turn-on-reftex "reftex" ())
+(declare-function pandoc-convert-to-pdf "ox-pandoc" ())
+(declare-function langtool-check "langtool" ())
+(declare-function citar-insert-citation "citar" (&optional arg))
+(declare-function reftex-citation "reftex-cite" (&optional arg))
+
 ;;;; Custom Variables
 (defgroup bv-writing nil
   "Writing and documentation configuration."
@@ -43,7 +68,7 @@
 
 (defcustom bv-writing-flyspell-prog-modes
   '(prog-mode-hook)
-  "Hooks to enable flyspell-prog-mode."
+  "Hooks to enable `flyspell-prog-mode'."
   :type '(repeat hook)
   :group 'bv-writing)
 
@@ -52,7 +77,7 @@
     org-mode-hook
     markdown-mode-hook
     LaTeX-mode-hook)
-  "Hooks to enable flyspell-mode."
+  "Hooks to enable `flyspell-mode'."
   :type '(repeat hook)
   :group 'bv-writing)
 
@@ -109,13 +134,19 @@
           ('hunspell (executable-find "hunspell"))
           (_ (executable-find "ispell"))))
 
+  (setq ispell-alternate-dictionary (expand-file-name "~/en_US.words"))
+
   (when (eq bv-writing-spelling-program 'aspell)
     (setq ispell-extra-args '("--sug-mode=ultra" "--lang=en_US")))
 
   (when (eq bv-writing-spelling-program 'hunspell)
     (setq ispell-dictionary "en_US")
-    (setq ispell-local-dictionary-alist
-          '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "['']" nil ("-d" "en_US") nil utf-8))))
+    ;; For Hunspell, we need to set the dictionary path
+    (setq ispell-hunspell-dictionary-alist
+          '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "['']" t
+             ("-d" "en_US") nil utf-8)))
+    ;; Tell Hunspell where to find dictionaries
+    (setenv "DICPATH" "/home/b/.guix-profile/share/hunspell:/run/current-system/profile/share/hunspell"))
 
   (setq ispell-dictionary bv-writing-default-dictionary)
   (setq ispell-personal-dictionary bv-writing-personal-dictionary)
@@ -343,7 +374,7 @@
   "Export current document to PDF using appropriate method."
   (interactive)
   (cond ((derived-mode-p 'org-mode)
-         (org-export-dispatch nil ?p))
+         (org-export-dispatch))
         ((derived-mode-p 'markdown-mode)
          (if (fboundp 'pandoc-convert-to-pdf)
              (pandoc-convert-to-pdf)
@@ -377,10 +408,13 @@
   (setq-local TeX-electric-sub-and-superscript t)
   (turn-on-reftex))
 
-;;; Global Keybindings
+;;; Global Keybindings - Define the map first
+(defvar bv-writing-map (make-sparse-keymap)
+  "Keymap for writing commands.")
+
 (with-eval-after-load 'bv-core
-  (define-prefix-command 'bv-writing-map)
-  (define-key bv-app-map "w" 'bv-writing-map)
+  (when (boundp 'bv-app-map)
+    (define-key bv-app-map "w" 'bv-writing-map))
 
   (define-key bv-writing-map "c" #'bv-writing-insert-citation)
   (define-key bv-writing-map "e" #'bv-writing-export-to-pdf)
@@ -398,10 +432,10 @@
 
   ;; Setup hooks
   (dolist (hook bv-writing-flyspell-prog-modes)
-    (add-hook hook 'flyspell-prog-mode))
+    (add-hook hook #'flyspell-prog-mode))
 
   (dolist (hook bv-writing-flyspell-text-modes)
-    (add-hook hook 'flyspell-mode))
+    (add-hook hook #'flyspell-mode))
 
   (add-hook 'text-mode-hook #'bv-writing-text-mode-setup)
   (add-hook 'LaTeX-mode-hook #'bv-writing-latex-mode-setup)

@@ -9,7 +9,7 @@
 (require 'seq)
 
 ;; External variable declarations
-(defvar bv-cache-dir)
+(defvar bv-cache-directory)
 (defvar bv-app-map)
 (defvar tempel-template-sources)
 (defvar org-timer-pause-time)
@@ -313,9 +313,9 @@ sequence closure.  Otherwise, return nil to permit normal cycling."
    '(org-habit-overdue-face ((t (:background "#ff5555"))))
    '(org-habit-overdue-future-face ((t (:background "#903030")))))
 
-  (when (boundp 'bv-cache-dir)
+  (when (boundp 'bv-cache-directory)
     (setq org-id-locations-file
-          (expand-file-name "org-id-locations" bv-cache-dir)))
+          (expand-file-name "org-id-locations" bv-cache-directory)))
 
   (setq org-list-demote-modify-bullet
         '(("+" . "-") ("-" . "+") ("*" . "+"))

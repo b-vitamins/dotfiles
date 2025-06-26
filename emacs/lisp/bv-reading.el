@@ -300,7 +300,7 @@
               ("q" . kill-current-buffer))
   :custom
   (nov-text-width bv-reading-nov-text-width)
-  (nov-save-place-file (expand-file-name "nov-places" bv-cache-dir))
+  (nov-save-place-file (expand-file-name "nov-places" bv-cache-directory))
   :config
   (add-hook 'nov-mode-hook 'visual-line-mode)
   
@@ -380,7 +380,7 @@
   (setq Info-fontify-quotations t)
   (setq Info-fontify-reference-items-flag t)
   (setq Info-saved-history-file
-        (expand-file-name "info-history" bv-cache-dir))
+        (expand-file-name "info-history" bv-cache-directory))
   (setq Info-persist-history-mode t))
 
 ;;;; Enhanced Info Faces

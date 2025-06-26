@@ -139,7 +139,7 @@
   (geiser-repl-query-on-exit-p nil)
   :config
   (setq geiser-repl-history-filename
-        (expand-file-name "geiser-history" bv-cache-dir))
+        (expand-file-name "geiser-history" bv-cache-directory))
   (setq geiser-repl-add-project-paths nil))
 
 (use-package geiser-guile
@@ -184,7 +184,7 @@
   
   ;; History file
   (setq sly-mrepl-history-file-name
-        (expand-file-name "sly-mrepl-history" bv-cache-dir))
+        (expand-file-name "sly-mrepl-history" bv-cache-directory))
   
   ;; Enhanced REPL
   (defun bv-sly-eval-dwim ()

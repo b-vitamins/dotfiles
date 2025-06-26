@@ -10,7 +10,7 @@
 (defvar git-gutter:update-commands)
 (defvar bv-toggle-map)
 (defvar embark-file-map)
-(defvar bv-cache-dir)
+(defvar bv-cache-directory)
 
 ;;;; Function Declarations
 ;; git-link functions
@@ -44,13 +44,13 @@
   :type 'boolean
   :group 'bv-git)
 
-(bv-defcustom bv-git-enable-gutter t
-  "Enable git-gutter mode."
+(bv-defcustom bv-git-enable-gutter nil
+  "Enable `git-gutter' mode."
   :type 'boolean
   :group 'bv-git)
 
 (bv-defcustom bv-git-gutter-update-on-focus t
-  "Update git-gutter when window gains focus."
+  "Update `git-gutter' when window gains focus."
   :type 'boolean
   :group 'bv-git)
 
@@ -196,7 +196,7 @@
   :ensure nil
   :custom
   (transient-history-file
-   (expand-file-name "transient/history.el" bv-cache-dir)))
+   (expand-file-name "transient/history.el" bv-cache-directory)))
 
 ;;;; Keybindings
 (with-eval-after-load 'bv-core
