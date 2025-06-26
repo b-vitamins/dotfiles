@@ -1,0 +1,114 @@
+#!/bin/sh
+# Pre-commit hook for code quality checks
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check for debugging print statements
+check_debug_prints() {
+    # Check Python files for print statements
+    if git diff --cached --name-only | grep -q '\.py$'; then
+        if git diff --cached | grep -E '^\+.*print\(' | grep -v '# noqa: print'; then
+            echo "${RED}Error: Found print statements in Python files${NC}" >&2
+            echo "Remove debug prints or add '# noqa: print' comment to allow" >&2
+            return 1
+        fi
+    fi
+    
+    # Check for console.log in JavaScript/TypeScript
+    if git diff --cached --name-only | grep -qE '\.(js|ts|jsx|tsx)$'; then
+        if git diff --cached | grep -E '^\+.*console\.(log|debug|info)' | grep -v '// eslint-disable-line'; then
+            echo "${RED}Error: Found console statements in JS/TS files${NC}" >&2
+            echo "Remove debug logs or add '// eslint-disable-line' comment to allow" >&2
+            return 1
+        fi
+    fi
+    
+    return 0
+}
+
+# Check for large files
+check_large_files() {
+    local max_size=5242880  # 5MB in bytes
+    local large_files=""
+    
+    for file in $(git diff --cached --name-only); do
+        if [ -f "$file" ]; then
+            size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null)
+            if [ "$size" -gt "$max_size" ]; then
+                large_files="$large_files\n  $file ($(( size / 1048576 ))MB)"
+            fi
+        fi
+    done
+    
+    if [ -n "$large_files" ]; then
+        echo "${YELLOW}Warning: Large files detected:${NC}" >&2
+        echo "$large_files" >&2
+        echo "Consider using Git LFS for large files" >&2
+        # This is a warning, not an error
+    fi
+}
+
+# Check for merge conflict markers
+check_merge_conflicts() {
+    if git diff --cached | grep -qE '^(\+|-)(<<<<<<<|=======|>>>>>>>)'; then
+        echo "${RED}Error: Merge conflict markers detected${NC}" >&2
+        return 1
+    fi
+    return 0
+}
+
+# Check for trailing whitespace
+check_trailing_whitespace() {
+    if git diff --cached --check | grep -q '^'; then
+        echo "${RED}Error: Trailing whitespace detected${NC}" >&2
+        git diff --cached --check
+        return 1
+    fi
+    return 0
+}
+
+# Check Scheme files style (if modified)
+check_scheme_style() {
+    local scheme_files=$(git diff --cached --name-only | grep '\.scm$')
+    if [ -n "$scheme_files" ] && command -v guix >/dev/null 2>&1; then
+        echo "${YELLOW}Checking Scheme file style...${NC}"
+        for file in $scheme_files; do
+            # Create a temporary file with staged content
+            tmp_file=$(mktemp)
+            git show ":$file" > "$tmp_file"
+            
+            # Check if guix style would make changes
+            if ! guix style -f "$tmp_file" | diff -q "$tmp_file" - >/dev/null; then
+                echo "${RED}Error: $file needs formatting${NC}" >&2
+                echo "Run: guix style -f $file" >&2
+                rm "$tmp_file"
+                return 1
+            fi
+            rm "$tmp_file"
+        done
+    fi
+    return 0
+}
+
+# Main execution
+failed=0
+
+echo "Running pre-commit checks..."
+
+check_debug_prints || failed=1
+check_large_files
+check_merge_conflicts || failed=1
+check_trailing_whitespace || failed=1
+check_scheme_style || failed=1
+
+if [ $failed -eq 1 ]; then
+    echo "${RED}Pre-commit checks failed!${NC}" >&2
+    exit 1
+fi
+
+echo "${GREEN}All pre-commit checks passed!${NC}"
+exit 0

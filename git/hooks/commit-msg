@@ -1,0 +1,55 @@
+#!/bin/sh
+# Enforce conventional commit format
+# Format: <type>(<scope>): <subject>
+#         <body>
+#         <footer>
+
+commit_regex='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?: .{1,100}$'
+error_msg="Commit message does not follow conventional format!
+
+Valid types:
+  feat:     New feature
+  fix:      Bug fix
+  docs:     Documentation changes
+  style:    Code style changes (formatting, etc)
+  refactor: Code refactoring
+  perf:     Performance improvements
+  test:     Test additions or corrections
+  build:    Build system changes
+  ci:       CI configuration changes
+  chore:    Maintenance tasks
+  revert:   Revert previous commit
+
+Format: <type>(<scope>): <subject>
+Example: feat(emacs): add LSP support for Rust
+Example: fix: resolve startup performance issue
+
+Subject line rules:
+- Max 100 characters
+- No period at the end
+- Use imperative mood"
+
+# Read the commit message
+commit_msg=$(cat "$1")
+first_line=$(echo "$commit_msg" | head -n1)
+
+# Check if commit message matches the pattern
+if ! echo "$first_line" | grep -qE "$commit_regex"; then
+    echo "$error_msg" >&2
+    exit 1
+fi
+
+# Check subject line length
+subject=$(echo "$first_line" | sed -E 's/^[^:]+: //')
+if [ ${#subject} -gt 100 ]; then
+    echo "Error: Subject line is too long (${#subject} > 100 characters)" >&2
+    exit 1
+fi
+
+# Check for period at end of subject
+if echo "$subject" | grep -q '\.$'; then
+    echo "Error: Subject line should not end with a period" >&2
+    exit 1
+fi
+
+exit 0
