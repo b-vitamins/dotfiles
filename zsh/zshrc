@@ -1,188 +1,520 @@
-# ---------------------------------------------------------------------------
-# 0. Early initialisation
-# ---------------------------------------------------------------------------
-# Load the basic autoloadable zsh modules only once.
-autoload -Uz add-zsh-hook compinit promptinit colors
-promptinit           # enable the built‑in prompt framework (we'll override)
-compinit -C          # initialise completion (use the compiled cache if any)
+#!/usr/bin/env zsh
+# zmodload zsh/zprof  # Uncomment to profile startup time
 
-# Direnv ‑‑ makes `guix shell` environments (and any other .envrc) automatic
-if command -v direnv >/dev/null 2>&1; then
-  eval "$(direnv hook zsh)"           # <-- *** required for direnv ***
-  export DIRENV_LOG_FORMAT=""        # be quiet unless something goes wrong
-fi
+[[ $ZSH_EVAL_CONTEXT == toplevel:* ]] || return
 
-# ---------------------------------------------------------------------------
-# 1. Shell behaviour & history
-# ---------------------------------------------------------------------------
-# Increase history size and keep it consistent across sessions
-HISTSIZE=10000
-SAVEHIST=10000
+mkdir -p "$XDG_CACHE_HOME/zsh/zcompcache" "$XDG_CACHE_HOME/zsh/tmp"
 
-setopt NO_BEEP               # shhh 🦉
-setopt EXTENDED_GLOB         # zsh's powerful globbing
-setopt NO_CLOBBER            # don't overwrite files with > by accident
-setopt HIST_IGNORE_DUPS      # no duplicate adjacent history entries
-setopt HIST_IGNORE_SPACE     # lines starting with space aren't saved
-setopt HIST_REDUCE_BLANKS    # trim superfluous spaces
-setopt HIST_VERIFY           # edit a recalled history line before executing
-setopt INC_APPEND_HISTORY    # write as soon as a line is executed
-setopt APPEND_HISTORY        # and append rather than overwrite
-setopt AUTO_CD               # "cd foo" → "foo"
-setopt AUTO_PUSHD            # pushd when cd'ing so you can use popd
-setopt PUSHD_IGNORE_DUPS     # no duplicate entries in the stack
-setopt NO_SHARE_HISTORY      # don't share in‑memory history across sessions
-setopt NO_HUP                # don't kill background jobs when shell exits
-
-# ---------------------------------------------------------------------------
-# 2. Completion system tuning
-# ---------------------------------------------------------------------------
-zstyle ':completion:*' menu select
-zstyle ':completion:*' list-suffixes yes
-zstyle ':completion:*' expand yes
-zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
-zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh"
-
-# ---------------------------------------------------------------------------
-# 3. Colours (built‑in table) & terminal title support
-# ---------------------------------------------------------------------------
+# Core modules
+autoload -Uz add-zsh-hook compinit promptinit colors vcs_info
+promptinit
+compinit -u -d "$XDG_CACHE_HOME/zsh/zcompdump"
 colors
 
-# Put directory in terminal title (useful in tabs)
-case $TERM in
-  (xterm*|rxvt*|terminator*|alacritty|tmux*)
-    precmd() { print -Pn "\e]0;%n@%m: %~\a"; }
-  ;;
-esac
+# Shell behavior
+setopt AUTO_CD AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_MINUS PUSHD_SILENT PUSHD_TO_HOME
+setopt EXTENDED_GLOB GLOB_DOTS NO_GLOB_COMPLETE
+setopt NO_BEEP NO_CLOBBER CORRECT_ALL
+setopt HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_REDUCE_BLANKS HIST_VERIFY
+setopt INC_APPEND_HISTORY APPEND_HISTORY SHARE_HISTORY
+setopt NO_HUP NO_CHECK_JOBS
+setopt COMPLETE_IN_WORD ALWAYS_TO_END
+setopt INTERACTIVE_COMMENTS
 
-# ---------------------------------------------------------------------------
-# 4. Prompt
-# ---------------------------------------------------------------------------
-#   Shows "環境" (environment) when $GUIX_ENVIRONMENT is set (direnv/guix shell)
-#   Shows "カオス" (chaos) otherwise.
-#   Toggle timestamp with Ctrl‑Space.
+DIRSTACKSIZE=20
 
-SHOW_TIMESTAMP=0   # default: timestamps off
+# Completion system ---
 
-function is_utf8_locale() {
-  [[ "${LC_ALL:-}${LANG:-}${GDM_LANG:-}" =~ [Uu][Tt][Ff]-?8 ]]
-}
+zstyle ':completion:*' menu select
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
+zstyle ':completion:*' accept-exact '*(N)'
+zstyle ':completion:*' squeeze-slashes true
+zstyle ':completion:*' special-dirs true
+zstyle ':completion:*:descriptions' format $'\e[38;5;150m-- %d --\e[0m'
+zstyle ':completion:*:corrections' format $'\e[38;5;215m-- %d (errors: %e) --\e[0m'
+zstyle ':completion:*:messages' format $'\e[38;5;150m-- %d --\e[0m'
+zstyle ':completion:*:warnings' format $'\e[38;5;210m-- no matches found --\e[0m'
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
+zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
-function prompt_env_precmd() {
-  local display_time prompt_path prompt_status
-  [[ "$SHOW_TIMESTAMP" -eq 1 ]] && display_time="%F{#ECBE7B}%D{%H:%M:%S}%f %F{#88c0d0}%D{%d %b}%f "
-
-  # Abbreviate path to at most two components (like %2~)
-  prompt_path="%2~"
-
-  if is_utf8_locale; then
-    if [[ -n "$GUIX_ENVIRONMENT" ]]; then
-      PROMPT="${display_time}%F{#51afef}環境%f %F{#98be65}${prompt_path}%f %F{#ff6c6b}>%f "
-    else
-      PROMPT="${display_time}%F{#ff6c6b}カオス%f %F{#98be65}${prompt_path}%f %F{#51afef}>%f "
-    fi
+if (( $+commands[fzf] )); then
+  if (( $+commands[ftb-tmux-popup] )); then
+    zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+  elif (( $+commands[fzf-tmux] )); then
+    zstyle ':fzf-tab:*' fzf-command fzf-tmux
   else
-    # Fallback for non‑UTF‑8 locales
-    if [[ -n "$GUIX_ENVIRONMENT" ]]; then
-      PROMPT="${display_time}%F{39}%n@%m%f %F{34}${prompt_path}%f %F{220}[env]%f %F{160}>%f "
-    else
-      PROMPT="${display_time}%F{39}%n@%m%f %F{34}${prompt_path}%f %F{160}>%f "
+    zstyle ':fzf-tab:*' fzf-command fzf
+  fi
+
+  zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always --icons $realpath'
+  zstyle ':fzf-tab:complete:*:*' fzf-preview 'bat --style=numbers --color=always --line-range=:200 ${(Q)realpath} 2>/dev/null || eza -la --color=always --icons ${(Q)realpath} 2>/dev/null || echo ${(Q)realpath}'
+  zstyle ':fzf-tab:complete:systemctl-*:*' fzf-preview 'SYSTEMD_COLORS=1 systemctl status $word'
+  zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview 'git log --oneline --graph --color=always $word'
+  zstyle ':fzf-tab:complete:git-log:*' fzf-preview 'git show --color=always $word'
+  zstyle ':fzf-tab:*' switch-group ',' '.'
+  zstyle ':fzf-tab:*' fzf-bindings 'tab:down' 'btab:up' 'ctrl-a:toggle-all'
+  zstyle ':fzf-tab:*' fzf-flags '--color=fg:255,bg:-1,hl:117,fg+:255,bg+:236,hl+:117,info:150,prompt:117,pointer:117,marker:114,spinner:150,header:245'
+fi
+
+# Prompt configuration ---
+
+typeset -g PROMPT_MODE=0
+typeset -g PROMPT_LAST_EXIT=0
+
+typeset -gA prompt_colors=(
+  [marker]="209"   [host]="255"     [path]="117"    [prompt]="111"
+  [branch]="150"   [dirty]="215"    [error]="210"    [time]="250"
+  [ssh]="223"      [env]="203"      [fade]="245"
+)
+
+typeset -gA prompt_symbols=(
+  [marker]="λ"  [tilde]="~"  [prompt]="›"  [branch]=""  [dirty]="*"
+)
+
+# Terminal title
+function _prompt_set_terminal_title() {
+  case $TERM in
+    xterm*|rxvt*|terminator*|alacritty|tmux*|foot*) print -Pn "\e]0;%n@%m: %~\a" ;;
+  esac
+}
+add-zsh-hook precmd _prompt_set_terminal_title
+
+# VCS configuration - simplified for branch + dirty only
+zstyle ':vcs_info:*' enable git
+zstyle ':vcs_info:*' max-exports 2
+zstyle ':vcs_info:git:*' formats '%b' '%u'
+zstyle ':vcs_info:git:*' actionformats '%b|%a' '%u'
+zstyle ':vcs_info:git:*' check-for-changes true
+zstyle ':vcs_info:git:*' stagedstr ""
+zstyle ':vcs_info:git:*' unstagedstr " *"
+
+# Execution time tracking
+typeset -g _prompt_start_time
+function _prompt_preexec() { _prompt_start_time=$EPOCHREALTIME }
+
+function _prompt_execution_time() {
+  local elapsed
+  if (( _prompt_start_time )); then
+    elapsed=$(( EPOCHREALTIME - _prompt_start_time ))
+    _prompt_start_time=0
+    if (( elapsed > 3 )); then
+      local human=""
+      if (( elapsed > 3600 )); then
+        human="$(( elapsed / 3600 ))h$(( (elapsed % 3600) / 60 ))m"
+      elif (( elapsed > 60 )); then
+        human="$(( elapsed / 60 ))m$(( elapsed % 60 ))s"
+      else
+        human="${elapsed%.*}s"
+      fi
+      echo "%F{${prompt_colors[time]}}${human}%f"
     fi
   fi
 }
 
-# Toggle showing timestamp in prompt (Ctrl‑Space)
-function toggle_timestamp {
-  SHOW_TIMESTAMP=$((1 - SHOW_TIMESTAMP))
-  prompt_env_precmd
+function _prompt_left() {
+  local marker_color="$prompt_colors[marker]"
+  local host_color="$prompt_colors[host]"
+  local path_color="$prompt_colors[path]"
+  local prompt_color="$prompt_colors[prompt]"
+
+  [[ -n "$GUIX_ENVIRONMENT" || -n "$VIRTUAL_ENV" ]] && marker_color="$prompt_colors[env]"
+  [[ -n "$SSH_CONNECTION" ]] && host_color="$prompt_colors[ssh]"
+  (( PROMPT_LAST_EXIT != 0 )) && prompt_color="$prompt_colors[error]"
+
+  echo "%F{$marker_color}${prompt_symbols[marker]}%f %F{$host_color}%m%f %F{$path_color}${prompt_symbols[tilde]}%f %F{$prompt_color}${prompt_symbols[prompt]}%f "
+}
+
+function _prompt_right() {
+  local parts=()
+  local width=$COLUMNS
+
+  # Execution time (only if > 3s)
+  local exec_time="$(_prompt_execution_time)"
+  [[ -n "$exec_time" ]] && parts+=("$exec_time")
+
+  # Git info - just branch and dirty indicator
+  if [[ -n "$vcs_info_msg_0_" ]]; then
+    parts+=("%F{${prompt_colors[branch]}}${vcs_info_msg_0_}${vcs_info_msg_1_}%f")
+  fi
+
+  # Path (only on wider terminals, skip if in home)
+  if (( width >= 80 )) && [[ "$PWD" != "$HOME" ]]; then
+    local path="${PWD/#$HOME/~}"
+    local display_path
+
+    # Ultra-compact path display
+    if (( ${#path} > 20 )); then
+      # Show only last 2 dirs
+      display_path="…/${path:t}"
+    else
+      display_path="${path#~/}"
+    fi
+
+    [[ -n "$display_path" ]] && parts+=("%F{${prompt_colors[fade]}}${display_path}%f")
+  fi
+
+  # Time (only in mode 1 and wide terminals)
+  if (( PROMPT_MODE == 1 )) && (( width >= 100 )); then
+    parts+=("%F{${prompt_colors[time]}}%D{%H:%M}%f")
+  fi
+
+  echo "${(j: :)parts}"
+}
+
+function _prompt_build() {
+  PROMPT_LAST_EXIT=$?
+  vcs_info
+  PROMPT="$(_prompt_left)"
+  RPROMPT="$(_prompt_right)"
+}
+
+add-zsh-hook preexec _prompt_preexec
+add-zsh-hook precmd _prompt_build
+
+# Unicode fallback
+local lambda=$'\u03BB'
+if [[ ${#lambda} -ne 1 ]]; then
+  prompt_symbols=(
+    [marker]="L" [tilde]="~" [prompt]=">" [branch]="" [dirty]="!"
+  )
+fi
+
+function toggle_prompt_mode() {
+  PROMPT_MODE=$(( 1 - PROMPT_MODE ))
+  _prompt_build
   zle reset-prompt
 }
-zle -N toggle_timestamp
-bindkey '^@' toggle_timestamp        # Ctrl‑Space because Ctrl‑@ is ^@
+zle -N toggle_prompt_mode
+bindkey '^@' toggle_prompt_mode
 
-# Every second, make sure the prompt remains fresh (for the env indicator)
-TRAPALRM() { zle reset-prompt }
-TMOUT=1                               # generate the ALRM signal once per sec
+# Key bindings ---
 
-add-zsh-hook precmd prompt_env_precmd # recalc prompt every command
-
-# ---------------------------------------------------------------------------
-# 5. Widgets & key‑bindings
-# ---------------------------------------------------------------------------
-# Re‑use Emacs‑style navigation plus a few handy extras
-zle -N edit-command-line
-bindkey -e                     # start from emacs keymap
+bindkey -e
 bindkey '^X^E' edit-command-line
-bindkey '^A' beginning-of-line
-bindkey '^E' end-of-line
 bindkey '^K' kill-line
+bindkey '^U' backward-kill-line
+bindkey '^W' backward-kill-word
+bindkey '^[^?' backward-kill-word
+bindkey '^[.' insert-last-word
 bindkey '^[b' backward-word
 bindkey '^[f' forward-word
 bindkey '^[d' kill-word
-bindkey '^R' history-incremental-search-backward
-bindkey '^S' history-incremental-search-forward
 
-# ---------------------------------------------------------------------------
-# 6. Environment variables
-# ---------------------------------------------------------------------------
-export LD_LIBRARY_PATH="$LIBRARY_PATH"   # mirror LIBRARY_PATH for mixed builds
+backward-kill-dir() {
+  local WORDCHARS=${WORDCHARS/\/}
+  zle backward-kill-word
+}
+zle -N backward-kill-dir
+bindkey '^[^?' backward-kill-dir
 
-# ---------------------------------------------------------------------------
-# 7. Aliases
-# ---------------------------------------------------------------------------
-# LS & friends with colour
-alias ls='ls --color=auto'
-alias ll='ls -lh --color=auto'
-alias la='ls -A --color=auto'
-alias l='ls -CF --color=auto'
-alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
-alias diff='diff --color=auto'
+if (( $+widgets[history-substring-search-up] )); then
+  bindkey '^[[A' history-substring-search-up
+  bindkey '^[[B' history-substring-search-down
+  bindkey '^P' history-substring-search-up
+  bindkey '^N' history-substring-search-down
+fi
 
-# Quick navigation
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
+ZSH_AUTOSUGGEST_STRATEGY=(history completion match_prev_cmd)
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+bindkey '^[[Z' autosuggest-accept
+
+# Aliases & functions ---
+
+# Modern coreutils - unique memorable aliases
+# Keep standard commands working, use new names for modern alternatives
+(( $+commands[eza] )) && {
+  alias e='eza --icons'              # e for eza
+  alias ee='eza -l --icons'          # ee for extended
+  alias ea='eza -la --icons'         # ea for all
+  alias e1='eza -1 --icons'          # e1 for one column
+  alias et='eza --tree --icons'      # et for tree
+}
+
+(( $+commands[bat] )) && {
+  alias b='bat'                      # b for bat
+  alias bp='bat --style=plain'       # bp for plain
+  alias bn='bat --style=numbers'     # bn for numbers
+}
+
+(( $+commands[rg] )) && alias rg='rg'  # ripgrep is already short
+(( $+commands[fd] )) && alias fd='fd'  # fd is already short
+(( $+commands[duf] )) && alias duf='duf'
+(( $+commands[dust] )) && alias dust='dust'
+(( $+commands[procs] )) && alias procs='procs'
+(( $+commands[btop] )) && alias btop='btop'
+(( $+commands[sd] )) && alias sd='sd'  # string replace
+(( $+commands[delta] )) && alias delta='delta'
+
+# Navigation
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias -- -='cd -'
+alias d='dirs -v'
+for i in {1..9}; do alias "$i"="cd +$i"; done
 
-# Editor shortcuts
-alias e='emacs'
-alias ec='emacsclient -c'
-alias em='emacs -nw'
-alias v='$EDITOR'
+# Git
+(( $+commands[git] )) && {
+  alias g='git'
+  alias gs='git status -sb'
+  alias gl='git log --oneline --graph --decorate -20'
+  alias gd='git diff'
+  alias gds='git diff --staged'
+  alias ga='git add'
+  alias gc='git commit -v'
+  alias gp='git push'
+  alias gpu='git pull'
+  alias gcb='git checkout -b'
+  alias glog='git log --graph --pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset" --abbrev-commit'
+  alias gwip='git add -A && git commit -m "WIP"'
+  alias gundo='git reset HEAD~1 --mixed'
+}
 
-# Git quality‑of‑life
-alias g='git'
-alias gs='git status -sb'
-alias gl='git log --oneline -10'
-alias gd='git diff'
-alias ga='git add'
-alias gc='git commit'
-alias gp='git push'
-alias gu='git pull'
+# Guix
+(( $+commands[guix] )) && {
+  alias gpi='guix package'
+  alias gse='guix search'
+  alias gi='guix install'
+  alias gr='guix remove'
+  alias gu='guix upgrade'
+  alias gpl='guix pull'
+  alias gca='guix gc'
+  alias genv='guix environment'
+  alias gsh='guix shell'
+  alias gb='guix build'
+  alias gde='guix describe'
+  alias gre='guix repl'
+  alias gsy='sudo guix system'
+  alias gho='guix home'
+  alias fmtguix='guix style'
+}
 
-# Project‑specific helpers
-alias fmtmyguix='guile $HOME/projects/dotfiles/scripts/style.scm $HOME/projects/myguix'
+# Development
+alias e='$EDITOR'
+alias v='$VISUAL'
+(( $+commands[python3] )) && {
+  alias py='python3'
+  alias venv='python3 -m venv'
+}
+(( $+commands[ipython] )) && alias ipy='ipython'
+alias activate='source venv/bin/activate'
+(( $+commands[make] )) && alias mk='make -j$(($(nproc) - 2))'
+(( $+commands[cmake] )) && alias cninja='cmake -G Ninja'
 
-# Utilities
-alias h='history | tail -20'
-alias path='echo $PATH | tr ":" "\n"'
-alias mkdir='mkdir -p'
-alias df='df -h'
-alias du='du -h'
-alias free='free -h'
-alias mount='mount | column -t'
-alias python='python3'
-alias c='claude'
+# Docker
+(( $+commands[docker] )) && {
+  alias dk='docker'
+  alias dkc='docker compose'
+  alias dkps='docker ps'
+  alias dkpsa='docker ps -a'
+  alias dkrm='docker rm'
+  alias dkrmi='docker rmi'
+  alias dkl='docker logs'
+  alias dke='docker exec -it'
+}
 
-# Guix mirror sync
-alias sync-guix='(cd ~/projects/guix-mirror && git fetch upstream && git merge upstream/master && git push origin master)'
+# Systemd
+(( $+commands[systemctl] )) && {
+  alias sc='systemctl'
+  alias scu='systemctl --user'
+}
+(( $+commands[journalctl] )) && {
+  alias jc='journalctl'
+  alias jcu='journalctl --user'
+}
 
-# ---------------------------------------------------------------------------
-# 8. End — tidy up
-# ---------------------------------------------------------------------------
-unsetopt PROMPT_SUBST  # safety: ensure no unknown prompt substitutions linger
+# Utils
+(( $+commands[ss] )) && (( $+commands[bat] )) && alias ports='ss -tulpn | bat'
+(( $+commands[curl] )) && {
+  alias weather='curl -s wttr.in | head -17'
+  alias myip='curl -s https://ipinfo.io/ip && echo'
+}
+alias h='history | tail -30'
+(( $+commands[bat] )) && alias path='echo $PATH | tr ":" "\n" | bat'
+alias reload='exec zsh'
+alias zc='$EDITOR ~/.config/zsh/.zshrc'
+alias ze='$EDITOR ~/.config/zsh/.zshenv'
 
-# vim: ft=zsh sw=2 ts=2 et
+# Core functions
+mkcd() { mkdir -p "$1" && cd "$1" }
+tmp() { cd "$(mktemp -d /tmp/${1:-tmp}-XXXXXX)" }
+bak() { cp -a "$1" "$1.bak.$(date +%Y%m%d-%H%M%S)" }
+extract() {
+  if [[ -f $1 ]]; then
+    case $1 in
+      *.tar.bz2) tar xjf $1 ;;
+      *.tar.gz) tar xzf $1 ;;
+      *.tar.xz) tar xf $1 ;;
+      *.tar.zst)
+        if command -v gtar &>/dev/null; then
+          gtar --zstd -xf $1
+        else
+          if ! tar --zstd -xf $1 2>/dev/null; then
+            echo "Install GNU tar (gtar) for zstd support"
+            return 1
+          fi
+        fi ;;
+      *.bz2) bunzip2 $1 ;;
+      *.gz) gunzip $1 ;;
+      *.tar) tar xf $1 ;;
+      *.tbz2) tar xjf $1 ;;
+      *.tgz) tar xzf $1 ;;
+      *.zip) unzip $1 ;;
+      *.7z) 7z x $1 ;;
+      *) echo "'$1' cannot be extracted" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+# Guix helpers
+if (( $+commands[guix] )); then
+  guix-shell-here() {
+    if [[ -f guix.scm ]]; then
+      guix shell -D -f guix.scm "$@"
+    elif [[ -f manifest.scm ]]; then
+      guix shell -m manifest.scm "$@"
+    else
+      echo "No guix.scm or manifest.scm found"
+    fi
+  }
+
+  guix-clean() {
+    guix gc -F ${1:-50G}
+    guix gc -d 1m
+  }
+
+  guix-generations() {
+    guix package --list-generations | bat
+    echo "---"
+    sudo guix system list-generations | bat
+  }
+fi
+
+# FZF integration ---
+
+if (( $+commands[fzf] )); then
+  export FZF_DEFAULT_OPTS="--color=fg:255,bg:-1,hl:117,fg+:255,bg+:236,hl+:117,info:150,prompt:117,pointer:117,marker:114,spinner:150,header:245"
+
+  fzf-history-widget() {
+    local selected num
+    setopt localoptions noglobsubst noposixbuiltins pipefail no_aliases 2>/dev/null
+    selected=( $(fc -rl 1 | awk '{ cmd=$0; sub(/^[ \t]*[0-9]+\*?[ \t]+/, "", cmd); if (!seen[cmd]++) print $0 }' |
+      FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS -n2..,.. --tiebreak=index --bind=ctrl-r:toggle-sort,ctrl-z:ignore $FZF_CTRL_R_OPTS --query=${(qqq)LBUFFER} +m" fzf) )
+    local ret=$?
+    if [ -n "$selected" ]; then
+      num=$selected[1]
+      if [ -n "$num" ]; then
+        zle vi-fetch-history -n $num
+      fi
+    fi
+    zle reset-prompt
+    return $ret
+  }
+  zle -N fzf-history-widget
+
+  if (( $+commands[guix] )); then
+    fguix() {
+      guix search . | \
+      awk 'BEGIN {RS=""} {gsub(/\n/, " "); print}' | \
+      fzf --ansi --preview 'echo {} | grep -oP "name: \K[^ ]+" | xargs guix show' \
+          --preview-window=right:70%:wrap
+    }
+  fi
+
+  if (( $+commands[git] )); then
+    gco() {
+      local branches branch
+      branches=$(git branch --all | grep -v HEAD) &&
+      branch=$(echo "$branches" | fzf -d $(( 2 + $(wc -l <<< "$branches") )) +m) &&
+      git checkout $(echo "$branch" | sed "s/.* //" | sed "s#remotes/[^/]*/##")
+    }
+
+    gshow() {
+      git log --graph --color=always \
+          --format="%C(auto)%h%d %s %C(black)%C(bold)%cr" "$@" |
+      fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort \
+          --bind "ctrl-m:execute:
+            (grep -o '[a-f0-9]\{7\}' | head -1 |
+            xargs -I % sh -c 'git show --color=always % | bat') << 'FZF-EOF'
+            {}
+FZF-EOF"
+    }
+  fi
+
+  fkill() {
+    local pid
+    pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
+    if [ "x$pid" != "x" ]; then
+      echo $pid | xargs kill -${1:-9}
+    fi
+  }
+
+  if (( $+commands[guix] )); then
+    fenv() {
+      local env=$(guix package --list-profiles | fzf)
+      [[ -n "$env" ]] && GUIX_PROFILE="$env" source "$env/etc/profile"
+    }
+  fi
+
+  if (( $+commands[rg] )); then
+    rgi() {
+      rg --line-number --no-heading --color=always "$@" |
+      fzf --ansi --delimiter ':' \
+          --preview 'bat --style=numbers --color=always --highlight-line {2} {1}' \
+          --preview-window 'up,60%,border-bottom,+{2}+3/3'
+    }
+  fi
+
+  (( $+commands[bat] )) && alias preview='fzf --preview "bat --style=numbers --color=always --line-range :500 {}"'
+fi
+
+# Modern integrations ---
+
+# Zoxide - use 'z' not 'cd'
+if (( $+commands[zoxide] )); then
+  eval "$(zoxide init zsh)"
+  alias z='z'     # z for jumping
+  alias zi='zi'   # zi for interactive
+fi
+
+if (( $+commands[direnv] )); then
+  eval "$(direnv hook zsh)"
+  export DIRENV_LOG_FORMAT=""
+fi
+
+# Set up history search binding
+if (( $+commands[atuin] )); then
+  eval "$(atuin init zsh --disable-up-arrow)"
+  bindkey '^R' atuin-search
+elif (( $+commands[fzf] )); then
+  bindkey '^R' fzf-history-widget
+fi
+
+# Syntax highlighting
+typeset -gA ZSH_HIGHLIGHT_STYLES
+ZSH_HIGHLIGHT_STYLES[default]='none'
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=210'
+ZSH_HIGHLIGHT_STYLES[reserved-word]='fg=147'
+ZSH_HIGHLIGHT_STYLES[alias]='fg=117,bold'
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=221'
+ZSH_HIGHLIGHT_STYLES[function]='fg=117,bold'
+ZSH_HIGHLIGHT_STYLES[command]='fg=114'
+ZSH_HIGHLIGHT_STYLES[precommand]='fg=147,underline'
+ZSH_HIGHLIGHT_STYLES[path]='fg=150'
+ZSH_HIGHLIGHT_STYLES[globbing]='fg=117'
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=223'
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=223'
+ZSH_HIGHLIGHT_STYLES[comment]='fg=245,italic'
+
+# Welcome
+if [[ -o interactive ]] && [[ -z "$INSIDE_EMACS" ]] && [[ -z "$ZSH_WELCOME_SHOWN" ]]; then
+  export ZSH_WELCOME_SHOWN=1
+  local name="${HOST[1]:u}${HOST[2,-1]}"  # Capitalize only first letter
+  echo "Hi, I'm ${name}. Nice to meet you."
+fi
