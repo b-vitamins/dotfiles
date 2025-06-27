@@ -122,8 +122,8 @@ set suspendable"))
       ;; Environment variables
       (simple-service 'custom-environment-variables
                       home-environment-variables-service-type
-                      `(("EDITOR" . "emacsclient -nw")
-                        ("VISUAL" . "emacsclient -c")
+                      `(("EDITOR" . "nvim")
+                        ("VISUAL" . "nvim")
                         ("BROWSER" . "firefox")
                         ("PAGER" . "less")
                         ("LESS" . "-FRX")
