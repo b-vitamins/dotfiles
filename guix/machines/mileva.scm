@@ -12,6 +12,7 @@
              (gnu home services ssh)
              (gnu home services syncthing)
              (gnu home services xdg)
+             (myguix home services emacs-daemon)
              (gnu packages display-managers)
              (gnu packages fonts)
              (gnu packages gnupg)
@@ -202,6 +203,11 @@ application/x-shellscript=emacsclient.desktop
 inode/directory=org.gnome.Nautilus.desktop
 "))))
       (service my-home-emacs-service-type)
+
+      (service home-emacs-daemon-service-type
+               (emacs-daemon-configuration
+                (package emacs-pgtk)
+                (server-name "mileva")))
 
       (service home-inputrc-service-type
                (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")

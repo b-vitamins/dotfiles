@@ -19,6 +19,7 @@
              (gnu home services syncthing)
              (gnu home services shells)
              (gnu home services pm)
+             (myguix home services emacs-daemon)
              (gnu system)
              (gnu services)
              (gnu services admin)
@@ -84,6 +85,12 @@ set suspendable"))
      (append (list
               ;; Home Emacs Service
               (service my-home-emacs-service-type)
+              
+              (service home-emacs-daemon-service-type
+                       (emacs-daemon-configuration
+                        (package emacs-pgtk)
+                        (server-name "spärck")))
+              
               ;; Power Management Home Services
               (service home-batsignal-service-type)
               ;; Scheduled User’s Job Execution
