@@ -5,6 +5,7 @@
              (gnu packages docker)
              (gnu packages gnupg)
              (gnu packages shellutils)
+             (gnu packages emacs)
              (gnu home services mcron)
              (gnu home services ssh)
              (gnu home services gnupg)

@@ -29,6 +29,7 @@
              (gnu packages base)
              (gnu packages databases)
              (gnu packages package-management)
+             (gnu packages emacs)
              (gnu services)
              (gnu services admin)
              (gnu services base)
