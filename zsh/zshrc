@@ -9,6 +9,9 @@ promptinit
 compinit -u -d "$XDG_CACHE_HOME/zsh/zcompdump"
 colors
 
+# Environment
+export LD_LIBRARY_PATH=$LIBRARY_PATH
+
 # Shell behavior
 setopt AUTO_CD AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_MINUS PUSHD_SILENT PUSHD_TO_HOME
 setopt EXTENDED_GLOB GLOB_DOTS NO_GLOB_COMPLETE
@@ -309,6 +312,7 @@ for i in {1..9}; do alias "$i"="cd +$i"; done
 # Development
 alias e='$EDITOR'
 alias v='$VISUAL'
+alias c='claude'
 (( $+commands[python3] )) && {
   alias py='python3'
   alias venv='python3 -m venv'
