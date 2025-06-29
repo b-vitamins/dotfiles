@@ -171,62 +171,66 @@
 
        ;; Zsh configuration
        (service home-zsh-service-type
-                (home-zsh-configuration 
-                 (xdg-flavor? #t)
-                 (environment-variables %my-shell-environment-variables)
-                 (zshenv (list (local-file
-                                "../../zsh/zshenv"
-                                "zshenv"
-                                #:recursive? #f)))
-                 (zshrc (list (local-file
-                               "../../zsh/zshrc"
-                               "zshrc"
-                               #:recursive? #f)
+                (home-zsh-configuration (xdg-flavor? #t)
+                                        (environment-variables
+                                         %my-shell-environment-variables)
+                                        (zshenv (list (local-file
+                                                       "../../zsh/zshenv"
+                                                       "zshenv"
+                                                       #:recursive? #f)))
+                                        (zshrc (list (local-file
+                                                      "../../zsh/zshrc"
+                                                      "zshrc"
+                                                      #:recursive? #f)
 
-                              ;; Add shared aliases
-                              (plain-file "zsh-aliases"
-                                          (string-join
-                                           (map (lambda (alias)
-                                                  (format #f "alias ~a=\"~a\""
-                                                          (car alias)
-                                                          (cdr alias)))
-                                                %my-shell-aliases)
-                                           "\n"))
+                                                     ;; Add shared aliases
+                                                     (plain-file "zsh-aliases"
+                                                      (string-join (map (lambda 
+                                                                                (alias)
+                                                                          (format
+                                                                           #f
+                                                                           "alias ~a=\"~a\""
+                                                                           (car
+                                                                            alias)
+                                                                           (cdr
+                                                                            alias)))
+                                                                    %my-shell-aliases)
+                                                                   "\n"))
 
-                              ;; Zsh plugins
-                              (mixed-text-file
-                               "zsh-syntax-highlighting"
-                               "source "
-                               zsh-syntax-highlighting
-                               "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")
+                                                     ;; Zsh plugins
+                                                     (mixed-text-file
+                                                      "zsh-syntax-highlighting"
+                                                      "source "
+                                                      zsh-syntax-highlighting
+                                                      "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")
 
-                              (mixed-text-file
-                               "zsh-history-substring-search"
-                               "source "
-                               zsh-history-substring-search
-                               "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
+                                                     (mixed-text-file
+                                                      "zsh-history-substring-search"
+                                                      "source "
+                                                      zsh-history-substring-search
+                                                      "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
 
-                              (mixed-text-file
-                               "zsh-completions"
-                               "fpath+=\""
-                               zsh-completions
-                               "/share/zsh/site-functions\"")
+                                                     (mixed-text-file
+                                                      "zsh-completions"
+                                                      "fpath+=\""
+                                                      zsh-completions
+                                                      "/share/zsh/site-functions\"")
 
-                              (mixed-text-file
-                               "zsh-autosuggestions"
-                               "source "
-                               zsh-autosuggestions
-                               "/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh")
+                                                     (mixed-text-file
+                                                      "zsh-autosuggestions"
+                                                      "source "
+                                                      zsh-autosuggestions
+                                                      "/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh")
 
-                              (mixed-text-file
-                               "zsh-autopair" "source "
-                               zsh-autopair
-                               "/share/zsh/plugins/zsh-autopair/zsh-autopair.zsh")
+                                                     (mixed-text-file
+                                                      "zsh-autopair" "source "
+                                                      zsh-autopair
+                                                      "/share/zsh/plugins/zsh-autopair/zsh-autopair.zsh")
 
-                              (mixed-text-file
-                               "fzf-tab" "source "
-                               fzf-tab
-                               "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")))))
+                                                     (mixed-text-file
+                                                      "fzf-tab" "source "
+                                                      fzf-tab
+                                                      "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")))))
 
        ;; GPG Agent (this might override base config, which is OK if you want custom settings)
        (service home-gpg-agent-service-type
@@ -582,13 +586,13 @@ collation-server = utf8mb4_unicode_ci")))
                                                   (avoid-regexp
                                                    "^(sshd|guix-daemon|postgres|mysql|redis-server)$")
                                                   (show-debug-messages? #f))) ;Less verbose
-
+                 
                  (service zram-device-service-type
                           (zram-device-configuration (size "8G") ;8GB compressed swap (64GB RAM)
                                                      (compression-algorithm 'zstd) ;Better compression ratio
                                                      (memory-limit "16G") ;Max 16GB uncompressed
                                                      (priority 100))) ;High priority
-
+                 
                  ;; Guix Services
                  (service guix-home-service-type
                           `(("b" ,%my-home-config)))
