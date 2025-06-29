@@ -1,211 +1,118 @@
-;;; init.el --- Configuration bootstrap -*- lexical-binding: t -*-
+;;; init.el --- Load all bv-* configuration modules -*- lexical-binding: t -*-
 
 ;;; Commentary:
-;; Bootstrap for Emacs configuration on Guix
-;; Minimal, fast, and modular
+;; This init file loads all bv-* modules for immediate use.
+;; Place this in ~/.config/emacs/init.el or ~/.emacs.d/init.el
 
 ;;; Code:
 
-;;;; Bootstrap Timing
-(defconst bv-start-time (current-time)
-  "Time when Emacs init started.")
+(require 'benchmark-init)
+;; To disable collection of benchmark data after init is done.
+(add-hook 'after-init-hook 'benchmark-init/deactivate)
 
-(defun bv-report-init-time ()
-  "Report Emacs initialization time."
-  (message "Emacs ready in %.3fs with %d garbage collections"
-           (float-time (time-subtract (current-time) bv-start-time))
-           gcs-done))
+;; Add the directory containing bv-*.el files to load-path
+(add-to-list 'load-path (expand-file-name "lisp" (file-name-directory load-file-name)))
 
-(add-hook 'emacs-startup-hook #'bv-report-init-time 'append)
+;; Core modules - load first
+(require 'bv-keymaps)
+(require 'bv-startup)
+(require 'bv-emacs-base)
 
-;;;; Directory Setup
-(defconst bv-emacs-dir (file-name-directory load-file-name)
-  "Root directory of configuration.")
+;; Appearance and UI
+(require 'bv-fonts)
+(require 'bv-appearance)
+(require 'bv-modus-themes)
+(require 'bv-circadian)
+(require 'bv-which-key)
+(require 'bv-keycast)
+(require 'bv-all-the-icons)
+(require 'bv-dashboard)
 
-(defconst bv-lisp-dir (expand-file-name "lisp" bv-emacs-dir)
-  "Directory containing configuration modules.")
+;; Basic functionality
+(require 'bv-battery)
+(require 'bv-time)
+(require 'bv-calendar)
+(require 'bv-window)
 
-(defconst bv-var-dir
-  (expand-file-name "var" (or (getenv "XDG_CACHE_HOME") "~/.cache/emacs"))
-  "Directory for persistent data.")
+;; File and buffer management
+(require 'bv-dired)
+(require 'bv-tramp)
+(require 'bv-project)
+(require 'bv-perspective)
+(require 'bv-monocle)
 
-(defconst bv-etc-dir
-  (expand-file-name "etc" (or (getenv "XDG_CONFIG_HOME") "~/.config/emacs"))
-  "Directory for configuration files.")
+;; Completion frameworks
+(require 'bv-completion)
+(require 'bv-vertico)
+(require 'bv-corfu)
+(require 'bv-tempel)
 
-;;;; Guix System Paths
-(defconst bv-guix-system-profile "/run/current-system/profile"
-  "Guix system profile directory.")
+;; Shell and terminal
+(require 'bv-eat)
+(require 'bv-eshell)
+(require 'bv-shell)
+(require 'bv-comint)
 
-(defconst bv-guix-home-profile (expand-file-name "~/.guix-home/profile")
-  "Guix home profile directory.")
+;; Development tools
+(require 'bv-elisp)
+(require 'bv-eglot)
+(require 'bv-dape)
+(require 'bv-flymake)
+(require 'bv-xref)
+(require 'bv-smartparens)
 
-(defconst bv-guix-user-profile (expand-file-name "~/.guix-profile")
-  "Guix user profile directory.")
+;; Version control
+(require 'bv-git)
 
-;; Library paths
-(defconst bv-system-lib-dir (expand-file-name "lib" bv-guix-system-profile)
-  "System library directory.")
+;; Org mode and related
+(require 'bv-org)
+(require 'bv-org-agenda)
+(require 'bv-org-dailies)
+(require 'bv-org-ql)
+(require 'bv-org-agenda-files-track)
+(require 'bv-org-roam)
+(require 'bv-emacs-org-recur)
+(require 'bv-citation)
 
-(defconst bv-home-lib-dir (expand-file-name "lib" bv-guix-home-profile)
-  "Home library directory.")
+;; Documentation and help
+(require 'bv-help)
+(require 'bv-info)
+(require 'bv-devdocs)
 
-;; Binary paths
-(defconst bv-system-bin-dir (expand-file-name "bin" bv-guix-system-profile)
-  "System binary directory.")
+;; External tools integration
+(require 'bv-calc)
+(require 'bv-re-builder)
+(require 'bv-browse-url)
+(require 'bv-pdf-tools)
+(require 'bv-nov-el)
+(require 'bv-graphviz)
+(require 'bv-spelling)
 
-(defconst bv-home-bin-dir (expand-file-name "bin" bv-guix-home-profile)
-  "Home binary directory.")
+;; Communication and feeds
+(require 'bv-elfeed)
+(require 'bv-ebdb)
+(require 'bv-ednc)
+(require 'bv-webpaste)
 
-;; Share paths
-(defconst bv-system-share-dir (expand-file-name "share" bv-guix-system-profile)
-  "System share directory.")
+;; Media
+(require 'bv-emms)
+(require 'bv-mpv)
+(require 'bv-yt-dlp)
+(require 'bv-pulseaudio-control)
 
-(defconst bv-home-share-dir (expand-file-name "share" bv-guix-home-profile)
-  "Home share directory.")
+;; AI assistants
+(require 'bv-gptel)
+(require 'bv-ellama)
 
-;; Ensure directories exist
-(dolist (dir (list bv-var-dir bv-etc-dir bv-lisp-dir))
-  (unless (file-directory-p dir)
-    (make-directory dir t)))
+;; Guix specific
+(require 'bv-geiser)
+(require 'bv-guix)
 
-;; Add lisp directory to load path
-(add-to-list 'load-path bv-lisp-dir)
+;; Utilities
+(require 'bv-power-menu)
+(require 'bv-display-wttr)
 
-;;;; Guix Package Management
-;; Disable package.el entirely - packages come from Guix
-(setq package-enable-at-startup nil)
-
-;; Configure use-package (provided by Guix)
-(require 'use-package)
-(setq use-package-always-ensure nil
-      use-package-enable-imenu-support t
-      use-package-compute-statistics t
-      use-package-minimum-reported-time 0.01
-      use-package-always-defer t
-      use-package-expand-minimally t)
-
-;;;; Path Configuration
-(setq user-emacs-directory bv-emacs-dir
-      custom-file (expand-file-name "custom.el" bv-var-dir)
-      auto-save-list-file-prefix (expand-file-name "auto-save-list/.saves-" bv-var-dir))
-
-;; Native compilation cache
-(when (boundp 'native-comp-eln-load-path)
-  (add-to-list 'native-comp-eln-load-path
-               (expand-file-name "eln-cache" bv-var-dir)))
-
-;;;; Core Settings
-;; Re-enable native compilation after startup
-(with-eval-after-load 'comp
-  (when (boundp 'native-comp-async-report-warnings-errors)
-    (setq native-comp-async-report-warnings-errors 'silent))
-  ;; Use the non-obsolete variable for Emacs 29+
-  (if (boundp 'native-comp-jit-compilation)
-      (setq native-comp-jit-compilation t)
-    (when (boundp 'native-comp-deferred-compilation)
-      (setq native-comp-deferred-compilation t))))
-
-;; Character encoding
-(set-default-coding-systems 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-(set-language-environment "UTF-8")
-(prefer-coding-system 'utf-8)
-
-;; Basic settings
-(setq-default
- ;; Encoding
- coding-system-for-read 'utf-8
- coding-system-for-write 'utf-8
- locale-coding-system 'utf-8
- ;; Misc
- ring-bell-function 'ignore
- visible-bell nil
- load-prefer-newer t
- enable-recursive-minibuffers t
- ;; Performance
- read-process-output-max (* 1024 1024)
- process-adaptive-read-buffering nil
- fast-but-imprecise-scrolling t
- redisplay-skip-fontification-on-input t)
-
-;;;; Module Loading System
-(require 'cl-lib)
-
-(defvar bv-module-load-times '()
-  "Alist of (module . load-time) for debugging.")
-
-(defmacro bv-require (module &optional noerror)
-  "Load MODULE and track timing.  If NOERROR is non-nil, don't signal errors."
-  `(let ((start-time (current-time)))
-     (condition-case err
-         (progn
-           (require ',module)
-           (push (cons ',module (float-time (time-subtract (current-time) start-time)))
-                 bv-module-load-times))
-       (error
-        (message "Error loading %s: %s" ',module err)
-        (unless ,noerror
-          (signal (car err) (cdr err)))))))
-
-(defun bv-report-module-times ()
-  "Report module loading times."
-  (interactive)
-  (message "Module load times:")
-  (dolist (entry (sort bv-module-load-times
-                       (lambda (a b) (> (cdr a) (cdr b)))))
-    (message "  %-20s %.3fs" (car entry) (cdr entry))))
-
-;;;; Load Core Modules
-;; These are always loaded
-(bv-require bv-core)
-(bv-require bv-defaults)
-(bv-require bv-ui)
-
-;;;; Deferred Module Loading
-
-;; Core productivity (load after 0.1s idle)
-(run-with-idle-timer 0.1 nil
-   (lambda ()
-     (bv-require bv-completion)
-     (bv-require bv-navigation)
-     (bv-require bv-development)
-     (bv-require bv-git)))
-
-;; Research tools (load after 1.0s idle)
-(run-with-idle-timer 1.0 nil
-   (lambda ()
-     (bv-require bv-org)
-     (bv-require bv-research)
-;;     (bv-require bv-reading)
-;;     (bv-require bv-writing)
-     ))
-
-;; Language support (load after 0.5s idle)
-;; (run-with-idle-timer 0.5 nil
-;;   (lambda ()
-;;     (bv-require bv-lang-lisp)
-;;     (bv-require bv-lang-python noerror)
-;;     (bv-require bv-lang-rust noerror)))
-
-;;;; Interactive Module Loaders
-(defun bv-load-all-modules ()
-  "Load all available modules interactively."
-  (interactive)
-  (message "Loading all modules...")
-  (dolist (file (directory-files bv-lisp-dir t "^bv-.*\\.el$"))
-    (let ((module (intern (file-name-base file))))
-      (unless (memq module '(bv-core bv-defaults bv-ui))
-        (bv-require module t))))
-  (message "All modules loaded"))
-
-;;;; Post-init Setup
-;; Load custom file if it exists
-(when (file-exists-p custom-file)
-  (load custom-file 'noerror 'nomessage))
-
-;; Start server if not running
+;; Start server if not already running
 (require 'server)
 (unless (server-running-p)
   (server-start))
