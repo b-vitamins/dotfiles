@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Emacs daemon service configuration for mileva and spärck machines
+- Git completions integration from Guix profiles in Zsh configuration
+- Comprehensive Zsh user manual with modern command replacements
+- LD_LIBRARY_PATH export and claude alias in Zsh configuration
+- Structured Emacs setup directory for organization files
+- Git commit guidelines in CLAUDE.md to prevent accidental commits
+### Changed
+- Formatted Guix machine configurations with guix style for consistency
+- Refactored scripts with guix style formatting and cleaned up new-client-cert
+- Modularized Emacs configuration into focused components
+- Updated Alacritty configuration with improved settings
+- Enhanced mileva machine configuration
+- Configured Alacritty to start Zsh as login shell
+### Fixed
+- Added missing emacs-pgtk package import in Guix configurations
+- Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup
+- Eliminated Zsh welcome message for cleaner shell initialization
+- Resolved Zsh startup errors and plugin loading issues
+- Removed redundant custom zprofile configuration
+- Corrected multiple import and configuration errors in mileva.scm
+- Fixed indentation in spärck system services configuration
+### Removed
+- Obsolete Emacs configuration files
+
+## [2025-06-29]
+### Added
 - Stripped Emacs configuration with core modules and UI defaults.
 - Core productivity modules for completion, navigation, development,
   and Git integration. Phase 2 now enabled in `init.el`.
