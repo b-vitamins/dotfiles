@@ -9,6 +9,25 @@ promptinit
 compinit -u -d "$XDG_CACHE_HOME/zsh/zcompdump"
 colors
 
+# Git completions
+() {
+  local -a paths=(
+    /run/current-system/profile
+    ~/.guix-profile
+    ~/.guix-home/profile
+  )
+
+  # Load bash completion
+  for p in $paths; do
+    [[ -f $p/share/bash-completion/completions/git ]] && source $p/share/bash-completion/completions/git && break
+  done
+
+  # Add zsh functions to fpath
+  for p in $paths; do
+    [[ -d $p/share/zsh/site-functions ]] && fpath=($p/share/zsh/site-functions $fpath)
+  done
+}
+
 # Environment
 export LD_LIBRARY_PATH=$LIBRARY_PATH
 
@@ -528,4 +547,3 @@ ZSH_HIGHLIGHT_STYLES[globbing]='fg=117'
 ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=223'
 ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=223'
 ZSH_HIGHLIGHT_STYLES[comment]='fg=245,italic'
-
