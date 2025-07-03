@@ -12,11 +12,8 @@
              (gnu home services ssh)
              (gnu home services syncthing)
              (gnu home services xdg)
-             (myguix home services emacs-daemon)
              (gnu packages display-managers)
-             (gnu packages admin)
              (gnu packages fonts)
-             (gnu packages fontutils)
              (gnu packages gnupg)
              (gnu packages linux)
              (gnu packages networking)
@@ -31,8 +28,6 @@
              (gnu packages base)
              (gnu packages databases)
              (gnu packages package-management)
-             (gnu packages emacs)
-             (gnu packages version-control)
              (gnu services)
              (gnu services admin)
              (gnu services base)
@@ -77,7 +72,6 @@
              (myguix packages productivity)
              (myguix packages python-pqrs)
              (myguix packages video)
-             (myguix services backup)
              (myguix services desktop)
              (myguix services mcron)
              (myguix services nvidia)
@@ -88,228 +82,292 @@
              (ice-9 match)
              (ice-9 threads))
 
+(define-public %default-dotguile
+  (plain-file "guile" "(use-modules (ice-9 readline)
+                           (ice-9 colorized))
+(activate-readline)
+(activate-colorized)"))
+
 ;;; Home configuration
 (define %my-home-config
   (home-environment
-    (packages (list
-               ;; Apple fonts
-               font-apple-sf-pro
-               font-apple-sf-mono
-               font-apple-sf-compact
-               font-apple-new-york
-               font-apple-sf-symbols
-               font-apple-color-emoji
+    (packages (append
 
-               ;; Roboto family
-               font-google-roboto
-
-               ;; Fira family
-               font-fira-code
-               font-fira-sans
-               font-fira-go))
+                      (list font-apple-sf-pro
+                            font-apple-sf-mono
+                            font-apple-sf-compact
+                            font-apple-new-york
+                            font-apple-sf-symbols
+                            font-google-roboto
+                            font-fira-go
+                            font-fira-sans
+                            font-fira-code
+                            font-fira-mono)))
 
     (services
-     (append
-      ;; Use base services from myguix
-      %my-base-home-services
+     (list
+      ;; Start with the base services from myguix
+      (service home-files-service-type
+               `((".guile" ,%default-dotguile)))
 
-      (list
-       ;; Only add what's UNIQUE to this system
-       (simple-service 'mileva-specific-environment
-                       home-environment-variables-service-type
-                       `(("EDITOR" . "nvim") ("VISUAL" . "nvim")
-                         ("BROWSER" . "firefox")
-                         ("MAKEFLAGS" unquote
-                          (string-append "-j"
-                                         (number->string (max 1
-                                                              (- (current-processor-count)
-                                                                 2)))))
-                         ("CMAKE_GENERATOR" . "Ninja")))
+      ;; Environment variables
+      (simple-service 'custom-environment-variables
+                      home-environment-variables-service-type
+                      `(("EDITOR" . "emacsclient -nw")
+                        ("VISUAL" . "emacsclient -c")
+                        ("BROWSER" . "firefox")
+                        ("PAGER" . "less")
+                        ("LESS" . "-FRX")
+                        ("LESSHISTFILE" . "$XDG_CACHE_HOME/.lesshst")
+                        ;; Development
+                        ("MAKEFLAGS" unquote
+                         (string-append "-j"
+                                        (number->string (max 1
+                                                             (- (current-processor-count)
+                                                                2)))))
+                        ("CMAKE_GENERATOR" . "Ninja")
+                        ;; XDG paths
+                        ("XDG_DATA_DIRS" . "$XDG_DATA_DIRS:$HOME/.local/share")
+                        ;; Python
+                        ("PYTHONDONTWRITEBYTECODE" . "1")
+                        ("PYTHONUNBUFFERED" . "1")
+                        ;; Rust
+                        ("CARGO_HOME" . "$XDG_DATA_HOME/cargo")
+                        ("RUSTUP_HOME" . "$XDG_DATA_HOME/rustup")
+                        ;; Go
+                        ("GOPATH" . "$XDG_DATA_HOME/go")
+                        ;; Node.js
+                        ("NPM_CONFIG_USERCONFIG" . "$XDG_CONFIG_HOME/npm/npmrc")
+                        ("NPM_CONFIG_CACHE" . "$XDG_CACHE_HOME/npm")
+                        ;; CUDA (for mileva)
+                        ("CUDA_CACHE_PATH" . "$XDG_CACHE_HOME/nv")
+                        ;; Wayland
+                        ("MOZ_ENABLE_WAYLAND" . "1")
+                        ("QT_QPA_PLATFORM" . "wayland;xcb")
+                        ("_JAVA_AWT_WM_NONREPARENTING" . #t)))
 
-       ;; Default applications (XDG MIME associations)
-       (simple-service 'default-applications
-                       home-xdg-configuration-files-service-type
-                       `(("mimeapps.list" ,%default-mimeapps)))
+      (service home-xdg-configuration-files-service-type
+               `(("gdb/gdbinit" ,%default-gdbinit)
+                 ("nano/nanorc" ,%default-nanorc)))
 
-       ;; Emacs services
-       (service my-home-emacs-service-type)
+      (service home-xdg-user-directories-service-type
+               (home-xdg-user-directories-configuration (desktop
+                                                         "$HOME/desktop")
+                                                        (documents
+                                                         "$HOME/documents")
+                                                        (download
+                                                         "$HOME/downloads")
+                                                        (music "$HOME/music")
+                                                        (pictures
+                                                         "$HOME/pictures")
+                                                        (publicshare
+                                                         "$HOME/public")
+                                                        (templates
+                                                         "$HOME/templates")
+                                                        (videos "$HOME/videos")))
 
-       (service home-emacs-daemon-service-type
-                (emacs-daemon-configuration (package
-                                              emacs-pgtk)
-                                            (server-name "mileva")))
+      ;; Default applications (XDG MIME associations)
+      (simple-service 'default-applications
+                      home-xdg-configuration-files-service-type
+                      `(("mimeapps.list" ,(plain-file "mimeapps.list"
+                                           "[Default Applications]
+text/html=firefox.desktop
+x-scheme-handler/http=firefox.desktop
+x-scheme-handler/https=firefox.desktop
+x-scheme-handler/about=firefox.desktop
+x-scheme-handler/unknown=firefox.desktop
+application/pdf=org.gnome.Evince.desktop
+image/png=org.gnome.eog.desktop
+image/jpeg=org.gnome.eog.desktop
+image/gif=org.gnome.eog.desktop
+image/webp=org.gnome.eog.desktop
+video/mp4=mpv.desktop
+video/x-matroska=mpv.desktop
+video/webm=mpv.desktop
+audio/mpeg=mpv.desktop
+audio/flac=mpv.desktop
+text/plain=emacsclient.desktop
+text/x-c=emacsclient.desktop
+text/x-python=emacsclient.desktop
+application/x-shellscript=emacsclient.desktop
+inode/directory=org.gnome.Nautilus.desktop
+"))))
+      (service my-home-emacs-service-type)
 
-       ;; Local configuration files
-       (simple-service 'mileva-dotfiles home-files-service-type
-                       `((".gitconfig" ,(local-file "../../git/gitconfig"
-                                                    "gitconfig"
-                                                    #:recursive? #f))
-                         (".gitignore" ,(local-file "../../git/gitignore"
-                                                    "gitignore"
-                                                    #:recursive? #f))
-                         (".gitattributes" ,(local-file
-                                             "../../git/gitattributes"
-                                             "gitattributes"
-                                             #:recursive? #f))))
+      (service home-inputrc-service-type
+               (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")
+                                                           ("TAB" . "menu-complete")))
+                                           (variables `(("bell-style" . "visible")
+                                                        ("editing-mode" . "emacs")
+                                                        ("show-all-if-ambiguous" . #t)
+                                                        ("mark-symlinked-directories" . #t)
+                                                        ("visible-stats" . #t)
+                                                        ("colored-stats" . #t)
+                                                        ("colored-completion-prefix" . #t)
+                                                        ("menu-complete-display-prefix" . #t)))))
 
-       ;; Local XDG configuration files
-       (simple-service 'mileva-xdg-config
-                       home-xdg-configuration-files-service-type
-                       `(("alacritty/alacritty.toml" ,(local-file
-                                                       "../../alacritty/alacritty.toml"
-                                                       "alacritty.toml"
-                                                       #:recursive? #f))
-                         ("mpv/input.conf" ,(local-file "../../mpv/input.conf"
-                                             "mpv-input.conf"
-                                             #:recursive? #f))
-                         ("mpv/mpv.conf" ,(local-file "../../mpv/mpv.conf"
-                                                      "mpv.conf"
+      ;; Scheduled User's Job Execution
+      (service home-mcron-service-type
+               (home-mcron-configuration (jobs (list %garbage-collector-job))))
+
+      ;; Configuration files
+      ;; Using simple-service to extend the existing home-files-service-type
+      (simple-service 'mileva-dotfiles home-files-service-type
+                      `((".gitconfig" ,(local-file "../../git/gitconfig"
+                                                   "gitconfig"
+                                                   #:recursive? #f))
+                        (".gitignore" ,(local-file "../../git/gitignore"
+                                                   "gitignore"
+                                                   #:recursive? #f))
+                        (".gitattributes" ,(local-file
+                                            "../../git/gitattributes"
+                                            "gitattributes"
+                                            #:recursive? #f))))
+
+      ;; XDG configuration files
+      (simple-service 'mileva-xdg-config
+                      home-xdg-configuration-files-service-type
+                      `(("alacritty/alacritty.toml" ,(local-file
+                                                      "../../alacritty/alacritty.toml"
+                                                      "alacritty.toml"
                                                       #:recursive? #f))
-                         ("mpv/shaders" ,(local-file "../../mpv/shaders"
-                                                     "mpv-shaders"
-                                                     #:recursive? #t))))
+                        ("mpv/input.conf" ,(local-file "../../mpv/input.conf"
+                                                       "mpv-input.conf"
+                                                       #:recursive? #f))
+                        ("mpv/mpv.conf" ,(local-file "../../mpv/mpv.conf"
+                                                     "mpv.conf"
+                                                     #:recursive? #f))
+                        ("mpv/shaders" ,(local-file "../../mpv/shaders"
+                                                    "mpv-shaders"
+                                                    #:recursive? #t))))
 
-       ;; Zsh configuration
-       (service home-zsh-service-type
-                (home-zsh-configuration (xdg-flavor? #t)
-                                        (environment-variables
-                                         %my-shell-environment-variables)
-                                        (zshenv (list (local-file
-                                                       "../../zsh/zshenv"
-                                                       "zshenv"
-                                                       #:recursive? #f)))
-                                        (zshrc (list (local-file
-                                                      "../../zsh/zshrc"
-                                                      "zshrc"
-                                                      #:recursive? #f)
+      ;; Zsh configuration
+      (service home-zsh-service-type
+               (home-zsh-configuration (xdg-flavor? #t)
+                                       (zshenv (list (local-file
+                                                      "../../zsh/zshenv"
+                                                      "zshenv"
+                                                      #:recursive? #f)))
+                                       (zshrc (list
+                                               ;; Load main zshrc
+                                               (local-file "../../zsh/zshrc"
+                                                           "zshrc"
+                                                           #:recursive? #f)
 
-                                                     ;; Add shared aliases
-                                                     (plain-file "zsh-aliases"
-                                                      (string-join (map (lambda 
-                                                                                (alias)
-                                                                          (format
-                                                                           #f
-                                                                           "alias ~a=\"~a\""
-                                                                           (car
-                                                                            alias)
-                                                                           (cdr
-                                                                            alias)))
-                                                                    %my-shell-aliases)
-                                                                   "\n"))
+                                               ;; Zsh plugins
+                                               (mixed-text-file
+                                                "zsh-syntax-highlighting"
+                                                "source "
+                                                zsh-syntax-highlighting
+                                                "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")
 
-                                                     ;; Zsh plugins
-                                                     (mixed-text-file
-                                                      "zsh-syntax-highlighting"
-                                                      "source "
-                                                      zsh-syntax-highlighting
-                                                      "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")
+                                               (mixed-text-file
+                                                "zsh-history-substring-search"
+                                                "source "
+                                                zsh-history-substring-search
+                                                "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
 
-                                                     (mixed-text-file
-                                                      "zsh-history-substring-search"
-                                                      "source "
-                                                      zsh-history-substring-search
-                                                      "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
+                                               (mixed-text-file
+                                                "zsh-completions" "fpath+=\""
+                                                zsh-completions
+                                                "/share/zsh/site-functions\"")
 
-                                                     (mixed-text-file
-                                                      "zsh-completions"
-                                                      "fpath+=\""
-                                                      zsh-completions
-                                                      "/share/zsh/site-functions\"")
+                                               (mixed-text-file
+                                                "zsh-autosuggestions"
+                                                "source " zsh-autosuggestions
+                                                "/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh")
 
-                                                     (mixed-text-file
-                                                      "zsh-autosuggestions"
-                                                      "source "
-                                                      zsh-autosuggestions
-                                                      "/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh")
+                                               (mixed-text-file "zsh-autopair"
+                                                "source " zsh-autopair
+                                                "/share/zsh/plugins/zsh-autopair/zsh-autopair.zsh")
 
-                                                     (mixed-text-file
-                                                      "zsh-autopair" "source "
-                                                      zsh-autopair
-                                                      "/share/zsh/plugins/zsh-autopair/zsh-autopair.zsh")
+                                               (mixed-text-file "fzf-tab"
+                                                "source " fzf-tab
+                                                "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")))))
 
-                                                     (mixed-text-file
-                                                      "fzf-tab" "source "
-                                                      fzf-tab
-                                                      "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")))))
-
-       ;; GPG Agent (this might override base config, which is OK if you want custom settings)
-       (service home-gpg-agent-service-type
-                (home-gpg-agent-configuration (pinentry-program (file-append
-                                                                 pinentry-gnome3
-                                                                 "/bin/pinentry-gnome3"))
-                                              (ssh-support? #t)
-                                              (default-cache-ttl 28800)
-                                              (max-cache-ttl 86400)
-                                              (default-cache-ttl-ssh 28800)
-                                              (max-cache-ttl-ssh 86400)
-                                              (extra-content
-                                               "enable-ssh-support
+      ;; GPG Agent
+      (service home-gpg-agent-service-type
+               (home-gpg-agent-configuration (pinentry-program (file-append
+                                                                pinentry-gnome3
+                                                                "/bin/pinentry-gnome3"))
+                                             (ssh-support? #t)
+                                             (default-cache-ttl 28800) ;8 hours
+                                             (max-cache-ttl 86400) ;24 hours
+                                             (default-cache-ttl-ssh 28800)
+                                             (max-cache-ttl-ssh 86400)
+                                             (extra-content
+                                              "enable-ssh-support
 allow-loopback-pinentry
 allow-preset-passphrase")))
 
-       ;; SSH configuration
-       (service home-openssh-service-type
-                (home-openssh-configuration (hosts (list (openssh-host (name
-                                                                        "github.com")
-                                                                       (user
-                                                                        "git")
-                                                                       (identity-file
-                                                                        "~/.ssh/id_ed25519")
-                                                                       (port
-                                                                             22)
-                                                                       (extra-content
-                                                                        "ControlMaster auto
-ControlPath ~/.ssh/control-%C
-ControlPersist 10m"))
+      ;; SSH configuration
+      (service home-openssh-service-type
+               (home-openssh-configuration (hosts (list
+                                                   ;; GitHub
+                                                   (openssh-host (name
+                                                                  "github.com")
+                                                                 (user "git")
+                                                                 (identity-file
+                                                                  "~/.ssh/id_ed25519")
+                                                                 (port 22)
+                                                                 (extra-content
+                                                                  "
+  ControlMaster auto
+  ControlPath ~/.ssh/control-%C
+  ControlPersist 10m"))
 
-                                                         (openssh-host (name
-                                                                        "gitlab.com")
-                                                                       (user
-                                                                        "git")
-                                                                       (identity-file
-                                                                        "~/.ssh/id_ed25519")
-                                                                       (port
-                                                                             22))
+                                                   ;; GitLab
+                                                   (openssh-host (name
+                                                                  "gitlab.com")
+                                                                 (user "git")
+                                                                 (identity-file
+                                                                  "~/.ssh/id_ed25519")
+                                                                 (port 22))
 
-                                                         (openssh-host (name
-                                                                        "spärck")
-                                                                       (host-name
-                                                                        "spärck.local")
-                                                                       (user
-                                                                        "b")
-                                                                       (identity-file
-                                                                        "~/.ssh/id_ed25519")
-                                                                       (forward-agent?
-                                                                        #t)
-                                                                       (compression?
-                                                                        #t)
-                                                                       (extra-content
-                                                                        "ControlMaster auto
-ControlPath ~/.ssh/control-%C
-ControlPersist 30m
-ServerAliveInterval 60
-ServerAliveCountMax 3"))
+                                                   ;; Spärck (laptop)
+                                                   (openssh-host (name
+                                                                  "spärck")
+                                                                 (host-name
+                                                                  "spärck.local")
+                                                                 (user "b")
+                                                                 (identity-file
+                                                                  "~/.ssh/id_ed25519")
+                                                                 (forward-agent?
+                                                                  #t)
+                                                                 (compression?
+                                                                  #t)
+                                                                 (extra-content
+                                                                  "
+  ControlMaster auto
+  ControlPath ~/.ssh/control-%C
+  ControlPersist 30m
+  ServerAliveInterval 60
+  ServerAliveCountMax 3"))
 
-                                                         (openssh-host (name
-                                                                        "*")
-                                                                       (extra-content
-                                                                        "HashKnownHosts yes
-IdentitiesOnly yes
-StrictHostKeyChecking ask
-VerifyHostKeyDNS yes
-VisualHostKey yes"))))
-                                            (add-keys-to-agent "confirm")))
+                                                   ;; Global SSH defaults
+                                                   (openssh-host (name "*")
+                                                                 (extra-content
+                                                                  "
+  HashKnownHosts yes
+  IdentitiesOnly yes
+  StrictHostKeyChecking ask
+  VerifyHostKeyDNS yes
+  VisualHostKey yes"))))
+                                           (add-keys-to-agent "confirm")))
 
-       ;; Desktop services
-       (service home-dbus-service-type)
-       (service home-pipewire-service-type)
-       (service home-syncthing-service-type)
+      ;; Desktop Home Services
+      (service home-dbus-service-type)
 
-       ;; Media services
-       (service home-beets-service-type
-                (home-beets-configuration (directory "/home/b/music")))
+      ;; Sound Home Services
+      (service home-pipewire-service-type)
 
-       (service home-nougat-service-type))))))
+      ;; Networking Home Services
+      (service home-syncthing-service-type)
+
+      ;; Miscellaneous Home Services
+      (service home-beets-service-type
+               (home-beets-configuration (directory "/home/b/music")))
+      (service home-nougat-service-type)))))
 
 (operating-system
   (host-name "mileva")
@@ -344,13 +402,13 @@ VisualHostKey yes"))))
   (file-systems (append (list (file-system
                                 (device (file-system-label "my-root"))
                                 (mount-point "/")
-                                (type "ext4"))
+                                (type "btrfs"))
                               (file-system
                                 (device (file-system-label "my-data"))
                                 (mount-point "/data")
-                                (type "ext4"))
+                                (type "btrfs"))
                               (file-system
-                                (device (uuid "4426-CA38"
+                                (device (uuid "AAFC-D5E5"
                                               'fat32))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
@@ -361,8 +419,7 @@ VisualHostKey yes"))))
                  (group "users")
                  (home-directory "/home/b")
                  (shell (file-append (specification->package "zsh") "/bin/zsh"))
-                 (supplementary-groups '("adbusers" "wheel"
-                                         "netdev"
+                 (supplementary-groups '("wheel" "netdev"
                                          "kvm"
                                          "tty"
                                          "libvirt"
@@ -375,10 +432,7 @@ VisualHostKey yes"))))
 
   (groups (cons* (user-group
                    (system? #t)
-                   (name "realtime"))
-                 (user-group
-                   (system? #t)
-                   (name "adbusers")) %base-groups))
+                   (name "realtime")) %base-groups))
 
   (packages (append
              ;; Core System
@@ -455,6 +509,14 @@ VisualHostKey yes"))))
              %base-packages))
   (services
    (append (list (service gnome-desktop-service-type)
+                 (service gdm-service-type
+                          (gdm-configuration (wayland? #t)
+                                             (debug? #f)
+                                             (xorg-configuration (xorg-configuration
+                                                                  (modules (cons
+                                                                            nvda
+                                                                            %default-xorg-modules))
+                                                                  (drivers '("nvidia"))))))
                  (service nvidia-service-type)
                  (set-xorg-configuration
                   (xorg-configuration (keyboard-layout keyboard-layout)
@@ -468,6 +530,10 @@ VisualHostKey yes"))))
                  ;; Networking Services
                  (service openssh-service-type)
                  (service nftables-service-type)
+                 (service network-manager-service-type
+                          (network-manager-configuration (vpn-plugins (list
+                                                                       network-manager-openvpn
+                                                                       network-manager-openconnect))))
 
                  ;; Database Services
                  (service redis-service-type
@@ -593,6 +659,10 @@ collation-server = utf8mb4_unicode_ci")))
                                                      (memory-limit "16G") ;Max 16GB uncompressed
                                                      (priority 100))) ;High priority
                  
+                 (service fstrim-service-type
+                          (fstrim-configuration (schedule "0 0 * * 0") ;Weekly on Sunday at midnight
+                                                (verbose? #f)))
+
                  ;; Guix Services
                  (service guix-home-service-type
                           `(("b" ,%my-home-config)))
@@ -657,61 +727,26 @@ collation-server = utf8mb4_unicode_ci")))
                  ;; Scheduled jobs using Shepherd timers
                  (simple-service 'system-timers shepherd-root-service-type
                                  (list
-                                  ;; Filesystem maintenance
-                                  (shepherd-timer '(fstrim-all)
-                                                  "0 0 * * 0" ;Weekly on Sunday at midnight
-                                                  #~(list #$(file-append
-                                                             util-linux
-                                                             "/sbin/fstrim")
-                                                          "-a" "-v")
-                                                  #:requirement '(file-systems))
-
-                                  (shepherd-timer '(clean-tmp-directory)
-                                                  "0 2 */14 * *" ;Every 14 days at 2 AM
-                                                  #~(begin
-                                                      (setenv "HOME" "/home/b")
-                                                      (system* #$(file-append
-                                                                  findutils
-                                                                  "/bin/find")
-                                                               "/home/b/tmp"
-                                                               "-mindepth" "1"
-                                                               "-delete"))
-                                                  #:requirement '(file-systems))
-
-                                  (shepherd-timer '(clean-old-downloads)
-                                                  "0 3 */14 * *" ;Every 14 days at 3 AM
-                                                  #~(begin
-                                                      (setenv "HOME" "/home/b")
-                                                      (system* #$(file-append
-                                                                  findutils
-                                                                  "/bin/find")
-                                                       "/home/b/downloads"
-                                                       "-mindepth"
-                                                       "1"
-                                                       "-atime"
-                                                       "+14"
-                                                       "-delete"))
-                                                  #:requirement '(file-systems))
-
-                                  ;; Package management
+                                  ;; Garbage collection daily at 4AM
                                   (shepherd-timer '(garbage-collection)
-                                                  "0 4 * * *" ;Daily at 4 AM
+                                                  "0 4 * * *"
                                                   #~(list #$(file-append guix
                                                              "/bin/guix") "gc"
                                                           "-F" "50G")
                                                   #:requirement '(guix-daemon))
 
+                                  ;; Update package database weekly on Sunday at 3AM
                                   (shepherd-timer '(update-package-database)
-                                                  "0 3 * * 0" ;Weekly on Sunday at 3 AM
+                                                  "0 3 * * 0"
                                                   #~(list #$(file-append guix
                                                              "/bin/guix")
                                                      "package"
                                                      "--list-generations")
                                                   #:requirement '(guix-daemon))
 
-                                  ;; Development tools cleanup
+                                  ;; Docker cleanup weekly on Saturday at 2AM
                                   (shepherd-timer '(docker-cleanup)
-                                                  "0 2 * * 6" ;Weekly on Saturday at 2 AM
+                                                  "0 2 * * 6"
                                                   #~(list #$(file-append
                                                              docker-cli
                                                              "/bin/docker")
@@ -719,130 +754,13 @@ collation-server = utf8mb4_unicode_ci")))
                                                           "-af")
                                                   #:requirement '(dockerd))
 
+                                  ;; Clean CUDA cache monthly on the 1st at 3AM
                                   (shepherd-timer '(cuda-cache-cleanup)
-                                                  "0 3 1 * *" ;Monthly on the 1st at 3 AM
+                                                  "0 3 1 * *"
                                                   #~(list #$(file-append
                                                              coreutils
                                                              "/bin/rm") "-rf"
-                                                     "/home/b/.nv/ComputeCache")
-                                                  #:requirement '(file-systems))
-
-                                  (shepherd-timer '(clean-package-caches)
-                                                  "0 3 15 * *" ;Monthly on the 15th at 3 AM
-                                                  #~(begin
-                                                      (system* #$(file-append
-                                                                  coreutils
-                                                                  "/bin/rm")
-                                                       "-rf"
-                                                       "/home/b/.cache/pip")
-                                                      (system* #$(file-append
-                                                                  findutils
-                                                                  "/bin/find")
-                                                       "/home/b/.local/share/cargo/registry/cache"
-                                                       "-type"
-                                                       "f"
-                                                       "-mtime"
-                                                       "+90"
-                                                       "-delete")
-                                                      (system* #$(file-append
-                                                                  coreutils
-                                                                  "/bin/rm")
-                                                       "-rf"
-                                                       "/home/b/.cache/npm/_cacache"))
-                                                  #:requirement '(file-systems))
-
-                                  (shepherd-timer '(git-maintenance)
-                                                  "0 4 * * 0" ;Weekly on Sunday at 4 AM
-                                                  #~(begin
-                                                      (setenv "HOME" "/home/b")
-                                                      (system* #$(file-append
-                                                                  findutils
-                                                                  "/bin/find")
-                                                       "/home/b/projects"
-                                                       "-name"
-                                                       ".git"
-                                                       "-type"
-                                                       "d"
-                                                       "-exec"
-                                                       #$(file-append git
-                                                          "/bin/git")
-                                                       "-C"
-                                                       "{}"
-                                                       ".."
-                                                       "maintenance"
-                                                       "run"
-                                                       "--auto"
-                                                       ";"))
-                                                  #:requirement '(file-systems))
-
-                                  ;; System maintenance
-                                  (shepherd-timer '(updatedb)
-                                                  "0 3 * * *" ;Daily at 3 AM
-                                                  #~(list #$(file-append
-                                                             findutils
-                                                             "/bin/updatedb")
-                                                     "--localpaths=/home /data"
-                                                     "--prunepaths=/tmp /var/tmp /gnu")
-                                                  #:requirement '(file-systems))
-
-                                  (shepherd-timer '(clean-logs)
-                                                  "0 2 * * 0" ;Weekly on Sunday at 2 AM
-                                                  #~(begin
-                                                      (system* #$(file-append
-                                                                  findutils
-                                                                  "/bin/find")
-                                                               "/var/log"
-                                                               "-name"
-                                                               "*.log.*"
-                                                               "-mtime"
-                                                               "+30"
-                                                               "-delete")
-                                                      (system* #$(file-append
-                                                                  findutils
-                                                                  "/bin/find")
-                                                               "/var/log"
-                                                               "-name"
-                                                               "*.gz"
-                                                               "-mtime"
-                                                               "+30"
-                                                               "-delete"))
-                                                  #:requirement '(file-systems))
-
-                                  (shepherd-timer '(font-cache-update)
-                                                  "0 3 * * 0" ;Weekly on Sunday at 3 AM
-                                                  #~(list #$(file-append
-                                                             fontconfig
-                                                             "/bin/fc-cache")
-                                                          "-fv")
-                                                  #:requirement '(file-systems))
-
-                                  ;; Database maintenance
-                                  (shepherd-timer '(postgres-vacuum)
-                                                  "0 5 * * 0" ;Weekly on Sunday at 5 AM
-                                                  #~(list #$(file-append
-                                                             postgresql
-                                                             "/bin/psql") "-U"
-                                                          "postgres" "-c"
-                                                          "VACUUM ANALYZE;")
-                                                  #:requirement '(postgres))
-
-                                  ;; Security and monitoring
-                                  (shepherd-timer '(disk-health-check)
-                                                  "0 6 * * 0" ;Weekly on Sunday at 6 AM
-                                                  #~(begin
-                                                      (system* #$(file-append
-                                                                  smartmontools
-                                                                  "/sbin/smartctl")
-                                                               "-a"
-                                                               "/dev/nvme0n1"
-                                                               "-l" "error")
-                                                      (system* #$(file-append
-                                                                  smartmontools
-                                                                  "/sbin/smartctl")
-                                                               "-a"
-                                                               "/dev/nvme1n1"
-                                                               "-l" "error"))
-                                                  #:requirement '(file-systems))))
+                                                     "/home/b/.nv/ComputeCache"))))
 
                  ;; Environment variables for Wayland preference
                  (simple-service 'wayland-environment
@@ -863,47 +781,8 @@ collation-server = utf8mb4_unicode_ci")))
                  (service oci-container-service-type
                           (list oci-meilisearch-service-type
                                 oci-grobid-service-type oci-neo4j-service-type
-                                oci-qdrant-service-type oci-minio-service-type))
-
-                 ;; Backup Service
-                 (service borg-backup-service-type
-                          (borg-backup-configuration (jobs (list (borg-backup-job
-                                                                  (name
-                                                                   "system-backup")
-                                                                  (repository
-                                                                   "/data/backups/borg")
-                                                                  (passphrase-file
-                                                                   "/root/.borg-password")
-                                                                  (schedule
-                                                                   "0 2 * * *")
-                                                                  (paths '("/etc"
-                                                                           "/root/.ssh"
-                                                                           "/root/.gnupg"
-                                                                           "/home/b/documents"
-                                                                           "/home/b/projects"
-                                                                           "/var/lib/postgresql"
-                                                                           "/var/lib/mysql"))
-                                                                  (exclude-patterns '
-                                                                   ("*/.cache"
-                                                                    "*/node_modules"
-                                                                    "*/.git"
-                                                                    "*/target"
-                                                                    "*/__pycache__"))
-                                                                  (compression
-                                                                   "zstd,3")
-                                                                  ;; Retention policy
-                                                                  (prune-keep-daily
-                                                                   7)
-                                                                  (prune-keep-weekly
-                                                                   4)
-                                                                  (prune-keep-monthly
-                                                                   12)
-                                                                  (prune-keep-yearly
-                                                                   2)
-                                                                  ;; Optional flags
-                                                                  (verbose? #f)
-                                                                  (stats? #t)
-                                                                  (progress?
-                                                                   #t)))))))
-           %my-desktop-services))
+                                oci-qdrant-service-type oci-minio-service-type)))
+           (modify-services %my-desktop-services
+             (delete gdm-service-type)
+             (delete network-manager-service-type))))
   (name-service-switch %mdns-host-lookup-nss))
