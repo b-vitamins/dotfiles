@@ -77,18 +77,24 @@ check_scheme_style() {
     if [ -n "$scheme_files" ] && command -v guix >/dev/null 2>&1; then
         echo "${YELLOW}Checking Scheme file style...${NC}"
         for file in $scheme_files; do
-            # Create a temporary file with staged content
-            tmp_file=$(mktemp)
-            git show ":$file" > "$tmp_file"
-            
-            # Check if guix style would make changes
-            if ! guix style -f "$tmp_file" | diff -q "$tmp_file" - >/dev/null; then
+            # Create temporary files for comparison
+            tmp_original=$(mktemp)
+            tmp_styled=$(mktemp)
+
+            # Get the staged content
+            git show ":$file" > "$tmp_original"
+            cp "$tmp_original" "$tmp_styled"
+            # Apply guix style to the copy
+            guix style -f "$tmp_styled" >/dev/null 2>&1
+
+            # Check if guix style made any changes
+            if ! diff -q "$tmp_original" "$tmp_styled" >/dev/null; then
                 echo "${RED}Error: $file needs formatting${NC}" >&2
                 echo "Run: guix style -f $file" >&2
-                rm "$tmp_file"
+                rm "$tmp_original" "$tmp_styled"
                 return 1
             fi
-            rm "$tmp_file"
+            rm "$tmp_original" "$tmp_styled"
         done
     fi
     return 0
