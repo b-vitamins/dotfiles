@@ -64,6 +64,7 @@
              (myguix home)
              (myguix utils)
              (myguix home services emacs)
+             (myguix home services emacs-daemon)
              (myguix home services nougat)
              (myguix packages base)
              (myguix packages fonts)
@@ -146,10 +147,6 @@
                         ("QT_QPA_PLATFORM" . "wayland;xcb")
                         ("_JAVA_AWT_WM_NONREPARENTING" . #t)))
 
-      (service home-xdg-configuration-files-service-type
-               `(("gdb/gdbinit" ,%default-gdbinit)
-                 ("nano/nanorc" ,%default-nanorc)))
-
       (service home-xdg-user-directories-service-type
                (home-xdg-user-directories-configuration (desktop
                                                          "$HOME/desktop")
@@ -185,14 +182,16 @@ video/mp4=mpv.desktop
 video/x-matroska=mpv.desktop
 video/webm=mpv.desktop
 audio/mpeg=mpv.desktop
-audio/flac=mpv.desktop
-text/plain=emacsclient.desktop
-text/x-c=emacsclient.desktop
-text/x-python=emacsclient.desktop
-application/x-shellscript=emacsclient.desktop
+audio/flac=audacious.desktop
+audio/mp3=audacious.desktop
+text/plain=org.gnome.TextEditor.desktop
+text/x-c=org.gnome.TextEditor.desktop
+text/x-python=org.gnome.TextEditor.desktop
+application/x-shellscript=org.gnome.TextEditor.desktop
 inode/directory=org.gnome.Nautilus.desktop
 "))))
       (service my-home-emacs-service-type)
+      (service home-emacs-daemon-service-type)
 
       (service home-inputrc-service-type
                (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")
@@ -488,6 +487,7 @@ allow-preset-passphrase")))
              %desktop-core
              %audio-system
              %bluetooth-system
+             %my-gnome-shell-assets
              ;; Media (workstation needs full media capabilities)
              %media-players
              %media-editors
