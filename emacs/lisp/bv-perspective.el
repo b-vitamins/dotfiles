@@ -6,44 +6,66 @@
 
 ;;; Commentary:
 
-;; Configuration for perspective-based workspace management.
+;; Workspace management with perspective.el.
 
 ;;; Code:
 
-(autoload 'persp-mode "perspective")
-(autoload 'persp-switch "perspective")
-(autoload 'project-prompt-project-dir "project")
-(autoload 'project-switch-project "project")
+(require 'perspective nil t)
+(declare-function project-prompt-project-dir "project")
+(declare-function project-switch-project "project")
 
-(with-eval-after-load 'perspective
-  (when (boundp 'persp-mode-prefix-key)
+(when (boundp 'persp-mode-prefix-key)
   (setq persp-mode-prefix-key (kbd "C-x P")))
-  (when (boundp 'persp-show-modestring)
-    (setq persp-show-modestring t))
-  (when (boundp 'persp-modestring-dividers)
-    (setq persp-modestring-dividers '(" [" "]" "|"))))
+(when (boundp 'persp-show-modestring)
+  (setq persp-show-modestring nil))
+(when (boundp 'persp-state-default-file)
+  (setq persp-state-default-file
+        (expand-file-name "perspectives" user-emacs-directory)))
+(when (boundp 'persp-suppress-no-prefix-key-warning)
+  (setq persp-suppress-no-prefix-key-warning t))
 
 (defun bv-persp-switch-project (dir)
-  "Switch to a project DIR in its own perspective.
-This function creates or switches to a perspective named after the
-project directory and then switches to that project.
-
-Argument DIR is the project directory path."
+  "Switch to project DIR in dedicated perspective."
   (interactive (list (project-prompt-project-dir)))
   (let ((name (file-name-nondirectory
-               (directory-file-name
-                (file-name-directory dir)))))
+               (directory-file-name dir))))
     (persp-switch name)
     (project-switch-project dir)))
 
-(with-eval-after-load 'project
-  (when (boundp 'project-prefix-map)
-    (define-key project-prefix-map (kbd "P") 'bv-persp-switch-project)))
+(defun bv-persp-setup-faces ()
+  "Apply theme-aware faces to perspective."
+  (when (facep 'persp-selected-face)
+    (set-face-attribute 'persp-selected-face nil
+                        :inherit 'bv-face-strong
+                        :weight 'bold)))
 
-(if after-init-time
-    (persp-mode 1)
-  (when (boundp 'after-init-hook)
-    (add-hook 'after-init-hook 'persp-mode)))
+(add-hook 'after-init-hook #'bv-persp-setup-faces)
+(add-hook 'bv-after-theme-hook #'bv-persp-setup-faces)
+
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-app-map)
+    (define-key bv-app-map (kbd "s") 'persp-switch)
+    (define-key bv-app-map (kbd "S") 'bv-persp-switch-project)
+    (define-key bv-app-map (kbd "k") 'persp-kill)
+    (define-key bv-app-map (kbd "r") 'persp-rename)
+    (define-key bv-app-map (kbd "a") 'persp-add-buffer)
+    (define-key bv-app-map (kbd "A") 'persp-set-buffer)
+    (define-key bv-app-map (kbd "b") 'persp-switch-to-buffer)
+    (define-key bv-app-map (kbd "i") 'persp-import)
+    (define-key bv-app-map (kbd "n") 'persp-next)
+    (define-key bv-app-map (kbd "p") 'persp-prev)))
+
+(with-eval-after-load 'project
+  (when (and (boundp 'project-switch-commands)
+             (listp project-switch-commands))
+    (add-to-list 'project-switch-commands
+                 '(bv-persp-switch-project "Perspective" ?P) t)))
+
+(add-hook 'after-init-hook 'persp-mode)
+
+(with-eval-after-load 'consult
+  (when (fboundp 'consult-customize)
+    (consult-customize persp-switch-to-buffer :preview-key "M-.")))
 
 (provide 'bv-perspective)
 ;;; bv-perspective.el ends here
