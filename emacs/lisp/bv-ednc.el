@@ -1,72 +1,95 @@
-;;; bv-ednc.el --- Desktop notifications configuration  -*- lexical-binding: t -*-
+;;; bv-ednc.el --- Desktop notifications configuration -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
-;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-;; Configuration for EDNC desktop notification handling with custom
-;; functions for managing notifications and keybindings.
+;; Desktop notification handling with EDNC.
 
 ;;; Code:
 
 
-(autoload 'ednc-notifications "ednc")
-(autoload 'ednc-format-notification "ednc")
-(autoload 'ednc--close-notification "ednc")
-(autoload 'ednc-dismiss-notification "ednc")
-(autoload 'ednc--update-log-buffer "ednc")
+(declare-function ednc-notifications "ednc")
+(declare-function ednc-format-notification "ednc")
+(declare-function ednc--close-notification "ednc")
+(declare-function ednc-dismiss-notification "ednc")
+(declare-function ednc--update-log-buffer "ednc")
 
-(defvar bv-ednc-map nil
-  "Keymap for EDNC notification commands.")
-(define-prefix-command 'bv-ednc-map)
+(defgroup bv-ednc nil
+  "Desktop notification settings."
+  :group 'bv)
 
-(defun bv-ednc--notify ()
-  "Format and return the most recent notification."
-  (when (ednc-notifications)
-    (ednc-format-notification (car (ednc-notifications)))))
+(defcustom bv-ednc-idle-delay 0.5
+  "Idle time before loading EDNC."
+  :type 'number
+  :group 'bv-ednc)
+
+(defcustom bv-ednc-modeline-format '(:eval (bv-ednc-modeline))
+  "Format for notification indicator in mode line."
+  :type 'sexp
+  :group 'bv-ednc)
+
+;; Load EDNC after idle delay
+(run-with-idle-timer bv-ednc-idle-delay t
+                     (lambda ()
+                       (require 'ednc nil t)))
+
+(defun bv-ednc-modeline ()
+  "Return notification count for mode line."
+  (when (and (fboundp 'ednc-notifications)
+             (ednc-notifications))
+    (concat " [" (number-to-string (length (ednc-notifications))) "]")))
 
 (defun bv-ednc-show-notification-log ()
-  "Switch to the EDNC notification log buffer."
+  "Display notification log."
   (interactive)
-  (when (and (boundp 'ednc-log-name) ednc-log-name (bufferp (get-buffer ednc-log-name)))
-    (switch-to-buffer ednc-log-name)))
+  (if-let ((buffer (get-buffer "*ednc-log*")))
+      (pop-to-buffer buffer)
+    (message "No notifications")))
 
-(defun bv-ednc-close-last-notification ()
-  "Close the most recent notification."
+(defun bv-ednc-dismiss-last ()
+  "Dismiss most recent notification."
   (interactive)
-  (when-let* ((notification (car (ednc-notifications))))
-    (ednc--close-notification notification 2)))
+  (when-let ((notification (car (ednc-notifications))))
+    (ednc-dismiss-notification notification)
+    (message "Notification dismissed")))
 
-(defun bv-ednc-close-all-notifications ()
-  "Close all pending notifications."
+(defun bv-ednc-dismiss-all ()
+  "Dismiss all notifications."
   (interactive)
-  (when (and (boundp 'ednc--state) ednc--state)
-    (mapc 'ednc-dismiss-notification (cdr ednc--state))))
+  (let ((count (length (ednc-notifications))))
+    (mapc #'ednc-dismiss-notification (ednc-notifications))
+    (message "Dismissed %d notifications" count)))
 
-(defun bv-ednc-update-notifications (&rest _)
-  "Update mode line to reflect notification change."
+(defun bv-ednc-open-app ()
+  "Open app for most recent notification."
   (interactive)
-  (force-mode-line-update t))
+  (when-let* ((notification (car (ednc-notifications)))
+              (app (alist-get 'app-name notification)))
+    (cond
+     ((string-match-p "firefox\\|chromium" app)
+      (browse-url ""))
+     ((string-match-p "telegram\\|signal" app)
+      (message "Opening %s..." app))
+     (t (message "No handler for %s" app)))))
 
-(when (boundp 'after-init-hook)
-  (add-hook 'after-init-hook 'ednc-mode))
-(when (boundp 'ednc-notification-presentation-functions)
-  (add-hook 'ednc-notification-presentation-functions 'bv-ednc-update-notifications)
-  (add-hook 'ednc-notification-presentation-functions 'ednc--update-log-buffer))
+(with-eval-after-load 'ednc
+  (ednc-mode 1)
+  (add-hook 'ednc-notification-presentation-functions
+            (lambda (&rest _) (force-mode-line-update t))))
 
-(with-eval-after-load 'notifications
-  (when (boundp 'notifications-application-name)
-    (setq notifications-application-name "Notification")))
+(defun bv-ednc-transient ()
+  "Transient menu for notifications."
+  (interactive)
+  (transient-define-prefix bv-ednc-transient-menu ()
+    "Desktop Notifications"
+    ["Actions"
+     ("l" "Show log" bv-ednc-show-notification-log)
+     ("d" "Dismiss last" bv-ednc-dismiss-last)
+     ("D" "Dismiss all" bv-ednc-dismiss-all)
+     ("o" "Open app" bv-ednc-open-app)])
+  (bv-ednc-transient-menu))
 
-(with-eval-after-load 'bv-keymaps
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "n") 'bv-ednc-map)))
-
-(let ((map bv-ednc-map))
-  (define-key map "c" 'bv-ednc-close-last-notification)
-  (define-key map "l" 'bv-ednc-show-notification-log)
-  (define-key map "d" 'bv-ednc-close-all-notifications))
+(global-set-key (kbd "C-c n") 'bv-ednc-transient)
 
 (provide 'bv-ednc)
 ;;; bv-ednc.el ends here
