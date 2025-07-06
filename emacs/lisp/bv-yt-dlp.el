@@ -1,45 +1,90 @@
-;;; bv-yt-dlp.el --- YouTube downloader configuration  -*- lexical-binding: t -*-
+;;; bv-yt-dlp.el --- YouTube downloader configuration -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
-;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-
-;; Configuration for yt-dlp YouTube downloader.
+;; Media downloading with yt-dlp.
 
 ;;; Code:
 
 
-(autoload 'substitute-env-vars "env")
+(declare-function ytdl-show-list "ytdl")
+(declare-function ytdl-download "ytdl")
+(declare-function ytdl-download-audio "ytdl")
+(declare-function ytdl-download-video "ytdl")
 
-(with-eval-after-load 'bv-keymaps
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "y") 'ytdl-show-list)))
+(defgroup bv-ytdl nil
+  "YouTube downloader settings."
+  :group 'bv)
+
+(defcustom bv-ytdl-idle-delay 2.0
+  "Idle time before loading ytdl."
+  :type 'number
+  :group 'bv-ytdl)
+
+(defcustom bv-ytdl-downloads-dir (expand-file-name "~/Downloads")
+  "Default download directory."
+  :type 'directory
+  :group 'bv-ytdl)
+
+(defcustom bv-ytdl-music-dir (expand-file-name "~/Music")
+  "Music download directory."
+  :type 'directory
+  :group 'bv-ytdl)
+
+(defcustom bv-ytdl-video-dir (expand-file-name "~/Videos")
+  "Video download directory."
+  :type 'directory
+  :group 'bv-ytdl)
+
+;; Load ytdl after idle delay
+(run-with-idle-timer bv-ytdl-idle-delay t
+                     (lambda ()
+                       (require 'ytdl nil t)))
+
+(setq ytdl-command "yt-dlp"
+      ytdl-download-folder bv-ytdl-downloads-dir
+      ytdl-music-folder bv-ytdl-music-dir
+      ytdl-video-folder bv-ytdl-video-dir
+      ytdl-mode-line nil)
+
+(defun bv-ytdl-download-url ()
+  "Download media from URL."
+  (interactive)
+  (let ((url (read-string "URL: ")))
+    (ytdl-download url)))
+
+(defun bv-ytdl-download-audio ()
+  "Download audio from URL."
+  (interactive)
+  (let ((url (read-string "Audio URL: ")))
+    (ytdl-download-audio url)))
+
+(defun bv-ytdl-download-video ()
+  "Download video from URL."
+  (interactive)
+  (let ((url (read-string "Video URL: ")))
+    (ytdl-download-video url)))
 
 (with-eval-after-load 'ytdl
-  (require 'env)
-  (when (boundp 'ytdl--dl-list-mode-map)
-    (define-key ytdl--dl-list-mode-map "a" 'ytdl-download))
-  (when (boundp 'ytdl-command)
-    (setq ytdl-command
-          "/run/current-system/profile/bin/yt-dlp"))
-  (when (boundp 'ytdl-download-folder)
-    (setq ytdl-download-folder (substitute-env-vars "$HOME/Downloads")))
-  (when (boundp 'ytdl-music-folder)
-    (setq ytdl-music-folder (substitute-env-vars "$HOME/Music")))
-  (when (boundp 'ytdl-video-folder)
-    (setq ytdl-video-folder (substitute-env-vars "$HOME/Videos")))
-  (when (boundp 'ytdl-mode-line)
-    (setq ytdl-mode-line nil))
-  (when (boundp 'ytdl-music-extra-args)
-    (setq ytdl-music-extra-args
-          (list "--ffmpeg-location"
-                "/run/current-system/profile/bin/ffmpeg")))
-  (when (boundp 'ytdl-video-extra-args)
-    (setq ytdl-video-extra-args
-          (list "--ffmpeg-location"
-                "/run/current-system/profile/bin/ffmpeg"))))
+  (define-key ytdl--dl-list-mode-map "q" 'quit-window)
+  (define-key ytdl--dl-list-mode-map "a" 'ytdl-download)
+  (define-key ytdl--dl-list-mode-map "d" 'ytdl-download-delete))
+
+(defun bv-ytdl-transient ()
+  "Transient menu for ytdl."
+  (interactive)
+  (transient-define-prefix bv-ytdl-transient-menu ()
+    "Media Downloader"
+    ["Download"
+     ("u" "From URL" bv-ytdl-download-url)
+     ("a" "Audio only" bv-ytdl-download-audio)
+     ("v" "Video" bv-ytdl-download-video)]
+    ["Manage"
+     ("l" "Show downloads" ytdl-show-list)])
+  (bv-ytdl-transient-menu))
+
+(global-set-key (kbd "C-c y") 'bv-ytdl-transient)
 
 (provide 'bv-yt-dlp)
 ;;; bv-yt-dlp.el ends here
