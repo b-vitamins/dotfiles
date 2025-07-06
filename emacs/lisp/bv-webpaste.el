@@ -1,39 +1,77 @@
-;;; bv-webpaste.el --- Webpaste configuration  -*- lexical-binding: t -*-
+;;; bv-webpaste.el --- Web pasting service configuration -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
-;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-
-;; Configuration for webpaste online pastebin service.
+;; Share code snippets via web paste services.
 
 ;;; Code:
 
 
-(define-prefix-command 'bv-webpaste-map)
+(declare-function webpaste-paste-buffer "webpaste")
+(declare-function webpaste-paste-region "webpaste")
+(declare-function webpaste-paste-buffer-or-region "webpaste")
 
-(with-eval-after-load 'bv-keymaps
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "P") 'bv-webpaste-map)))
+(defgroup bv-webpaste nil
+  "Web paste service settings."
+  :group 'bv)
 
-(when (boundp 'bv-webpaste-map)
-  (let ((map bv-webpaste-map))
-    (define-key map "b" 'webpaste-paste-buffer)
-    (define-key map "r" 'webpaste-paste-region)
-    (define-key map "p" 'webpaste-paste-buffer-or-region)))
+(defcustom bv-webpaste-idle-delay 2.0
+  "Idle time before loading webpaste."
+  :type 'number
+  :group 'bv-webpaste)
 
-(with-eval-after-load 'webpaste
-  (when (boundp 'webpaste-provider-priority)
-    (setq webpaste-provider-priority
-          '("paste.rs" "bpa.st" "ix.io" "paste.mozilla.org")))
-  (when (boundp 'webpaste-paste-confirmation)
-    (setq webpaste-paste-confirmation t)))
+(defcustom bv-webpaste-providers '("paste.rs" "ix.io" "0x0.st" "paste.mozilla.org")
+  "List of paste providers in order of preference."
+  :type '(repeat string)
+  :group 'bv-webpaste)
+
+;; Load webpaste after idle delay
+(run-with-idle-timer bv-webpaste-idle-delay t
+                     (lambda ()
+                       (require 'webpaste nil t)))
+
+(setq webpaste-provider-priority bv-webpaste-providers
+      webpaste-paste-confirmation t
+      webpaste-open-in-browser nil)
 
 (with-eval-after-load 'request
-  (when (boundp 'request-storage-directory)
-    (setq request-storage-directory
-          (concat (or (getenv "XDG_CACHE_HOME") "~/.cache") "/emacs/request"))))
+  (setq request-storage-directory
+        (expand-file-name "emacs/request" (or (getenv "XDG_CACHE_HOME") "~/.cache"))))
+
+(defun bv-webpaste-paste-dwim ()
+  "Paste region if active, otherwise paste buffer."
+  (interactive)
+  (if (use-region-p)
+      (webpaste-paste-region)
+    (webpaste-paste-buffer)))
+
+(defun bv-webpaste-paste-defun ()
+  "Paste current defun."
+  (interactive)
+  (save-excursion
+    (mark-defun)
+    (webpaste-paste-region)))
+
+(with-eval-after-load 'webpaste
+  (add-hook 'webpaste-return-url-hook
+            (lambda (url)
+              (message "Pasted to: %s" url)
+              (kill-new url))))
+
+(defun bv-webpaste-transient ()
+  "Transient menu for webpaste."
+  (interactive)
+  (transient-define-prefix bv-webpaste-transient-menu ()
+    "Web Paste"
+    ["Paste"
+     ("p" "Buffer/region" bv-webpaste-paste-dwim)
+     ("b" "Buffer" webpaste-paste-buffer)
+     ("r" "Region" webpaste-paste-region)
+     ("d" "Defun" bv-webpaste-paste-defun)])
+  (bv-webpaste-transient-menu))
+
+(global-set-key (kbd "C-c P") 'bv-webpaste-transient)
 
 (provide 'bv-webpaste)
 ;;; bv-webpaste.el ends here
