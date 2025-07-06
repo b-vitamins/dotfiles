@@ -1,4 +1,4 @@
-;;; bv-smartparens.el --- Structured editing configuration  -*- lexical-binding: t -*-
+;;; bv-smartparens.el --- Structural editing  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,25 +6,20 @@
 
 ;;; Commentary:
 
-;; Configuration for smartparens structured editing.
+;; Smart parentheses for structural editing.
 
 ;;; Code:
 
 (eval-when-compile (require 'smartparens))
 
-
-(autoload 'smartparens-mode "smartparens-autoloads")
-(autoload 'smartparens-strict-mode "smartparens-autoloads")
+(autoload 'smartparens-mode "smartparens")
+(autoload 'smartparens-strict-mode "smartparens")
 (autoload 'sp-use-smartparens-bindings "smartparens")
 (autoload 'show-smartparens-global-mode "smartparens")
 (autoload 'sp-forward-slurp-sexp "smartparens")
 
-(when (boundp 'prog-mode-hook)
-  (dolist (hook '(prog-mode-hook))
-    (add-hook hook 'smartparens-mode))
-  
-  (dolist (hook '(prog-mode-hook))
-    (add-hook hook 'smartparens-strict-mode)))
+(add-hook 'prog-mode-hook 'smartparens-mode)
+(add-hook 'prog-mode-hook 'smartparens-strict-mode)
 
 (with-eval-after-load 'smartparens
   (sp-use-smartparens-bindings)
