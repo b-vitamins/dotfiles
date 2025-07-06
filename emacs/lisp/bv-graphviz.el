@@ -1,4 +1,4 @@
-;;; bv-graphviz.el --- Graphviz configuration  -*- lexical-binding: t -*-
+;;; bv-graphviz.el --- Graph visualization  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,29 +6,46 @@
 
 ;;; Commentary:
 
-;; Graphviz configuration for DOT language support and Org-mode
-;; babel integration with inline image display.
+;; Graphviz DOT language and diagram generation.
 
 ;;; Code:
 
+(autoload 'graphviz-dot-mode "graphviz-dot-mode")
 (autoload 'org-redisplay-inline-images "org")
 
-(defun bv-graphviz-fix-inline-images ()
-  "Fix display of inline images after Graphviz babel execution."
-  (interactive)
-  (when (and (boundp 'org-inline-image-overlays) org-inline-image-overlays)
-    (org-redisplay-inline-images)))
+;; File associations
+(add-to-list 'auto-mode-alist '("\\.dot\\'" . graphviz-dot-mode))
+(add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
 
-(when (boundp 'org-babel-after-execute-hook)
-  (add-hook 'org-babel-after-execute-hook 'bv-graphviz-fix-inline-images))
+;; Org-babel support
+(with-eval-after-load 'org
+  (require 'ob-dot)
 
-(with-eval-after-load 'ob-core
-  (require 'ob-dot))
-
-(with-eval-after-load 'ob-dot
+  ;; Default settings for dot blocks
   (when (boundp 'org-babel-default-header-args:dot)
-    (add-to-list 'org-babel-default-header-args:dot
-                 '(:cmdline . "-Kdot -Tpng"))))
+    (setq org-babel-default-header-args:dot
+          '((:cmdline . "-Kdot -Tsvg")
+            (:results . "file graphics")
+            (:exports . "results"))))
+
+  ;; Auto-display images after execution
+  (defun bv-graphviz-display-inline-images ()
+    "Refresh inline images after graphviz execution."
+    (when (derived-mode-p 'org-mode)
+      (org-redisplay-inline-images)))
+
+  (add-hook 'org-babel-after-execute-hook #'bv-graphviz-display-inline-images))
+
+;; Graphviz mode settings
+(with-eval-after-load 'graphviz-dot-mode
+  (when (boundp 'graphviz-dot-indent-width)
+    (setq graphviz-dot-indent-width 2))
+  (when (boundp 'graphviz-dot-auto-indent-on-newline)
+    (setq graphviz-dot-auto-indent-on-newline t))
+  (when (boundp 'graphviz-dot-auto-indent-on-braces)
+    (setq graphviz-dot-auto-indent-on-braces t))
+  (when (boundp 'graphviz-dot-auto-indent-on-semi)
+    (setq graphviz-dot-auto-indent-on-semi t)))
 
 (provide 'bv-graphviz)
 ;;; bv-graphviz.el ends here
