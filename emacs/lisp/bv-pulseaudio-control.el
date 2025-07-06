@@ -1,62 +1,84 @@
-;;; bv-pulseaudio-control.el --- PulseAudio control configuration  -*- lexical-binding: t -*-
+;;; bv-pulseaudio-control.el --- Audio control configuration -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
-;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-
-;; Configuration for pulseaudio-control package with icon support.
-;; This module sets up PulseAudio control with Material Design icons
-;; for volume and microphone status display in the mode line.
+;; System audio control with PulseAudio.
 
 ;;; Code:
 
 
-(autoload 'pulseaudio-control-default-sink-mode "pulseaudio-control")
-(autoload 'pulseaudio-control-default-source-mode "pulseaudio-control")
+(declare-function pulseaudio-control-default-sink-mode "pulseaudio-control")
+(declare-function pulseaudio-control-default-source-mode "pulseaudio-control")
+(declare-function pulseaudio-control-increase-volume "pulseaudio-control")
+(declare-function pulseaudio-control-decrease-volume "pulseaudio-control")
+(declare-function pulseaudio-control-toggle-current-sink-mute "pulseaudio-control")
 
-(with-eval-after-load 'bv-keymaps
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "v") 'pulseaudio-control-map)))
+(defgroup bv-pulseaudio nil
+  "Audio control settings."
+  :group 'bv)
+
+(defcustom bv-pulseaudio-idle-delay 0.5
+  "Idle time before loading pulseaudio-control."
+  :type 'number
+  :group 'bv-pulseaudio)
+
+(defcustom bv-pulseaudio-volume-step "5%"
+  "Volume adjustment step."
+  :type 'string
+  :group 'bv-pulseaudio)
+
+;; Load pulseaudio-control after idle delay
+(run-with-idle-timer bv-pulseaudio-idle-delay t
+                     (lambda ()
+                       (require 'pulseaudio-control nil t)))
+
+(setq pulseaudio-control-pactl-path "pactl"
+      pulseaudio-control-volume-step bv-pulseaudio-volume-step
+      pulseaudio-control-volume-verbose nil
+      pulseaudio-control-sink-mute-string "[M]"
+      pulseaudio-control-sink-volume-strings '("" "" "")
+      pulseaudio-control-source-mute-string "[M]"
+      pulseaudio-control-source-volume-strings '("" ""))
 
 (with-eval-after-load 'pulseaudio-control
-  (when (boundp 'pulseaudio-control-map)
-    (define-key pulseaudio-control-map "L"
-      'pulseaudio-control-toggle-sink-input-mute-by-index))
-  
-  (eval-when-compile (require 'all-the-icons))
-  (with-eval-after-load 'all-the-icons
-    (let ((all-the-icons-default-adjust -0.15))
-      (when (boundp 'pulseaudio-control-sink-mute-string)
-        (setq pulseaudio-control-sink-mute-string
-              (all-the-icons-material "volume_off" :height 1)))
-      (when (boundp 'pulseaudio-control-sink-volume-strings)
-        (setq pulseaudio-control-sink-volume-strings
-              (list (all-the-icons-material "volume_mute" :height 1)
-                    (all-the-icons-material "volume_down" :height 1)
-                    (all-the-icons-material "volume_up" :height 1))))
-      (when (boundp 'pulseaudio-control-source-mute-string)
-        (setq pulseaudio-control-source-mute-string
-              (all-the-icons-material "mic_off" :height 1)))
-      (when (boundp 'pulseaudio-control-source-volume-strings)
-        (setq pulseaudio-control-source-volume-strings
-              (list (all-the-icons-material "mic_none" :height 1)
-                    (all-the-icons-material "mic" :height 1))))))
-  
-  (when (boundp 'pulseaudio-control-pactl-path)
-    (setq pulseaudio-control-pactl-path
-          "/run/current-system/profile/bin/pactl"))
-  (when (boundp 'pulseaudio-control--volume-maximum)
-    (setq pulseaudio-control--volume-maximum
-          '(("percent" . 100) ("decibels" . 10) ("raw" . 98000))))
-  (when (boundp 'pulseaudio-control-volume-step)
-    (setq pulseaudio-control-volume-step "5%"))
-  (when (boundp 'pulseaudio-control-volume-verbose)
-    (setq pulseaudio-control-volume-verbose nil))
-  
   (pulseaudio-control-default-sink-mode)
   (pulseaudio-control-default-source-mode))
+
+(defun bv-audio-increase-volume ()
+  "Increase system volume."
+  (interactive)
+  (pulseaudio-control-increase-volume))
+
+(defun bv-audio-decrease-volume ()
+  "Decrease system volume."
+  (interactive)
+  (pulseaudio-control-decrease-volume))
+
+(defun bv-audio-toggle-mute ()
+  "Toggle audio mute."
+  (interactive)
+  (pulseaudio-control-toggle-current-sink-mute))
+
+(defun bv-audio-transient ()
+  "Transient menu for audio control."
+  (interactive)
+  (transient-define-prefix bv-audio-transient-menu ()
+    "Audio Control"
+    ["Volume"
+     ("+" "Increase" bv-audio-increase-volume :transient t)
+     ("-" "Decrease" bv-audio-decrease-volume :transient t)
+     ("m" "Toggle mute" bv-audio-toggle-mute)]
+    ["Devices"
+     ("s" "Select sink" pulseaudio-control-select-sink-by-name)
+     ("i" "Select source" pulseaudio-control-select-source-by-name)])
+  (bv-audio-transient-menu))
+
+(global-set-key (kbd "C-c v") 'bv-audio-transient)
+
+(global-set-key (kbd "<XF86AudioRaiseVolume>") 'bv-audio-increase-volume)
+(global-set-key (kbd "<XF86AudioLowerVolume>") 'bv-audio-decrease-volume)
+(global-set-key (kbd "<XF86AudioMute>") 'bv-audio-toggle-mute)
 
 (provide 'bv-pulseaudio-control)
 ;;; bv-pulseaudio-control.el ends here
