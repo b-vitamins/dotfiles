@@ -1,27 +1,62 @@
-;;; bv-mpv.el --- MPV configuration  -*- lexical-binding: t -*-
+;;; bv-mpv.el --- MPV media player integration -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
-;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-
-;; Configuration for MPV media player integration with Emacs.
-;; Provides functions for playing URLs, downloading media, and controlling
-;; playback through keybindings and Embark integration.
+;; MPV media player integration with ytdl support.
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'mpv)
-  (require 'ytdl)
-  (require 'cl-lib))
+(defgroup bv-mpv nil
+  "MPV media player integration."
+  :group 'bv)
 
+(defcustom bv-mpv-idle-delay 2.0
+  "Idle time before loading mpv."
+  :type 'number
+  :group 'bv-mpv)
 
-(autoload 'mpv-run-command "mpv")
-(autoload 'mpv-get-property "mpv")
+(defcustom bv-mpv-seek-step 3
+  "Number of seconds to seek forward/backward."
+  :type 'integer
+  :group 'bv-mpv)
+
+;; Declare functions to avoid warnings
+(declare-function mpv-start "mpv")
+(declare-function mpv-run-command "mpv")
+(declare-function mpv-get-property "mpv")
+(declare-function mpv-playlist-append-url "mpv")
+(declare-function mpv-seek "mpv")
+(declare-function mpv-set-chapter-ab-loop "mpv")
+(declare-function mpv-remove-playlist-entry "mpv")
+(declare-function mpv-jump-to-chapter "mpv")
+(declare-function mpv-jump-to-playlist-entry "mpv")
+(declare-function mpv-playlist-next "mpv")
+(declare-function mpv-playlist-prev "mpv")
+(declare-function mpv-chapter-next "mpv")
+(declare-function mpv-chapter-prev "mpv")
+(declare-function mpv-seek-forward "mpv")
+(declare-function mpv-seek-backward "mpv")
+(declare-function mpv-quit "mpv")
+(declare-function mpv-set-ab-loop "mpv")
+(declare-function mpv-pause "mpv")
+(declare-function mpv-toggle-loop "mpv")
+(declare-function mpv-toggle-video "mpv")
+(declare-function ytdl-select-format "ytdl")
+(declare-function ytdl--get-download-type "ytdl")
+(declare-function ytdl--download-async "ytdl")
+(declare-function ytdl--eval-field "ytdl")
+(declare-function ytdl--eval-list "ytdl")
+
+;; Load mpv after idle delay
+(run-with-idle-timer bv-mpv-idle-delay t
+                     (lambda ()
+                       (require 'mpv nil t)
+                       (require 'ytdl nil t)))
 
 (define-prefix-command 'bv-mpv-map)
+
+(eval-when-compile (require 'cl-lib))
 
 (cl-defun bv-mpv-play-url (url &optional format &key audio repeat (formats t) (select t) playlist)
   "Play URL in MPV with optional format selection and playback options.
@@ -105,7 +140,7 @@ PLAYLIST when non-nil adds to playlist instead of playing directly."
     (define-key bv-app-map (kbd "m") 'bv-mpv-map)))
 
 (with-eval-after-load 'mpv
-  (setq mpv-seek-step 3))
+  (setq mpv-seek-step bv-mpv-seek-step))
 
 (when (boundp 'bv-mpv-map)
   (let ((map bv-mpv-map))
