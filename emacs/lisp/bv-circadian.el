@@ -14,7 +14,6 @@
 (require 'url)
 
 (declare-function circadian-setup "circadian" ())
-(declare-function bv-modus-themes-set-custom-faces "bv-modus-themes" ())
 
 
 (defun bv-circadian--get-geolocation ()
@@ -44,15 +43,13 @@
     (when (boundp 'calendar-latitude)
       (setq calendar-latitude (if coordinates (cdr coordinates) 0)))))
 
-(when (boundp 'circadian-after-load-theme-hook)
-  (add-hook 'circadian-after-load-theme-hook 'bv-modus-themes-set-custom-faces))
-
-(with-eval-after-load 'circadian-autoloads
-  (when (boundp 'circadian-themes)
-    (setq circadian-themes
-          '((:sunrise . modus-operandi-deuteranopia)
-            (:sunset . modus-vivendi-deuteranopia))))
-  (circadian-setup))
+(defun bv-circadian-setup ()
+  "Setup automatic theme switching based on sunrise/sunset."
+  (when (require 'circadian nil t)
+    (setq circadian-themes '((:sunrise . bv-theme-set-light)
+                             (:sunset  . bv-theme-set-dark)))
+    (add-hook 'circadian-after-load-theme-hook #'bv-refresh-theme)
+    (circadian-setup)))
 
 (provide 'bv-circadian)
 ;;; bv-circadian.el ends here
