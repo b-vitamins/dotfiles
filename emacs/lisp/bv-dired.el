@@ -5,60 +5,52 @@
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-;; Configuration for Dired file manager with enhanced functionality
-;; including external file opening, rsync support, and visual improvements.
+
+;; Dired with external file opening and rsync support.
 
 ;;; Code:
 
-(eval-when-compile (require 'dired))
-
-
-(autoload 'dired-get-marked-files "dired")
-(autoload 'embark-open-externally "embark")
+(require 'dired)
+(autoload 'dired-rsync "dired-rsync" nil t)
+(autoload 'embark-open-externally "embark" nil t)
 
 (defun bv-dired-open-externally ()
-  "Open marked files in Dired through an external program."
+  "Open marked files with external program."
   (interactive)
-  (let ((files (dired-get-marked-files)))
-    (mapc 'embark-open-externally files)))
+  (dolist (file (dired-get-marked-files))
+    (embark-open-externally file)))
 
-(when (boundp 'global-map)
-  (define-key global-map (kbd "s-d") 'dired-jump))
+(when (boundp 'dired-dwim-target)
+  (setq dired-dwim-target t))
+(when (boundp 'dired-listing-switches)
+  (setq dired-listing-switches "-l --group-directories-first -h -A --time-style=long-iso"))
+(when (boundp 'dired-hide-details-hide-symlink-targets)
+  (setq dired-hide-details-hide-symlink-targets nil))
+(when (boundp 'delete-by-moving-to-trash)
+  (setq delete-by-moving-to-trash nil))
+(when (boundp 'dired-recursive-deletes)
+  (setq dired-recursive-deletes 'always))
+(when (boundp 'dired-recursive-copies)
+  (setq dired-recursive-copies 'always))
+(when (boundp 'dired-clean-confirm-killing-deleted-buffers)
+  (setq dired-clean-confirm-killing-deleted-buffers nil))
 
 (with-eval-after-load 'dired
-  (when (boundp 'dired-mode-map)
-    (define-key dired-mode-map "V" 'bv-dired-open-externally)
-    (define-key dired-mode-map (kbd "C-c C-r") 'dired-rsync)
-    (define-key dired-mode-map "q" 'kill-current-buffer))
-  
-  (when (boundp 'dired-dwim-target)
-    (setq dired-dwim-target t))
-  (when (boundp 'dired-listing-switches)
-    (setq dired-listing-switches "-l --group-directories-first -h -A --time-style=long-iso"))
-  (when (boundp 'dired-hide-details-hide-symlink-targets)
-    (setq dired-hide-details-hide-symlink-targets nil))
-  (when (boundp 'delete-by-moving-to-trash)
-    (setq delete-by-moving-to-trash nil))
-  (when (boundp 'dired-recursive-deletes)
-    (setq dired-recursive-deletes 'always))
-  (setq dired-clean-confirm-killing-deleted-buffers nil
-        dired-recursive-copies 'always)
-  
-  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+  (define-key dired-mode-map "V" 'bv-dired-open-externally)
+  (define-key dired-mode-map (kbd "C-c C-r") 'dired-rsync)
+  (define-key dired-mode-map "q" 'kill-current-buffer)
   (add-hook 'dired-mode-hook 'dired-hide-details-mode)
   (add-hook 'dired-mode-hook 'toggle-truncate-lines))
 
-(with-eval-after-load 'all-the-icons-dired
-  (when (boundp 'all-the-icons-dired-monochrome)
-    (setq all-the-icons-dired-monochrome nil)))
-
 (with-eval-after-load 'dired-rsync
   (when (boundp 'dired-rsync-options)
-    (setq dired-rsync-options "--exclude .git/ --exclude .gitignore -az --info=progress2 --delete")))
+    (setq dired-rsync-options "-az --info=progress2 --delete")))
 
 (with-eval-after-load 'ls-lisp
   (when (boundp 'ls-lisp-use-insert-directory-program)
     (setq ls-lisp-use-insert-directory-program nil)))
+
+(global-set-key (kbd "s-d") 'dired-jump)
 
 (provide 'bv-dired)
 ;;; bv-dired.el ends here
