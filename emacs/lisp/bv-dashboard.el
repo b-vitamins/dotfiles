@@ -5,67 +5,88 @@
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-;; Configuration for the dashboard package, providing a startup screen
-;; with recent files, projects, and agenda items.
+
+;; Minimal startup screen with recent files and projects.
 
 ;;; Code:
 
 (require 'dashboard)
 
+(when (boundp 'dashboard-banner-logo-title)
+  (setq dashboard-banner-logo-title "Welcome to Emacs"))
+(when (boundp 'dashboard-startup-banner)
+  (setq dashboard-startup-banner 'logo))
+(when (boundp 'dashboard-center-content)
+  (setq dashboard-center-content t))
+(when (boundp 'dashboard-set-init-info)
+  (setq dashboard-set-init-info nil))
+(when (boundp 'dashboard-set-footer)
+  (setq dashboard-set-footer nil))
+(when (boundp 'dashboard-show-shortcuts)
+  (setq dashboard-show-shortcuts nil))
+(when (boundp 'dashboard-set-heading-icons)
+  (setq dashboard-set-heading-icons nil))
+(when (boundp 'dashboard-set-file-icons)
+  (setq dashboard-set-file-icons nil)) ;; Temporarily disabled due to font issues
+(when (boundp 'dashboard-icon-type)
+  (setq dashboard-icon-type (if (fboundp 'nerd-icons-octicon)
+                                'nerd-icons
+                              'all-the-icons)))
+(when (boundp 'dashboard-display-icons-p)
+  (setq dashboard-display-icons-p #'display-graphic-p))
+(when (boundp 'dashboard-heading-icons)
+  (setq dashboard-heading-icons '((recents   . "history")
+                                   (bookmarks . "bookmark")
+                                   (agenda    . "calendar")
+                                   (projects  . "briefcase")
+                                   (registers . "database"))))
+(when (boundp 'dashboard-items)
+  (setq dashboard-items '((recents . 10)
+                          (projects . 5))))
+(when (boundp 'dashboard-path-max-length)
+  (setq dashboard-path-max-length 60))
+(when (boundp 'dashboard-path-style)
+  (setq dashboard-path-style 'truncate-beginning))
+(when (boundp 'dashboard-projects-backend)
+  (setq dashboard-projects-backend 'project-el))
+(when (boundp 'dashboard-heading-shorcut-format)
+  (setq dashboard-heading-shorcut-format " [%s]"))
+(when (boundp 'dashboard-image-banner-max-height)
+  (setq dashboard-image-banner-max-height 200))
+(when (boundp 'dashboard-image-banner-max-width)
+  (setq dashboard-image-banner-max-width 350))
+
+(defun bv-dashboard-setup-faces ()
+  "Apply theme-aware faces to dashboard."
+  (set-face-attribute 'dashboard-banner-logo-title nil
+                      :inherit 'bv-face-default
+                      :height 0.9)
+  (set-face-attribute 'dashboard-heading nil
+                      :inherit 'bv-face-strong
+                      :height 1.0)
+  (set-face-attribute 'dashboard-items-face nil
+                      :inherit 'bv-face-default)
+  (set-face-attribute 'dashboard-no-items-face nil
+                      :inherit 'bv-face-faded)
+  (set-face-attribute 'dashboard-text-banner nil
+                      :inherit 'bv-face-faded
+                      :height 0.9))
+
+(add-hook 'after-init-hook #'bv-dashboard-setup-faces)
+(add-hook 'bv-after-theme-hook #'bv-dashboard-setup-faces)
+
 (defun bv-dashboard-open ()
-  "Jump to a dashboard buffer, creating one if it doesn't exist."
+  "Open dashboard buffer."
   (interactive)
-  (when (boundp 'dashboard-buffer-name)
-    (when (get-buffer-create dashboard-buffer-name)
-      (switch-to-buffer dashboard-buffer-name)
-      (dashboard-mode)
-      (dashboard-insert-startupify-lists)
-      (dashboard-refresh-buffer))))
+  (when (fboundp 'dashboard-refresh)
+    (dashboard-refresh)))
 
-(when (boundp 'after-init-hook)
-  (add-hook 'after-init-hook 'bv-dashboard-open))
-
-(with-eval-after-load 'bv-keymaps
+(with-eval-after-load 'bv-bindings
   (when (boundp 'bv-app-map)
     (define-key bv-app-map (kbd "h") 'bv-dashboard-open)))
 
-(with-eval-after-load 'dashboard
-  (when (boundp 'dashboard-center-content)
-    (setq dashboard-center-content t)))
-
-(with-eval-after-load 'dashboard-widgets
-  (when (boundp 'dashboard-bookmarks-show-base)
-    (setq dashboard-bookmarks-show-base nil))
-  (when (boundp 'dashboard-projects-backend)
-    (setq dashboard-projects-backend 'project-el))
-  (when (boundp 'dashboard-path-max-length)
-    (setq dashboard-path-max-length 70))
-  (when (boundp 'dashboard-path-style)
-    (setq dashboard-path-style 'truncate-beginning))
-  (when (boundp 'dashboard-set-init-info)
-    (setq dashboard-set-init-info nil))
-  (when (boundp 'dashboard-set-heading-icons)
-    (setq dashboard-set-heading-icons nil))
-  (when (boundp 'dashboard-set-file-icons)
-    (setq dashboard-set-file-icons nil))
-  (when (boundp 'dashboard-set-footer)
-    (setq dashboard-set-footer nil))
-  (when (boundp 'dashboard-items)
-    (setq dashboard-items '((recents . 5) (projects . 5) (agenda . 10))))
-  (when (boundp 'dashboard-startup-banner)
-    (setq dashboard-startup-banner 'logo))
-  (when (boundp 'dashboard-banner-logo-title)
-    (setq dashboard-banner-logo-title ""))
-  (when (boundp 'dashboard-image-banner-max-height)
-    (setq dashboard-image-banner-max-height 0))
-  (when (boundp 'dashboard-image-banner-max-width)
-    (setq dashboard-image-banner-max-width 0))
-  (when (boundp 'dashboard-show-shortcuts)
-    (setq dashboard-show-shortcuts nil))
-  (when (boundp 'dashboard-week-agenda)
-    (setq dashboard-week-agenda t))
-  (when (boundp 'dashboard-agenda-release-buffers)
-    (setq dashboard-agenda-release-buffers t)))
+(when (fboundp 'dashboard-setup-startup-hook)
+  (dashboard-setup-startup-hook))
 
 (provide 'bv-dashboard)
 ;;; bv-dashboard.el ends here
