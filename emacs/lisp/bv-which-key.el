@@ -6,7 +6,7 @@
 
 ;;; Commentary:
 
-;; Configuration for which-key package.
+;; Display available key bindings in popup.
 
 ;;; Code:
 
@@ -14,12 +14,54 @@
 
 (when (boundp 'which-key-min-display-lines)
   (setq which-key-min-display-lines 1))
+(when (boundp 'which-key-max-display-columns)
+  (setq which-key-max-display-columns nil))
 (when (boundp 'which-key-ellipsis)
-  (setq which-key-ellipsis "..."))
+  (setq which-key-ellipsis "…"))
 (when (boundp 'which-key-idle-delay)
   (setq which-key-idle-delay 0.5))
+(when (boundp 'which-key-idle-secondary-delay)
+  (setq which-key-idle-secondary-delay 0.1))
+(when (boundp 'which-key-show-docstrings)
+  (setq which-key-show-docstrings nil))
+(when (boundp 'which-key-separator)
+  (setq which-key-separator " → "))
+(when (boundp 'which-key-prefix-prefix)
+  (setq which-key-prefix-prefix "+"))
+(when (boundp 'which-key-sort-order)
+  (setq which-key-sort-order 'which-key-key-order-alpha))
+(when (boundp 'which-key-max-description-length)
+  (setq which-key-max-description-length 32))
 
-(which-key-mode 1)
+(when (boundp 'which-key-popup-type)
+  (setq which-key-popup-type 'side-window))
+(when (boundp 'which-key-side-window-location)
+  (setq which-key-side-window-location 'bottom))
+(when (boundp 'which-key-side-window-max-height)
+  (setq which-key-side-window-max-height 0.33))
+(when (boundp 'which-key-side-window-max-width)
+  (setq which-key-side-window-max-width 0.66))
+
+(defun bv-which-key-setup-faces ()
+  "Apply theme-aware faces to which-key."
+  (set-face-attribute 'which-key-key-face nil
+                      :inherit 'bv-face-strong)
+  (set-face-attribute 'which-key-separator-face nil
+                      :inherit 'bv-face-faded)
+  (set-face-attribute 'which-key-note-face nil
+                      :inherit 'bv-face-faded)
+  (set-face-attribute 'which-key-command-description-face nil
+                      :inherit 'bv-face-default)
+  (set-face-attribute 'which-key-local-map-description-face nil
+                      :inherit 'bv-face-salient)
+  (set-face-attribute 'which-key-group-description-face nil
+                      :inherit 'bv-face-strong))
+
+(add-hook 'after-init-hook #'bv-which-key-setup-faces)
+(add-hook 'bv-after-theme-hook #'bv-which-key-setup-faces)
+
+(when (fboundp 'which-key-mode)
+  (which-key-mode 1))
 
 (when (boundp 'global-map)
   (define-key global-map (kbd "C-h C-k") 'which-key-show-top-level))
