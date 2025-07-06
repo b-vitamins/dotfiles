@@ -1,4 +1,4 @@
-;;; bv-help.el --- Help configuration  -*- lexical-binding: t -*-
+;;; bv-help.el --- Enhanced help system  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,46 +6,63 @@
 
 ;;; Commentary:
 
-;; Configuration for enhanced help systems using helpful and embark.
-;; Replaces default help commands with more informative alternatives.
+;; Enhanced help with quick access and better defaults.
 
 ;;; Code:
 
-(when (boundp 'global-map)
-  (let ((map global-map))
-  (define-key map (vector 'remap 'describe-function) 'helpful-callable)
-  (define-key map (vector 'remap 'describe-variable) 'helpful-variable)
-  (define-key map (vector 'remap 'describe-key) 'helpful-key)
-  (define-key map (vector 'remap 'describe-command) 'helpful-command)
-  (define-key map (vector 'Info-goto-emacs-command-node) 'helpful-function)))
+(require 'help)
 
-(when (boundp 'help-map)
-  (define-key help-map "o" 'helpful-at-point))
+;; Better help defaults
+(when (boundp 'help-window-select)
+  (setq help-window-select t))
+(when (boundp 'help-enable-variable-value-editing)
+  (setq help-enable-variable-value-editing t))
 
-(with-eval-after-load 'embark
-  (when (boundp 'embark-symbol-map)
-    (define-key embark-symbol-map
-      (vector 'remap 'describe-symbol)
-      'helpful-symbol))
-  (when (boundp 'embark-become-help-map)
-    (let ((map embark-become-help-map))
-      (define-key map (vector 'remap 'describe-function) 'helpful-callable)
-      (define-key map (vector 'remap 'describe-variable) 'helpful-variable)
-      (define-key map (vector 'remap 'describe-symbol) 'helpful-symbol)
-      (define-key map (vector 'remap 'describe-command) 'helpful-command))))
+;; Quick help message
+(defun bv-quick-help ()
+  "Display quick help in echo area."
+  (interactive)
+  (let ((message-log-max nil))
+    (message
+     (concat
+      (propertize "\n" 'face '(:height 0.4))
+      " [C-x C-f] Open  [M-w] Copy   [C-w] Cut   [C-s] Search           "
+      (propertize "[C-g]   Cancel" 'face 'bold)
+      "\n"
+      " [C-x C-s] Save  [C-y] Paste  [C-/] Undo  [M-x] Command          "
+      (propertize "[C-x C-c] Quit" 'face 'bold)
+      (propertize "\n " 'face '(:height 0.5))))
+    (sit-for 30)))
 
-(when (boundp 'helpful-mode-hook)
-  (add-hook 'helpful-mode-hook 'visual-line-mode))
+;; Enhanced describe functions
+(defun bv-describe-symbol-at-point ()
+  "Describe symbol at point."
+  (interactive)
+  (let ((symbol (symbol-at-point)))
+    (if symbol
+        (describe-symbol symbol)
+      (call-interactively 'describe-symbol))))
 
-(with-eval-after-load 'helpful
-  (when (boundp 'helpful-mode-map)
-    (define-key helpful-mode-map "q" 'kill-this-buffer)))
+;; Help transient
+(defun bv-help-transient ()
+  "Show help transient menu."
+  (interactive)
+  (let ((help-map (make-sparse-keymap)))
+    (define-key help-map (kbd "f") 'describe-function)
+    (define-key help-map (kbd "v") 'describe-variable)
+    (define-key help-map (kbd "k") 'describe-key)
+    (define-key help-map (kbd "m") 'describe-mode)
+    (define-key help-map (kbd "s") 'describe-symbol)
+    (define-key help-map (kbd "p") 'describe-package)
+    (define-key help-map (kbd "i") 'info)
+    (define-key help-map (kbd "?") 'help-for-help)
+    (set-transient-map help-map t)
+    (message "Help: [f]unction [v]ariable [k]ey [m]ode [s]ymbol [p]ackage [i]nfo [?]help")))
 
-(with-eval-after-load 'help-mode
-  (when (boundp 'help-mode-map)
-    (define-key help-mode-map "q" 'kill-this-buffer))
-  (when (boundp 'help-window-select)
-    (setq help-window-select t)))
+;; Keybindings
+(global-set-key (kbd "C-h C-h") 'bv-help-transient)
+(global-set-key (kbd "C-h .") 'bv-describe-symbol-at-point)
+(global-set-key (kbd "M-p") 'bv-quick-help)
 
 (provide 'bv-help)
 ;;; bv-help.el ends here
