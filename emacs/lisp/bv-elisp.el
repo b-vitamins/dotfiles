@@ -6,29 +6,29 @@
 
 ;;; Commentary:
 
-;; This module configures Emacs Lisp development environment.
-;; It sets up enhanced evaluation commands, IELM configuration,
-;; and Org Babel integration for Elisp code blocks.
+;; Emacs Lisp development configuration.
 
 ;;; Code:
 
+(require 'elisp-mode)
+(autoload 'pp-eval-last-sexp "pp")
+(autoload 'pp-eval-expression "pp")
+(autoload 'pp-macroexpand-last-sexp "pp")
 
-(when (boundp 'emacs-lisp-mode-hook)
-  (add-hook 'emacs-lisp-mode-hook 'flymake-mode))
+(add-hook 'emacs-lisp-mode-hook 'flymake-mode)
 
-(with-eval-after-load 'elisp-mode
-  (when (boundp 'emacs-lisp-mode-map)
-    (let ((map emacs-lisp-mode-map))
+(when (boundp 'emacs-lisp-mode-map)
+  (let ((map emacs-lisp-mode-map))
     (define-key map (kbd "C-x C-e") 'pp-eval-last-sexp)
-    (define-key map (kbd "M-:") 'pp-eval-expression)
     (define-key map (kbd "C-c C-m") 'pp-macroexpand-last-sexp)
     (define-key map (kbd "C-c C-b") 'eval-buffer)
-    (autoload 'embark-pp-eval-defun "embark")
-    (define-key map (kbd "C-c C-c") 'embark-pp-eval-defun))))
+    (define-key map (kbd "C-c C-c") 'eval-defun)))
 
-(with-eval-after-load 'bv-keymaps
+(global-set-key (kbd "M-:") 'pp-eval-expression)
+
+(with-eval-after-load 'bv-bindings
   (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "I") 'ielm)))
+    (define-key bv-app-map (kbd "i") 'ielm)))
 
 (with-eval-after-load 'ielm
   (when (boundp 'ielm-header)
@@ -36,14 +36,15 @@
   (when (boundp 'ielm-noisy)
     (setq ielm-noisy nil)))
 
-(with-eval-after-load 'org
-  (when (boundp 'org-structure-template-alist)
-    (add-to-list 'org-structure-template-alist '("el" . "src elisp"))))
+(defun bv-elisp-outline-level ()
+  "Custom outline level for Emacs Lisp."
+  (- (match-end 0) (match-beginning 0)))
 
-(with-eval-after-load 'ob-emacs-lisp
-  (when (boundp 'org-babel-default-header-args:elisp)
-    (setq org-babel-default-header-args:elisp
-          '((:lexical . "t") (:results . "scalar")))))
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (setq-local outline-regexp ";;[;*]+\\|\\s-*([^)]")
+            (setq-local outline-level 'bv-elisp-outline-level)
+            (outline-minor-mode 1)))
 
 (provide 'bv-elisp)
 ;;; bv-elisp.el ends here
