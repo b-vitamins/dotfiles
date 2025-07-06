@@ -1,4 +1,4 @@
-;;; bv-xref.el --- Xref configuration  -*- lexical-binding: t -*-
+;;; bv-xref.el --- Cross-reference configuration  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,7 +6,7 @@
 
 ;;; Commentary:
 
-;; Configuration for xref cross-reference system.
+;; Cross-reference navigation with consult integration.
 
 ;;; Code:
 
