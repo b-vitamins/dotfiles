@@ -1,18 +1,19 @@
-;;; bv-citation.el --- Citation configuration  -*- lexical-binding: t -*-
+;;; bv-citation.el --- Citation management  -*- lexical-binding: t -*-
+
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
+
 ;;; Commentary:
-;; Configuration for citation management using org-cite, citar, and related tools.
-;; Sets up bibliography paths, processors, and visual icons for citation handling.
+
+;; Research citation management with org-cite and citar.
+
 ;;; Code:
+
 (eval-when-compile
   (require 'citar)
   (require 'oc-biblatex)
   (require 'oc-csl))
-(autoload 'all-the-icons-faicon "all-the-icons")
-(autoload 'all-the-icons-material "all-the-icons")
-(autoload 'all-the-icons-octicon "all-the-icons")
 (with-eval-after-load 'bibtex
   (when (boundp 'bibtex-dialect)
     (setq bibtex-dialect 'biblatex)))
@@ -32,21 +33,6 @@
   (when (boundp 'org-cite-export-processors)
     (setq org-cite-export-processors '((latex biblatex) (t csl)))))
 (with-eval-after-load 'citar
-  (eval-when-compile (require 'all-the-icons))
-  (when (boundp 'citar-symbols)
-    (setq citar-symbols
-          `((file ,(all-the-icons-faicon "file-o"
-                                         :face 'all-the-icons-green
-                                         :v-adjust -0.1)
-                  . " ")
-            (note ,(all-the-icons-material "speaker_notes"
-                                           :face 'all-the-icons-blue
-                                           :v-adjust -0.3)
-                  . " ")
-            (link ,(all-the-icons-octicon "link"
-                                           :face 'all-the-icons-orange
-                                           :v-adjust 0.01)
-                  . " "))))
   (when (boundp 'citar-library-paths)
     (setq citar-library-paths (list "~/documents/library")))
   (when (boundp 'citar-notes-paths)
@@ -67,9 +53,13 @@
   "Find and open main bibliography file."
   (interactive)
   (find-file "~/documents/slipbox/bibliography/physics.bib"))
-(when (boundp 'mode-specific-map)
-  (let ((map mode-specific-map))
-    (define-key map (kbd "b") 'org-cite-insert)
-    (define-key map (kbd "n b") 'bv-find-main-bibliography)))
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-app-map)
+    (define-key bv-app-map (kbd "b") 'citar-open)
+    (define-key bv-app-map (kbd "B") 'citar-insert-citation)))
+
+(with-eval-after-load 'org
+  (when (boundp 'org-mode-map)
+    (define-key org-mode-map (kbd "C-c b") 'org-cite-insert)))
 (provide 'bv-citation)
 ;;; bv-citation.el ends here
