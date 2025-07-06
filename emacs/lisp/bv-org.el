@@ -6,7 +6,7 @@
 
 ;;; Commentary:
 
-;; Configuration for org-mode and related packages.
+;; Org mode for research notes and task management.
 
 ;;; Code:
 
@@ -16,10 +16,13 @@
   (require 'org-refile)
   (require 'org-modern))
 
+;; Load LaTeX preview configuration early
+(require 'bv-org-latex nil t)
 
 (autoload 'consult--buffer-state "consult")
 (autoload 'org-timer-value-string "org-timer")
 (autoload 'org-html-stable-ids-add "ox-html-stable-ids")
+(autoload 'org-buffer-list "org")
 
 (with-eval-after-load 'ox-html
   (require 'ox-html-stable-ids)
@@ -27,9 +30,6 @@
 
 (when (boundp 'mode-specific-map)
   (define-key mode-specific-map (kbd "c") 'org-capture))
-
-(autoload 'org-buffer-list "org")
-
 
 (with-eval-after-load 'consult
   (when (boundp 'consult-buffer-sources)
@@ -54,10 +54,6 @@
            (or (getenv "XDG_CACHE_HOME") "~/.cache")
            "/emacs/org-id-locations"))))
 
-(defun bv-org-find-subtask-location ()
-  "Find the location to store a subtask under the current heading."
-  (when (derived-mode-p 'org-agenda-mode) (org-agenda-goto))
-  (org-back-to-heading t))
 
 (with-eval-after-load 'org
   (setopt org-M-RET-may-split-line '((default . nil)))
@@ -67,9 +63,7 @@
   (setq org-startup-indented t)
   
   (defun bv-org-timer-update-mode-line ()
-    "Update the timer in the mode line without surrounding brackets.
-This function replaces the default org-timer mode line update to
-remove the surrounding brackets from the timer display."
+    "Update timer in mode line."
     (if (and (boundp 'org-timer-pause-time) org-timer-pause-time)
         nil
       (when (boundp 'org-timer-mode-line-string)
@@ -163,8 +157,7 @@ remove the surrounding brackets from the timer display."
           ("course" . ?C)))
   
   (defun bv-org-rename-buffer-to-title (&optional end)
-    "Rename buffer to value of #+TITLE:.
-If END is non-nil search for #+TITLE: at `point' and delimit it to END."
+    "Rename buffer to #+TITLE: value."
     (interactive)
     (let ((case-fold-search t) (beg (or (and end (point)) (point-min))))
       (save-excursion
@@ -178,9 +171,7 @@ If END is non-nil search for #+TITLE: at `point' and delimit it to END."
     nil)
   
   (defun bv-org-rename-buffer-to-title-config ()
-    "Configure Org to rename buffer to value of #+TITLE:.
-This function adds the buffer renaming functionality to
-font-lock keywords for automatic execution."
+    "Add buffer renaming to font-lock."
     (font-lock-add-keywords nil '(bv-org-rename-buffer-to-title)))
   
   (add-hook 'org-mode-hook 'bv-org-rename-buffer-to-title-config)
@@ -219,12 +210,6 @@ font-lock keywords for automatic execution."
     (define-key bv-org-timer-map (kbd "p") 'org-timer-pause-or-continue)
     (define-key bv-org-timer-map (kbd "t") 'org-timer-set-timer))
   
-  (with-eval-after-load 'org-timer
-    (eval-when-compile (require 'all-the-icons))
-    (with-eval-after-load 'all-the-icons
-      (when (boundp 'org-timer-format)
-        (setq org-timer-format
-              (concat (all-the-icons-material "timer" :v-adjust -0.1) " %s  ")))))
   
   (autoload 'global-org-modern-mode "org-modern"))
 
