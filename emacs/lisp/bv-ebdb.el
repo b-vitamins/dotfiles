@@ -1,53 +1,93 @@
-;;; bv-ebdb.el --- EBDB configuration  -*- lexical-binding: t -*-
+;;; bv-ebdb.el --- Contact database configuration -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
-;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-;; Configuration for EBDB contact management system with keybindings
-;; and customization for contact handling.
+;; Contact management with EBDB.
 
 ;;; Code:
 
 
-(define-prefix-command 'bv-ebdb-map)
+(declare-function ebdb-display-all-records "ebdb")
+(declare-function ebdb-create-record-extended "ebdb")
+(declare-function ebdb-search "ebdb")
+(declare-function ebdb-mail "ebdb")
 
-(with-eval-after-load 'bv-keymaps
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "b") 'bv-ebdb-map))
-  (when (boundp 'bv-ebdb-map)
-    (let ((map bv-ebdb-map))
-      (define-key map "a" 'ebdb-display-all-records)
-      (define-key map "c" 'ebdb-create-record-extended))))
+(defgroup bv-ebdb nil
+  "Contact database settings."
+  :group 'bv)
+
+(defcustom bv-ebdb-idle-delay 2.0
+  "Idle time before loading EBDB."
+  :type 'number
+  :group 'bv-ebdb)
+
+(defcustom bv-ebdb-sources (list (expand-file-name "emacs/contacts.db" (or (getenv "XDG_DATA_HOME") "~/.local/share")))
+  "List of EBDB database files."
+  :type '(repeat string)
+  :group 'bv-ebdb)
+
+;; Load EBDB after idle delay
+(run-with-idle-timer bv-ebdb-idle-delay t
+                     (lambda ()
+                       (require 'ebdb nil t)))
+
+(setq ebdb-sources bv-ebdb-sources
+      ebdb-default-country nil
+      ebdb-default-window-size 0.3
+      ebdb-dedicated-window 'ebdb
+      ebdb-mail-avoid-redundancy t
+      ebdb-complete-mail 'capf
+      ebdb-completion-display-record nil
+      ebdb-complete-mail-allow-cycling nil
+      ebdb-save-on-exit t)
 
 (with-eval-after-load 'ebdb
   (require 'ebdb-i18n)
   (require 'ebdb-vcard)
   (require 'ebdb-org)
-  (require 'ebdb-ispell)
-  
-  (when (boundp 'ebdb-sources)
-    (setq ebdb-sources (list "~/documents/contacts")))
-  (when (boundp 'ebdb-default-country)
-    (setq ebdb-default-country nil))
-  (when (boundp 'ebdb-default-window-size)
-    (setq ebdb-default-window-size 0.3))
-  (when (boundp 'ebdb-dedicated-window)
-    (setq ebdb-dedicated-window 'ebdb))
-  (when (boundp 'ebdb-mail-avoid-redundancy)
-    (setq ebdb-mail-avoid-redundancy t))
-  (when (boundp 'ebdb-complete-mail)
-    (setq ebdb-complete-mail 'capf))
-  (when (boundp 'ebdb-completion-display-record)
-    (setq ebdb-completion-display-record nil))
-  (when (boundp 'ebdb-complete-mail-allow-cycling)
-    (setq ebdb-complete-mail-allow-cycling nil))
-  (when (boundp 'ebdb-save-on-exit)
-    (setq ebdb-save-on-exit t))
-  
-  (when (boundp 'ebdb-mode-map)
-    (define-key ebdb-mode-map "q" 'kill-this-buffer)))
+  (require 'ebdb-ispell))
+
+(defun bv-ebdb-search-name ()
+  "Search contacts by name."
+  (interactive)
+  (ebdb-search (ebdb-prompt-for-string "Name: ") nil))
+
+(defun bv-ebdb-search-email ()
+  "Search contacts by email."
+  (interactive)
+  (ebdb-search nil (ebdb-prompt-for-string "Email: ")))
+
+(defun bv-ebdb-add-from-mail ()
+  "Add sender of current email to contacts."
+  (interactive)
+  (when (derived-mode-p 'message-mode 'mail-mode)
+    (save-excursion
+      (goto-char (point-min))
+      (when (re-search-forward "^From: \\(.*\\)" nil t)
+        (let ((from (match-string 1)))
+          (ebdb-create-record-extended from))))))
+
+(with-eval-after-load 'ebdb
+  (define-key ebdb-mode-map "q" 'quit-window)
+  (define-key ebdb-mode-map "/" 'bv-ebdb-search-name)
+  (define-key ebdb-mode-map "@" 'bv-ebdb-search-email))
+
+(defun bv-ebdb-transient ()
+  "Transient menu for EBDB."
+  (interactive)
+  (transient-define-prefix bv-ebdb-transient-menu ()
+    "EBDB Contact Database"
+    ["Display"
+     ("a" "All contacts" ebdb-display-all-records)
+     ("s" "Search by name" bv-ebdb-search-name)
+     ("e" "Search by email" bv-ebdb-search-email)]
+    ["Edit"
+     ("c" "Create contact" ebdb-create-record-extended)
+     ("m" "Add from mail" bv-ebdb-add-from-mail)])
+  (bv-ebdb-transient-menu))
+
+(global-set-key (kbd "C-c b") 'bv-ebdb-transient)
 
 (provide 'bv-ebdb)
 ;;; bv-ebdb.el ends here
