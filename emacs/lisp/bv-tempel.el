@@ -6,37 +6,39 @@
 
 ;;; Commentary:
 
-;; Configuration for tempel template system.
+;; Template expansion with tempel.
 
 ;;; Code:
 
-(eval-when-compile (require 'tempel))
+(require 'tempel)
+(declare-function tempel-complete "tempel")
 
+(when (boundp 'tempel-trigger-prefix)
+  (setq tempel-trigger-prefix ";"))
+(when (boundp 'tempel-path)
+  (setq tempel-path (expand-file-name "templates" user-emacs-directory)))
 
-(autoload 'tempel-complete "tempel")
-(autoload 'tempel-insert "tempel")
+(defun bv-tempel-setup-capf ()
+  "Add tempel to completion-at-point."
+  (setq-local completion-at-point-functions
+              (cons 'tempel-complete completion-at-point-functions)))
 
-(with-eval-after-load 'tempel
-  (when (boundp 'tempel-trigger-prefix)
-    (setq tempel-trigger-prefix ";"))
-  (defun bv-tempel-setup-capf ()
-    "Prepends `tempel-complete' to `completion-at-point-functions'."
-    (when (boundp 'completion-at-point-functions)
-      (setq-local completion-at-point-functions
-                  (cons 'tempel-complete completion-at-point-functions))))
-  (dolist (mode '(prog-mode-hook text-mode-hook conf-mode-hook fundamental-mode))
-    (when (boundp mode)
-      (add-hook mode 'bv-tempel-setup-capf))))
+(dolist (hook '(prog-mode-hook text-mode-hook conf-mode-hook))
+  (add-hook hook 'bv-tempel-setup-capf))
 
-(when (boundp 'global-map)
-  (define-key global-map (kbd "M-+") 'tempel-insert))
+(global-set-key (kbd "M-+") 'tempel-insert)
 
-(autoload 'global-tempel-abbrev-mode "tempel")
+(when (boundp 'tempel-map)
+  (define-key tempel-map (kbd "TAB") 'tempel-next)
+  (define-key tempel-map (kbd "<tab>") 'tempel-next)
+  (define-key tempel-map (kbd "S-TAB") 'tempel-previous)
+  (define-key tempel-map (kbd "<backtab>") 'tempel-previous))
 
-(if after-init-time
-    (global-tempel-abbrev-mode 1)
-  (when (boundp 'after-init-hook)
-    (add-hook 'after-init-hook 'global-tempel-abbrev-mode)))
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-app-map)
+    (define-key bv-app-map (kbd "t") 'tempel-insert)))
+
+(global-tempel-abbrev-mode 1)
 
 (provide 'bv-tempel)
 ;;; bv-tempel.el ends here
