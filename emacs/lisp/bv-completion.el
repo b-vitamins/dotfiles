@@ -5,8 +5,8 @@
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-;; Comprehensive completion configuration using orderless, consult, embark,
-;; and marginalia.  Sets up advanced completion styles and custom keybindings.
+
+;; Completion with orderless, consult, embark, and marginalia.
 
 ;;; Code:
 
@@ -15,17 +15,8 @@
   (require 'marginalia)
   (require 'consult))
 
-;; Variables declared here that are defined in other packages
-;; We'll wrap their usage with (when (boundp ...) ...)
-
-(defgroup bv-completion nil
-  "Tweaks to the built-in Emacs completion."
-  :group 'bv)
-
-(defcustom bv-completion-initial-narrow-alist '()
-  "Alist of MODE . KEY to present an initial completion narrowing via `consult'."
-  :group 'bv-completion
-  :type '(alist :key-type symbol :value-type string))
+(defvar bv-completion-initial-narrow-alist '()
+  "Mode to key mapping for automatic consult narrowing.")
 
 (with-eval-after-load 'minibuffer
   (when (boundp 'tab-always-indent)
@@ -64,38 +55,38 @@
     (setq orderless-component-separator 'orderless-escapable-split-on-space))
 
   (defun bv-orderless-literal-dispatcher (pattern _index _total)
-    "Dispatcher for literal matching when PATTERN ends with '='."
+    "Match PATTERN literally when it ends with '='."
     (cond ((equal "=" pattern) '(orderless-literal . "="))
           ((string-suffix-p "=" pattern)
            (cons 'orderless-literal (substring pattern 0 -1)))))
 
   (defun bv-orderless-without-literal-dispatcher (pattern _index _total)
-    "Dispatcher for exclusion matching when PATTERN ends with '!'."
+    "Exclude matches for PATTERN when it ends with '!'."
     (cond ((equal "!" pattern) '(orderless-literal . "!"))
           ((string-suffix-p "!" pattern)
            (cons 'orderless-without-literal (substring pattern 0 -1)))))
 
   (defun bv-orderless-initialism-dispatcher (pattern _index _total)
-    "Dispatcher for initialism matching when PATTERN ends with ','."
+    "Match PATTERN as initialism when it ends with ','."
     (cond ((equal "," pattern) '(orderless-literal . ","))
           ((string-suffix-p "," pattern)
            (cons 'orderless-initialism (substring pattern 0 -1)))))
 
   (defun bv-orderless-flex-dispatcher (pattern _index _total)
-    "Dispatcher for flex matching when PATTERN ends with '~'."
+    "Match PATTERN flexibly when it ends with '~'."
     (cond ((equal "~" pattern) '(orderless-literal . "~"))
           ((string-suffix-p "~" pattern)
            (cons 'orderless-flex (substring pattern 0 -1)))))
 
   (defun bv-completion--mode-buffers (&rest modes)
-    "Return list of buffers whose major mode derives from any of MODES."
+    "Return buffers matching MODES."
     (seq-filter
      (lambda (buffer)
        (with-current-buffer buffer (cl-some 'derived-mode-p modes)))
      (buffer-list)))
 
   (defun bv-completion-initial-narrow ()
-    "Automatically narrow consult-buffer based on current buffer's major mode."
+    "Auto-narrow consult-buffer by major mode."
     (let* ((buffer-mode-assoc bv-completion-initial-narrow-alist)
            (key (and (eq this-command 'consult-buffer)
                      (or (alist-get
@@ -134,21 +125,20 @@
     (setq completion-category-defaults nil))
   (setq enable-recursive-minibuffers t))
 
-(setq history-length 10000)
+(when (boundp 'history-length)
+  (setq history-length 10000))
 (when (boundp 'savehist-file)
   (setq savehist-file
-        (concat (or (getenv "XDG_CACHE_HOME") "~/.cache") "/emacs/history")))
+        (expand-file-name "history" user-emacs-directory)))
 
-(when (boundp 'global-map)
-  (define-key global-map (kbd "s-.") 'embark-act)
-  (define-key global-map (kbd "s->") 'embark-become))
+(global-set-key (kbd "s-.") 'embark-act)
+(global-set-key (kbd "s->") 'embark-become)
+(global-set-key (kbd "M-y") 'consult-yank-pop)
+(global-set-key (kbd "s-B") 'consult-buffer)
+(global-set-key (kbd "C-x C-r") 'consult-recent-file)
+
 (when (boundp 'minibuffer-local-map)
-  (define-key minibuffer-local-map (kbd "M-r") 'consult-history))
-(when (boundp 'global-map)
-  (define-key global-map (kbd "M-y") 'consult-yank-pop)
-  (define-key global-map (kbd "s-B") 'consult-buffer)
-  (define-key global-map (kbd "C-x C-r") 'consult-recent-file))
-(when (boundp 'minibuffer-local-map)
+  (define-key minibuffer-local-map (kbd "M-r") 'consult-history)
   (define-key minibuffer-local-map (kbd "s-g") 'embark-become))
 
 (when (boundp 'goto-map)
@@ -163,7 +153,7 @@
     (define-key map (kbd "b") 'consult-bookmark)))
 
 (defun bv-goto-line-relative ()
-  "Jump to line using relative numbers when narrowing is active."
+  "Jump to line with relative numbering."
   (interactive)
   (let ((consult-line-numbers-widen nil))
     (call-interactively 'consult-goto-line)))
@@ -178,8 +168,6 @@
     (define-key map (kbd "e") 'consult-isearch-history)
     (define-key map (kbd "l") 'consult-line)))
 
-(autoload 'consult-isearch-history "consult")
-
 (when (boundp 'isearch-mode-map)
   (let ((map isearch-mode-map))
     (define-key map (kbd "M-e") 'consult-isearch-history)
@@ -189,10 +177,6 @@
 (when (boundp 'minibuffer-local-map)
   (define-key minibuffer-local-map (kbd "s-b") 'exit-minibuffer))
 
-(autoload 'consult-customize "consult" "" nil 'macro)
-(autoload 'consult--customize-set "consult")
-(autoload 'consult--customize-put "consult")
-(autoload 'embark-open-externally "embark")
 
 (with-eval-after-load 'embark
   (require 'embark-consult))
@@ -203,21 +187,22 @@
 
 (with-eval-after-load 'consult
   (require 'embark-consult)
-  (when (boundp 'consult-ripgrep-args)
-    (setq consult-ripgrep-args
-          (replace-regexp-in-string
-           "^rg"
-           "/run/current-system/profile/bin/rg"
-           consult-ripgrep-args)))
-  (consult-customize consult-buffer :preview-key "M-.")
-  (consult-customize consult-history :category 'consult-history)
-  (consult-customize consult-line :inherit-input-method t))
+  (consult-customize
+   consult-buffer :preview-key "M-."
+   consult-history :category 'consult-history
+   consult-line :inherit-input-method t))
 
-(with-eval-after-load 'marginalia
+(when (boundp 'marginalia-align)
   (setq marginalia-align 'left))
 
-(autoload 'marginalia-mode "marginalia")
 (marginalia-mode 1)
+(savehist-mode 1)
+
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-app-map)
+    (define-key bv-app-map (kbd "h") 'consult-history)
+    (define-key bv-app-map (kbd "m") 'consult-mode-command)
+    (define-key bv-app-map (kbd "k") 'consult-kmacro)))
 
 (provide 'bv-completion)
 ;;; bv-completion.el ends here
