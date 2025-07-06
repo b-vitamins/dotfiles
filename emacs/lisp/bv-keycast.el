@@ -6,46 +6,68 @@
 
 ;;; Commentary:
 
-;; Configuration for keycast mode to display current commands and key bindings.
-;; Provides a custom keycast mode with mode line integration.
+;; Display current command and key binding in header line.
 
 ;;; Code:
 
-(eval-when-compile (require 'keycast))
+(require 'keycast)
 
+(defun bv-keycast-active-window-p ()
+  "Return non-nil if current window is active."
+  (eq (selected-window) (old-selected-window)))
 
-(with-eval-after-load 'keycast
-  (require 'moody)
-  (when (boundp 'keycast-mode-line-window-predicate)
-    (setq keycast-mode-line-window-predicate 'moody-window-active-p))
-  (when (boundp 'keycast-mode-line-format)
-    (setq keycast-mode-line-format "%k%c%r "))
-  (when (boundp 'global-mode-string)
-    (when (boundp 'keycast-mode-line)
-      (add-to-list 'global-mode-string keycast-mode-line))))
+(when (boundp 'keycast-mode-line-window-predicate)
+  (setq keycast-mode-line-window-predicate 'bv-keycast-active-window-p))
+(when (boundp 'keycast-mode-line-format)
+  (setq keycast-mode-line-format "%k%c%r "))
+(when (boundp 'keycast-mode-line-insert-after)
+  (setq keycast-mode-line-insert-after 'mode-line-misc-info))
+(when (boundp 'keycast-mode-line-remove-tail-elements)
+  (setq keycast-mode-line-remove-tail-elements nil))
 
-(autoload 'keycast--update "keycast")
+(defun bv-keycast-setup-faces ()
+  "Apply theme-aware faces to keycast."
+  (set-face-attribute 'keycast-key nil
+                      :inherit 'bv-face-strong
+                      :box nil
+                      :height 1.0)
+  (set-face-attribute 'keycast-command nil
+                      :inherit 'bv-face-salient
+                      :weight 'normal))
+
+(add-hook 'after-init-hook #'bv-keycast-setup-faces)
+(add-hook 'bv-after-theme-hook #'bv-keycast-setup-faces)
+
+(defun bv-keycast-header-line-formatter ()
+  "Format keycast information for header line display."
+  (when (and (boundp 'keycast--this-command-keys)
+             (boundp 'keycast--this-command)
+             keycast--this-command-keys
+             keycast--this-command)
+    (concat " "
+            (propertize (key-description keycast--this-command-keys)
+                        'face 'keycast-key)
+            " → "
+            (propertize (symbol-name keycast--this-command)
+                        'face 'keycast-command)
+            " ")))
 
 (define-minor-mode bv-keycast-mode
-  "Show current command and its key binding in the mode line."
+  "Show current command and key binding in header line."
   :global t
   :group 'bv
   (if bv-keycast-mode
-      (when (boundp 'post-command-hook)
-        (add-hook 'post-command-hook 'keycast--update t))
-    (when (boundp 'keycast--this-command)
-      (setq keycast--this-command nil))
-    (when (boundp 'keycast--this-command-keys)
-      (setq keycast--this-command-keys nil))
-    (when (boundp 'keycast--command-repetitions)
-      (setq keycast--command-repetitions 0))
-    (when (boundp 'post-command-hook)
-      (remove-hook 'post-command-hook 'keycast--update))))
+      (progn
+        (when (fboundp 'keycast-mode-line-mode)
+          (keycast-mode-line-mode -1))
+        (when (fboundp 'keycast-header-line-mode)
+          (keycast-header-line-mode 1)))
+    (when (fboundp 'keycast-header-line-mode)
+      (keycast-header-line-mode -1))))
 
-(with-eval-after-load 'bv-keymaps
+(with-eval-after-load 'bv-bindings
   (when (boundp 'bv-toggle-map)
-    (define-key bv-toggle-map (kbd "k") 'bv-keycast-mode)
-    (define-key bv-toggle-map (kbd "K") 'bv-keycast-mode)))
+    (define-key bv-toggle-map (kbd "k") 'bv-keycast-mode)))
 
 (provide 'bv-keycast)
 ;;; bv-keycast.el ends here
