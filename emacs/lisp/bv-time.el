@@ -6,42 +6,57 @@
 
 ;;; Commentary:
 
-;; Configuration for time display and world clock.
+;; Time display in mode line and world clock.
 
 ;;; Code:
 
-(eval-when-compile (require 'time))
+(require 'time)
 
-
-(with-eval-after-load 'bv-keymaps
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "C") 'world-clock)))
-
-(when (boundp 'world-clock-list)
-  (setq world-clock-list
-        '(("America/Los_Angeles" "Los Angeles")
-          ("America/Boise" "Boise")
-          ("America/New_York" "New York")
-          ("UTC" "UTC")
-          ("Europe/London" "London")
-          ("Europe/Paris" "Paris")
-          ("Europe/Helsinki" "Helsinki")
-          ("Europe/Moscow" "Moscow")
-          ("Asia/Tbilisi" "Tbilisi")
-          ("Asia/Tokyo" "Tokyo"))))
-
-(when (boundp 'world-clock-time-format)
-  (setq world-clock-time-format "%A %d %B %R %Z"))
+(when (boundp 'display-time-format)
+  (setq display-time-format "%H:%M"))
 (when (boundp 'display-time-default-load-average)
   (setq display-time-default-load-average nil))
 (when (boundp 'display-time-load-average-threshold)
-  (setq display-time-load-average-threshold 0))
+  (setq display-time-load-average-threshold 10.0))
 (when (boundp 'display-time-day-and-date)
-  (setq display-time-day-and-date t))
+  (setq display-time-day-and-date nil))
 (when (boundp 'display-time-24hr-format)
   (setq display-time-24hr-format t))
+(when (boundp 'display-time-mail-string)
+  (setq display-time-mail-string ""))
+(when (boundp 'display-time-interval)
+  (setq display-time-interval 60))
 
-(display-time-mode)
+(when (boundp 'world-clock-list)
+  (setq world-clock-list
+        '(("Asia/Kolkata" "Bangalore")
+          ("America/Los_Angeles" "Los Angeles")
+          ("America/New_York" "New York")
+          ("UTC" "UTC")
+          ("Europe/London" "London")
+          ("Europe/Berlin" "Berlin")
+          ("Asia/Tokyo" "Tokyo")
+          ("Australia/Sydney" "Sydney"))))
+
+(when (boundp 'world-clock-time-format)
+  (setq world-clock-time-format "%a %d %b %H:%M %Z"))
+(when (boundp 'world-clock-buffer-name)
+  (setq world-clock-buffer-name "*World Clock*"))
+
+(defun bv-time-setup-faces ()
+  "Apply theme-aware face to time display."
+  (set-face-attribute 'display-time-date-and-time nil
+                      :inherit 'bv-face-faded))
+
+(add-hook 'after-init-hook #'bv-time-setup-faces)
+(add-hook 'bv-after-theme-hook #'bv-time-setup-faces)
+
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-app-map)
+    (define-key bv-app-map (kbd "C") 'world-clock)))
+
+(when (fboundp 'display-time-mode)
+  (display-time-mode 1))
 
 (provide 'bv-time)
 ;;; bv-time.el ends here

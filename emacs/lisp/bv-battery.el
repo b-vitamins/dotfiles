@@ -6,44 +6,44 @@
 
 ;;; Commentary:
 
-;; Battery status display with icon indicators in the mode line.
+;; Battery status display in mode line.
 
 ;;; Code:
 
-(require 'cl-lib)
 (require 'battery nil t)
-(autoload 'all-the-icons-faicon "all-the-icons")
 
-
-(defun bv-battery-add-unicode-indicator (data)
-  "Add battery icon indicator to mode line based on battery DATA."
+(defun bv-battery-format (data)
+  "Format battery status from DATA with text indicator."
   (let* ((bat-str (cdr (assq ?p data)))
+         (status (cdr (assq ?B data)))
          (bat (if (and bat-str (not (string= bat-str "N/A")))
-                  (car (read-from-string bat-str))
+                  (string-to-number bat-str)
                 nil)))
     (when (numberp bat)
-      (let* ((index (cond
-                      ((> bat 75) 0)
-                      ((> bat 50) 1)
-                      ((> bat 25) 2)
-                      ((> bat 10) 3)
-                      (t 4)))
-             (symbol (nth index
-                          (list (all-the-icons-faicon "battery-full")
-                                (all-the-icons-faicon "battery-three-quarters")
-                                (all-the-icons-faicon "battery-half")
-                                (all-the-icons-faicon "battery-quarter")
-                                (all-the-icons-faicon "battery-empty")))))
-        (when (and (boundp 'battery-mode-line-string) battery-mode-line-string)
-          (setq battery-mode-line-string
-                (format "%s %s" symbol battery-mode-line-string)))))))
+      (let ((indicator (cond
+                        ((string= status "Charging") "+")
+                        ((string= status "Discharging") "-")
+                        (t ""))))
+        (propertize (format "BAT%s%d%%" indicator bat)
+                    'face (cond
+                           ((< bat 20) 'bv-face-critical)
+                           ((< bat 50) 'bv-face-popout)
+                           (t 'bv-face-faded)))))))
 
-(when (fboundp 'battery-status-function)
-  (when (boundp 'battery-update-functions)
-    (add-hook 'battery-update-functions 'bv-battery-add-unicode-indicator))
+(when (and (fboundp 'battery-status-function)
+           battery-status-function)
   (when (boundp 'battery-mode-line-format)
-    (setq battery-mode-line-format "%p%% "))
-  (display-battery-mode))
+    (setq battery-mode-line-format " %b "))
+  (when (boundp 'battery-mode-line-limit)
+    (setq battery-mode-line-limit 90))
+  (when (boundp 'battery-update-interval)
+    (setq battery-update-interval 60))
+  (when (boundp 'battery-echo-area-format)
+    (setq battery-echo-area-format "Battery: %B %p%%, %t"))
+  (when (boundp 'battery-mode-line-string-creator)
+    (setq battery-mode-line-string-creator 'bv-battery-format))
+  (when (fboundp 'display-battery-mode)
+    (display-battery-mode 1)))
 
 (provide 'bv-battery)
 ;;; bv-battery.el ends here
