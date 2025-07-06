@@ -6,12 +6,13 @@
 
 ;;; Commentary:
 
-;; Configuration for shell script editing and execution.
+;; Shell script editing and shell-mode.
 
 ;;; Code:
 
+(require 'sh-script nil t)
 
-(with-eval-after-load 'sh-script
+(when (featurep 'sh-script)
   (when (boundp 'sh-basic-offset)
     (setq sh-basic-offset 2))
   (when (boundp 'sh-indent-comment)
@@ -19,24 +20,35 @@
   (when (boundp 'sh-first-lines-indent)
     (setq sh-first-lines-indent nil)))
 
-(add-to-list 'display-buffer-alist
-             '("\\*Async Shell Command.*\\*"
-               (display-buffer-no-window)))
+(when (boundp 'display-buffer-alist)
+  (add-to-list 'display-buffer-alist
+               '("\\*Async Shell Command.*\\*"
+                 (display-buffer-no-window))))
 
-(with-eval-after-load 'org
-  (when (boundp 'org-structure-template-alist)
-    (add-to-list 'org-structure-template-alist '("sh" . "src sh"))))
 
-(with-eval-after-load 'ob-core
-  (require 'ob-shell))
+(defun bv-shell ()
+  "Start shell in current directory."
+  (interactive)
+  (shell))
 
-(with-eval-after-load 'project
-  (when (boundp 'project-prefix-map)
-    (define-key project-prefix-map "s" 'project-shell))
-  (when (and (boundp 'project-switch-commands)
-             (listp project-switch-commands))
-    (add-to-list 'project-switch-commands
-                 '(project-shell "Start an inferior shell"))))
+(defun bv-shell-project ()
+  "Start shell in project root."
+  (interactive)
+  (if (and (fboundp 'project-current) (project-current))
+      (let ((default-directory (project-root (project-current))))
+        (shell))
+    (shell)))
+
+(global-set-key (kbd "s-S") 'bv-shell)
+
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-app-map)
+    (define-key bv-app-map (kbd "s") 'bv-shell)
+    (define-key bv-app-map (kbd "S") 'bv-shell-project)))
+
+(with-eval-after-load 'shell
+  (when (boundp 'shell-mode-map)
+    (define-key shell-mode-map (kbd "M-r") 'consult-history)))
 
 (provide 'bv-shell)
 ;;; bv-shell.el ends here
