@@ -1,4 +1,4 @@
-;;; bv-nov-el.el --- Nov.el EPUB reader configuration  -*- lexical-binding: t -*-
+;;; bv-nov-el.el --- EPUB reader configuration  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,52 +6,35 @@
 
 ;;; Commentary:
 
-;; Configuration for nov.el EPUB reader with text justification.
+;; Beautiful EPUB reading experience.
 
 ;;; Code:
 
-
+(autoload 'nov-mode "nov")
 (autoload 'olivetti-mode "olivetti")
-(autoload 'pj-line-width "justify-kp")
-(autoload 'shr-pixel-column "shr")
-(autoload 'pj-justify "justify-kp")
 
-(when (boundp 'auto-mode-alist)
-  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode)))
-
-(defun bv-nov-post-html-render-hook ()
-  "Justify text in nov mode after HTML rendering."
-  (if (get-buffer-window)
-      (let ((max-width (pj-line-width))
-            buffer-read-only)
-        (save-excursion
-          (goto-char (point-min))
-          (while (not (eobp))
-            (when (not (looking-at "^[[:space:]-]*$"))
-              (goto-char (line-end-position))
-              (when (> (shr-pixel-column) max-width)
-                (goto-char (line-beginning-position))
-                (pj-justify)))
-            (forward-line 1))))
-    (add-hook 'window-configuration-change-hook
-              'bv-nov-window-configuration-change-hook
-              nil
-              t)))
-
-(defun bv-nov-window-configuration-change-hook ()
-  "Handle window configuration change for nov mode text justification."
-  (bv-nov-post-html-render-hook)
-  (remove-hook 'window-configuration-change-hook
-               'bv-nov-window-configuration-change-hook
-               t))
+(add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
 
 (with-eval-after-load 'nov
-  (when (boundp 'nov-mode-hook)
-    (add-hook 'nov-mode-hook (lambda () (olivetti-mode 1))))
+  ;; Reading setup
   (when (boundp 'nov-text-width)
     (setq nov-text-width t))
-  (when (boundp 'nov-post-html-render-hook)
-    (add-hook 'nov-post-html-render-hook 'bv-nov-post-html-render-hook)))
+  (when (boundp 'nov-save-place-file)
+    (setq nov-save-place-file
+          (expand-file-name "nov-places"
+                           (or (getenv "XDG_CACHE_HOME") "~/.cache"))))
+
+  ;; Typography
+  (add-hook 'nov-mode-hook #'olivetti-mode)
+  (add-hook 'nov-mode-hook #'visual-line-mode)
+  (add-hook 'nov-mode-hook (lambda () (setq-local line-spacing 0.2)))
+
+  ;; Face customization
+  (defun bv-nov-setup-faces ()
+    "Setup faces for nov mode."
+    (face-remap-add-relative 'variable-pitch :family "Libertinus Serif" :height 1.2))
+
+  (add-hook 'nov-mode-hook #'bv-nov-setup-faces))
 
 (provide 'bv-nov-el)
 ;;; bv-nov-el.el ends here
