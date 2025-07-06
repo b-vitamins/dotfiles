@@ -6,116 +6,113 @@
 
 ;;; Commentary:
 
-;; Configuration for TRAMP remote file access.
+;; TRAMP remote file access with SSH config integration.
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'tramp)
-  (require 'cl-lib))
-
-
-(autoload 'consult--buffer-state "consult")
-
-
-
-(define-prefix-command 'bv-tramp-map)
-
-(defun bv-tramp--parse-sconfig-hosts ()
-  "Parse SSH configuration file and return a list of host definitions."
-  (when-let ((file (expand-file-name "~/.ssh/config")))
+(require 'tramp)
+(require 'cl-lib)
+(declare-function consult--read "consult")
+(declare-function consult--directory-prompt "consult")
+(declare-function consult--file-prompt "consult")
+(defun bv-tramp--parse-ssh-hosts ()
+  "Parse SSH config for host names."
+  (when-let ((file (expand-file-name "~/.ssh/config"))
+             ((file-exists-p file)))
     (with-temp-buffer
-      (insert-file-contents-literally file)
-      (goto-char (point-min))
-      (delete nil
-              (cl-loop while (not (eobp))
-                       when (re-search-forward
-                             (rx bol
-                                 (* space)
-                                 "Host"
-                                 space
-                                 (group (+ (any "a-z" "A-Z" "0-9" "_.%*" "-"))))
-                             (pos-eol)
-                             t)
-                       collect (match-string 1)
-                       unless (> (skip-chars-forward "\t") 0)
-                       do (forward-line 1))))))
+      (insert-file-contents file)
+      (cl-loop while (re-search-forward "^Host \\([^*\n]+\\)$" nil t)
+               collect (match-string 1)))))
 
-(cl-defun bv-tramp-run (command &rest args &key thing &allow-other-keys)
-  "Execute COMMAND with ARGS in TRAMP session and manipulate remote THING."
-  (let* ((host (completing-read "SSH host: " (bv-tramp--parse-sconfig-hosts)))
-         (read-thing
-          (if thing
-              (pcase thing
-                (:directory (read-directory-name
-                             (format "Directory (%s): " host)
-                             (format "/-:%s:" host)))
-                (:file (read-file-name
-                        (format "File (%s): " host)
-                        (format "/-:%s:" host))))
-            (format "/-:%s:" host)))
-         (default-directory read-thing))
-    (cond ((and args thing) (apply command read-thing (cddr args)))
-          (args (apply command args))
-          (t (funcall command)))))
+(defun bv-tramp--read-host ()
+  "Read SSH host with consult if available."
+  (let ((hosts (bv-tramp--parse-ssh-hosts)))
+    (if (and (fboundp 'consult--read) (boundp 'consult--tofu-char))
+        (consult--read hosts
+                       :prompt "SSH host: "
+                       :require-match t
+                       :sort nil
+                       :category 'ssh-host)
+      (completing-read "SSH host: " hosts nil t))))
 
-(autoload 'tramp-list-remote-buffers "tramp-cmds")
+(defun bv-tramp-run (command &optional type)
+  "Execute COMMAND on remote host with optional TYPE (:file or :directory)."
+  (let* ((host (bv-tramp--read-host))
+         (remote-path (format "/ssh:%s:" host))
+         (default-directory
+           (pcase type
+             (:directory
+              (if (fboundp 'consult--directory-prompt)
+                  (consult--directory-prompt remote-path nil)
+                (read-directory-name
+                 (format "Directory (%s): " host) remote-path)))
+             (:file
+              (if (fboundp 'consult--file-prompt)
+                  (consult--file-prompt remote-path nil)
+                (read-file-name
+                 (format "File (%s): " host) remote-path)))
+             (_ remote-path))))
+    (funcall command default-directory)))
 
-(with-eval-after-load 'tramp
-  (when (boundp 'bv-tramp-buffer-source)
-    (setq bv-tramp-buffer-source
-      `(:name "Tramp"
-              :narrow ?r
-              :category buffer
-              :state ,'consult--buffer-state
-              :items ,(lambda () (mapcar 'buffer-name (when (fboundp 'tramp-list-remote-buffers)
-                                                       (tramp-list-remote-buffers)))))))
-  
-  (with-eval-after-load 'consult
-    (when (and (boundp 'consult-buffer-sources)
-               (boundp 'bv-tramp-buffer-source))
-      (add-to-list 'consult-buffer-sources bv-tramp-buffer-source 'append))))
+(defun bv-tramp-shell ()
+  "Open shell on remote host."
+  (interactive)
+  (bv-tramp-run 'shell))
 
-(defun bv-tramp-shell (&optional arg)
-  "Open a shell buffer inside a TRAMP host with ARG."
-  (interactive "P")
-  (bv-tramp-run 'shell arg))
-
-(defun bv-tramp-eshell (&optional arg)
-  "Open an eshell buffer inside a TRAMP host with ARG."
-  (interactive "P")
-  (bv-tramp-run 'eshell arg))
+(defun bv-tramp-eshell ()
+  "Open eshell on remote host."
+  (interactive)
+  (bv-tramp-run 'eshell))
 
 (defun bv-tramp-dired ()
-  "Open a Dired buffer inside a TRAMP host."
+  "Open dired on remote host."
   (interactive)
-  (bv-tramp-run 'dired :thing :directory))
+  (bv-tramp-run 'dired :directory))
 
 (defun bv-tramp-find-file ()
-  "Open a file inside a TRAMP host."
+  "Open file on remote host."
   (interactive)
-  (bv-tramp-run 'find-file :thing :file))
+  (bv-tramp-run 'find-file :file))
 
-(with-eval-after-load 'bv-keymaps
-  (when (and (boundp 'bv-app-map) (boundp 'bv-tramp-map))
-    (define-key bv-app-map (kbd "R") 'bv-tramp-map)))
+(when (boundp 'tramp-verbose)
+  (setq tramp-verbose 1))
+(when (boundp 'tramp-default-method)
+  (setq tramp-default-method "ssh"))
+(when (boundp 'tramp-remote-path)
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
+(when (boundp 'tramp-use-ssh-controlmaster-options)
+  (setq tramp-use-ssh-controlmaster-options t))
+(when (boundp 'tramp-persistency-file-name)
+  (setq tramp-persistency-file-name
+        (expand-file-name "tramp" user-emacs-directory)))
+(when (boundp 'remote-file-name-inhibit-cache)
+  (setq remote-file-name-inhibit-cache nil))
+(when (boundp 'vc-ignore-dir-regexp)
+  (setq vc-ignore-dir-regexp
+        (format "%s\\|%s"
+                vc-ignore-dir-regexp
+                tramp-file-name-regexp)))
 
-(when (boundp 'bv-tramp-map)
-  (let ((map bv-tramp-map))
-    (define-key map "f" 'bv-tramp-find-file)
-    (define-key map "d" 'bv-tramp-dired)
-    (define-key map "s" 'bv-tramp-shell)
-    (define-key map "e" 'bv-tramp-eshell)))
+(defvar bv-tramp-consult-source
+  `(:name "SSH Hosts"
+    :narrow ?h
+    :category ssh-host
+    :face bv-face-popout
+    :history ssh-host-history
+    :items ,#'bv-tramp--parse-ssh-hosts
+    :action (lambda (host) (find-file (format "/ssh:%s:" host))))
+  "Consult source for SSH hosts.")
 
-(with-eval-after-load 'tramp
-  (when (boundp 'tramp-verbose)
-    (setq tramp-verbose 1))
-  (when (boundp 'tramp-default-method)
-    (setq tramp-default-method "ssh"))
-  (when (boundp 'tramp-remote-path)
-    (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
-  (when (boundp 'tramp-default-proxies-alist)
-    (set-default 'tramp-default-proxies-alist '((".*" "\\`root\\'" "/ssh:%h:")))))
+(with-eval-after-load 'consult
+  (when (boundp 'consult-buffer-sources)
+    (add-to-list 'consult-buffer-sources 'bv-tramp-consult-source 'append)))
+
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-app-map)
+    (define-key bv-app-map (kbd "R f") 'bv-tramp-find-file)
+    (define-key bv-app-map (kbd "R d") 'bv-tramp-dired)
+    (define-key bv-app-map (kbd "R s") 'bv-tramp-shell)
+    (define-key bv-app-map (kbd "R e") 'bv-tramp-eshell)))
 
 (provide 'bv-tramp)
 ;;; bv-tramp.el ends here
