@@ -1,50 +1,95 @@
-;;; bv-geiser.el --- Geiser Scheme configuration  -*- lexical-binding: t -*-
+;;; bv-geiser.el --- Scheme development configuration -*- lexical-binding: t -*-
 
-;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
-;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-
-;; Geiser configuration for Scheme development with Guile integration,
-;; REPL setup, and Org-mode babel support.
+;; Scheme development with Geiser and Guile.
 
 ;;; Code:
 
-(autoload 'xdg-cache-home "xdg")
 
-(with-eval-after-load 'geiser-repl
-  (require 'xdg)
-  (when (boundp 'geiser-repl-query-on-kill-p)
-    (setq geiser-repl-query-on-kill-p nil))
-  (when (boundp 'geiser-repl-history-filename)
-    (setq geiser-repl-history-filename
-          (expand-file-name "emacs/geiser_history" (xdg-cache-home))))
-  (when (boundp 'geiser-repl-add-project-paths)
-    (setq geiser-repl-add-project-paths nil)))
+(declare-function geiser-mode "geiser-mode")
+(declare-function geiser-eros-mode "geiser-eros")
+(declare-function geiser-repl "geiser-repl")
+(declare-function geiser-eval-definition "geiser-mode")
+
+(defgroup bv-geiser nil
+  "Scheme development settings."
+  :group 'bv)
+
+(defcustom bv-geiser-idle-delay 1.0
+  "Idle time before loading geiser."
+  :type 'number
+  :group 'bv-geiser)
+
+(defcustom bv-geiser-default-implementation 'guile
+  "Default Scheme implementation."
+  :type 'symbol
+  :group 'bv-geiser)
+
+;; Load geiser after idle delay
+(run-with-idle-timer bv-geiser-idle-delay t
+                     (lambda ()
+                       (require 'geiser nil t)))
+
+(setq geiser-default-implementation bv-geiser-default-implementation
+      geiser-active-implementations '(guile)
+      geiser-repl-query-on-kill-p nil
+      geiser-repl-history-filename (expand-file-name "emacs/geiser-history" (or (getenv "XDG_CACHE_HOME") "~/.cache"))
+      geiser-repl-add-project-paths nil)
 
 (with-eval-after-load 'geiser-mode
-  (geiser-eros-mode)
-  (geiser-mode))
+  (add-hook 'scheme-mode-hook 'geiser-mode)
+  (add-hook 'geiser-mode-hook 'geiser-eros-mode))
 
-(with-eval-after-load 'geiser-impl
-  (when (boundp 'geiser-default-implementation)
-    (setq geiser-default-implementation 'guile))
-  (when (boundp 'geiser-active-implementations)
-    (setq geiser-active-implementations '(guile)))
-  (when (boundp 'geiser-implementations-alist)
-    (setq geiser-implementations-alist '(((regexp "\\.scm$") guile)))))
+(defun bv-geiser-eval-buffer ()
+  "Evaluate entire buffer in Geiser."
+  (interactive)
+  (geiser-eval-buffer))
+
+(defun bv-geiser-eval-last-sexp ()
+  "Evaluate last s-expression."
+  (interactive)
+  (geiser-eval-last-sexp))
+
+(defun bv-geiser-repl-here ()
+  "Start Geiser REPL in current window."
+  (interactive)
+  (let ((geiser-repl-window-allow-split nil))
+    (geiser-repl)))
+
+(with-eval-after-load 'geiser-mode
+  (define-key geiser-mode-map (kbd "C-c C-b") 'bv-geiser-eval-buffer)
+  (define-key geiser-mode-map (kbd "C-c C-z") 'bv-geiser-repl-here))
 
 (with-eval-after-load 'org
-  (when (boundp 'org-structure-template-alist)
-    (add-to-list 'org-structure-template-alist '("sc" . "src scheme"))))
-
-(with-eval-after-load 'ob-core
+  (add-to-list 'org-structure-template-alist '("sc" . "src scheme"))
   (require 'ob-scheme))
 
 (with-eval-after-load 'ob-scheme
-  (when (boundp 'org-babel-default-header-args:scheme)
-    (setq org-babel-default-header-args:scheme '((:results . "scalar")))))
+  (setq org-babel-default-header-args:scheme '((:results . "value"))))
+
+(defun bv-geiser-transient ()
+  "Transient menu for Geiser."
+  (interactive)
+  (transient-define-prefix bv-geiser-transient-menu ()
+    "Scheme Development"
+    ["Evaluation"
+     ("e" "Eval definition" geiser-eval-definition)
+     ("r" "Eval region" geiser-eval-region)
+     ("b" "Eval buffer" bv-geiser-eval-buffer)
+     ("l" "Eval last sexp" bv-geiser-eval-last-sexp)]
+    ["REPL"
+     ("z" "Switch to REPL" geiser-repl)
+     ("Z" "REPL here" bv-geiser-repl-here)
+     ("c" "Clear REPL" geiser-repl-clear-buffer)]
+    ["Documentation"
+     ("d" "Symbol doc" geiser-doc-symbol-at-point)
+     ("m" "Module doc" geiser-doc-module)])
+  (bv-geiser-transient-menu))
+
+(with-eval-after-load 'scheme-mode
+  (define-key scheme-mode-map (kbd "C-c s") 'bv-geiser-transient))
 
 (provide 'bv-geiser)
 ;;; bv-geiser.el ends here
