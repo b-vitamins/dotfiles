@@ -1,4 +1,4 @@
-;;; bv-org-agenda-files-track.el --- Dynamic org agenda files tracking  -*- lexical-binding: t -*-
+;;; bv-org-agenda-files-track.el --- Dynamic agenda file tracking  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,17 +6,12 @@
 
 ;;; Commentary:
 
-;; Configuration for dynamic org agenda files tracking.
+;; Automatic org agenda file discovery with org-ql.
 
 ;;; Code:
 
-
+(require 'org-agenda-files-track-ql)
 (autoload 'org-ql--normalize-query "org-ql")
-
-(condition-case nil
-    (require 'org-agenda-files-track-ql)
-  (file-missing
-   (message "org-agenda-files-track-ql not available")))
 
 (when (boundp 'org-agenda-include-diary)
   (setq org-agenda-include-diary nil))
