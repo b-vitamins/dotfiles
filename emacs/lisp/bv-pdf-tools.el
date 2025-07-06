@@ -1,4 +1,4 @@
-;;; bv-pdf-tools.el --- PDF viewing and tools configuration  -*- lexical-binding: t -*-
+;;; bv-pdf-tools.el --- PDF viewing configuration  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,75 +6,94 @@
 
 ;;; Commentary:
 
-;; Configuration for PDF tools and viewing.
+;; Enhanced PDF viewing with theme integration.
 
 ;;; Code:
-
-(require 'seq)
 
 (autoload 'pdf-view-mode "pdf-view")
 (autoload 'pdf-view-themed-minor-mode "pdf-view")
 (autoload 'pdf-tools-enable-minor-modes "pdf-tools")
-(autoload 'bv-modus-themes--dark-theme-p "bv-modus-themes")
+(autoload 'pdf-tools-install "pdf-tools")
 
-(with-eval-after-load 'tex
-  (when (boundp 'TeX-view-program-selection)
-    (setopt TeX-view-program-selection '((output-pdf "PDF Tools"))))
-  (add-hook 'TeX-mode-hook 'TeX-source-correlate-mode))
-
-(defun bv-pdf-tools--list-buffers ()
-  "List all currently-opened `pdf-view' mode buffers.
-Returns a list of all buffers that are currently in `pdf-view-mode'."
-  (seq-filter
-   (lambda (buffer)
-     (with-current-buffer buffer
-       (derived-mode-p 'pdf-view-mode)))
-   (buffer-list)))
-
-(defun bv-pdf-tools-update-buffers (&optional _theme)
-  "Apply `bv-pdf-tools-mode' to currently open `pdf-view' mode buffers.
-Optional argument _THEME is ignored but kept for compatibility with
-theme change hooks."
-  (dolist (buffer (bv-pdf-tools--list-buffers))
-    (with-current-buffer buffer
-      (bv-pdf-tools-mode 1))))
-
-(defgroup bv-pdf-tools nil
-  "Custom tweaks for PDF Tools."
-  :group 'bv)
-
-(define-minor-mode bv-pdf-tools-mode
-  "Apply `pdf-tools' settings based on the current theme.
-This minor mode automatically enables or disables `pdf-view-themed-minor-mode'
-based on whether the current theme is dark or light."
-  :group 'bv-pdf-tools
-  (if bv-pdf-tools-mode
-      (if (bv-modus-themes--dark-theme-p)
-          (pdf-view-themed-minor-mode 1)
-        (pdf-view-themed-minor-mode -1))
-    (pdf-view-themed-minor-mode -1)))
-
-(when (boundp 'pdf-view-mode-hook)
-  (add-hook 'pdf-view-mode-hook 'bv-pdf-tools-mode))
-(when (boundp 'circadian-after-load-theme-hook)
-  (add-hook 'circadian-after-load-theme-hook 'bv-pdf-tools-update-buffers))
-
+;; Auto mode
 (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode))
 (add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
 
-(when (boundp 'pdf-view-mode-hook)
-  (add-hook 'pdf-view-mode-hook 'pdf-tools-enable-minor-modes))
+;; PDF viewing setup
+(defun bv-pdf-tools-setup ()
+  "Setup PDF tools."
+  (pdf-tools-enable-minor-modes)
+  ;; Don't use themed mode by default - it inverts colors including figures
+  (pdf-view-themed-minor-mode -1))
 
+(add-hook 'pdf-view-mode-hook #'bv-pdf-tools-setup)
+
+
+;; PDF view settings
 (with-eval-after-load 'pdf-view
   (when (boundp 'pdf-view-use-scaling)
     (setq pdf-view-use-scaling t))
   (when (boundp 'pdf-view-display-size)
     (setq pdf-view-display-size 'fit-page))
   (when (boundp 'pdf-view-resize-factor)
-    (setq pdf-view-resize-factor 1.025)))
+    (setq pdf-view-resize-factor 1.1))
+  (when (boundp 'pdf-view-continuous)
+    (setq pdf-view-continuous t)))
 
-(with-eval-after-load 'saveplace
-  (require 'saveplace-pdf-view))
+;; TeX integration
+(with-eval-after-load 'tex
+  (when (boundp 'TeX-view-program-selection)
+    (setq TeX-view-program-selection '((output-pdf "PDF Tools"))))
+  (add-hook 'TeX-mode-hook 'TeX-source-correlate-mode))
+
+;; Night mode with enhanced rendering
+(defvar-local bv-pdf-night-mode nil
+  "Whether night mode is enabled for current PDF buffer.")
+
+(defun bv-pdf-toggle-night-mode ()
+  "Toggle night mode with enhanced inversion for crisp text."
+  (interactive)
+  (setq bv-pdf-night-mode (not bv-pdf-night-mode))
+  (if bv-pdf-night-mode
+      (progn
+        ;; High contrast colors for better text clarity
+        (when (boundp 'pdf-view-midnight-colors)
+          (setq-local pdf-view-midnight-colors '("#e8e8e8" . "#181818")))
+        ;; Enable midnight mode with inversion
+        (pdf-view-midnight-minor-mode 1)
+        ;; Increase resolution for crisper text
+        (when (boundp 'pdf-view-use-scaling)
+          (setq-local pdf-view-use-scaling t))
+        (when (boundp 'pdf-view-resolution)
+          (setq-local pdf-view-resolution 144)) ; Higher DPI
+        ;; Force re-render with new settings
+        (pdf-view-redisplay))
+    (pdf-view-midnight-minor-mode -1)
+    ;; Restore default resolution
+    (when (boundp 'pdf-view-resolution)
+      (setq-local pdf-view-resolution 96))
+    (pdf-view-redisplay))
+  (message "PDF night mode %s"
+           (if bv-pdf-night-mode "enabled" "disabled")))
+
+(with-eval-after-load 'pdf-view
+  (when (boundp 'pdf-view-mode-map)
+    (define-key pdf-view-mode-map (kbd "n") 'bv-pdf-toggle-night-mode))
+  ;; Midnight mode settings for better inversion
+  (when (boundp 'pdf-view-midnight-invert)
+    (setq pdf-view-midnight-invert t))
+  (when (boundp 'pdf-view-midnight-hue)
+    (setq pdf-view-midnight-hue nil))
+  ;; Image processing settings for better quality
+  (when (boundp 'pdf-view-use-imagemagick)
+    (setq pdf-view-use-imagemagick t))
+  (when (boundp 'pdf-view-image-relief)
+    (setq pdf-view-image-relief 0))
+  (when (boundp 'pdf-view-use-unicode-ligther)
+    (setq pdf-view-use-unicode-ligther nil)))
+
+;; Install PDF tools on first use
+(pdf-tools-install :no-query)
 
 (provide 'bv-pdf-tools)
 ;;; bv-pdf-tools.el ends here
