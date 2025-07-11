@@ -64,7 +64,6 @@
              (myguix home)
              (myguix utils)
              (myguix home services emacs)
-             (myguix home services emacs-daemon)
              (myguix home services nougat)
              (myguix packages base)
              (myguix packages fonts)
@@ -191,7 +190,6 @@ application/x-shellscript=org.gnome.TextEditor.desktop
 inode/directory=org.gnome.Nautilus.desktop
 "))))
       (service my-home-emacs-service-type)
-      (service home-emacs-daemon-service-type)
 
       (service home-inputrc-service-type
                (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")
@@ -407,7 +405,7 @@ allow-preset-passphrase")))
                                 (mount-point "/data")
                                 (type "btrfs"))
                               (file-system
-                                (device (uuid "AAFC-D5E5"
+                                (device (uuid "812C-DF8C"
                                               'fat32))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
