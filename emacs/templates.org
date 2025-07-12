@@ -7,12 +7,21 @@
 :END:
 ** The fundamentals
 #+BEGIN_SRC emacs-lisp
-;;; The fundamentals (placeholder)
+org-mode
+
+(m "$" p "$")
+(M "\\(" p "\\)")
+(d "\\[" p "\\]")
+(e "\\begin{equation}" r> "\\end{equation}")
+(D "\\begin{equation*}" r> "\\end{equation*}")
 #+END_SRC
 
 ** Automatic numbering and cross-referencing
 #+BEGIN_SRC emacs-lisp
-;;; Automatic numbering and cross-referencing (placeholder)
+org-mode
+
+(l "\\label{" p "}")
+(r "\\eqref{" p "}")
 #+END_SRC
 
 * Math symbols and math fonts
