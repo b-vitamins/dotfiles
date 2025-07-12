@@ -40,6 +40,7 @@ desktop.ini
 /emacs/custom.el
 /emacs/init.elc
 /emacs/early-init.elc
+/emacs/latex-templates/
 *.elc
 
 # But keep configuration

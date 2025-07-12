@@ -32,13 +32,13 @@
 (when (boundp 'org-roam-completion-everywhere)
   (setq org-roam-completion-everywhere t))
 (when (boundp 'org-roam-directory)
-  (setq org-roam-directory "~/documents/slipbox"))
+  (setq org-roam-directory "~/documents/slipbox/slips"))
 (when (boundp 'org-roam-db-gc-threshold)
   (setq org-roam-db-gc-threshold most-positive-fixnum))
 
 (defun bv-ensure-org-roam-directories ()
   "Ensure org-roam directories exist."
-  (let ((roam-dir (expand-file-name (if (boundp 'org-roam-directory) org-roam-directory "~/documents/slipbox")))
+  (let ((roam-dir (expand-file-name (if (boundp 'org-roam-directory) org-roam-directory "~/documents/slipbox/slips")))
         (cache-dir (concat (or (getenv "XDG_CACHE_HOME") "~/.cache") "/emacs")))
     (unless (file-exists-p roam-dir)
       (make-directory roam-dir t))
@@ -120,12 +120,12 @@
     (setq org-roam-capture-templates
           '(("s" "Slip" plain
              "%?"
-             :target (file+head "slips/%<%Y-%m-%d>-${slug}.org"
+             :target (file+head "%<%Y-%m-%d>-${slug}.org"
                                ":PROPERTIES:\n:ID: %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: \n\n")
              :unnarrowed t)
             ("l" "Literature" plain
              "%?"
-             :target (file+head "slips/%<%Y-%m-%d>-lit-${slug}.org"
+             :target (file+head "%<%Y-%m-%d>-lit-${slug}.org"
                                ":PROPERTIES:\n:ID: %(org-id-new)\n:ROAM_REFS: \n:END:\n#+title: ${title}\n#+filetags: :literature:\n\n* Summary\n\n* Key Concepts\n\n* Connections\n\n")
              :unnarrowed t)
             ("c" "Concept" plain
