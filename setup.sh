@@ -1,207 +1,497 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# setup.sh - Dotfiles installation and configuration manager
+#
+# This script manages the installation of configuration files from this
+# dotfiles repository to their appropriate locations in the home directory.
+# It follows XDG Base Directory specifications and supports machine-specific
+# configurations.
 
-# Function to display usage information
-usage() {
-    echo "Usage: $0 [--dry-run] [--force] [--machine <hostname>] [--guix-only]"
-    echo "  --dry-run      Simulate the script without making any changes."
-    echo "  --force        Remove existing files before creating symlinks."
-    echo "  --machine      Specify a machine name to use its configuration."
-    echo "  --guix-only    Only set up Guix-related symlinks."
-    exit 1
-}
+set -euo pipefail
 
-# Parse command-line arguments
+# Script metadata
+readonly SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+readonly DOTFILES_DIR="$SCRIPT_DIR"
+
+# Color codes for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly BOLD='\033[1m'
+readonly RESET='\033[0m'
+
+# Default configuration
 DRY_RUN=false
 FORCE=false
+VERBOSE=false
 MACHINE=""
 GUIX_ONLY=false
+SKIP_TEMPLATES=false
+SKIP_HOOKS=false
 
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --dry-run) DRY_RUN=true; shift ;;
-        --force) FORCE=true; shift ;;
-        --machine) MACHINE="$2"; shift 2 ;;
-        --guix-only) GUIX_ONLY=true; shift ;;
-        *) usage ;;
+# -----------------------------------------------------------------------------
+# Utility functions
+# -----------------------------------------------------------------------------
+
+log() {
+    local level="$1"
+    shift
+    local message="$*"
+    local color=""
+
+    case "$level" in
+        ERROR)   color="$RED" ;;
+        SUCCESS) color="$GREEN" ;;
+        WARNING) color="$YELLOW" ;;
+        INFO)    color="$BLUE" ;;
+        *)       color="$RESET" ;;
     esac
-done
 
-# Handle conflicting flags
-if [ "$DRY_RUN" = true ] && [ "$FORCE" = true ]; then
-    echo "Error: --dry-run and --force cannot be used together."
-    exit 1
-fi
-
-# Determine the hostname
-if [ -z "$MACHINE" ]; then
-    HOSTNAME=$(hostname)
-else
-    HOSTNAME="$MACHINE"
-fi
-
-# Define the base directory for dotfiles
-DOTFILES_DIR=~/projects/dotfiles
-
-# Define source and target pairs
-declare -A links=()
-
-# Only add non-Guix links if not in guix-only mode
-if [ "$GUIX_ONLY" = false ]; then
-    links=(
-        ["$DOTFILES_DIR/emacs/init.el"]="~/.config/emacs/init.el"
-        ["$DOTFILES_DIR/emacs/early-init.el"]="~/.config/emacs/early-init.el"
-        ["$DOTFILES_DIR/emacs/lisp"]="~/.config/emacs/lisp"
-        ["$DOTFILES_DIR/emacs/setup"]="~/.config/emacs/setup"
-    )
-fi
-
-# Add hostname-dependent Guix symlinks
-GUIX_MACHINE_DIR="$DOTFILES_DIR/guix/machines"
-if [ -d "$GUIX_MACHINE_DIR" ]; then
-    links["$DOTFILES_DIR/guix/channels.scm"]="~/.config/guix/channels.scm"
-    links["$GUIX_MACHINE_DIR/$HOSTNAME.scm"]="~/.config/guix/config.scm"
-else
-    echo "Warning: No configuration found for hostname '$HOSTNAME'. Skipping Guix links."
-fi
-
-# Function to update snippets
-update_snippets() {
-    local local_base_dir="$HOME/.config/emacs/snippets"
-    local temp_dir="/tmp/snippets"
-
-    # Define repositories and their respective directories to sync
-    local repos=(
-        "https://github.com/b-vitamins/latex-snippets.git master org-mode"
-    )
-
-    # Prepare the temporary directory
-    mkdir -p "$temp_dir"
-
-    # Process each repository
-    for repo in "${repos[@]}"; do
-        IFS=' ' read -r repo_url branch modes <<< "$repo"
-
-        # Clone or pull the repository into the temp directory
-        local repo_name=$(basename "$repo_url" .git)
-        local repo_path="$temp_dir/$repo_name"
-
-        if [ ! -d "$repo_path" ]; then
-            echo "Cloning repository '$repo_url'..."
-            if [ "$DRY_RUN" = false ]; then
-                git clone --branch "$branch" "$repo_url" "$repo_path"
-            else
-                echo " (would clone: $repo_url)"
-            fi
-        else
-            echo "Updating repository '$repo_name'..."
-            if [ "$DRY_RUN" = false ]; then
-                (cd "$repo_path" && git pull origin "$branch")
-            else
-                echo " (would update: $repo_name)"
-            fi
-        fi
-
-        # Copy each specified mode directory
-        for mode in ${modes}; do
-            local source_path="$repo_path/$mode"
-            local dest_path="$local_base_dir/$mode"
-            mkdir -p "$dest_path"
-            
-            echo "Copying snippets from '$source_path' to '$dest_path'..."
-            if [ "$DRY_RUN" = false ]; then
-                find "$source_path" -type f | while read -r file; do
-                    local dest_file="${dest_path}/${file#$source_path/}"
-                    cp -a "$file" "$dest_file"
-                done
-            else
-                find "$source_path" -type f | while read -r file; do
-                    local dest_file="${dest_path}/${file#$source_path/}"
-                    echo " (would copy: $file -> $dest_file)"
-                done
-            fi
-        done
-    done
-
-    # Cleanup the temporary directory
-    if [ "$DRY_RUN" = false ]; then
-        rm -rf "$temp_dir"
-    else
-        echo " (would remove temporary directory: $temp_dir)"
-    fi
-
-    echo "All specified snippet modes have been updated."
+    printf "%b%b[%s]%b %s\n" "$color" "$BOLD" "$level" "$RESET" "$message" >&2
 }
 
-# Run the update snippets function only if not in dry run and not in guix-only mode
-if [ "$DRY_RUN" = false ] && [ "$GUIX_ONLY" = false ]; then
-    echo "Configuring the repository..."
-    echo "Updating snippets..."
-    update_snippets
-else
-    echo "Configuring the repository (dry run)..."
-    echo " (snippets would be updated)"
-fi
+die() {
+    log ERROR "$@"
+    exit 1
+}
 
-# Create symlinks
-for src in "${!links[@]}"; do
-    target=${links[$src]}
-    
-    # Expand ~ to the home directory
-    target_expanded=$(eval echo "$target")
-
-    # Check if source file/directory exists
-    if [ ! -e "$src" ]; then
-        echo "Error: Source '$src' does not exist. Skipping."
-        continue
+debug() {
+    if [[ "$VERBOSE" == true ]]; then
+        log INFO "$@"
     fi
-    
-    # Create target directory if it doesn't exist
-    target_dir="$(dirname "$target_expanded")"
-    if [ ! -d "$target_dir" ]; then
-        echo "Warning: Target directory '$target_dir' does not exist. Creating it."
-        if [ "$DRY_RUN" = false ]; then
-            mkdir -p "$target_dir" || { echo "Error: Failed to create directory '$target_dir'. Exiting."; exit 1; }
-        else
-            echo " (would create directory: $target_dir)"
+}
+
+confirm() {
+    local prompt="$1"
+    local response
+
+    if [[ "$FORCE" == true ]]; then
+        return 0
+    fi
+
+    printf "%b%b[?]%b %s [y/N] " "$YELLOW" "$BOLD" "$RESET" "$prompt"
+    read -r response
+    [[ "$response" =~ ^[Yy]$ ]]
+}
+
+# -----------------------------------------------------------------------------
+# Usage and help
+# -----------------------------------------------------------------------------
+
+usage() {
+    cat << EOF
+${BOLD}NAME${RESET}
+    $SCRIPT_NAME - Dotfiles installation and configuration manager
+
+${BOLD}SYNOPSIS${RESET}
+    $SCRIPT_NAME [OPTIONS]
+
+${BOLD}DESCRIPTION${RESET}
+    Installs configuration files from this dotfiles repository to their
+    appropriate locations. Supports dry-run mode, machine-specific configs,
+    and selective installation.
+
+${BOLD}OPTIONS${RESET}
+    -d, --dry-run
+        Show what would be done without making changes
+
+    -f, --force
+        Overwrite existing files without prompting
+
+    -v, --verbose
+        Enable verbose output
+
+    -m, --machine HOSTNAME
+        Use configuration for specified machine (default: current hostname)
+
+    -g, --guix-only
+        Only install Guix-related configurations
+
+    -s, --skip-templates
+        Skip Emacs template regeneration
+
+    -k, --skip-hooks
+        Skip Git hooks installation
+
+    -h, --help
+        Display this help message
+
+${BOLD}EXAMPLES${RESET}
+    # Preview changes without applying them
+    $SCRIPT_NAME --dry-run
+
+    # Force installation, overwriting existing files
+    $SCRIPT_NAME --force
+
+    # Install only Guix configurations for a specific machine
+    $SCRIPT_NAME --guix-only --machine mileva
+
+${BOLD}SUPPORTED CONFIGURATIONS${RESET}
+    Managed by this script:
+    - Emacs (init files, lisp modules, templates)
+    - Guix System (channels.scm only)
+    - qBittorrent configuration (if present)
+    - Git hooks installation
+
+    Managed by Guix home configuration:
+    - Shell (zsh configuration)
+    - Git (config, ignore patterns)
+    - Terminal (alacritty)
+    - Media (mpv with shaders)
+    - Development tools (grobid via containers)
+
+EOF
+}
+
+# -----------------------------------------------------------------------------
+# Argument parsing
+# -----------------------------------------------------------------------------
+
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -d|--dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            -f|--force)
+                FORCE=true
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -m|--machine)
+                MACHINE="$2"
+                shift 2
+                ;;
+            -g|--guix-only)
+                GUIX_ONLY=true
+                shift
+                ;;
+            -s|--skip-templates)
+                SKIP_TEMPLATES=true
+                shift
+                ;;
+            -k|--skip-hooks)
+                SKIP_HOOKS=true
+                shift
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                die "Unknown option: $1\nRun '$SCRIPT_NAME --help' for usage"
+                ;;
+        esac
+    done
+}
+
+# -----------------------------------------------------------------------------
+# Configuration detection
+# -----------------------------------------------------------------------------
+
+detect_environment() {
+    # Determine hostname
+    if [[ -z "$MACHINE" ]]; then
+        MACHINE="$(hostname)"
+        debug "Detected hostname: $MACHINE"
+    else
+        log INFO "Using specified machine: $MACHINE"
+    fi
+
+    # Check if we're in a Git repository
+    if [[ -d "$DOTFILES_DIR/.git" ]]; then
+        debug "Git repository detected"
+        readonly IS_GIT_REPO=true
+    else
+        debug "Not a Git repository"
+        readonly IS_GIT_REPO=false
+    fi
+
+    # Check for Emacs
+    if command -v emacs >/dev/null 2>&1; then
+        debug "Emacs found: $(command -v emacs)"
+        readonly HAS_EMACS=true
+    else
+        log WARNING "Emacs not found - template generation will be skipped"
+        readonly HAS_EMACS=false
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Link definitions
+# -----------------------------------------------------------------------------
+
+declare -A LINKS
+
+define_links() {
+    # Only add non-Guix links if not in guix-only mode
+    if [[ "$GUIX_ONLY" == false ]]; then
+        # Emacs configuration - ONLY symlink these as they're not in Guix config
+        LINKS["$DOTFILES_DIR/emacs/init.el"]="$HOME/.config/emacs/init.el"
+        LINKS["$DOTFILES_DIR/emacs/early-init.el"]="$HOME/.config/emacs/early-init.el"
+        LINKS["$DOTFILES_DIR/emacs/lisp"]="$HOME/.config/emacs/lisp"
+        LINKS["$DOTFILES_DIR/emacs/setup"]="$HOME/.config/emacs/setup"
+        LINKS["$DOTFILES_DIR/emacs/templates"]="$HOME/.config/emacs/templates"
+
+        # Note: The following are handled by Guix home configuration:
+        # - Shell (zsh/zshrc, zsh/zshenv)
+        # - Git (git/gitconfig, git/gitignore)
+        # - Terminal (alacritty/alacritty.toml)
+        # - Media (mpv/mpv.conf, mpv/input.conf, mpv/shaders)
+        # - Development tools (grobid via oci-container)
+        # DO NOT create symlinks for these!
+
+        # qBittorrent is not managed by Guix, so we handle it here
+        if [[ -d "$DOTFILES_DIR/qBittorrent" ]]; then
+            LINKS["$DOTFILES_DIR/qBittorrent"]="$HOME/.config/qBittorrent"
         fi
     fi
-    
-    # Check if the target already exists
-    if [ -e "$target_expanded" ]; then
-        echo "Warning: Target '$target_expanded' already exists."
-        if [ "$FORCE" = true ]; then
-            echo "Removing existing target before creating symlink."
-            if [ "$DRY_RUN" = false ]; then
-                rm -rf "$target_expanded"
-            else
-                echo " (would remove: $target_expanded)"
+
+    # Guix configuration (always included unless machine not found)
+    if [[ -d "$DOTFILES_DIR/guix" ]]; then
+        if [[ -f "$DOTFILES_DIR/guix/machines/$MACHINE.scm" ]]; then
+            LINKS["$DOTFILES_DIR/guix/channels.scm"]="$HOME/.config/guix/channels.scm"
+            LINKS["$DOTFILES_DIR/guix/machines/$MACHINE.scm"]="$HOME/.config/guix/config.scm"
+        else
+            log WARNING "No Guix configuration found for machine: $MACHINE"
+            log INFO "Available machines:"
+            for machine in "$DOTFILES_DIR"/guix/machines/*.scm; do
+                [[ -f "$machine" ]] && echo "  - $(basename "$machine" .scm)"
+            done
+        fi
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Template generation
+# -----------------------------------------------------------------------------
+
+regenerate_templates() {
+    local templates_org="$DOTFILES_DIR/emacs/templates.org"
+
+    if [[ "$SKIP_TEMPLATES" == true ]]; then
+        debug "Skipping template regeneration (--skip-templates)"
+        return 0
+    fi
+
+    if [[ ! -f "$templates_org" ]]; then
+        log WARNING "templates.org not found - skipping template generation"
+        return 0
+    fi
+
+    if [[ "$HAS_EMACS" != true ]]; then
+        log WARNING "Emacs not available - skipping template generation"
+        return 0
+    fi
+
+    log INFO "Regenerating Emacs templates from templates.org..."
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "  Would regenerate templates from: $templates_org"
+    else
+        # Suppress profile warnings but show other output
+        emacs -Q --batch \
+            --eval "(require 'org)" \
+            --eval "(org-babel-tangle-file \"$templates_org\")" \
+            2>&1 | grep -v "^/etc/profile" || true
+
+        if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
+            log SUCCESS "Templates regenerated successfully"
+        else
+            log WARNING "Template regeneration completed with warnings"
+        fi
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Symlink creation
+# -----------------------------------------------------------------------------
+
+create_symlink() {
+    local source="$1"
+    local target="$2"
+    local target_dir
+
+    # Check if source exists
+    if [[ ! -e "$source" ]]; then
+        log ERROR "Source does not exist: $source"
+        return 1
+    fi
+
+    # Create parent directory if needed
+    target_dir="$(dirname "$target")"
+    if [[ ! -d "$target_dir" ]]; then
+        debug "Creating directory: $target_dir"
+        if [[ "$DRY_RUN" == false ]]; then
+            mkdir -p "$target_dir" || {
+                log ERROR "Failed to create directory: $target_dir"
+                return 1
+            }
+        fi
+    fi
+
+    # Handle existing target
+    if [[ -e "$target" || -L "$target" ]]; then
+        if [[ "$(readlink -f "$target")" == "$(readlink -f "$source")" ]]; then
+            debug "Link already correct: $target"
+            return 0
+        fi
+
+        if [[ "$FORCE" == true ]]; then
+            log WARNING "Removing existing target: $target"
+            if [[ "$DRY_RUN" == false ]]; then
+                rm -rf "$target"
             fi
         else
-            if [ "$DRY_RUN" = false ]; then
-                echo "Skipping symlink creation."
-                continue
+            if confirm "Overwrite existing file/link: $target?"; then
+                if [[ "$DRY_RUN" == false ]]; then
+                    rm -rf "$target"
+                fi
             else
-                echo " (would be skipped in dry run)"
+                log INFO "Skipping: $target"
+                return 0
             fi
         fi
     fi
-    
-    # Create the symlink
-    if [ "$DRY_RUN" = false ]; then
-        ln -sf "$src" "$target_expanded" && echo "Created symlink: $src -> $target_expanded" || { echo "Error: Failed to create symlink."; exit 1; }
-    else
-        echo " (would create symlink: $src -> $target_expanded)"
-    fi
-done
 
-# Install git hooks if in the repository and not in guix-only mode
-if [ "$GUIX_ONLY" = false ] && [ -d "$DOTFILES_DIR/.git" ]; then
-    echo "Installing git hooks..."
-    if [ "$DRY_RUN" = false ]; then
-        "$DOTFILES_DIR/git/hooks/install.sh"
+    # Create symlink
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "  Would create: $source -> $target"
     else
-        echo " (would install git hooks)"
+        ln -sf "$source" "$target" && {
+            log SUCCESS "Created: $source -> $target"
+        } || {
+            log ERROR "Failed to create symlink: $target"
+            return 1
+        }
     fi
-fi
+}
 
-echo "Symlink setup complete."
+# -----------------------------------------------------------------------------
+# Git hooks installation
+# -----------------------------------------------------------------------------
+
+install_git_hooks() {
+    if [[ "$SKIP_HOOKS" == true ]]; then
+        debug "Skipping Git hooks installation (--skip-hooks)"
+        return 0
+    fi
+
+    if [[ "$IS_GIT_REPO" != true ]]; then
+        debug "Not a Git repository - skipping hooks"
+        return 0
+    fi
+
+    local hooks_script="$DOTFILES_DIR/git/hooks/install.sh"
+    if [[ ! -f "$hooks_script" ]]; then
+        log WARNING "Git hooks install script not found"
+        return 0
+    fi
+
+    log INFO "Installing Git hooks..."
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "  Would run: $hooks_script"
+    else
+        if "$hooks_script"; then
+            log SUCCESS "Git hooks installed successfully"
+        else
+            log WARNING "Git hooks installation failed"
+        fi
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Main execution
+# -----------------------------------------------------------------------------
+
+main() {
+    log INFO "Dotfiles Setup Script"
+    echo "====================="
+
+    # Parse command line arguments
+    parse_arguments "$@"
+
+    # Validate conflicting options
+    if [[ "$DRY_RUN" == true && "$FORCE" == true ]]; then
+        die "Cannot use --dry-run and --force together"
+    fi
+
+    # Detect environment
+    detect_environment
+
+    # Define configuration links
+    define_links
+
+    # Show what we're about to do
+    if [[ "$DRY_RUN" == true ]]; then
+        log INFO "Running in DRY-RUN mode - no changes will be made"
+    fi
+
+    if [[ "$GUIX_ONLY" == true ]]; then
+        log INFO "Installing Guix configurations only"
+    else
+        log INFO "Installing all configurations"
+    fi
+
+    echo
+
+    # Regenerate templates if applicable
+    if [[ "$GUIX_ONLY" == false ]]; then
+        regenerate_templates
+        echo
+    fi
+
+    # Create symlinks
+    log INFO "Creating configuration symlinks..."
+    local failed=0
+    local created=0
+    local skipped=0
+
+    for source in "${!LINKS[@]}"; do
+        if create_symlink "$source" "${LINKS[$source]}"; then
+            created=$((created + 1))
+        else
+            failed=$((failed + 1))
+        fi
+    done
+
+    echo
+
+    # Install Git hooks if applicable
+    if [[ "$GUIX_ONLY" == false ]]; then
+        install_git_hooks
+        echo
+    fi
+
+    # Summary
+    log INFO "Setup Summary"
+    echo "============="
+    echo "  Created: $created symlinks"
+    [[ $failed -gt 0 ]] && echo "  Failed:  $failed symlinks"
+    [[ "$DRY_RUN" == true ]] && echo "  (DRY RUN - no actual changes made)"
+    echo
+
+    if [[ $failed -eq 0 ]]; then
+        log SUCCESS "Setup completed successfully!"
+
+        # Post-setup advice
+        if [[ "$GUIX_ONLY" == false ]]; then
+            echo
+            log INFO "Next steps:"
+            echo "  1. Restart Emacs to load new configuration"
+            echo "  2. Source ~/.zshrc or start a new shell"
+            echo "  3. Run 'guix pull' to update channels"
+        fi
+    else
+        die "Setup completed with errors"
+    fi
+}
+
+# Run main function
+main "$@"
