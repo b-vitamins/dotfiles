@@ -1,0 +1,224 @@
+#+TITLE: Tempel template scaffolding
+#+PROPERTY: header-args:emacs-lisp :exports none
+
+* Inline math formulas and displayed equations
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle templates/inline-math-formulas-and-displayed-equations.eld
+:END:
+** The fundamentals
+#+BEGIN_SRC emacs-lisp
+;;; The fundamentals (placeholder)
+#+END_SRC
+
+** Automatic numbering and cross-referencing
+#+BEGIN_SRC emacs-lisp
+;;; Automatic numbering and cross-referencing (placeholder)
+#+END_SRC
+
+* Math symbols and math fonts
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle templates/math-symbols-and-math-fonts.eld
+:END:
+** Classes of math symbols
+#+BEGIN_SRC emacs-lisp
+;;; Classes of math symbols (placeholder)
+#+END_SRC
+
+** Some symbols intentionally omitted here
+#+BEGIN_SRC emacs-lisp
+;;; Some symbols intentionally omitted here (placeholder)
+#+END_SRC
+
+** Alphabets and digits
+#+BEGIN_SRC emacs-lisp
+;;; Alphabets and digits (placeholder)
+#+END_SRC
+
+** Miscellaneous simple symbols
+#+BEGIN_SRC emacs-lisp
+;;; Miscellaneous simple symbols (placeholder)
+#+END_SRC
+
+** Binary operator symbols
+#+BEGIN_SRC emacs-lisp
+;;; Binary operator symbols (placeholder)
+#+END_SRC
+
+** Relation symbols: \( <=>\succ\sim \) and variants
+#+BEGIN_SRC emacs-lisp
+;;; Relation symbols: <=>\succ\sim (placeholder)
+#+END_SRC
+
+** Relation symbols: arrows
+#+BEGIN_SRC emacs-lisp
+;;; Relation symbols: arrows (placeholder)
+#+END_SRC
+
+** Relation symbols: miscellaneous
+#+BEGIN_SRC emacs-lisp
+;;; Relation symbols: miscellaneous (placeholder)
+#+END_SRC
+
+** Cumulative (variable-size) operators
+#+BEGIN_SRC emacs-lisp
+;;; Cumulative (variable-size) operators (placeholder)
+#+END_SRC
+
+** Punctuation
+#+BEGIN_SRC emacs-lisp
+;;; Punctuation (placeholder)
+#+END_SRC
+
+** Pairing delimiters (extensible)
+#+BEGIN_SRC emacs-lisp
+;;; Pairing delimiters (placeholder)
+#+END_SRC
+
+** Nonpairing extensible symbols
+#+BEGIN_SRC emacs-lisp
+;;; Nonpairing extensible symbols (placeholder)
+#+END_SRC
+
+** Extensible vertical arrows
+#+BEGIN_SRC emacs-lisp
+;;; Extensible vertical arrows (placeholder)
+#+END_SRC
+
+** Math accents
+#+BEGIN_SRC emacs-lisp
+;;; Math accents (placeholder)
+#+END_SRC
+
+** Named operators
+#+BEGIN_SRC emacs-lisp
+;;; Named operators (placeholder)
+#+END_SRC
+
+* Notations
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle templates/notations.eld
+:END:
+** Top and bottom embellishments
+#+BEGIN_SRC emacs-lisp
+;;; Top and bottom embellishments (placeholder)
+#+END_SRC
+
+** Extensible arrows
+#+BEGIN_SRC emacs-lisp
+;;; Extensible arrows (placeholder)
+#+END_SRC
+
+** Affixing symbols to other symbols
+#+BEGIN_SRC emacs-lisp
+;;; Affixing symbols to other symbols (placeholder)
+#+END_SRC
+
+** Matrices
+#+BEGIN_SRC emacs-lisp
+;;; Matrices (placeholder)
+#+END_SRC
+
+** Math spacing commands
+#+BEGIN_SRC emacs-lisp
+;;; Math spacing commands (placeholder)
+#+END_SRC
+
+** Dots
+#+BEGIN_SRC emacs-lisp
+;;; Dots (placeholder)
+#+END_SRC
+
+** Nonbreaking dashes
+#+BEGIN_SRC emacs-lisp
+;;; Nonbreaking dashes (placeholder)
+#+END_SRC
+
+** Roots
+#+BEGIN_SRC emacs-lisp
+;;; Roots (placeholder)
+#+END_SRC
+
+** Boxed formulas
+#+BEGIN_SRC emacs-lisp
+;;; Boxed formulas (placeholder)
+#+END_SRC
+
+* Fractions and related constructions
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle templates/fractions-and-related-constructions.eld
+:END:
+** The \( \frac, \dfrac, and \tfrac \) commands
+#+BEGIN_SRC emacs-lisp
+;;; The \frac, \dfrac, and \tfrac commands (placeholder)
+#+END_SRC
+
+** The \( \binom, \dbinom, and \tbinom \) commands
+#+BEGIN_SRC emacs-lisp
+;;; The \binom, \dbinom, and \tbinom commands (placeholder)
+#+END_SRC
+
+** The \( \genfrac \) command
+#+BEGIN_SRC emacs-lisp
+;;; The \genfrac command (placeholder)
+#+END_SRC
+
+** Continued fractions
+#+BEGIN_SRC emacs-lisp
+;;; Continued fractions (placeholder)
+#+END_SRC
+
+* Delimiters
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle templates/delimiters.eld
+:END:
+** Delimiter sizes
+#+BEGIN_SRC emacs-lisp
+;;; Delimiter sizes (placeholder)
+#+END_SRC
+
+** Vertical bar notations
+#+BEGIN_SRC emacs-lisp
+;;; Vertical bar notations (placeholder)
+#+END_SRC
+
+* The \text command
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle templates/the-text-command.eld
+:END:
+** \( \bmod \) and its relatives
+#+BEGIN_SRC emacs-lisp
+;;; \bmod and its relatives (placeholder)
+#+END_SRC
+
+* Integrals and sums
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle templates/integrals-and-sums.eld
+:END:
+** Altering the placement of limits
+#+BEGIN_SRC emacs-lisp
+;;; Altering the placement of limits (placeholder)
+#+END_SRC
+
+** Multiple integral signs
+#+BEGIN_SRC emacs-lisp
+;;; Multiple integral signs (placeholder)
+#+END_SRC
+
+** Multiline subscripts and superscripts
+#+BEGIN_SRC emacs-lisp
+;;; Multiline subscripts and superscripts (placeholder)
+#+END_SRC
+
+** The \( \sideset \) command
+#+BEGIN_SRC emacs-lisp
+;;; The \sideset command (placeholder)
+#+END_SRC
+
+* Changing the size of elements in a formula
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle templates/changing-the-size-of-elements-in-a-formula.eld
+:END:
+** Changing the size of elements in a formula
+#+BEGIN_SRC emacs-lisp
+;;; Changing the size of elements in a formula (placeholder)
+#+END_SRC
