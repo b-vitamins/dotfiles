@@ -10,9 +10,9 @@
 org-mode
 
 ;; Basic inline and display math
-(m "$" p "$")                                          ; inline math $...$
+(im "$" p "$")                                          ; inline math $...$
 (M "\\(" p "\\)")                                      ; inline math \(...\)
-(d "\\[" n> r> n> "\\]")                               ; display math \[...\]
+(dm "\\[" n> r> n> "\\]")                               ; display math \[...\]
 (eq "\\begin{equation}" n> r> n> "\\end{equation}")     ; numbered equation
 (eq* "\\begin{equation*}" n> r> n> "\\end{equation*}")  ; unnumbered equation
 
@@ -30,15 +30,15 @@ org-mode
 (fl* "\\begin{flalign*}" n> r> n> "\\end{flalign*}")   ; flalign*
 
 ;; Subordinate environments (for use within other math)
-(gad "\\begin{gathered}" (p "[t/c/b]? " pos) n> r> n> "\\end{gathered}")    ; gathered
-(ald "\\begin{aligned}" (p "[t/c/b]? " pos) n> r> n> "\\end{aligned}") ; aligned
-(alad "\\begin{alignedat}{" p "}" (p "[t/c/b]? " pos) n> r> n> "\\end{alignedat}") ; alignedat
+(gad "\\begin{gathered}" n> r> n> "\\end{gathered}")    ; gathered
+(ald "\\begin{aligned}" n> r> n> "\\end{aligned}") ; aligned
+(alad "\\begin{alignedat}{" p "}" n> r> n> "\\end{alignedat}") ; alignedat
 
 ;; Array environment (general purpose)
 (ar "\\begin{array}{" p "}" n> r> n> "\\end{array}")    ; array with column spec
 
 ;; Subequations
-(se "\\begin{subequations}" (p "\\label{" label "}") n> r> n> "\\end{subequations}") ; subequations
+(se "\\begin{subequations}" p n> r> n> "\\end{subequations}") ; subequations
 #+END_SRC
 
 ** Automatic numbering and cross-referencing
@@ -46,9 +46,9 @@ org-mode
 org-mode
 
 ;; Labels and references
-(l "\\label{" p "}")                    ; label
-(r "\\eqref{" p "}")                    ; equation reference (with parentheses)
-(rf "\\ref{" p "}")                      ; general reference (no parentheses)
+(lb "\\label{" p "}")                    ; label
+(eqref "\\eqref{" p "}")                    ; equation reference (with parentheses)
+(ref "\\ref{" p "}")                      ; general reference (no parentheses)
 (tg "\\tag{" p "}")                      ; manual tag
 (tg* "\\tag*{" p "}")                    ; tag without parentheses
 
@@ -114,73 +114,73 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Greek letters - lowercase
-(a "\\alpha")                    ; α alpha
-(b "\\beta")                     ; β beta
-(g "\\gamma")                    ; γ gamma
-(d "\\delta")                    ; δ delta
-(e "\\epsilon")                  ; ε epsilon (lunate)
-(ve "\\varepsilon")              ; ε varepsilon (script)
-(z "\\zeta")                     ; ζ zeta
+(alpha "\\alpha")                    ; α alpha
+(beta "\\beta")                     ; β beta
+(gamma "\\gamma")                    ; γ gamma
+(delta "\\delta")                    ; δ delta
+(epsilon "\\epsilon")                  ; ε epsilon (lunate)
+(varepsilon "\\varepsilon")              ; ε varepsilon (script)
+(zeta "\\zeta")                     ; ζ zeta
 (et "\\eta")                     ; η eta
 (th "\\theta")                   ; θ theta
 (vth "\\vartheta")               ; ϑ vartheta
-(i "\\iota")                     ; ι iota
-(k "\\kappa")                    ; κ kappa
+(io "\\iota")                     ; ι iota
+(kappa "\\kappa")                    ; κ kappa
 (vk "\\varkappa")                ; ϰ varkappa
-(l "\\lambda")                   ; λ lambda
+(lambda "\\lambda")                   ; λ lambda
 (mu "\\mu")                      ; μ mu
-(n "\\nu")                       ; ν nu
-(x "\\xi")                       ; ξ xi
-(p "\\pi")                       ; π pi
+(nu "\\nu")                       ; ν nu
+(xi "\\xi")                       ; ξ xi
+(pi "\\pi")                       ; π pi
 (vp "\\varpi")                   ; ϖ varpi
 (rh "\\rho")                     ; ρ rho
 (vrh "\\varrho")                 ; ϱ varrho
-(s "\\sigma")                    ; σ sigma
+(sig "\\sigma")                    ; σ sigma
 (vs "\\varsigma")                ; ς varsigma
-(t "\\tau")                      ; τ tau
-(u "\\upsilon")                  ; υ upsilon
-(ph "\\phi")                     ; φ phi
+(tau "\\tau")                    ; τ tau
+(upsilon "\\upsilon")                  ; υ upsilon
+(phi "\\phi")                     ; φ phi
 (vph "\\varphi")                 ; φ varphi
 (ch "\\chi")                     ; χ chi
 (ps "\\psi")                     ; ψ psi
-(o "\\omega")                    ; ω omega
+(omega "\\omega")                    ; ω omega
 (dg "\\digamma")                 ; ϝ digamma
 
 ;; Greek letters - uppercase
-(G "\\Gamma")                    ; Γ Gamma
-(D "\\Delta")                    ; Δ Delta
+(Gamma "\\Gamma")                    ; Γ Gamma
+(Delta "\\Delta")                    ; Δ Delta
 (Th "\\Theta")                   ; Θ Theta
-(L "\\Lambda")                   ; Λ Lambda
-(X "\\Xi")                       ; Ξ Xi
-(P "\\Pi")                       ; Π Pi
-(S "\\Sigma")                    ; Σ Sigma
-(U "\\Upsilon")                  ; Υ Upsilon
+(Lambda "\\Lambda")                   ; Λ Lambda
+(Xi "\\Xi")                       ; Ξ Xi
+(Pi "\\Pi")                       ; Π Pi
+(Sigma "\\Sigma")                    ; Σ Sigma
+(Upsilon "\\Upsilon")                  ; Υ Upsilon
 (Ph "\\Phi")                     ; Φ Phi
 (Ps "\\Psi")                     ; Ψ Psi
-(O "\\Omega")                    ; Ω Omega
+(Omega "\\Omega")                    ; Ω Omega
 
 ;; Other alphabetic symbols
-(al "\\aleph")                   ; ℵ aleph
+(aleph "\\aleph")                ; ℵ aleph
 (be "\\beth")                    ; ℶ beth
 (gi "\\gimel")                   ; ℷ gimel
-(da "\\daleth")                  ; ℸ daleth
+(daleth "\\daleth")                  ; ℸ daleth
 (el "\\ell")                     ; ℓ ell
 (eth "\\eth")                    ; ð eth
 (hb "\\hbar")                    ; ℏ hbar
-(hs "\\hslash")                  ; ℏ hslash variant
+(hslash "\\hslash")                  ; ℏ hslash variant
 (wp "\\wp")                      ; ℘ wp (Weierstrass p)
 (mho "\\mho")                    ; ℧ mho
 (co "\\complement")              ; ∁ complement
 (cs "\\circledS")                ; Ⓢ circled S
 (fi "\\Finv")                    ; Ⅎ Finv
-(ga "\\Game")                    ; ⅁ Game
+(Game "\\Game")                  ; ⅁ Game
 (bk "\\Bbbk")                    ; 𝕜 Bbbk
 
 ;; Partial derivatives
 (pa "\\partial")                 ; ∂ partial
 
 ;; Special math mode letters
-(im "\\imath")                   ; ı dotless i
+(imath "\\imath")                   ; ı dotless i
 (jm "\\jmath")                   ; ȷ dotless j
 
 ;; Real and Imaginary parts
@@ -192,7 +192,7 @@ latex-mode org-mode
 (mr "\\mathrm{" p "}")           ; roman
 (mi "\\mathit{" p "}")           ; italic
 (mc "\\mathcal{" p "}")          ; calligraphic
-(ms "\\mathscr{" p "}")          ; script
+(mscr "\\mathscr{" p "}")          ; script
 (mf "\\mathfrak{" p "}")         ; fraktur
 (bb "\\mathbb{" p "}")           ; blackboard bold
 (sf "\\mathsf{" p "}")           ; sans serif
@@ -206,8 +206,8 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Basic symbols
-(# "\\#")                        ; # hash
-(& "\\&")                        ; & ampersand
+(hash "\\#")                     ; # hash
+(amp "\\&")                      ; & ampersand
 (an "\\angle")                   ; ∠ angle
 (bp "\\backprime")               ; ‵ backprime
 (pr "\\prime")                   ; ′ prime
@@ -216,7 +216,7 @@ latex-mode org-mode
 (ex "\\exists")                  ; ∃ exists
 (nex "\\nexists")                ; ∄ nexists
 (fo "\\forall")                  ; ∀ forall
-(inf "\\infty")                  ; ∞ infinity
+(infty "\\infty")                  ; ∞ infinity
 (na "\\nabla")                   ; ∇ nabla (del)
 (neg "\\neg")                    ; ¬ neg (logical not)
 (lnot "\\lnot")                  ; ¬ lnot (synonym)
@@ -228,25 +228,25 @@ latex-mode org-mode
 
 ;; Card suits
 (cl "\\clubsuit")                ; ♣ clubsuit
-(di "\\diamondsuit")             ; ♦ diamondsuit
+(dsuit "\\diamondsuit")          ; ♦ diamondsuit
 (he "\\heartsuit")               ; ♥ heartsuit
-(sp "\\spadesuit")               ; ♠ spadesuit
+(ssuit "\\spadesuit")            ; ♠ spadesuit
 
 ;; Musical symbols
-(fl "\\flat")                    ; ♭ flat
+(flat "\\flat")                  ; ♭ flat
 (nat "\\natural")                ; ♮ natural
 (sh "\\sharp")                   ; ♯ sharp
 
 ;; Geometric shapes
 (lo "\\lozenge")                 ; ◊ lozenge
 (dia "\\diamond")                ; ⋄ diamond (smaller)
-(sq "\\square")                  ; □ square
+(square "\\square")                  ; □ square
 (bst "\\bigstar")                ; ★ bigstar
 ;; Black shapes (amssymb)
 (blo "\\blacklozenge")           ; ⧫ blacklozenge
 (bsq "\\blacksquare")            ; ■ blacksquare
 (bt "\\blacktriangle")           ; ▲ blacktriangle
-(btd "\\blacktriangledown")      ; ▼ blacktriangledown
+(bltd "\\blacktriangledown")     ; ▼ blacktriangledown
 
 ;; Angle symbols
 (ma "\\measuredangle")           ; ∡ measuredangle
@@ -262,16 +262,16 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Basic arithmetic
-(* "*")                          ; * times (implicit)
-(+ "+")                          ; + plus (implicit)
-(- "-")                          ; - minus (implicit)
+(times "*")                      ; * times (implicit)
+(plus "+")                       ; + plus (implicit)
+(minus "-")                      ; - minus (implicit)
 (ti "\\times")                   ; × times
 (div "\\div")                    ; ÷ div
 (pm "\\pm")                      ; ± plus-minus
 (mp "\\mp")                      ; ∓ minus-plus
 
 ;; Dots and circles
-(cd "\\cdot")                    ; ⋅ cdot
+(cdot "\\cdot")                    ; ⋅ cdot
 (ci "\\circ")                    ; ∘ circ
 (bu "\\bullet")                  ; • bullet
 (bc "\\bigcirc")                 ; ◯ bigcirc
@@ -287,7 +287,7 @@ latex-mode org-mode
 (vee "\\vee")                    ; ∨ vee (or)
 (lor "\\lor")                    ; ∨ lor (synonym)
 (we "\\wedge")                   ; ∧ wedge (and)
-(lan "\\land")                   ; ∧ land (synonym)
+(land "\\land")                   ; ∧ land (synonym)
 
 ;; Advanced set/lattice operations
 (bw "\\barwedge")                ; ⊼ barwedge
@@ -317,7 +317,7 @@ latex-mode org-mode
 
 ;; Special operators
 (as "\\ast")                     ; ∗ ast
-(st "\\star")                    ; ⋆ star
+(star "\\star")                    ; ⋆ star
 (dag "\\dagger")                 ; † dagger
 (ddag "\\ddagger")               ; ‡ ddagger
 (am "\\amalg")                   ; ⨿ amalg
@@ -329,7 +329,7 @@ latex-mode org-mode
 (cda "\\circleddash")            ; ⊝ circleddash
 (cas "\\circledast")             ; ⊛ circledast
 (cci "\\circledcirc")            ; ⊚ circledcirc
-(in "\\intercal")                ; ⊺ intercal
+(intc "\\intercal")               ; ⊺ intercal
 (dio "\\divideontimes")          ; ⋇ divideontimes
 (ltt "\\leftthreetimes")         ; ⋋ leftthreetimes
 (rtt "\\rightthreetimes")        ; ⋌ rightthreetimes
@@ -348,9 +348,9 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Basic comparisons
-(< "<")                          ; < less than
-(> ">")                          ; > greater than
-(= "=")                          ; = equals
+(lt "<")                         ; < less than
+(gt ">")                         ; > greater than
+(eqsign "=")                     ; = equals
 (le "\\leq")                     ; ≤ leq
 (LEQ "\\le")                     ; ≤ le (synonym)
 (ge "\\geq")                     ; ≥ geq
@@ -363,14 +363,14 @@ latex-mode org-mode
 (NEQ "\\ne")                     ; ≠ ne (synonym)
 
 ;; Equivalence and similarity
-(eq "\\equiv")                   ; ≡ equiv
+(equiv "\\equiv")                ; ≡ equiv
 (si "\\sim")                     ; ∼ sim
 (sieq "\\simeq")                 ; ≃ simeq
 (ap "\\approx")                  ; ≈ approx
 (apeq "\\approxeq")              ; ⊜ approxeq
 (asy "\\asymp")                  ; ≍ asymp
 (cong "\\cong")                 ; ≅ cong
-(do "\\doteq")                   ; ≐ doteq
+(doteq "\\doteq")                   ; ≐ doteq
 (deqd "\\doteqdot")             ; ≑ doteqdot
 (Do "\\Doteq")                   ; ≑ Doteq (synonym)
 
@@ -391,7 +391,7 @@ latex-mode org-mode
 (treq "\\triangleq")             ; ≜ triangleq
 
 ;; Order relations
-(pr "\\prec")                    ; ≺ prec
+(prec "\\prec")                  ; ≺ prec
 (su "\\succ")                    ; ≻ succ
 (preq "\\preceq")                ; ⪯ preceq
 (sueq "\\succeq")                ; ⪰ succeq
@@ -476,10 +476,10 @@ latex-mode org-mode
 
 ;; Long arrows
 (llar "\\longleftarrow")         ; ⟵ longleftarrow
-(lrar "\\longrightarrow")        ; ⟶ longrightarrow
+(lra "\\longrightarrow")         ; ⟶ longrightarrow
 (llra "\\longleftrightarrow")    ; ⟷ longleftrightarrow
 (Lla "\\Longleftarrow")          ; ⟸ Longleftarrow
-(Lra "\\Longrightarrow")         ; ⟹ Longrightarrow
+(Lrar "\\Longrightarrow")        ; ⟹ Longrightarrow
 (Llra "\\Longleftrightarrow")    ; ⟺ Longleftrightarrow
 
 ;; Maps to
@@ -496,9 +496,9 @@ latex-mode org-mode
 
 ;; Harpoons
 (lhu "\\leftharpoonup")          ; ↼ leftharpoonup
-(lhd "\\leftharpoondown")        ; ↽ leftharpoondown
+(lhdown "\\leftharpoondown")        ; ↽ leftharpoondown
 (rhu "\\rightharpoonup")         ; ⇀ rightharpoonup
-(rhd "\\rightharpoondown")       ; ⇁ rightharpoondown
+(rhdown "\\rightharpoondown")       ; ⇁ rightharpoondown
 (uhu "\\upharpoonleft")          ; ↿ upharpoonleft
 (uhr "\\upharpoonright")         ; ↾ upharpoonright
 (dhl "\\downharpoonleft")        ; ⇃ downharpoonleft
@@ -636,7 +636,7 @@ latex-mode org-mode
 (bltri "\\blacktriangleleft")    ; ◀ blacktriangleleft
 (brtri "\\blacktriangleright")   ; ▶ blacktriangleright
 (tleq "\\trianglelefteq")        ; ⊴ trianglelefteq
-(treq "\\trianglerighteq")       ; ⊵ trianglerighteq
+(trieq "\\trianglerighteq")       ; ⊵ trianglerighteq
 (nltri "\\ntriangleleft")        ; ⋪ ntriangleleft
 (nrtri "\\ntriangleright")       ; ⋫ ntriangleright
 (ntleq "\\ntrianglelefteq")      ; ⋬ ntrianglelefteq
@@ -699,17 +699,17 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Basic punctuation
-(, ",")                          ; , comma
-(; ";")                          ; ; semicolon
-(: "\\colon")                    ; : colon (proper spacing)
-(. ".")                          ; . period
-(! "!")                          ; ! exclamation
-(? "?")                          ; ? question
+(comma ",")                      ; , comma
+(semicolon ";")                  ; ; semicolon
+(colon "\\colon")                ; : colon (proper spacing)
+(period ".")                     ; . period
+(excl "!")                       ; ! exclamation
+(quest "?")                      ; ? question
 
 ;; Dots
-(cd "\\cdots")                   ; ⋯ cdots (centered dots)
+(cdots "\\cdots")                   ; ⋯ cdots (centered dots)
 (ld "\\ldots")                   ; … ldots (low dots)
-(ddot "\\ddots")                 ; ⋱ ddots (diagonal dots)
+(ddots "\\ddots")                 ; ⋱ ddots (diagonal dots)
 (vdot "\\vdots")                 ; ⋮ vdots (vertical dots)
 
 ;; Semantic dots (amsmath - preferred)
@@ -727,20 +727,20 @@ latex-mode org-mode
 
 ;; Basic delimiters (these auto-scale with \left \right)
 ;; Note: Prefer \lvert/\rvert, \lVert/\rVert for proper spacing
-(( "(")                          ; ( left paren
-() ")")                          ; ) right paren
-([ "[")                          ; [ left bracket
-(] "]")                          ; ] right bracket
-({ "\\{")                        ; { left brace
-(} "\\}")                        ; } right brace
+(lpar "(")                       ; ( left paren
+(rpar ")")                       ; ) right paren
+(lbra "[")                       ; [ left bracket
+(rbra "]")                       ; ] right bracket
+(lbrc "\\{")                     ; { left brace
+(rbrc "\\}")                     ; } right brace
 (lan "\\langle")                 ; ⟨ langle
 (ran "\\rangle")                 ; ⟩ rangle
 (lc "\\lceil")                   ; ⌈ lceil
 (rc "\\rceil")                   ; ⌉ rceil
 (lf "\\lfloor")                  ; ⌊ lfloor
 (rf "\\rfloor")                  ; ⌋ rfloor
-(/ "/")                          ; / slash
-(\ "\\backslash")                ; \ backslash
+(slash "/")                      ; / slash
+(bsl "\\backslash")              ; \ backslash
 
 ;; Vertical bars (use these for proper spacing)
 (lv "\\lvert")                   ; | lvert
@@ -766,7 +766,7 @@ latex-mode org-mode
 
 ;; Auto-sizing delimiters
 (lr "\\left" p " " r " \\right" p) ; \left...\right pair
-(bi "\\big" p)                   ; \big
+(big "\\big" p)                   ; \big
 (Bi "\\Big" p)                   ; \Big
 (bg "\\bigg" p)                  ; \bigg
 (Bg "\\Bigg" p)                  ; \Bigg
@@ -785,34 +785,22 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Vertical bars and arrows
-(| "|")                         ; | vert
-(ve "\\vert")                   ; | vert (explicit)
-(|| "\\|")                      ; ‖ Vert (double bar)
+(vbar "|")                      ; | vert
+(vert "\\vert")                   ; | vert (explicit)
+(Vert "\\|")                    ; ‖ Vert (double bar)
 (Ve "\\Vert")                   ; ‖ Vert (explicit)
 (ava "\\arrowvert")             ; | arrowvert
 (Ava "\\Arrowvert")             ; ‖ Arrowvert
-(brv "\\bracevert")             ; ⎪ bracevert
+(bvert "\\bracevert")             ; ⎪ bracevert
 
-;; Extensible arrows
-(ua "\\uparrow")                ; ↑ uparrow
-(da "\\downarrow")              ; ↓ downarrow
-(uda "\\updownarrow")           ; ↕ updownarrow
-(Ua "\\Uparrow")                ; ⇑ Uparrow
-(Da "\\Downarrow")              ; ⇓ Downarrow
-(Uda "\\Updownarrow")           ; ⇕ Updownarrow
+;; Extensible arrows (defined in arrows section, removed duplicates)
 #+END_SRC
 
 ** Extensible vertical arrows
 #+BEGIN_SRC emacs-lisp
 latex-mode org-mode
 
-;; These are same as in nonpairing but included for completeness
-(uarr "\\uparrow")               ; ↑ uparrow
-(darr "\\downarrow")             ; ↓ downarrow
-(udarr "\\updownarrow")          ; ↕ updownarrow
-(Uarr "\\Uparrow")               ; ⇑ Uparrow
-(Darr "\\Downarrow")             ; ⇓ Downarrow
-(Udarr "\\Updownarrow")          ; ⇕ Updownarrow
+;; These are same as in arrows section, removed duplicates
 #+END_SRC
 
 ** Math accents
@@ -821,16 +809,16 @@ latex-mode org-mode
 
 ;; Standard accents
 (hat "\\hat{" p "}")             ; â hat
-(ch "\\check{" p "}")            ; ǎ check
+(chk "\\check{" p "}")            ; ǎ check
 (til "\\tilde{" p "}")           ; ã tilde
 (ac "\\acute{" p "}")            ; á acute
 (gr "\\grave{" p "}")            ; à grave
 (dot "\\dot{" p "}")             ; ȧ dot
-(ddo "\\ddot{" p "}")            ; ä ddot
-(br "\\breve{" p "}")            ; ă breve
+(ddot "\\ddot{" p "}")            ; ä ddot
+(brv "\\breve{" p "}")            ; ă breve
 (bar "\\bar{" p "}")             ; ā bar
 (vec "\\vec{" p "}")             ; a⃗ vec
-(mat "\\mathring{" p "}")        ; å mathring
+(mring "\\mathring{" p "}")        ; å mathring
 
 ;; Wide accents
 (what "\\widehat{" p "}")        ; âbc widehat
@@ -925,21 +913,8 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Over/under embellishments (already defined in math accents)
-;; These are repeated here for completeness of section 4.1
-(what "\\widehat{" p "}")        ; wide hat
-(wtil "\\widetilde{" p "}")      ; wide tilde
-(olin "\\overline{" p "}")        ; overline
-(ulin "\\underline{" p "}")       ; underline
-(obr "\\overbrace{" p "}")        ; overbrace
-(ubr "\\underbrace{" p "}")       ; underbrace
-
-;; Over/under arrows (comprehensive)
-(ola "\\overleftarrow{" p "}")   ; overleftarrow
-(ora "\\overrightarrow{" p "}")  ; overrightarrow
-(olra "\\overleftrightarrow{" p "}") ; overleftrightarrow
-(ula "\\underleftarrow{" p "}")  ; underleftarrow
-(ura "\\underrightarrow{" p "}") ; underrightarrow
-(ulra "\\underleftrightarrow{" p "}") ; underleftrightarrow
+;; See math accents section for: what, wtil, olin, ulin, obr, ubr
+;; See math accents section for: ola, ora, olra, ula, ura, ulra
 
 ;; Labels on embellishments
 (obl "\\overbrace{" p "}^{" p "}") ; overbrace with label
@@ -953,8 +928,8 @@ latex-mode org-mode
 ;; Extensible arrows with super/subscripts
 (xla "\\xleftarrow{" p "}")      ; xleftarrow (superscript only)
 (xra "\\xrightarrow{" p "}")     ; xrightarrow (superscript only)
-(xla[ "\\xleftarrow[" p "]{" p "}") ; xleftarrow with sub and super
-(xra[ "\\xrightarrow[" p "]{" p "}") ; xrightarrow with sub and super
+(xlasub "\\xleftarrow[" p "]{" p "}") ; xleftarrow with sub and super
+(xrasub "\\xrightarrow[" p "]{" p "}") ; xrightarrow with sub and super
 
 ;; Extensible arrows from mathtools package
 (xlra "\\xleftrightarrow{" p "}") ; xleftrightarrow
@@ -966,10 +941,10 @@ latex-mode org-mode
 (xhla "\\xhookleftarrow{" p "}") ; xhookleftarrow
 
 ;; With optional subscripts (mathtools)
-(xlra[ "\\xleftrightarrow[" p "]{" p "}") ; with sub and super
-(xLa[ "\\xLeftarrow[" p "]{" p "}") ; with sub and super
-(xRa[ "\\xRightarrow[" p "]{" p "}") ; with sub and super
-(xLra[ "\\xLeftrightarrow[" p "]{" p "}") ; with sub and super
+(xlrasub "\\xleftrightarrow[" p "]{" p "}") ; with sub and super
+(xLasub "\\xLeftarrow[" p "]{" p "}") ; with sub and super
+(xRasub "\\xRightarrow[" p "]{" p "}") ; with sub and super
+(xLrasub "\\xLeftrightarrow[" p "]{" p "}") ; with sub and super
 #+END_SRC
 
 ** Affixing symbols to other symbols
@@ -979,7 +954,7 @@ latex-mode org-mode
 ;; Stacking symbols
 (os "\\overset{" p "}{" p "}")   ; overset - symbol above
 (us "\\underset{" p "}{" p "}")  ; underset - symbol below
-(st "\\stackrel{" p "}{" p "}")  ; stackrel (older, prefer overset)
+(stk "\\stackrel{" p "}{" p "}")  ; stackrel (older, prefer overset)
 
 ;; Advanced affixing (see sideset in section 8.4)
 (ss "\\sideset{" p "}{" p "}" p) ; sideset for corner symbols
@@ -990,7 +965,7 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Basic matrix environments
-(mat "\\begin{matrix}" n> r> n> "\\end{matrix}")     ; no delimiters
+(matrix "\\begin{matrix}" n> r> n> "\\end{matrix}")     ; no delimiters
 (pmat "\\begin{pmatrix}" n> r> n> "\\end{pmatrix}")  ; ( ) parentheses
 (bmat "\\begin{bmatrix}" n> r> n> "\\end{bmatrix}")  ; [ ] brackets
 (Bmat "\\begin{Bmatrix}" n> r> n> "\\end{Bmatrix}")  ; { } braces
@@ -1008,11 +983,11 @@ latex-mode org-mode
 
 ;; Row operations
 (hdf "\\hdotsfor{" p "}")        ; horizontal dots for n columns
-(\ "\\\\")                       ; new row
-(& " & ")                        ; column separator
+(nr "\\\\")                       ; new row
+(col " & ")                        ; column separator
 
 ;; Cases environment
-(cas "\\begin{cases}" n> r> n> "\\end{cases}")      ; cases
+(cases "\\begin{cases}" n> r> n> "\\end{cases}")      ; cases
 (cas2 "\\begin{cases}" n> p " & \\text{if } " p " \\\\" n> p " & \\text{otherwise}" n> "\\end{cases}") ; 2-case template
 
 ;; Array environment (general purpose)
@@ -1024,32 +999,32 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Positive spacing
-(, "\\,")                        ; thin space (3mu)
-(: "\\:")                        ; medium space (4mu)
-(; "\\;")                        ; thick space (5mu)
-(q "\\quad")                     ; 1em space
+(thins "\\,")                   ; thin space (3mu)
+(meds "\\:")                    ; medium space (4mu)
+(thicksp "\\;")                  ; thick space (5mu)
+(quad "\\quad")                     ; 1em space
 (qq "\\qquad")                   ; 2em space
 
 ;; Negative spacing
-(! "\\!")                        ; negative thin space (-3mu)
+(negthinsp "\\!")                ; negative thin space (-3mu)
 (nts "\\negthinspace")           ; same as \!
 (nms "\\negmedspace")            ; negative medium space
 (nks "\\negthickspace")          ; negative thick space
 
 ;; Named spacing
-(ts "\\thinspace")               ; thin space
-(ms "\\medspace")                ; medium space
+(thinspace "\\thinspace")               ; thin space
+(medspace "\\medspace")                ; medium space
 (ks "\\thickspace")              ; thick space
 
 ;; Custom spacing
-(hs "\\hspace{" p "}")           ; horizontal space
+(hsp "\\hspace{" p "}")           ; horizontal space
 (hs* "\\hspace*{" p "}")         ; non-breakable hspace
 (vs "\\vspace{" p "}")           ; vertical space
 (vs* "\\vspace*{" p "}")         ; non-breakable vspace
 (msp "\\mspace{" p "mu}")        ; math space in mu units
 
 ;; Phantom spacing
-(ph "\\phantom{" p "}")          ; full phantom (width + height)
+(phantom "\\phantom{" p "}")          ; full phantom (width + height)
 (hph "\\hphantom{" p "}")        ; horizontal phantom (width only)
 (vph "\\vphantom{" p "}")        ; vertical phantom (height only)
 
@@ -1062,18 +1037,14 @@ latex-mode org-mode
 #+BEGIN_SRC emacs-lisp
 latex-mode org-mode
 
-;; Basic dots (already in punctuation - repeated for section completeness)
-(ld "\\ldots")                   ; ... low dots
-(cd "\\cdots")                   ; ⋯ centered dots
-(vdo "\\vdots")                  ; ⋮ vertical dots
-(ddo "\\ddots")                  ; ⋱ diagonal dots
+;; Basic dots (already in punctuation - see punctuation section)
 
 ;; Semantic dots (amsmath - preferred)
 (dc "\\dotsc")                   ; dots with commas
 (db "\\dotsb")                   ; dots with binary operators/relations
-(dm "\\dotsm")                   ; dots with multiplication
+(dotsm "\\dotsm")                   ; dots with multiplication
 (di "\\dotsi")                   ; dots with integrals
-(do "\\dotso")                   ; other dots
+(dotso "\\dotso")                   ; other dots
 (dt "\\dots")                    ; auto dots (context sensitive)
 
 ;; Special usage
@@ -1105,7 +1076,7 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Square roots
-(sq "\\sqrt{" p "}")             ; square root
+(sqrt "\\sqrt{" p "}")             ; square root
 (sqn "\\sqrt[" p "]{" p "}")     ; nth root
 
 ;; Common roots
@@ -1148,7 +1119,7 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Basic fractions
-(f "\\frac{" p "}{" p "}")       ; fraction
+(frac "\\frac{" p "}{" p "}")       ; fraction
 (df "\\dfrac{" p "}{" p "}")     ; display fraction (larger)
 (tf "\\tfrac{" p "}{" p "}")     ; text fraction (smaller)
 
@@ -1181,7 +1152,7 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Basic binomial coefficients
-(bi "\\binom{" p "}{" p "}")     ; binomial coefficient
+(binom "\\binom{" p "}{" p "}")     ; binomial coefficient
 (dbi "\\dbinom{" p "}{" p "}")   ; display binomial (larger)
 (tbi "\\tbinom{" p "}{" p "}")   ; text binomial (smaller)
 
@@ -1276,20 +1247,20 @@ latex-mode org-mode
 
 ;; Basic delimiter commands
 (lp "\\left(" p "\\right)")      ; auto-sized parentheses
-(lb "\\left[" p "\\right]")      ; auto-sized brackets
-(lbr "\\left\\{" p "\\right\\}") ; auto-sized braces
-(la "\\left\\langle" p "\\right\\rangle") ; auto-sized angle brackets
-(lv "\\left|" p "\\right|")      ; auto-sized vertical bars
-(lV "\\left\\|" p "\\right\\|")  ; auto-sized double vertical bars
+(lbr "\\left[" p "\\right]")      ; auto-sized brackets
+(lbc "\\left\\{" p "\\right\\}") ; auto-sized braces
+(lang "\\left\\langle" p "\\right\\rangle") ; auto-sized angle brackets
+(lvb "\\left|" p "\\right|")      ; auto-sized vertical bars
+(lVb "\\left\\|" p "\\right\\|")  ; auto-sized double vertical bars
 
 ;; Manual sizing - small to large
-(bg "\\big(" p "\\big)")         ; big parentheses
+(bigp "\\big(" p "\\big)")         ; big parentheses
 (bgg "\\Big(" p "\\Big)")        ; Big parentheses
 (bggg "\\bigg(" p "\\bigg)")     ; bigg parentheses
 (bgggg "\\Bigg(" p "\\Bigg)")    ; Bigg parentheses
 
 ;; Left/right variants for manual sizing
-(bgl "\\bigl(" p "\\bigr)")      ; big left/right
+(biglr "\\bigl(" p "\\bigr)")      ; big left/right
 (bggl "\\Bigl(" p "\\Bigr)")     ; Big left/right
 (bgggl "\\biggl(" p "\\biggr)")  ; bigg left/right
 (bggggl "\\Biggl(" p "\\Biggr)") ; Bigg left/right
@@ -1350,7 +1321,7 @@ latex-mode org-mode
 (set "\\{" p " \\mid " p "\\}")  ; set notation {x | condition}
 (lset "\\left\\{" p " \\,\\middle\\vert\\, " p "\\right\\}") ; auto-sized set
 (cond "P(" p " \\mid " p ")")    ; conditional probability P(A|B)
-(div " \\mid ")                  ; divides relation a|b
+(divides " \\mid ")                  ; divides relation a|b
 (ndiv " \\nmid ")                ; does not divide
 
 ;; Sized vertical bar notations
@@ -1374,7 +1345,7 @@ latex-mode org-mode
 (defnorm "\\providecommand{\\norm}[1]{\\lVert#1\\rVert}") ; define \norm command
 
 ;; Matrix determinant
-(det "\\begin{vmatrix} " r " \\end{vmatrix}") ; determinant with vert bars
+(detm "\\begin{vmatrix} " r " \\end{vmatrix}") ; determinant with vert bars
 (Det "\\begin{Vmatrix} " r " \\end{Vmatrix}") ; matrix norm with double bars
 
 ;; Common patterns
@@ -1393,9 +1364,9 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Text in math mode
-(t "\\text{" p "}")              ; text in math mode
+(txt "\\text{" p "}")              ; text in math mode
 (tb "\\textbf{" p "}")           ; bold text in math
-(ti "\\textit{" p "}")           ; italic text in math
+(tit "\\textit{" p "}")           ; italic text in math
 (tt "\\texttt{" p "}")           ; typewriter text in math
 (trm "\\textrm{" p "}")          ; roman text in math
 (tsf "\\textsf{" p "}")          ; sans-serif text in math
@@ -1427,7 +1398,7 @@ latex-mode org-mode
 (remmod " \\bmod " p " = ")      ; remainder when divided by
 
 ;; GCD and related
-(gcd "\\gcd(" p ", " p ")")      ; greatest common divisor
+(gcdf "\\gcd(" p ", " p ")")      ; greatest common divisor
 (lcm "\\operatorname{lcm}(" p ", " p ")") ; least common multiple
 
 ;; Text subscripts and superscripts
@@ -1451,7 +1422,7 @@ latex-mode org-mode
 (tmm " \\text{ mm}")             ; millimeters
 (tkm " \\text{ km}")             ; kilometers
 (tkg " \\text{ kg}")             ; kilograms
-(ts " \\text{ s}")               ; seconds
+(tsec " \\text{ s}")               ; seconds
 (tms " \\text{ ms}")             ; milliseconds
 (thz " \\text{ Hz}")             ; hertz
 (tkhz " \\text{ kHz}")           ; kilohertz
@@ -1467,18 +1438,18 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Basic integrals and sums
-(int "\\int ")                    ; integral
+(intg "\\int ")                    ; integral
 (intl "\\int_{" p "}^{" p "} ")  ; integral with limits
 (oint "\\oint ")                  ; contour integral
 (ointl "\\oint_{" p "}^{" p "} ") ; contour integral with limits
 
-(sum "\\sum ")                    ; summation
+(sums "\\sum ")                    ; summation
 (suml "\\sum_{" p "}^{" p "} ")  ; summation with limits
-(prod "\\prod ")                  ; product
+(prods "\\prod ")                  ; product
 (prodl "\\prod_{" p "}^{" p "} ") ; product with limits
 
 ;; Limit placement modifiers
-(lim "\\lim_{" p " \\to " p "} ") ; limit
+(limt "\\lim_{" p " \\to " p "} ") ; limit
 (limsup "\\limsup_{" p " \\to " p "} ") ; limit superior
 (liminf "\\liminf_{" p " \\to " p "} ") ; limit inferior
 
@@ -1506,11 +1477,11 @@ latex-mode org-mode
 (prodi "\\prod_{i=1}^{n} ")      ; product from i=1 to n
 
 ;; Operators with subscripts
-(max "\\max_{" p "} ")           ; max with subscript
-(min "\\min_{" p "} ")           ; min with subscript
-(sup "\\sup_{" p "} ")           ; supremum with subscript
-(inf "\\inf_{" p "} ")           ; infimum with subscript
-(arg "\\arg\\max_{" p "} ")      ; argmax
+(maxs "\\max_{" p "} ")           ; max with subscript
+(mins "\\min_{" p "} ")           ; min with subscript
+(sups "\\sup_{" p "} ")           ; supremum with subscript
+(infim "\\inf_{" p "} ")           ; infimum with subscript
+(argmax "\\arg\\max_{" p "} ")      ; argmax
 (argmin "\\arg\\min_{" p "} ")   ; argmin
 #+END_SRC
 
@@ -1592,8 +1563,7 @@ latex-mode org-mode
 (maxsub "\\max_{\\substack{x \\in A \\\\ y \\in B}}") ; max with constraints
 (limsub "\\lim_{\\substack{x \\to 0 \\\\ y \\to 0}}") ; limit with multiple variables
 
-;; Alternative stacking methods
-(atop "\\genfrac{}{}{0pt}{}{" p "}{" p "}") ; stack without line
+;; Alternative stacking methods (see fractions section for atop)
 (above "{" p " \\above 0pt " p "}") ; TeX primitive stacking
 
 ;; Aligned subscripts/superscripts
@@ -1650,9 +1620,9 @@ latex-mode org-mode
 latex-mode org-mode
 
 ;; Math style commands
-(ds "\\displaystyle ")            ; display style (full size)
-(ts "\\textstyle ")               ; text style (inline size)
-(ss "\\scriptstyle ")             ; script style (subscript size)
+(dstyle "\\displaystyle ")            ; display style (full size)
+(textstyle "\\textstyle ")               ; text style (inline size)
+(scriptstyle "\\scriptstyle ")             ; script style (subscript size)
 (sss "\\scriptscriptstyle ")      ; scriptscript style (sub-subscript size)
 
 ;; Common applications
@@ -1683,7 +1653,7 @@ latex-mode org-mode
 ;; Sizing in specific contexts
 (dsub "_{\\displaystyle " p "}")  ; display style subscript
 (dsup "^{\\displaystyle " p "}")  ; display style superscript
-(tsub "_{\\textstyle " p "}")     ; text style subscript
+(tssub "_{\\textstyle " p "}")     ; text style subscript
 (tsup "^{\\textstyle " p "}")     ; text style superscript
 
 ;; Common patterns
@@ -1697,7 +1667,7 @@ latex-mode org-mode
 (inlineint "$\\displaystyle\\int_{" p "}^{" p "}$ ") ; inline display integral
 
 ;; Resizing delimiters with content
-(biglr "\\left(" p "\\right)")    ; auto-sized parentheses
+(lr "\\left(" p "\\right)")    ; auto-sized parentheses
 (Biglr "\\bigl(" p "\\bigr)")     ; manually sized parentheses
 (bigglr "\\biggl(" p "\\biggr)")  ; larger parentheses
 
