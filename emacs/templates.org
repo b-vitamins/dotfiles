@@ -9,19 +9,70 @@
 #+BEGIN_SRC emacs-lisp
 org-mode
 
-(m "$" p "$")
-(M "\\(" p "\\)")
-(d "\\[" p "\\]")
-(e "\\begin{equation}" r> "\\end{equation}")
-(D "\\begin{equation*}" r> "\\end{equation*}")
+;; Basic inline and display math
+(m "$" p "$")                                          ; inline math $...$
+(M "\\(" p "\\)")                                      ; inline math \(...\)
+(d "\\[" n> r> n> "\\]")                               ; display math \[...\]
+(eq "\\begin{equation}" n> r> n> "\\end{equation}")     ; numbered equation
+(eq* "\\begin{equation*}" n> r> n> "\\end{equation*}")  ; unnumbered equation
+
+;; Multiline environments - primary (can be numbered)
+(sp "\\begin{split}" n> r> n> "\\end{split}")          ; split (use inside equation)
+(ml "\\begin{multline}" n> r> n> "\\end{multline}")     ; multline
+(ml* "\\begin{multline*}" n> r> n> "\\end{multline*}")  ; multline*
+(ga "\\begin{gather}" n> r> n> "\\end{gather}")        ; gather
+(ga* "\\begin{gather*}" n> r> n> "\\end{gather*}")     ; gather*
+(al "\\begin{align}" n> r> n> "\\end{align}")          ; align
+(al* "\\begin{align*}" n> r> n> "\\end{align*}")       ; align*
+(ala "\\begin{alignat}{" p "}" n> r> n> "\\end{alignat}")    ; alignat (requires number)
+(ala* "\\begin{alignat*}{" p "}" n> r> n> "\\end{alignat*}") ; alignat*
+(fl "\\begin{flalign}" n> r> n> "\\end{flalign}")      ; flalign (full length)
+(fl* "\\begin{flalign*}" n> r> n> "\\end{flalign*}")   ; flalign*
+
+;; Subordinate environments (for use within other math)
+(gad "\\begin{gathered}" (p "[t/c/b]? " pos) n> r> n> "\\end{gathered}")    ; gathered
+(ald "\\begin{aligned}" (p "[t/c/b]? " pos) n> r> n> "\\end{aligned}") ; aligned
+(alad "\\begin{alignedat}{" p "}" (p "[t/c/b]? " pos) n> r> n> "\\end{alignedat}") ; alignedat
+
+;; Array environment (general purpose)
+(ar "\\begin{array}{" p "}" n> r> n> "\\end{array}")    ; array with column spec
+
+;; Subequations
+(se "\\begin{subequations}" (p "\\label{" label "}") n> r> n> "\\end{subequations}") ; subequations
 #+END_SRC
 
 ** Automatic numbering and cross-referencing
 #+BEGIN_SRC emacs-lisp
 org-mode
 
-(l "\\label{" p "}")
-(r "\\eqref{" p "}")
+;; Labels and references
+(l "\\label{" p "}")                    ; label
+(r "\\eqref{" p "}")                    ; equation reference (with parentheses)
+(rf "\\ref{" p "}")                      ; general reference (no parentheses)
+(tg "\\tag{" p "}")                      ; manual tag
+(tg* "\\tag*{" p "}")                    ; tag without parentheses
+
+;; Common label patterns
+(leq "\\label{eq:" p "}")                ; equation label
+(lfig "\\label{fig:" p "}") ; figure label
+(ltab "\\label{tab:" p "}")              ; table label
+(lsec "\\label{sec:" p "}")              ; section label
+(lthm "\\label{thm:" p "}")              ; theorem label
+(llem "\\label{lem:" p "}")              ; lemma label
+(lprop "\\label{prop:" p "}")            ; proposition label
+(lcor "\\label{cor:" p "}")              ; corollary label
+(ldef "\\label{def:" p "}")              ; definition label
+
+;; Cross-referencing with prefixes
+(req "\\eqref{eq:" p "}")                ; equation reference
+(rfig "\\ref{fig:" p "}")                ; figure reference
+(rtab "\\ref{tab:" p "}")                ; table reference
+(rsec "\\ref{sec:" p "}")                ; section reference
+
+;; Numbering control
+(nw "\\numberwithin{equation}{" p "}")    ; number equations within sections
+(nn "\\nonumber")                         ; suppress equation number on current line
+(nt "\\notag")                            ; same as \nonumber
 #+END_SRC
 
 * Math symbols and math fonts
@@ -30,7 +81,27 @@ org-mode
 :END:
 ** Classes of math symbols
 #+BEGIN_SRC emacs-lisp
-;;; Classes of math symbols (placeholder)
+latex-mode org-mode
+
+(tblc
+ "\\begin{tabular}{|l|l|l|l|}" n
+ "\\hline Class number & Mnemonic & Description (part of speech) & Examples \\\\" n
+ "\\hline 0 & Ord & simple/ordinary (\"noun\") & $A 0 \\Phi \\infty$ \\\\" n
+ "\\hline 1 & Op & prefix operator & $\\sum \\Pi$ \\\\" n
+ "\\hline 2 & Bin & binary operator (conjunction) & $+ \\cup \\wedge$ \\\\" n
+ "\\hline 3 & Rel & relation/comparison (verb) & $= < C$ \\\\" n
+ "\\hline 4 & Open & left/opening delimiter & ( [ \\{ \\lbrace \\rbrace \\} >) \\\\" n
+ "\\hline 5 & Close & right/closing delimiter & ) ] \\} > \\\\" n
+ "\\hline 6 & Punct & postfix/punctuation & ., , ! \\\\" n
+ "\\hline" n
+ "\\end{tabular}")
+
+(dfs
+ "\\DeclareFontShape{OT2}{wncyr}{m}{n}{<->wncyr10}{}")
+(dsf
+ "\\DeclareSymbolFont{cyr}{OT2}{wncyr}{m}{n}")
+(dms
+ "\\DeclareMathSymbol{\\Sh}{\\mathalpha}{cyr}{88}")
 #+END_SRC
 
 ** Some symbols intentionally omitted here
