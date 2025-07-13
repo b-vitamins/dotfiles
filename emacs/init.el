@@ -16,8 +16,6 @@
 
 (require 'bv-layout)
 
-(require 'bv-base-colors)
-(require 'bv-faces)
 (require 'bv-theme)
 (require 'bv-theme-dark)
 (require 'bv-theme-light)

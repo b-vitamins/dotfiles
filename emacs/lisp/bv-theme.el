@@ -1,4 +1,4 @@
-;;; bv-theme.el --- Theme face configuration  -*- lexical-binding: t -*-
+;;; bv-theme.el --- Unified theme system  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,17 +6,188 @@
 
 ;;; Commentary:
 
-;; This file derives all faces in various modes from the fundamental faces
-;; defined in bv-faces.
+;; Unified theme system combining base colors, semantic faces, and theme
+;; application. Supports light/dark variants with all faces derived from
+;; a core set of semantic faces.
 
 ;;; Code:
 
-(require 'bv-faces)
+(defgroup bv '()
+  "Personal Emacs customizations.")
+
+;; Base color definitions
+
+(defvar bv-base-colors--defaults
+  `((foreground . ,(face-foreground 'default nil t))
+    (background . ,(face-background 'default nil t))
+    (highlight . ,(face-background 'fringe nil t))
+    (critical . ,(face-foreground 'error nil t))
+    (salient . ,(face-foreground 'font-lock-keyword-face nil t))
+    (strong . ,(face-foreground 'default nil t))
+    (popout . ,(face-foreground 'font-lock-string-face nil t))
+    (subtle . ,(face-background 'mode-line-inactive nil t))
+    (faded . ,(face-foreground 'shadow nil t))))
+
+(defun bv-base-colors--get (name)
+  "Get default color associated with symbol NAME."
+  (cdr (assoc name bv-base-colors--defaults)))
+
+(defcustom bv-color-foreground (bv-base-colors--get 'foreground)
+  "Foreground color."
+  :type 'color
+  :group 'bv)
+
+(defcustom bv-color-background (bv-base-colors--get 'background)
+  "Background color."
+  :type 'color
+  :group 'bv)
+
+(defcustom bv-color-highlight (bv-base-colors--get 'highlight)
+  "Highlight color."
+  :type 'color
+  :group 'bv)
+
+(defcustom bv-color-critical (bv-base-colors--get 'critical)
+  "Critical color."
+  :type 'color
+  :group 'bv)
+
+(defcustom bv-color-salient (bv-base-colors--get 'salient)
+  "Salient color."
+  :type 'color
+  :group 'bv)
+
+(defcustom bv-color-strong (bv-base-colors--get 'strong)
+  "Strong color."
+  :type 'color
+  :group 'bv)
+
+(defcustom bv-color-popout (bv-base-colors--get 'popout)
+  "Popout color."
+  :type 'color
+  :group 'bv)
+
+(defcustom bv-color-subtle (bv-base-colors--get 'subtle)
+  "Subtle color."
+  :type 'color
+  :group 'bv)
+
+(defcustom bv-color-faded (bv-base-colors--get 'faded)
+  "Faded color."
+  :type 'color
+  :group 'bv)
+
+;; Font settings
+
+(defcustom bv-font-family-monospaced "Roboto Mono"
+  "Name of the font-family to use.
+Defaults to Roboto Mono. Customizing this might lead to conflicts
+if the family does not have sufficient bold/light etc faces."
+  :group 'bv
+  :type 'string)
+
+(defcustom bv-font-family-proportional nil
+  "Font to use for variable pitch faces.
+Setting this allows displaying variable pitch faces when
+variable-pitch-mode or mixed-pitch-mode is active.
+Defaults to nil."
+  :group 'bv
+  :type 'string)
+
+(defcustom bv-font-size 12
+  "Default value for the font size in pt units."
+  :group 'bv
+  :type 'integer)
+
+;; Theme variant
 
 (defcustom bv-theme-var nil
   "Current theme variant ('light' or 'dark')."
   :group 'bv
   :type 'string)
+
+;; Semantic face definitions
+
+(defface bv-face-default nil
+  "Default face is used for regular information."
+  :group 'bv)
+
+(defface bv-face-variable-pitch nil
+  "Default variable-pitch face is used for variable pitch mode."
+  :group 'bv)
+
+(defface bv-face-critical nil
+  "Critical face is for information that requires immediate action.
+High contrast face with intense background color."
+  :group 'bv)
+
+(defface bv-face-popout nil
+  "Popout face is used for information that needs attention.
+Uses contrasting hue to attract attention."
+  :group 'bv)
+
+(defface bv-face-strong nil
+  "Strong face is used for structural elements.
+Same color as default with different weight."
+  :group 'bv)
+
+(defface bv-face-salient nil
+  "Salient face is used for important information.
+Different hue with similar intensity to default."
+  :group 'bv)
+
+(defface bv-face-faded nil
+  "Faded face is for less important information.
+Same hue as default with reduced intensity."
+  :group 'bv)
+
+(defface bv-face-subtle nil
+  "Subtle face is used to delineate areas.
+Light background color that is barely perceptible."
+  :group 'bv)
+
+;; Helper functions
+
+(defun bv-faces ()
+  "Derive face attributes for bv-faces using bv-theme values."
+  (set-face-attribute 'bv-face-default nil
+                      :foreground bv-color-foreground
+                      :background bv-color-background
+                      :family     bv-font-family-monospaced
+                      :height     (* bv-font-size 10))
+
+  (set-face-attribute 'bv-face-critical nil
+                      :foreground bv-color-foreground
+                      :background bv-color-critical)
+
+  (set-face-attribute 'bv-face-popout nil
+                      :foreground bv-color-popout)
+
+  (set-face-attribute 'bv-face-variable-pitch nil
+                      :foreground (face-foreground 'bv-face-default)
+                      :background (face-background 'bv-face-default)
+                      :family (or bv-font-family-proportional
+                                  bv-font-family-monospaced)
+                      :height (* bv-font-size 10))
+
+  (if (display-graphic-p)
+      (set-face-attribute 'bv-face-strong nil
+                          :foreground bv-color-strong
+                          :weight 'medium)
+    (set-face-attribute 'bv-face-strong nil
+                        :foreground bv-color-strong
+                        :weight 'bold))
+
+  (set-face-attribute 'bv-face-salient nil
+                      :foreground bv-color-salient
+                      :weight 'light)
+
+  (set-face-attribute 'bv-face-faded nil
+                      :foreground bv-color-faded
+                      :weight 'light)
+
+  (set-face-attribute 'bv-face-subtle nil
+                      :background bv-color-subtle))
 
 (defun set-face (face style)
   "Reset FACE and make it inherit STYLE."
@@ -27,6 +198,8 @@
                           :weight     'unspecified :height     'unspecified
                           :underline  'unspecified :overline   'unspecified
                           :box        'unspecified :inherit    style)))
+
+;; Theme application functions
 
 (defun bv-theme--basics ()
   "Derive basic Emacs faces from bv-faces."
@@ -222,6 +395,38 @@
   (bv-theme--mode-line)
   (bv-theme--hl-line)
   (bv-theme--org))
+
+;; Theme variants
+
+(defun bv-theme-set-light ()
+  "Apply light theme base."
+  (setq frame-background-mode    'light)
+  (setq bv-color-foreground "#3a3a3a") ;; Charcoal
+  (setq bv-color-background "#FFFFFF") ;; Pure white
+  (setq bv-color-highlight  "#F7F7F7") ;; Off-white
+  (setq bv-color-critical   "#d7875f") ;; Terracotta
+  (setq bv-color-salient    "#5f87d7") ;; Cornflower blue
+  (setq bv-color-strong     "#262626") ;; Dark charcoal
+  (setq bv-color-popout     "#87afaf") ;; Sage green
+  (setq bv-color-subtle     "#eeeeee") ;; Light gray
+  (setq bv-color-faded      "#767676") ;; Medium gray
+  (setq bv-theme-var "light"))
+
+(defun bv-theme-set-dark ()
+  "Apply dark theme base."
+  (setq frame-background-mode     'dark)
+  (setq bv-color-foreground "#dadada") ;; Platinum
+  (setq bv-color-background "#1c1c1c") ;; Eerie black
+  (setq bv-color-highlight  "#303030") ;; Jet
+  (setq bv-color-critical   "#d7875f") ;; Terracotta
+  (setq bv-color-salient    "#5f87d7") ;; Cornflower blue
+  (setq bv-color-strong     "#eeeeee") ;; White smoke
+  (setq bv-color-popout     "#afaf87") ;; Olive
+  (setq bv-color-subtle     "#303030") ;; Jet
+  (setq bv-color-faded      "#6c6c6c") ;; Dim gray
+  (setq bv-theme-var "dark"))
+
+;; Public functions
 
 (defun bv-refresh-theme ()
   "Refresh the current theme."
