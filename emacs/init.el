@@ -17,14 +17,9 @@
 (require 'bv-layout)
 
 (require 'bv-theme)
-(require 'bv-theme-dark)
-(require 'bv-theme-light)
-
-;; Set initial theme (light as fallback)
-(bv-theme-set-light)
-(bv-refresh-theme)
 
 ;; Setup automatic theme switching based on time
+;; This will set the initial theme based on current time
 (require 'bv-circadian)
 (bv-circadian-setup)
 
