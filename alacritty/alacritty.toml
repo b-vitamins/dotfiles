@@ -26,20 +26,20 @@ builtin_box_drawing = true
 
 # Try these fonts for better experience (in order of preference)
 [font.normal]
-family = "SF Mono"  # or "JetBrains Mono", "Fira Code", "Cascadia Code"
+family = "Fira Code"  # or "JetBrains Mono", "Fira Mono", "Cascadia Code"
 style = "Regular"
 
 [font.bold]
-family = "SF Mono"
-style = "Semibold"
+family = "Fira Code"
+style = "Bold"
 
 [font.italic]
-family = "SF Mono"
-style = "Regular Italic"
+family = "Fira Code"
+style = "Light Italic"
 
 [font.bold_italic]
-family = "SF Mono"
-style = "Semibold Italic"
+family = "Fira Code"
+style = "Medium Italic"
 
 # Colors harmonized with your zsh prompt colors
 [colors]
