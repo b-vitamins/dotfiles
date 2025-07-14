@@ -66,7 +66,6 @@
              (myguix home)
              (myguix utils)
              (myguix home services emacs)
-             (myguix home services emacs-daemon)
              (myguix home services nougat)
              (myguix packages base)
              (myguix packages fonts)
@@ -92,18 +91,8 @@
 ;;; Home configuration
 (define %my-home-config
   (home-environment
-    (packages (append
-
-                      (list font-apple-sf-pro
-                            font-apple-sf-mono
-                            font-apple-sf-compact
-                            font-apple-new-york
-                            font-apple-sf-symbols
-                            font-google-roboto
-                            font-fira-go
-                            font-fira-sans
-                            font-fira-code
-                            font-fira-mono)))
+    (packages (append (list font-google-roboto font-fira-go font-fira-sans
+                            font-fira-code font-fira-mono)))
 
     (services
      (list
@@ -180,7 +169,7 @@ image/webp=org.gnome.eog.desktop
 video/mp4=mpv.desktop
 video/x-matroska=mpv.desktop
 video/webm=mpv.desktop
-audio/mpeg=mpv.desktop
+audio/mpeg=audacious.desktop
 audio/flac=audacious.desktop
 audio/mp3=audacious.desktop
 text/plain=org.gnome.TextEditor.desktop
@@ -190,8 +179,6 @@ application/x-shellscript=org.gnome.TextEditor.desktop
 inode/directory=org.gnome.Nautilus.desktop
 "))))
       (service my-home-emacs-service-type)
-      (service home-emacs-daemon-service-type
-               (emacs-daemon-configuration (server-name "spärck")))
 
       (service home-inputrc-service-type
                (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")
@@ -395,9 +382,9 @@ allow-preset-passphrase")))
   (file-systems (append (list (file-system
                                 (device (file-system-label "my-root"))
                                 (mount-point "/")
-                                (type "ext4"))
+                                (type "btrfs"))
                               (file-system
-                                (device (uuid "763C-E5EC"
+                                (device (uuid "7E9E-F277"
                                               'fat32))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
@@ -473,6 +460,7 @@ allow-preset-passphrase")))
              %media-players
              ;; Documents
              %latex-core
+             %latex-extended
              %document-conversion-packages
              %spell-checkers
              ;; Math/Science
