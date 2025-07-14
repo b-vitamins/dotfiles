@@ -93,16 +93,8 @@
   (home-environment
     (packages (append
 
-                      (list font-apple-sf-pro
-                            font-apple-sf-mono
-                            font-apple-sf-compact
-                            font-apple-new-york
-                            font-apple-sf-symbols
-                            font-google-roboto
-                            font-fira-go
-                            font-fira-sans
-                            font-fira-code
-                            font-fira-mono)))
+                      (list font-google-roboto font-fira-go font-fira-sans
+                            font-fira-code font-fira-mono)))
 
     (services
      (list
@@ -758,7 +750,117 @@ collation-server = utf8mb4_unicode_ci")))
                                                   #~(list #$(file-append
                                                              coreutils
                                                              "/bin/rm") "-rf"
-                                                     "/home/b/.nv/ComputeCache"))))
+                                                     "/home/b/.nv/ComputeCache"))
+
+                                  ;; Daily backup of critical files to Google Drive at 1AM
+                                  (shepherd-timer '(rclone-backup-critical)
+                                                  "0 1 * * *"
+                                                  #~(begin
+                                                      (setenv "HOME" "/home/b")
+                                                      (system* #$(file-append
+                                                                  rclone
+                                                                  "/bin/rclone")
+                                                       "sync"
+                                                       "/home/b/documents"
+                                                       "remote:backup/documents"
+                                                       "--exclude"
+                                                       "*.tmp"
+                                                       "--exclude"
+                                                       "*~"
+                                                       "--exclude"
+                                                       ".#*")
+                                                      (system* #$(file-append
+                                                                  rclone
+                                                                  "/bin/rclone")
+                                                       "sync"
+                                                       "/home/b/projects"
+                                                       "remote:backup/projects"
+                                                       "--exclude"
+                                                       "**/.git/**"
+                                                       "--exclude"
+                                                       "**/node_modules/**"
+                                                       "--exclude"
+                                                       "**/__pycache__/**"
+                                                       "--exclude"
+                                                       "**/target/**"
+                                                       "--exclude"
+                                                       "**/.venv/**"
+                                                       "--exclude"
+                                                       "**/venv/**"
+                                                       "--exclude"
+                                                       "**/.cargo/**"
+                                                       "--exclude"
+                                                       "**/dist/**"
+                                                       "--exclude"
+                                                       "**/build/**"
+                                                       "--exclude"
+                                                       "*.pyc"
+                                                       "--exclude"
+                                                       "*.pyo"
+                                                       "--exclude"
+                                                       "*.so"
+                                                       "--exclude"
+                                                       "*.o"
+                                                       "--exclude"
+                                                       "*.a"
+                                                       "--exclude"
+                                                       "*.tar.gz"
+                                                       "--exclude"
+                                                       "*.zip")
+                                                      (system* #$(file-append
+                                                                  rclone
+                                                                  "/bin/rclone")
+                                                       "sync"
+                                                       "/home/b/.password-store"
+                                                       "remote:backup/password-store")
+                                                      (system* #$(file-append
+                                                                  rclone
+                                                                  "/bin/rclone")
+                                                       "sync" "/home/b/.ssh"
+                                                       "remote:backup/ssh")
+                                                      (system* #$(file-append
+                                                                  rclone
+                                                                  "/bin/rclone")
+                                                       "sync" "/home/b/.gnupg"
+                                                       "remote:backup/gnupg"))
+                                                  #:requirement '(networking))
+
+                                  ;; Weekly backup of larger/less critical files on Sunday at 2AM
+                                  (shepherd-timer '(rclone-backup-weekly)
+                                                  "0 2 * * 0"
+                                                  #~(begin
+                                                      (setenv "HOME" "/home/b")
+                                                      (system* #$(file-append
+                                                                  rclone
+                                                                  "/bin/rclone")
+                                                       "sync"
+                                                       "/home/b/pictures"
+                                                       "remote:backup/pictures"
+                                                       "--exclude"
+                                                       "*.tmp")
+                                                      (system* #$(file-append
+                                                                  rclone
+                                                                  "/bin/rclone")
+                                                       "sync"
+                                                       "/home/b/.config"
+                                                       "remote:backup/config"
+                                                       "--include"
+                                                       "alacritty/**"
+                                                       "--include"
+                                                       "mpv/**"
+                                                       "--include"
+                                                       "emacs/**"
+                                                       "--include"
+                                                       "git/**"
+                                                       "--include"
+                                                       "direnv/**"
+                                                       "--include"
+                                                       "*.conf"
+                                                       "--include"
+                                                       "*.toml"
+                                                       "--exclude"
+                                                       "*"))
+                                                  #:requirement '(networking))))
 
                  ;; Environment variables for Wayland preference
                  (simple-service 'wayland-environment
