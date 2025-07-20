@@ -25,17 +25,6 @@
 (when (boundp 'aw-leading-char-style)
   (setq aw-leading-char-style 'char))
 
-(defun bv-window-setup-faces ()
-  "Apply theme-aware faces to ace-window."
-  (set-face-attribute 'aw-leading-char-face nil
-                      :inherit 'bv-face-salient
-                      :height 2.0
-                      :weight 'bold)
-  (set-face-attribute 'aw-mode-line-face nil
-                      :inherit 'bv-face-strong))
-
-(add-hook 'after-init-hook #'bv-window-setup-faces)
-(add-hook 'bv-after-theme-hook #'bv-window-setup-faces)
 
 (global-set-key (kbd "M-o") 'ace-window)
 

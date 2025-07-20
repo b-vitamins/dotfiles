@@ -52,28 +52,6 @@
 (add-hook 'minibuffer-setup-hook 'corfu-enable-in-minibuffer)
 (add-hook 'corfu-mode-hook 'corfu-doc-mode)
 
-(defun bv-corfu-setup-faces ()
-  "Apply theme-aware faces to corfu."
-  (when (facep 'corfu-current)
-    (set-face-attribute 'corfu-current nil
-                        :inherit 'bv-face-subtle
-                        :extend t))
-  (when (facep 'corfu-default)
-    (set-face-attribute 'corfu-default nil
-                        :inherit 'bv-face-default
-                        :background (face-attribute 'bv-face-subtle :background)))
-  (when (facep 'corfu-border)
-    (set-face-attribute 'corfu-border nil
-                        :inherit 'bv-face-faded))
-  (when (facep 'corfu-annotations)
-    (set-face-attribute 'corfu-annotations nil
-                        :inherit 'bv-face-faded))
-  (when (facep 'corfu-bar)
-    (set-face-attribute 'corfu-bar nil
-                        :background (face-attribute 'bv-face-salient :foreground))))
-
-(add-hook 'after-init-hook #'bv-corfu-setup-faces)
-(add-hook 'bv-after-theme-hook #'bv-corfu-setup-faces)
 
 (global-corfu-mode 1)
 

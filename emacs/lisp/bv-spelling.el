@@ -37,17 +37,12 @@
     (setq flyspell-issue-message-flag nil))
 
   ;; Better flyspell faces
-  (defun bv-spelling-setup-faces ()
-    "Setup spell checking faces."
-    (when (facep 'flyspell-incorrect)
-      (set-face-attribute 'flyspell-incorrect nil
-                          :underline `(:style wave :color ,(face-foreground 'bv-face-critical))))
-    (when (facep 'flyspell-duplicate)
-      (set-face-attribute 'flyspell-duplicate nil
-                          :underline `(:style wave :color ,(face-foreground 'bv-face-popout)))))
-
-  (add-hook 'flyspell-mode-hook #'bv-spelling-setup-faces)
-  (add-hook 'bv-after-theme-hook #'bv-spelling-setup-faces))
+  (when (facep 'flyspell-incorrect)
+    (set-face-attribute 'flyspell-incorrect nil
+                        :underline '(:style wave :color "red")))
+  (when (facep 'flyspell-duplicate)
+    (set-face-attribute 'flyspell-duplicate nil
+                        :underline '(:style wave :color "orange"))))
 
 ;; Dictionary lookup
 (with-eval-after-load 'dictionary

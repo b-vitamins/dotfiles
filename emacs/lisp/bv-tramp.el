@@ -97,7 +97,7 @@
   `(:name "SSH Hosts"
     :narrow ?h
     :category ssh-host
-    :face bv-face-popout
+    :face bv-themes-popout
     :history ssh-host-history
     :items ,#'bv-tramp--parse-ssh-hosts
     :action (lambda (host) (find-file (format "/ssh:%s:" host))))

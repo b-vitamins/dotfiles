@@ -51,38 +51,6 @@
   (when (boundp 'all-the-icons-color-icons)
     (setq all-the-icons-color-icons nil)))
 
-(defun bv-all-the-icons-setup-faces ()
-  "Apply muted colors to icons matching theme."
-  (when (and (fboundp 'all-the-icons-faicon)
-             (boundp 'bv-color-critical))
-    (set-face-attribute 'all-the-icons-red nil
-                        :foreground bv-color-critical)
-    (set-face-attribute 'all-the-icons-lred nil
-                        :foreground bv-color-critical)
-    (set-face-attribute 'all-the-icons-dred nil
-                        :foreground bv-color-critical)
-    (set-face-attribute 'all-the-icons-green nil
-                        :foreground bv-color-salient)
-    (set-face-attribute 'all-the-icons-lgreen nil
-                        :foreground bv-color-salient)
-    (set-face-attribute 'all-the-icons-dgreen nil
-                        :foreground bv-color-salient)
-    (set-face-attribute 'all-the-icons-blue nil
-                        :foreground bv-color-salient)
-    (set-face-attribute 'all-the-icons-lblue nil
-                        :foreground bv-color-salient)
-    (set-face-attribute 'all-the-icons-dblue nil
-                        :foreground bv-color-faded)
-    (set-face-attribute 'all-the-icons-yellow nil
-                        :foreground bv-color-popout)
-    (set-face-attribute 'all-the-icons-orange nil
-                        :foreground bv-color-popout)
-    (set-face-attribute 'all-the-icons-dorange nil
-                        :foreground bv-color-popout)
-    (set-face-attribute 'all-the-icons-purple nil
-                        :foreground bv-color-faded)
-    (set-face-attribute 'all-the-icons-maroon nil
-                        :foreground bv-color-critical)))
 
 (defun bv-all-the-icons-setup-fontsets (&optional frame)
   "Setup fontsets for icon display.
@@ -148,8 +116,7 @@ If FRAME is provided, setup fontsets for that frame."
 (defun bv-all-the-icons-init ()
   "Initialize all-the-icons with proper timing."
   (when (display-graphic-p)
-    (bv-all-the-icons-setup-fontsets)
-    (bv-all-the-icons-setup-faces)))
+    (bv-all-the-icons-setup-fontsets)))
 
 ;; Hook into frame creation
 (add-hook 'after-make-frame-functions #'bv-all-the-icons-setup-fontsets)
@@ -157,7 +124,6 @@ If FRAME is provided, setup fontsets for that frame."
 ;; Hook into various initialization points
 (add-hook 'after-init-hook #'bv-all-the-icons-init)
 (add-hook 'window-setup-hook #'bv-all-the-icons-init)
-(add-hook 'bv-after-theme-hook #'bv-all-the-icons-setup-faces)
 
 ;; For daemon mode
 (if (daemonp)
@@ -296,8 +262,7 @@ If FRAME is provided, setup fontsets for that frame."
 
 ;; Immediately configure fontsets if in GUI mode
 (when (and (display-graphic-p) bv-all-the-icons-enabled)
-  (bv-all-the-icons-setup-fontsets)
-  (bv-all-the-icons-setup-faces))
+  (bv-all-the-icons-setup-fontsets))
 
 (provide 'bv-all-the-icons)
 ;;; bv-all-the-icons.el ends here

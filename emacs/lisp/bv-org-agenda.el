@@ -82,59 +82,7 @@
                     ((org-agenda-overriding-header "\nResearch pipeline\n")
                      (org-agenda-sorting-strategy '(priority-down effort-up)))))))))
 
-  ;; Face customization
-  (defun bv-org-agenda-setup-faces ()
-    "Apply minimal, elegant faces to org-agenda."
-    ;; Headers
-    (when (facep 'org-agenda-structure)
-      (set-face-attribute 'org-agenda-structure nil
-                          :inherit 'bv-face-strong
-                          :weight 'light
-                          :height 1.2))
-    ;; Dates
-    (when (facep 'org-agenda-date)
-      (set-face-attribute 'org-agenda-date nil
-                          :inherit 'bv-face-strong
-                          :weight 'regular
-                          :underline nil))
-    (when (facep 'org-agenda-date-today)
-      (set-face-attribute 'org-agenda-date-today nil
-                          :inherit 'bv-face-salient
-                          :weight 'regular
-                          :underline t))
-    (when (facep 'org-agenda-date-weekend)
-      (set-face-attribute 'org-agenda-date-weekend nil
-                          :inherit 'bv-face-faded
-                          :weight 'regular))
-    ;; Current time
-    (when (facep 'org-agenda-current-time)
-      (set-face-attribute 'org-agenda-current-time nil
-                          :inherit 'bv-face-popout))
-    ;; Tasks
-    (when (facep 'org-scheduled)
-      (set-face-attribute 'org-scheduled nil
-                          :inherit 'bv-face-faded))
-    (when (facep 'org-scheduled-today)
-      (set-face-attribute 'org-scheduled-today nil
-                          :inherit 'bv-face-default))
-    (when (facep 'org-agenda-done)
-      (set-face-attribute 'org-agenda-done nil
-                          :inherit 'bv-face-subtle
-                          :strike-through nil))
-    ;; Hide keywords
-    (when (facep 'org-todo)
-      (set-face-attribute 'org-todo nil
-                          :inherit 'bv-face-popout
-                          :weight 'regular
-                          :box nil))
-    (when (facep 'org-done)
-      (set-face-attribute 'org-done nil
-                          :inherit 'bv-face-subtle
-                          :weight 'regular
-                          :box nil)))
-
-  (add-hook 'org-agenda-mode-hook #'bv-org-agenda-setup-faces)
-  (add-hook 'bv-after-theme-hook #'bv-org-agenda-setup-faces))
+)
 
 ;; Nano-style calendar popup
 (defun bv-org-agenda-calendar ()
@@ -171,27 +119,7 @@
 ;; Calendar beautification
 (with-eval-after-load 'calendar
   (when (boundp 'calendar-week-start-day)
-    (setq calendar-week-start-day 1))
-
-  (defun bv-calendar-setup-faces ()
-    "Beautify calendar."
-    (when (facep 'calendar-today)
-      (set-face-attribute 'calendar-today nil
-                          :inherit 'bv-face-salient
-                          :weight 'bold
-                          :underline t))
-    (when (facep 'calendar-weekday-header)
-      (set-face-attribute 'calendar-weekday-header nil
-                          :inherit 'bv-face-faded))
-    (when (facep 'calendar-weekend-header)
-      (set-face-attribute 'calendar-weekend-header nil
-                          :inherit 'bv-face-subtle))
-    (when (facep 'calendar-month-header)
-      (set-face-attribute 'calendar-month-header nil
-                          :inherit 'bv-face-strong
-                          :height 1.1)))
-
-  (add-hook 'calendar-mode-hook #'bv-calendar-setup-faces))
+    (setq calendar-week-start-day 1)))
 
 (provide 'bv-org-agenda)
 ;;; bv-org-agenda.el ends here

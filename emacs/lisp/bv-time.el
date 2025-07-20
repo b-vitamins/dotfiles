@@ -43,13 +43,6 @@
 (when (boundp 'world-clock-buffer-name)
   (setq world-clock-buffer-name "*World Clock*"))
 
-(defun bv-time-setup-faces ()
-  "Apply theme-aware face to time display."
-  (set-face-attribute 'display-time-date-and-time nil
-                      :inherit 'bv-face-faded))
-
-(add-hook 'after-init-hook #'bv-time-setup-faces)
-(add-hook 'bv-after-theme-hook #'bv-time-setup-faces)
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-app-map)

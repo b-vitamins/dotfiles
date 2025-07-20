@@ -25,18 +25,6 @@
 (when (boundp 'keycast-mode-line-remove-tail-elements)
   (setq keycast-mode-line-remove-tail-elements nil))
 
-(defun bv-keycast-setup-faces ()
-  "Apply theme-aware faces to keycast."
-  (set-face-attribute 'keycast-key nil
-                      :inherit 'bv-face-strong
-                      :box nil
-                      :height 1.0)
-  (set-face-attribute 'keycast-command nil
-                      :inherit 'bv-face-salient
-                      :weight 'normal))
-
-(add-hook 'after-init-hook #'bv-keycast-setup-faces)
-(add-hook 'bv-after-theme-hook #'bv-keycast-setup-faces)
 
 (defun bv-keycast-header-line-formatter ()
   "Format keycast information for header line display."

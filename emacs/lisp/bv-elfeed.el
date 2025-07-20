@@ -101,35 +101,6 @@
   (define-key elfeed-show-mode-map "q" 'quit-window)
   (define-key elfeed-show-mode-map "w" 'bv-elfeed-show-eww))
 
-(defun bv-elfeed-setup-faces ()
-  "Configure elfeed faces."
-  (require 'bv-theme nil t)
-  (if (fboundp 'set-face)
-      (progn
-        (when (facep 'elfeed-search-title-face)
-          (set-face 'elfeed-search-title-face 'default))
-        (when (facep 'elfeed-search-unread-title-face)
-          (set-face 'elfeed-search-unread-title-face 'bold)))
-    ;; Fallback if set-face is not available
-    (when (facep 'elfeed-search-title-face)
-      (set-face-attribute 'elfeed-search-title-face nil
-                          :inherit 'default))
-    (when (facep 'elfeed-search-unread-title-face)
-      (set-face-attribute 'elfeed-search-unread-title-face nil
-                          :inherit 'bold)))
-  (when (facep 'elfeed-search-date-face)
-    (set-face-attribute 'elfeed-search-date-face nil
-                        :inherit 'font-lock-comment-face))
-  (when (facep 'elfeed-search-feed-face)
-    (set-face-attribute 'elfeed-search-feed-face nil
-                        :inherit 'font-lock-keyword-face))
-  (when (facep 'elfeed-search-tag-face)
-    (set-face-attribute 'elfeed-search-tag-face nil
-                        :inherit 'font-lock-type-face)))
-
-(with-eval-after-load 'elfeed
-  (bv-elfeed-setup-faces)
-  (add-hook 'elfeed-search-mode-hook 'bv-elfeed-setup-faces))
 
 (with-eval-after-load 'org-capture
   (add-to-list 'org-capture-templates

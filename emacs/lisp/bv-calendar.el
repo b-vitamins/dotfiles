@@ -15,23 +15,23 @@
 (setq calendar-week-start-day 1
       calendar-date-style 'iso)
 (defface bv-calendar-header
-  '((t :inherit bv-face-strong))
+  '((t :weight bold))
   "Face for calendar headers.")
 
 (defface bv-calendar-today
-  '((t :inherit bv-face-salient :weight bold))
+  '((t :foreground "blue" :weight bold))
   "Face for today.")
 
 (defface bv-calendar-current
-  '((t :inherit bv-face-default :underline t))
+  '((t :underline t))
   "Face for current selected date.")
 
 (defface bv-calendar-weekend
-  '((t :inherit bv-face-faded))
+  '((t :foreground "gray"))
   "Face for weekends.")
 
 (defface bv-calendar-holiday
-  '((t :inherit bv-face-popout))
+  '((t :foreground "red"))
   "Face for holidays.")
 
 (defconst bv-calendar-month-width 23
@@ -134,7 +134,7 @@
                         (propertize (format "%-3s" (substring name 0 2))
                                     'face (if weekend
                                               'bv-calendar-weekend
-                                            'bv-face-default))))))
+                                            'bv-themes-default))))))
       (push day-line lines))
     (let ((current-line (make-string (* 3 first-day) ?\s)))
       (dotimes (day last-day)
@@ -166,7 +166,7 @@
                                              (is-today 'bv-calendar-today)
                                              (holiday 'bv-calendar-holiday)
                                              (weekend 'bv-calendar-weekend)
-                                             (t 'bv-face-default))
+                                             (t 'bv-themes-default))
                                       'mouse-face 'highlight
                                       'help-echo (format-time-string "%A, %B %e, %Y"
                                                                      (encode-time 0 0 0 d month year))

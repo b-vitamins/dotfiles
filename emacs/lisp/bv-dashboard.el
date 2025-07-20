@@ -56,24 +56,6 @@
 (when (boundp 'dashboard-image-banner-max-width)
   (setq dashboard-image-banner-max-width 350))
 
-(defun bv-dashboard-setup-faces ()
-  "Apply theme-aware faces to dashboard."
-  (set-face-attribute 'dashboard-banner-logo-title nil
-                      :inherit 'bv-face-default
-                      :height 0.9)
-  (set-face-attribute 'dashboard-heading nil
-                      :inherit 'bv-face-strong
-                      :height 1.0)
-  (set-face-attribute 'dashboard-items-face nil
-                      :inherit 'bv-face-default)
-  (set-face-attribute 'dashboard-no-items-face nil
-                      :inherit 'bv-face-faded)
-  (set-face-attribute 'dashboard-text-banner nil
-                      :inherit 'bv-face-faded
-                      :height 0.9))
-
-(add-hook 'after-init-hook #'bv-dashboard-setup-faces)
-(add-hook 'bv-after-theme-hook #'bv-dashboard-setup-faces)
 
 (defun bv-dashboard-open ()
   "Open dashboard buffer."

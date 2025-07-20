@@ -26,9 +26,9 @@
                         (t ""))))
         (propertize (format "BAT%s%d%%" indicator bat)
                     'face (cond
-                           ((< bat 20) 'bv-face-critical)
-                           ((< bat 50) 'bv-face-popout)
-                           (t 'bv-face-faded)))))))
+                           ((< bat 20) 'error)
+                           ((< bat 50) 'warning)
+                           (t 'shadow)))))))
 
 (when (and (fboundp 'battery-status-function)
            battery-status-function)

@@ -11,7 +11,7 @@
 ;;; Code:
 
 (require 'solar)
-(require 'bv-theme)
+(require 'bv-themes)
 
 (defcustom bv-circadian-latitude 12.9716
   "Latitude for sunrise/sunset calculations (default: Bangalore)."
@@ -63,15 +63,14 @@
 (defun bv-circadian-update-theme ()
   "Update theme based on current time."
   (interactive)
-  (let ((use-dark (bv-circadian--should-use-dark-theme-p)))
+  (let ((use-dark (bv-circadian--should-use-dark-theme-p))
+        (current-variant (bv-themes-variant)))
     (cond
-     ((and use-dark (not (string= bv-theme-var "dark")))
-      (bv-theme-set-dark)
-      (bv-refresh-theme)
+     ((and use-dark (not (string= current-variant "dark")))
+      (bv-themes-load-theme 'bv-dark)
       (message "Switched to dark theme"))
-     ((and (not use-dark) (not (string= bv-theme-var "light")))
-      (bv-theme-set-light)
-      (bv-refresh-theme)
+     ((and (not use-dark) (not (string= current-variant "light")))
+      (bv-themes-load-theme 'bv-light)
       (message "Switched to light theme")))))
 
 (defun bv-circadian-setup ()

@@ -26,8 +26,7 @@
                '(menu-bar-lines . 0))))
 
 
-(defface fallback '((t :family "Fira Code"
-                       :inherit 'bv-face-faded))
+(defface fallback '((t :family "Fira Code"))
   "Fallback face for glyphs missing in primary font.")
 (set-display-table-slot standard-display-table 'truncation
                         (make-glyph-code ?… 'fallback))

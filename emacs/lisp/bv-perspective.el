@@ -32,15 +32,6 @@
     (persp-switch name)
     (project-switch-project dir)))
 
-(defun bv-persp-setup-faces ()
-  "Apply theme-aware faces to perspective."
-  (when (facep 'persp-selected-face)
-    (set-face-attribute 'persp-selected-face nil
-                        :inherit 'bv-face-strong
-                        :weight 'bold)))
-
-(add-hook 'after-init-hook #'bv-persp-setup-faces)
-(add-hook 'bv-after-theme-hook #'bv-persp-setup-faces)
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-app-map)

@@ -14,9 +14,16 @@
 (add-to-list 'load-path
              (expand-file-name "lisp" (file-name-directory load-file-name)))
 
+;; Add lisp directory to theme load path for bv-light-theme and bv-dark-theme
+(add-to-list 'custom-theme-load-path
+             (expand-file-name "lisp" (file-name-directory load-file-name)))
+
 (require 'bv-layout)
 
-(require 'bv-theme)
+(require 'bv-themes)
+
+;; Apply default theme (light)
+(bv-themes-load-theme 'bv-light)
 
 ;; Setup automatic theme switching based on time
 ;; This will set the initial theme based on current time
@@ -30,7 +37,6 @@
 (require 'bv-battery)      ; Battery status
 
 (require 'bv-modeline)
-(bv-modeline-faces)
 (bv-modeline)
 
 (require 'bv-bindings)

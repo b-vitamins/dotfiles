@@ -42,23 +42,6 @@
 (when (boundp 'which-key-side-window-max-width)
   (setq which-key-side-window-max-width 0.66))
 
-(defun bv-which-key-setup-faces ()
-  "Apply theme-aware faces to which-key."
-  (set-face-attribute 'which-key-key-face nil
-                      :inherit 'bv-face-strong)
-  (set-face-attribute 'which-key-separator-face nil
-                      :inherit 'bv-face-faded)
-  (set-face-attribute 'which-key-note-face nil
-                      :inherit 'bv-face-faded)
-  (set-face-attribute 'which-key-command-description-face nil
-                      :inherit 'bv-face-default)
-  (set-face-attribute 'which-key-local-map-description-face nil
-                      :inherit 'bv-face-salient)
-  (set-face-attribute 'which-key-group-description-face nil
-                      :inherit 'bv-face-strong))
-
-(add-hook 'after-init-hook #'bv-which-key-setup-faces)
-(add-hook 'bv-after-theme-hook #'bv-which-key-setup-faces)
 
 (when (fboundp 'which-key-mode)
   (which-key-mode 1))

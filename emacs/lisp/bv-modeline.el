@@ -47,21 +47,21 @@
          (space-down    -0.20)
          (prefix (cond ((string= status "RO")
                         (propertize (if (window-dedicated-p) " -- " " RO ")
-                                    'face 'bv-face-header-popout))
+                                    'face 'bv-themes-header-popout))
                        ((string= status "**")
                         (propertize (if (window-dedicated-p) " -- " " ** ")
-                                    'face 'bv-face-header-critical))
+                                    'face 'bv-themes-header-critical))
                        ((string= status "RW")
                         (propertize (if (window-dedicated-p) " -- " " RW ")
-                                    'face 'bv-face-header-faded))
-                       (t (propertize status 'face 'bv-face-header-popout))))
+                                    'face 'bv-themes-header-faded))
+                       (t (propertize status 'face 'bv-themes-header-popout))))
          (left (concat
-                (propertize " " 'face 'bv-face-header-default
+                (propertize " " 'face 'bv-themes-header-default
                             'display `(raise ,space-up))
-                (propertize name 'face 'bv-face-header-strong)
-                (propertize " " 'face 'bv-face-header-default
+                (propertize name 'face 'bv-themes-header-strong)
+                (propertize " " 'face 'bv-themes-header-default
                             'display `(raise ,space-down))
-                (propertize primary 'face 'bv-face-header-default)))
+                (propertize primary 'face 'bv-themes-header-default)))
          (right (concat secondary " "))
          (available-width (- (window-total-width)
                              (length prefix) (length left) (length right)
@@ -70,9 +70,8 @@
     (concat prefix
             left
             (propertize (make-string available-width ?\ )
-                        'face 'bv-face-header-default)
-            (propertize right 'face `(:inherit bv-face-header-default
-                                      :foreground ,bv-color-faded)))))
+                        'face 'bv-themes-header-default)
+            (propertize right 'face 'bv-themes-header-default))))
 
 (defun bv-modeline-status ()
   "Return buffer status: read-only (RO), modified (**) or read-write (RW)."
@@ -191,78 +190,6 @@
                                  ")")
                          org-mode-line-string)))
 
-(defface bv-face-header-default nil
-  "Default face for the header line."
-  :group 'bv)
-
-(defface bv-face-header-critical nil
-  "Critical face for the header line."
-  :group 'bv)
-
-(defface bv-face-header-popout nil
-  "Popout face for the header line."
-  :group 'bv)
-
-(defface bv-face-header-strong nil
-  "Strong face for the header line."
-  :group 'bv)
-
-(defface bv-face-header-salient nil
-  "Salient face for the header line."
-  :group 'bv)
-
-(defface bv-face-header-faded nil
-  "Faded face for the header line."
-  :group 'bv)
-
-(defface bv-face-header-subtle nil
-  "Subtle face for the header line."
-  :group 'bv)
-
-(defun bv-modeline-faces ()
-  "Setup header line faces using theme colors."
-  (set-face-attribute 'bv-face-header-default nil
-                      :foreground bv-color-foreground
-                      :background bv-color-subtle
-                      :box `(:line-width 1
-                             :color ,bv-color-background
-                             :style nil))
-
-  (set-face-attribute 'bv-face-header-strong nil
-                      :foreground bv-color-strong
-                      :background bv-color-subtle
-                      :inherit 'bv-face-strong
-                      :box `(:line-width 1
-                             :color ,bv-color-background
-                             :style nil))
-
-  (set-face-attribute 'bv-face-header-salient nil
-                      :foreground bv-color-background
-                      :background bv-color-salient
-                      :box `(:line-width 1
-                             :color ,bv-color-background
-                             :style nil))
-
-  (set-face-attribute 'bv-face-header-popout nil
-                      :foreground bv-color-background
-                      :background bv-color-popout
-                      :box `(:line-width 1
-                             :color ,bv-color-background
-                             :style nil))
-
-  (set-face-attribute 'bv-face-header-faded nil
-                      :foreground bv-color-background
-                      :background bv-color-faded
-                      :box `(:line-width 1
-                             :color ,bv-color-background
-                             :style nil))
-
-  (set-face-attribute 'bv-face-header-critical nil
-                      :foreground bv-color-background
-                      :background bv-color-critical
-                      :box `(:line-width 1
-                             :color ,bv-color-background
-                             :style nil)))
 
 (defun bv-modeline ()
   "Install a header line whose content is dependent on the major mode."
