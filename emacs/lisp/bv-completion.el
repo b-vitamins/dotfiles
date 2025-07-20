@@ -15,6 +15,22 @@
   (require 'marginalia)
   (require 'consult))
 
+;; Better history sorting - recent items first
+(defun bv-completion-sort-by-history (candidates)
+  "Sort CANDIDATES by history, putting recent items first."
+  (let ((hist (and (minibufferp)
+                   (symbol-value minibuffer-history-variable))))
+    (if hist
+        (sort candidates
+              (lambda (a b)
+                (let ((a-pos (seq-position hist a))
+                      (b-pos (seq-position hist b)))
+                  (cond ((and a-pos b-pos) (< a-pos b-pos))
+                        (a-pos t)
+                        (b-pos nil)
+                        (t (string< a b))))))
+      candidates)))
+
 (defvar bv-completion-initial-narrow-alist '()
   "Mode to key mapping for automatic consult narrowing.")
 
@@ -45,6 +61,24 @@
 
   (when (boundp 'rfn-eshadow-update-overlay-hook)
     (add-hook 'rfn-eshadow-update-overlay-hook 'vertico-directory-tidy))
+
+  ;; Enable file path abbreviation (~/... instead of /home/user/...)
+  (when (boundp 'file-name-shadow-mode)
+    (file-name-shadow-mode 1))
+  (when (boundp 'rfn-eshadow-update-overlay)
+    (setq file-name-shadow-properties '(face file-name-shadow field shadow))
+    (setq file-name-shadow-tty-properties '(before-string "{" after-string "}")))
+
+  ;; Abbreviate file paths in completions
+  (add-hook 'rfn-eshadow-setup-minibuffer-hook
+            (lambda ()
+              (when (eq this-command 'find-file)
+                (setq-local minibuffer-default-add-function
+                            (lambda ()
+                              (let ((def (minibuffer-default-add-completions)))
+                                (if (listp def)
+                                    (mapcar 'abbreviate-file-name def)
+                                  (abbreviate-file-name def))))))))
 
   (when (boundp 'minibuffer-local-completion-map)
     (let ((map minibuffer-local-completion-map))
@@ -119,10 +153,25 @@
     (setq completion-styles '(orderless basic)))
   (when (boundp 'completion-category-overrides)
     (setq completion-category-overrides
-          '((project-file (styles orderless partial-completion basic))
-            (file (styles orderless partial-completion basic)))))
+          '((file (styles orderless partial-completion basic))
+            (project-file (styles orderless partial-completion basic))
+            (buffer (styles orderless flex))
+            (consult-location (styles orderless))
+            (consult-multi (styles orderless))
+            (command (styles orderless flex))
+            (variable (styles orderless flex))
+            (symbol (styles orderless flex)))))
   (when (boundp 'completion-category-defaults)
     (setq completion-category-defaults nil))
+
+  ;; More flexible space matching in orderless
+  (when (boundp 'orderless-matching-styles)
+    (setq orderless-matching-styles
+          '(orderless-literal
+            orderless-regexp
+            orderless-initialism
+            orderless-prefixes
+            orderless-flex)))
   (setq enable-recursive-minibuffers t))
 
 (when (boundp 'history-length)
@@ -136,6 +185,8 @@
 (global-set-key (kbd "M-y") 'consult-yank-pop)
 (global-set-key (kbd "s-B") 'consult-buffer)
 (global-set-key (kbd "C-x C-r") 'consult-recent-file)
+(global-set-key (kbd "C-s") 'consult-line)
+(global-set-key (kbd "C-r") 'consult-line)
 
 (when (boundp 'minibuffer-local-map)
   (define-key minibuffer-local-map (kbd "M-r") 'consult-history)
@@ -168,6 +219,10 @@
     (define-key map (kbd "e") 'consult-isearch-history)
     (define-key map (kbd "l") 'consult-line)))
 
+;; If you still want to use isearch occasionally, you can access it via M-s prefix
+(global-set-key (kbd "M-s i") 'isearch-forward)
+(global-set-key (kbd "M-s I") 'isearch-backward)
+
 (when (boundp 'isearch-mode-map)
   (let ((map isearch-mode-map))
     (define-key map (kbd "M-e") 'consult-isearch-history)
@@ -190,10 +245,25 @@
   (consult-customize
    consult-buffer :preview-key "M-."
    consult-history :category 'consult-history
-   consult-line :inherit-input-method t))
+   consult-line :inherit-input-method t :require-match t
+   consult-ripgrep :preview-key "M-."
+   consult-grep :preview-key "M-."
+   consult-find :preview-key "M-.")
+
+  ;; Better async search performance
+  (when (boundp 'consult-async-min-input)
+    (setq consult-async-min-input 2))
+  (when (boundp 'consult-async-refresh-delay)
+    (setq consult-async-refresh-delay 0.2))
+  (when (boundp 'consult-async-input-throttle)
+    (setq consult-async-input-throttle 0.3))
+
+  ;; Show directories first in file completion
+  (when (boundp 'consult-find-args)
+    (setq consult-find-args "find . -type f -o -type d")))
 
 (when (boundp 'marginalia-align)
-  (setq marginalia-align 'left))
+  (setq marginalia-align 'right))
 
 (marginalia-mode 1)
 (savehist-mode 1)
