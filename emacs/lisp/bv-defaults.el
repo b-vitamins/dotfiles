@@ -27,6 +27,8 @@
       pop-up-windows nil
       indicate-empty-lines nil
       cursor-in-non-selected-windows nil
+      cursor-type '(bar . 1)              ; Thin vertical bar cursor (1 pixel wide)
+      blink-cursor-mode nil               ; Disable cursor blinking
       initial-major-mode 'text-mode
       default-major-mode 'text-mode
       font-lock-maximum-decoration nil
@@ -91,6 +93,19 @@
         (kill-buffer buffer))
     ad-do-it))
 (ad-activate 'term-sentinel)
+
+;; Ensure cursor type is applied to frames
+(add-to-list 'default-frame-alist '(cursor-type . (bar . 1)))
+
+;; Force cursor type after frame creation
+(add-hook 'after-make-frame-functions
+          (lambda (frame)
+            (with-selected-frame frame
+              (setq cursor-type '(bar . 1)))))
+
+;; Also set it for the initial frame
+(when (display-graphic-p)
+  (setq cursor-type '(bar . 1)))
 
 (provide 'bv-defaults)
 ;;; bv-defaults.el ends here
