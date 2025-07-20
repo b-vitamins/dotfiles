@@ -11,7 +11,8 @@
     (highlight  . "#f7f7f7")  ; Off-white
     (salient    . "#5f87d7")  ; Cornflower blue
     (popout     . "#87afaf")  ; Sage green
-    (critical   . "#d7875f")) ; Terracotta
+    (critical   . "#d7875f") ; Terracotta
+    (mode-line-fg . background)) ; Mode-line text color
   "Color palette for BV light theme.")
 
 (bv-themes-theme bv-light bv-light-palette)

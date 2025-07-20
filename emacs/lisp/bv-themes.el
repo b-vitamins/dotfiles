@@ -175,7 +175,7 @@
     `(font-lock-warning-face ((,c :inherit bv-themes-popout :weight bold)))
 
     ;; UI elements
-    `(mode-line ((,c :foreground ,(if (display-graphic-p) background foreground)
+    `(mode-line ((,c :foreground ,mode-line-fg
                      :background ,background
                      :height 0.1
                      :box nil :underline nil :overline nil)))

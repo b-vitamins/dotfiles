@@ -11,7 +11,8 @@
     (highlight  . "#303030")  ; Jet (for highlights)
     (salient    . "#5f87d7")  ; Cornflower blue
     (popout     . "#afaf87")  ; Olive
-    (critical   . "#d7875f")) ; Terracotta
+    (critical   . "#d7875f") ; Terracotta
+    (mode-line-fg . foreground)) ; Mode-line text color
   "Color palette for BV dark theme.")
 
 (bv-themes-theme bv-dark bv-dark-palette)
