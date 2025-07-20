@@ -3,6 +3,7 @@
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
+;; Package-Requires: ((emacs "26.1"))
 
 ;;; Commentary:
 
@@ -46,6 +47,10 @@
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 
 (menu-bar-mode -1)
+
+;; Enable line numbers globally
+(when (fboundp 'global-display-line-numbers-mode)
+  (global-display-line-numbers-mode 1))
 
 (setq ring-bell-function 'ignore
       visible-bell nil)
