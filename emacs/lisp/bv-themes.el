@@ -1,14 +1,18 @@
-;;; bv-themes.el --- Sophisticated theme engine -*- lexical-binding: t -*-
+;;; bv-themes.el --- Sophisticated aesthetic theme engine -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
+;; Version: 2.0.0
+;; Package-Requires: ((emacs "27.1"))
+;; Keywords: faces, theme, aesthetics
 
 ;;; Commentary:
 
-;; A sophisticated theme engine supporting multiple variants through
+;; A sophisticated theme engine supporting light and dark variants through
 ;; a data-driven architecture with extensive customization options.
-;; Inspired by the Modus themes' design principles.
+;; Prioritizes aesthetics and visual appeal over strict contrast ratios.
+;; Inspired by the Modus themes' architecture and extensibility.
 
 ;;; Code:
 
@@ -16,9 +20,10 @@
 (require 'color)
 
 (defgroup bv-themes ()
-  "Sophisticated theme system with semantic color mapping."
+  "Sophisticated aesthetic theme system with semantic color mapping."
   :group 'faces
-  :prefix "bv-themes-")
+  :prefix "bv-themes-"
+  :tag "BV Themes")
 
 ;;; User Options - Syntax Highlighting
 
@@ -30,13 +35,15 @@ Other options:
 - `intense': More vivid colors
 - `monochrome': Minimal color variation
 - `rainbow': Maximum color variety
-- `tinted': Slightly desaturated colors"
+- `tinted': Slightly desaturated colors
+- `alt': Alternative color scheme"
   :type '(choice (const :tag "Default" nil)
                  (const :tag "Faint" faint)
                  (const :tag "Intense" intense)
                  (const :tag "Monochrome" monochrome)
                  (const :tag "Rainbow" rainbow)
-                 (const :tag "Tinted" tinted))
+                 (const :tag "Tinted" tinted)
+                 (const :tag "Alternative" alt))
   :group 'bv-themes)
 
 ;;; User Options - Mode Line
@@ -49,13 +56,15 @@ Other options:
 - `padded': Extra padding
 - `borderless': No borders
 - `gradient': Gradient effect (simulated)
-- `minimal': Very subtle styling"
+- `minimal': Very subtle styling
+- `moody': Alternative modern style"
   :type '(choice (const :tag "Default" nil)
                  (const :tag "Accented" accented)
                  (const :tag "Padded" padded)
                  (const :tag "Borderless" borderless)
                  (const :tag "Gradient" gradient)
-                 (const :tag "Minimal" minimal))
+                 (const :tag "Minimal" minimal)
+                 (const :tag "Moody" moody))
   :group 'bv-themes)
 
 ;;; User Options - Typography
@@ -90,6 +99,11 @@ Each level can have:
   :type 'boolean
   :group 'bv-themes)
 
+(defcustom bv-themes-mixed-fonts nil
+  "Non-nil to enable inheritance from `fixed-pitch' in some faces."
+  :type 'boolean
+  :group 'bv-themes)
+
 ;;; User Options - Org Mode
 
 (defcustom bv-themes-org-blocks nil
@@ -99,20 +113,23 @@ Other options:
 - `tinted': Slightly colored backgrounds
 - `rainbow': Different colors per language
 - `zebra': Alternating backgrounds
-- `minimal': No background distinction"
+- `minimal': No background distinction
+- `bordered': Add borders to blocks"
   :type '(choice (const :tag "Default" nil)
                  (const :tag "Tinted" tinted)
                  (const :tag "Rainbow" rainbow)
                  (const :tag "Zebra" zebra)
-                 (const :tag "Minimal" minimal))
+                 (const :tag "Minimal" minimal)
+                 (const :tag "Bordered" bordered))
   :group 'bv-themes)
 
 (defcustom bv-themes-org-agenda-structure nil
   "Style for org-agenda structure.
-Can be `default', `rainbow', or `gradient'."
+Can be `default', `rainbow', `gradient', or `modern'."
   :type '(choice (const :tag "Default" default)
                  (const :tag "Rainbow" rainbow)
-                 (const :tag "Gradient" gradient))
+                 (const :tag "Gradient" gradient)
+                 (const :tag "Modern" modern))
   :group 'bv-themes)
 
 ;;; User Options - UI
@@ -127,20 +144,51 @@ Controls padding and spacing in UI elements."
 
 (defcustom bv-themes-fringes nil
   "Style for window fringes.
-Can be nil (default), `subtle', `greyscale', or `invisible'."
+Can be nil (default), `subtle', `greyscale', `invisible', or `accented'."
   :type '(choice (const :tag "Default" nil)
                  (const :tag "Subtle" subtle)
                  (const :tag "Greyscale" greyscale)
-                 (const :tag "Invisible" invisible))
+                 (const :tag "Invisible" invisible)
+                 (const :tag "Accented" accented))
+  :group 'bv-themes)
+
+(defcustom bv-themes-hl-line nil
+  "Style for line highlighting.
+Can be nil (default), `intense', `accented', `underline', or `faint'."
+  :type '(choice (const :tag "Default" nil)
+                 (const :tag "Intense" intense)
+                 (const :tag "Accented" accented)
+                 (const :tag "Underline" underline)
+                 (const :tag "Faint" faint))
+  :group 'bv-themes)
+
+(defcustom bv-themes-paren-match nil
+  "Style for parenthesis matching.
+Can be nil (default), `intense', `subtle', `underline', or `bold'."
+  :type '(choice (const :tag "Default" nil)
+                 (const :tag "Intense" intense)
+                 (const :tag "Subtle" subtle)
+                 (const :tag "Underline" underline)
+                 (const :tag "Bold" bold))
+  :group 'bv-themes)
+
+(defcustom bv-themes-region nil
+  "Style for region highlighting.
+Can be nil (default), `no-extend', `bg-only', or `accented'."
+  :type '(choice (const :tag "Default" nil)
+                 (const :tag "No extend" no-extend)
+                 (const :tag "Background only" bg-only)
+                 (const :tag "Accented" accented))
   :group 'bv-themes)
 
 (defcustom bv-themes-completions nil
-  "Style for completion interfaces.
-Can be nil (default), `opinionated', `moderate', or `minimal'."
-  :type '(choice (const :tag "Default" nil)
-                 (const :tag "Opinionated" opinionated)
-                 (const :tag "Moderate" moderate)
-                 (const :tag "Minimal" minimal))
+  "Control the style of completion user interfaces."
+  :type `(alist
+          :key-type symbol
+          :value-type (set :tag "Style of completion" :greedy t
+                          (const :tag "Bold weight" bold)
+                          (const :tag "Italic" italic)
+                          (const :tag "Underline" underline)))
   :group 'bv-themes)
 
 ;;; User Options - Fonts
@@ -168,23 +216,47 @@ If nil, uses the default proportional font."
 
 (defcustom bv-themes-diffs nil
   "Style for diffs and version control.
-Can be nil (default), `desaturated', `fg-only', `bg-only', or `deuteranopia'."
+Can be nil (default), `desaturated', `fg-only', `bg-only', `deuteranopia', or `unified'."
   :type '(choice (const :tag "Default" nil)
                  (const :tag "Desaturated" desaturated)
                  (const :tag "Foreground only" fg-only)
                  (const :tag "Background only" bg-only)
-                 (const :tag "Deuteranopia" deuteranopia))
+                 (const :tag "Deuteranopia" deuteranopia)
+                 (const :tag "Unified" unified))
   :group 'bv-themes)
 
 ;;; User Options - Links
 
 (defcustom bv-themes-links nil
   "Style for links.
-Can be nil (default), `neutral-underline', `faint', `no-underline'."
+Can be nil (default), `neutral-underline', `faint', `no-underline', or `bold'."
   :type '(choice (const :tag "Default" nil)
                  (const :tag "Neutral underline" neutral-underline)
                  (const :tag "Faint" faint)
-                 (const :tag "No underline" no-underline))
+                 (const :tag "No underline" no-underline)
+                 (const :tag "Bold" bold))
+  :group 'bv-themes)
+
+;;; User Options - Markup
+
+(defcustom bv-themes-markup nil
+  "Style for markup faces (bold, italic, etc).
+Can be nil (default), `intense', `faint', or `color-coded'."
+  :type '(choice (const :tag "Default" nil)
+                 (const :tag "Intense" intense)
+                 (const :tag "Faint" faint)
+                 (const :tag "Color-coded" color-coded))
+  :group 'bv-themes)
+
+;;; User Options - Prompts
+
+(defcustom bv-themes-prompts nil
+  "Style for prompts.
+Properties can include `bold', `italic', `background', and various colors."
+  :type '(set :tag "Properties" :greedy t
+              (const :tag "Bold" bold)
+              (const :tag "Italic" italic)
+              (const :tag "Background" background))
   :group 'bv-themes)
 
 ;;; User Options - Palette Overrides
@@ -270,6 +342,9 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
              :weight (if (memq base-color '(keyword fnname)) 'medium 'normal)))
       ('tinted
        (list :foreground (bv-themes--desaturate color 0.2)))
+      ('alt
+       (let ((alt-key (intern (format "%s-alt" base-color))))
+         (list :foreground (or (bv-themes--retrieve-palette-value alt-key palette) color))))
       (_
        (list :foreground color)))))
 
@@ -319,6 +394,10 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
           `(:background ,(bv-themes--retrieve-palette-value 'modeline-bg-active palette)
             :foreground ,(bv-themes--retrieve-palette-value 'modeline-fg-active palette)
             :box (:line-width 4 :color ,(bv-themes--retrieve-palette-value 'modeline-bg-active palette))))
+         ('moody
+          `(:background ,(bv-themes--retrieve-palette-value 'modeline-bg-active-alt palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'modeline-fg-active palette)
+            :overline ,(bv-themes--retrieve-palette-value 'accent-0 palette)))
          (_
           `(:background ,(bv-themes--retrieve-palette-value 'modeline-bg-active palette)
             :foreground ,(bv-themes--retrieve-palette-value 'modeline-fg-active palette)))))
@@ -344,6 +423,8 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
        (bv-themes--retrieve-palette-value 'bg-alt palette)))
     ('minimal
      'unspecified)
+    ('bordered
+     (bv-themes--retrieve-palette-value 'bg-inactive palette))
     (_
      (bv-themes--retrieve-palette-value 'bg-dim palette))))
 
@@ -357,6 +438,8 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
        `(:foreground ,(bv-themes--retrieve-palette-value 'fg-link-faint palette) :underline t))
       ('no-underline
        `(:foreground ,color :underline nil))
+      ('bold
+       `(:foreground ,color :underline t :weight bold))
       (_
        `(:foreground ,color :underline t)))))
 
@@ -410,10 +493,77 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
            ('fg `(:foreground ,(bv-themes--retrieve-palette-value
                                 (alist-get which deut-colors)
                                 palette))))))
+      ('unified
+       (pcase side
+         ('bg `(:background ,(bv-themes--retrieve-palette-value 'bg-changed palette)))
+         ('fg `(:foreground ,(bv-themes--retrieve-palette-value 'fg-changed palette)))))
       (_
        (pcase side
          ('bg `(:background ,(bv-themes--retrieve-palette-value base-bg-key palette)))
          ('fg `(:foreground ,(bv-themes--retrieve-palette-value base-fg-key palette))))))))
+
+(defun bv-themes--hl-line-props (palette)
+  "Compute hl-line properties based on user settings and PALETTE."
+  (pcase bv-themes-hl-line
+    ('intense
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-hl-line-intense palette) :extend t))
+    ('accented
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-hl-line-accent palette) :extend t))
+    ('underline
+     `(:underline ,(bv-themes--retrieve-palette-value 'border palette) :extend t))
+    ('faint
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-hl-line-faint palette) :extend t))
+    (_
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-hl-line palette) :extend t))))
+
+(defun bv-themes--paren-match-props (palette)
+  "Compute paren match properties based on user settings and PALETTE."
+  (pcase bv-themes-paren-match
+    ('intense
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-paren-match-intense palette)
+       :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)))
+    ('subtle
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-paren-match palette)))
+    ('underline
+     `(:underline ,(bv-themes--retrieve-palette-value 'accent-0 palette)
+       :weight bold))
+    ('bold
+     `(:inherit bold
+       :background ,(bv-themes--retrieve-palette-value 'bg-paren-match palette)))
+    (_
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-paren-match palette)
+       :foreground ,(bv-themes--retrieve-palette-value 'fg-paren-match palette)))))
+
+(defun bv-themes--region-props (palette)
+  "Compute region properties based on user settings and PALETTE."
+  (pcase bv-themes-region
+    ('no-extend
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-region palette)
+       :foreground ,(bv-themes--retrieve-palette-value 'fg-region palette)
+       :extend nil))
+    ('bg-only
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-region palette)
+       :extend t))
+    ('accented
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-region-accent palette)
+       :foreground ,(bv-themes--retrieve-palette-value 'fg-region palette)
+       :extend t))
+    (_
+     `(:background ,(bv-themes--retrieve-palette-value 'bg-region palette)
+       :foreground ,(bv-themes--retrieve-palette-value 'fg-region palette)
+       :extend t))))
+
+(defun bv-themes--prompt-props (palette)
+  "Compute prompt properties based on user settings and PALETTE."
+  (let ((properties bv-themes-prompts))
+    (append
+     (list :foreground (bv-themes--retrieve-palette-value 'fg-prompt palette))
+     (when (memq 'bold properties)
+       (list :weight 'bold))
+     (when (memq 'italic properties)
+       (list :slant 'italic))
+     (when (memq 'background properties)
+       (list :background (bv-themes--retrieve-palette-value 'bg-prompt palette))))))
 
 ;;; Semantic faces (these are the building blocks)
 
@@ -465,6 +615,46 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
 
 (defface bv-themes-accent-3 nil
   "Quaternary accent color face."
+  :group 'bv-themes)
+
+;;; Special UI faces
+
+(defface bv-themes-mark-select nil
+  "Face for selected marks."
+  :group 'bv-themes)
+
+(defface bv-themes-mark-delete nil
+  "Face for deletion marks."
+  :group 'bv-themes)
+
+(defface bv-themes-mark-other nil
+  "Face for other marks."
+  :group 'bv-themes)
+
+;;; Diff and version control faces
+
+(defface bv-themes-diff-added nil
+  "Face for added diff lines."
+  :group 'bv-themes)
+
+(defface bv-themes-diff-removed nil
+  "Face for removed diff lines."
+  :group 'bv-themes)
+
+(defface bv-themes-diff-changed nil
+  "Face for changed diff lines."
+  :group 'bv-themes)
+
+(defface bv-themes-diff-refine-added nil
+  "Face for refined added diff lines."
+  :group 'bv-themes)
+
+(defface bv-themes-diff-refine-removed nil
+  "Face for refined removed diff lines."
+  :group 'bv-themes)
+
+(defface bv-themes-diff-refine-changed nil
+  "Face for refined changed diff lines."
   :group 'bv-themes)
 
 ;;; Header line faces (for modeline)
@@ -552,6 +742,7 @@ Supports recursive semantic mappings like Modus themes."
         (bold-constructs bv-themes-bold-constructs)
         (italic-constructs bv-themes-italic-constructs)
         (variable-pitch-ui bv-themes-variable-pitch-ui)
+        (mixed-fonts bv-themes-mixed-fonts)
         (font-mono (or bv-themes-font-family-monospaced
                        (face-attribute 'default :family)))
         (font-prop (or bv-themes-font-family-proportional
@@ -597,11 +788,42 @@ Supports recursive semantic mappings like Modus themes."
       (bv-themes-accent-3
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-3 palette))))
 
+      ;; Mark faces
+      (bv-themes-mark-select
+       ((,c :inherit bold :background ,(bv-themes--retrieve-palette-value 'bg-mark-select palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-mark-select palette))))
+      (bv-themes-mark-delete
+       ((,c :inherit bold :background ,(bv-themes--retrieve-palette-value 'bg-mark-delete palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-mark-delete palette))))
+      (bv-themes-mark-other
+       ((,c :inherit bold :background ,(bv-themes--retrieve-palette-value 'bg-mark-other palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-mark-other palette))))
+
+      ;; Diff faces
+      (bv-themes-diff-added
+       ((,c ,@(bv-themes--diff-props 'added 'bg palette)
+            ,@(bv-themes--diff-props 'added 'fg palette))))
+      (bv-themes-diff-removed
+       ((,c ,@(bv-themes--diff-props 'removed 'bg palette)
+            ,@(bv-themes--diff-props 'removed 'fg palette))))
+      (bv-themes-diff-changed
+       ((,c ,@(bv-themes--diff-props 'changed 'bg palette)
+            ,@(bv-themes--diff-props 'changed 'fg palette))))
+      (bv-themes-diff-refine-added
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-added-refine palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-added-intense palette))))
+      (bv-themes-diff-refine-removed
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-removed-refine palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-removed-intense palette))))
+      (bv-themes-diff-refine-changed
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-changed-refine palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-changed-intense palette))))
+
       ;; Basic faces
       (default
        ((,c :family ,font-mono
             :height ,font-size
-            :weight light
+            :weight normal
             :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
             :background ,(bv-themes--retrieve-palette-value 'bg-main palette))))
 
@@ -609,18 +831,50 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :background ,(bv-themes--retrieve-palette-value 'cursor palette))))
 
       (region
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-region palette)
-            ,@(let ((fg (bv-themes--retrieve-palette-value 'fg-region palette)))
-                (unless (eq fg 'unspecified)
-                  (list :foreground fg)))
-            :extend t)))
+       ((,c ,@(bv-themes--region-props palette))))
 
       (highlight
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hover palette))))
 
       (hl-line
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hl-line palette)
-            :extend t)))
+       ((,c ,@(bv-themes--hl-line-props palette))))
+
+      (fringe
+       ((,c :background ,(pcase bv-themes-fringes
+                          ('subtle (bv-themes--retrieve-palette-value 'bg-dim palette))
+                          ('greyscale (bv-themes--retrieve-palette-value 'bg-inactive palette))
+                          ('invisible (bv-themes--retrieve-palette-value 'bg-main palette))
+                          ('accented (bv-themes--retrieve-palette-value 'bg-accent-subtle palette))
+                          (_ (bv-themes--retrieve-palette-value 'fringe palette)))
+            :foreground ,(pcase bv-themes-fringes
+                          ('subtle (bv-themes--retrieve-palette-value 'fringe-subtle palette))
+                          ('greyscale (bv-themes--retrieve-palette-value 'fringe-greyscale palette))
+                          ('invisible (bv-themes--retrieve-palette-value 'bg-main palette))
+                          ('accented (bv-themes--retrieve-palette-value 'fringe-accent palette))
+                          (_ (bv-themes--retrieve-palette-value 'fringe palette))))))
+
+      (vertical-border
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'border palette))))
+
+      (window-divider
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'border palette))))
+      (window-divider-first-pixel
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'border palette))))
+      (window-divider-last-pixel
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'border palette))))
+
+      (minibuffer-prompt
+       ((,c ,@(bv-themes--prompt-props palette))))
+
+      ;; Basic UI faces
+      (error ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'error palette))))
+      (warning ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+      (success ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'success palette))))
+
+      (shadow ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
+      (secondary-selection ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hover-secondary palette))))
+
+      (trailing-whitespace ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space-error palette))))
 
       ;; Font lock faces with syntax variants
       (font-lock-keyword-face
@@ -669,18 +923,364 @@ Supports recursive semantic mappings like Modus themes."
       (font-lock-regexp-grouping-construct
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'rx-construct palette))))
 
+      ;; Additional font-lock faces
+      (font-lock-number-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'number palette))))
+
+      (font-lock-operator-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'operator palette))))
+
+      (font-lock-property-name-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'property palette))))
+
+      (font-lock-punctuation-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'punctuation palette))))
+
+      (font-lock-bracket-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'bracket palette))))
+
+      (font-lock-delimiter-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'delimiter palette))))
+
+      (font-lock-escape-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'escape palette))))
+
+      (font-lock-misc-punctuation-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'punctuation palette))))
+
+      ;; Search and replace
+      (isearch
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-current palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (isearch-fail
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-fail palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (lazy-highlight
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-lazy palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (match
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-match palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (query-replace
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-replace palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      ;; Line numbers
+      (line-number
+       ((,c :inherit ,(if mixed-fonts '(fixed-pitch default) 'default)
+            :background ,(bv-themes--retrieve-palette-value 'bg-line-number-inactive palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-line-number-inactive palette))))
+
+      (line-number-current-line
+       ((,c :inherit ,(if mixed-fonts '(fixed-pitch default) 'default)
+            :background ,(bv-themes--retrieve-palette-value 'bg-line-number-active palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-line-number-active palette)
+            :weight bold)))
+
+      (line-number-major-tick
+       ((,c :inherit line-number
+            :foreground ,(bv-themes--retrieve-palette-value 'red palette))))
+
+      (line-number-minor-tick
+       ((,c :inherit line-number
+            :foreground ,(bv-themes--retrieve-palette-value 'cyan palette))))
+
       ;; Mode line with variants
       (mode-line
-       ((,c ,@(bv-themes--mode-line-props 'active palette))))
+       ((,c ,@(bv-themes--mode-line-props 'active palette)
+            ,@(when variable-pitch-ui '(:inherit variable-pitch)))))
 
       (mode-line-inactive
-       ((,c ,@(bv-themes--mode-line-props 'inactive palette))))
+       ((,c ,@(bv-themes--mode-line-props 'inactive palette)
+            ,@(when variable-pitch-ui '(:inherit variable-pitch)))))
 
       (mode-line-emphasis
        ((,c :inherit bv-themes-strong)))
 
       (mode-line-highlight
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hover-secondary palette))))
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hover-secondary palette)
+            :box ,(bv-themes--retrieve-palette-value 'border palette))))
+
+      ;; Links and buttons
+      (link
+       ((,c ,@(bv-themes--link-props palette))))
+
+      (link-visited
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-link-visited palette)
+            :underline t)))
+
+      (button
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-button-active palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-button-active palette)
+            :box (:line-width 1 :color ,(bv-themes--retrieve-palette-value 'border palette)))))
+
+      ;; Parentheses matching
+      (show-paren-match
+       ((,c ,@(bv-themes--paren-match-props palette))))
+
+      (show-paren-mismatch
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-paren-mismatch palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-paren-mismatch palette))))
+
+      ;; Header line
+      (header-line
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-header palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-header palette)
+            ,@(when variable-pitch-ui '(:inherit variable-pitch)))))
+
+      (header-line-highlight
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hover palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
+            :box ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      ;; Tab bar
+      (tab-bar
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-bar palette))))
+
+      (tab-bar-tab
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-current palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
+            :weight medium
+            :box (:line-width -2 :color ,(bv-themes--retrieve-palette-value 'bg-tab-current palette)))))
+
+      (tab-bar-tab-inactive
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-other palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)
+            :box (:line-width -2 :color ,(bv-themes--retrieve-palette-value 'bg-tab-other palette)))))
+
+      ;; Tab line
+      (tab-line
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-bar palette)
+            :height 0.95)))
+
+      (tab-line-tab
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-current palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
+            :box (:line-width -2 :color ,(bv-themes--retrieve-palette-value 'bg-tab-current palette)))))
+
+      (tab-line-tab-current
+       ((,c :inherit tab-line-tab :weight bold)))
+
+      (tab-line-tab-inactive
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-other palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)
+            :box (:line-width -2 :color ,(bv-themes--retrieve-palette-value 'bg-tab-other palette)))))
+
+      (tab-line-highlight
+       ((,c :inherit highlight)))
+
+      (tab-line-close-highlight
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'red palette))))
+
+      ;; Whitespace mode
+      (whitespace-space
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-space palette))))
+
+      (whitespace-tab
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-space palette))))
+
+      (whitespace-trailing
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space-error palette))))
+
+      (whitespace-line
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+
+      (whitespace-space-before-tab
+       ((,c :inherit warning :background ,(bv-themes--retrieve-palette-value 'bg-space palette))))
+
+      (whitespace-space-after-tab
+       ((,c :inherit warning :background ,(bv-themes--retrieve-palette-value 'bg-space palette))))
+
+      (whitespace-indentation
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-space palette))))
+
+      (whitespace-empty
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space palette))))
+
+      (whitespace-newline
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-space palette))))
+
+      ;; Pulse
+      (pulse-highlight-start-face
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-pulse palette))))
+
+      ;; Fill column indicator
+      (fill-column-indicator
+       ((,c :height 1
+            :background ,(bv-themes--retrieve-palette-value 'bg-fill-column palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'bg-fill-column palette))))
+
+      ;; Tooltip
+      (tooltip
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tooltip palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      ;; Help
+      (help-key-binding
+       ((,c :inherit bold
+            :background ,(bv-themes--retrieve-palette-value 'bg-keybind palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'keybind palette))))
+
+      (help-argument-name
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'variable palette)
+            :slant ,(if italic-constructs 'italic 'normal))))
+
+      ;; Custom
+      (custom-button
+       ((,c :inherit bv-themes-button)))
+
+      (custom-button-mouse
+       ((,c :inherit (highlight custom-button))))
+
+      (custom-button-pressed
+       ((,c :inherit (secondary-selection custom-button))))
+
+      (custom-state
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+
+      (custom-changed
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-changed-subtle palette))))
+
+      (custom-face-tag
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'type palette))))
+
+      (custom-group-tag
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'builtin palette))))
+
+      (custom-variable-tag
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'variable palette))))
+
+      ;; Info
+      (info-node
+       ((,c :inherit bold)))
+
+      (info-title-1
+       ((,c :inherit bv-themes-heading-1)))
+
+      (info-title-2
+       ((,c :inherit bv-themes-heading-2)))
+
+      (info-title-3
+       ((,c :inherit bv-themes-heading-3)))
+
+      (info-title-4
+       ((,c :inherit bv-themes-heading-4)))
+
+      (info-menu-header
+       ((,c :inherit bold)))
+
+      (info-menu-star
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'red palette))))
+
+      ;; Compilation
+      (compilation-mode-line-run
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'modeline-warning palette))))
+
+      (compilation-mode-line-exit
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'modeline-success palette))))
+
+      (compilation-mode-line-fail
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'modeline-error palette))))
+
+      (compilation-error
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'error palette))))
+
+      (compilation-warning
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+
+      (compilation-info
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'info palette))))
+
+      (compilation-line-number
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-special-mild palette))))
+
+      (compilation-column-number
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-special-mild palette))))
+
+      ;; Completions
+      (completions-annotations
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'docstring palette)
+            :slant ,(if italic-constructs 'italic 'normal))))
+
+      (completions-common-part
+       ((,c ,@(bv-themes--completion-props 0 palette))))
+
+      (completions-first-difference
+       ((,c ,@(bv-themes--completion-props 1 palette))))
+
+      ;; Bookmark
+      (bookmark-face
+       ((,c :inherit success)))
+
+      ;; Message (mail)
+      (message-header-name
+       ((,c :inherit bold)))
+
+      (message-header-subject
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'mail-subject palette))))
+
+      (message-header-to
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'mail-recipient palette))))
+
+      (message-header-cc
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-recipient palette))))
+
+      (message-header-other
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-other palette))))
+
+      (message-separator
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-inactive palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (message-cited-text-1
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-cite-0 palette))))
+
+      (message-cited-text-2
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-cite-1 palette))))
+
+      (message-cited-text-3
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-cite-2 palette))))
+
+      (message-cited-text-4
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-cite-3 palette))))
+
+      ;; Calendar and diary
+      (calendar-today
+       ((,c :inherit bold :underline t)))
+
+      (calendar-weekday-header
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-weekday palette))))
+
+      (calendar-weekend-header
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-weekend palette))))
+
+      (calendar-month-header
+       ((,c :inherit bold)))
+
+      (diary
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette))))
+
+      (holiday
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-holiday palette))))
+
+      ;; Outline
+      (outline-1 ((,c :inherit bv-themes-heading-1)))
+      (outline-2 ((,c :inherit bv-themes-heading-2)))
+      (outline-3 ((,c :inherit bv-themes-heading-3)))
+      (outline-4 ((,c :inherit bv-themes-heading-4)))
+      (outline-5 ((,c :inherit bv-themes-heading-5)))
+      (outline-6 ((,c :inherit bv-themes-heading-6)))
+      (outline-7 ((,c :inherit bv-themes-heading-7)))
+      (outline-8 ((,c :inherit bv-themes-heading-8)))
 
       ;; Headings with dynamic properties
       (org-level-1 ((,c ,@(bv-themes--heading 1 palette))))
@@ -700,193 +1300,318 @@ Supports recursive semantic mappings like Modus themes."
                            ((,c :foreground ,(bv-themes--retrieve-palette-value
                                               (nth (1- i) colors) palette)))))
 
-      ;; Completion faces with multiple match levels
-      ,@(cl-loop for i from 0 to 3
-                 collect `(,(intern (format "orderless-match-face-%d" i))
-                           ((,c ,@(bv-themes--completion-props i palette)))))
+      ;; Dired
+      (dired-directory
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette))))
 
-      (completions-common-part
-       ((,c ,@(bv-themes--completion-props 0 palette))))
+      (dired-symlink
+       ((,c :inherit link)))
 
-      (completions-first-difference
-       ((,c ,@(bv-themes--completion-props 1 palette))))
+      (dired-broken-symlink
+       ((,c :inherit link :foreground ,(bv-themes--retrieve-palette-value 'error palette))))
 
-      ;; Diff faces with proper backgrounds
+      (dired-flagged
+       ((,c :inherit bv-themes-mark-delete)))
+
+      (dired-marked
+       ((,c :inherit bv-themes-mark-select)))
+
+      (dired-header
+       ((,c :inherit bold)))
+
+      (dired-mark
+       ((,c :inherit bold)))
+
+      (dired-ignored
+       ((,c :inherit shadow)))
+
+      (dired-perm-write
+       ((,c :inherit shadow)))
+
+      ;; Eshell
+      (eshell-prompt
+       ((,c ,@(bv-themes--prompt-props palette))))
+
+      (eshell-ls-directory
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette)
+            :weight bold)))
+
+      (eshell-ls-symlink
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-1 palette))))
+
+      (eshell-ls-executable
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-2 palette))))
+
+      ;; Term/ansi-term
+      (term-color-black
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-black palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-black palette))))
+
+      (term-color-red
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-red palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-red palette))))
+
+      (term-color-green
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-green palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-green palette))))
+
+      (term-color-yellow
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-yellow palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-yellow palette))))
+
+      (term-color-blue
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-blue palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-blue palette))))
+
+      (term-color-magenta
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-magenta palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-magenta palette))))
+
+      (term-color-cyan
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-cyan palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-cyan palette))))
+
+      (term-color-white
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-white palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-white palette))))
+
+      ;; Ansi-color
+      (ansi-color-black
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-black palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-black palette))))
+
+      (ansi-color-red
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-red palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-red palette))))
+
+      (ansi-color-green
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-green palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-green palette))))
+
+      (ansi-color-yellow
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-yellow palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-yellow palette))))
+
+      (ansi-color-blue
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-blue palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-blue palette))))
+
+      (ansi-color-magenta
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-magenta palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-magenta palette))))
+
+      (ansi-color-cyan
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-cyan palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-cyan palette))))
+
+      (ansi-color-white
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-white palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-white palette))))
+
+      (ansi-color-bright-black
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-black-bright palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-black-bright palette))))
+
+      (ansi-color-bright-red
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-red-bright palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-red-bright palette))))
+
+      (ansi-color-bright-green
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-green-bright palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-green-bright palette))))
+
+      (ansi-color-bright-yellow
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-yellow-bright palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-yellow-bright palette))))
+
+      (ansi-color-bright-blue
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-blue-bright palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-blue-bright palette))))
+
+      (ansi-color-bright-magenta
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-magenta-bright palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-magenta-bright palette))))
+
+      (ansi-color-bright-cyan
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-cyan-bright palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-cyan-bright palette))))
+
+      (ansi-color-bright-white
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-white-bright palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-white-bright palette))))
+
+      ;; Package faces
+      (package-name
+       ((,c :inherit link)))
+
+      (package-description
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'docstring palette))))
+
+      (package-status-installed
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-alt palette))))
+
+      (package-status-available
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-alt palette))))
+
+      (package-status-new
+       ((,c :inherit success)))
+
+      (package-status-held
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+
+      (package-status-disabled
+       ((,c :inherit error :strike-through t)))
+
+      (package-status-built-in
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'builtin palette))))
+
+      (package-status-dependency
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+
+      (package-status-unsigned
+       ((,c :inherit error)))
+
+      (package-status-from-source
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'type palette))))
+
+      ;; SHR/eww
+      (shr-link
+       ((,c :inherit link)))
+
+      (shr-selected-link
+       ((,c :inherit bv-themes-mark-select)))
+
+      (shr-h1
+       ((,c :inherit bv-themes-heading-1)))
+
+      (shr-h2
+       ((,c :inherit bv-themes-heading-2)))
+
+      (shr-h3
+       ((,c :inherit bv-themes-heading-3)))
+
+      (shr-h4
+       ((,c :inherit bv-themes-heading-4)))
+
+      (shr-h5
+       ((,c :inherit bv-themes-heading-5)))
+
+      (shr-h6
+       ((,c :inherit bv-themes-heading-6)))
+
+      ;; Eldoc
+      (eldoc-highlight-function-argument
+       ((,c :inherit bold
+            :background ,(bv-themes--retrieve-palette-value 'bg-active-argument palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-active-argument palette))))
+
+      ;; Diff mode
+      (diff-header
+       ((,c :inherit bold)))
+
+      (diff-file-header
+       ((,c :inherit bold)))
+
+      (diff-hunk-header
+       ((,c :inherit bold :background ,(bv-themes--retrieve-palette-value 'bg-inactive palette))))
+
+      (diff-function
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-inactive palette))))
+
       (diff-added
-       ((,c ,@(bv-themes--diff-props 'added 'bg palette)
-            ,@(bv-themes--diff-props 'added 'fg palette)
-            :extend t)))
+       ((,c :inherit bv-themes-diff-added :extend t)))
+
       (diff-removed
-       ((,c ,@(bv-themes--diff-props 'removed 'bg palette)
-            ,@(bv-themes--diff-props 'removed 'fg palette)
-            :extend t)))
+       ((,c :inherit bv-themes-diff-removed :extend t)))
+
       (diff-changed
-       ((,c ,@(bv-themes--diff-props 'changed 'bg palette)
-            ,@(bv-themes--diff-props 'changed 'fg palette)
-            :extend t)))
+       ((,c :inherit bv-themes-diff-changed :extend t)))
 
       (diff-refine-added
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-added-refine palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-added-intense palette))))
+       ((,c :inherit bv-themes-diff-refine-added)))
+
       (diff-refine-removed
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-removed-refine palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-removed-intense palette))))
+       ((,c :inherit bv-themes-diff-refine-removed)))
+
       (diff-refine-changed
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-changed-refine palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-changed-intense palette))))
+       ((,c :inherit bv-themes-diff-refine-changed)))
 
-      ;; Org blocks with dynamic backgrounds
-      (org-block
-       ((,c :background ,(bv-themes--org-block-bg 'default palette)
-            :extend t)))
-      (org-block-begin-line
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-prose-block-delimiter palette)
-            :background ,(bv-themes--retrieve-palette-value 'bg-prose-block-delimiter palette)
-            :extend t)))
-      (org-block-end-line
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-prose-block-delimiter palette)
-            :background ,(bv-themes--retrieve-palette-value 'bg-prose-block-delimiter palette)
-            :extend t)))
+      (diff-indicator-added
+       ((,c :inherit diff-added :foreground ,(bv-themes--retrieve-palette-value 'fg-added-intense palette))))
 
-      ;; Org elements
-      (org-code
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-code palette))))
-      (org-verbatim
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-verbatim palette))))
-      (org-table
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-table palette))))
-      (org-formula
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-macro palette))))
-      (org-quote
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)
-            :slant ,(if italic-constructs 'italic 'normal))))
+      (diff-indicator-removed
+       ((,c :inherit diff-removed :foreground ,(bv-themes--retrieve-palette-value 'fg-removed-intense palette))))
 
-      ;; Org todo keywords
-      (org-todo
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-todo palette)
-            :weight bold)))
-      (org-done
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-done palette)
-            :weight medium)))
-      (org-headline-done
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
+      (diff-indicator-changed
+       ((,c :inherit diff-changed :foreground ,(bv-themes--retrieve-palette-value 'fg-changed-intense palette))))
 
-      ;; Org dates and scheduling
-      (org-date
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette))))
-      (org-scheduled
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-scheduled palette))))
-      (org-scheduled-today
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-scheduled palette)
-            :weight bold)))
-      (org-scheduled-previously
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-warning palette))))
-      (org-upcoming-deadline
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-deadline palette))))
-      (org-deadline-announce
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-deadline palette)
-            :weight bold)))
-      (org-time-grid
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
-      (org-upcoming-distant-deadline
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette))))
+      ;; Ediff
+      (ediff-current-diff-A
+       ((,c :inherit bv-themes-diff-removed)))
 
-      ;; Org meta
-      (org-tag
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-tag palette)
-            :weight light)))
-      (org-meta-line
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata palette))))
-      (org-document-title
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-heading-0 palette)
-            :weight bold
-            :height 1.8)))
-      (org-document-info
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata palette))))
-      (org-document-info-keyword
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata-value palette))))
+      (ediff-current-diff-B
+       ((,c :inherit bv-themes-diff-added)))
 
-      ;; Links and buttons
-      (link
-       ((,c ,@(bv-themes--link-props palette))))
-      (link-visited
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-link-visited palette)
-            :underline t)))
+      (ediff-current-diff-C
+       ((,c :inherit bv-themes-diff-changed)))
 
-      (button
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-button-active palette)
-            :background ,(bv-themes--retrieve-palette-value 'bg-button-active palette)
-            :box (:line-width 1 :color ,(bv-themes--retrieve-palette-value 'border palette)))))
+      (ediff-current-diff-Ancestor
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-region palette))))
 
-      ;; Additional standard faces
-      (fringe
-       ((,c :foreground ,(pcase bv-themes-fringes
-                          ('subtle (bv-themes--retrieve-palette-value 'fringe-subtle palette))
-                          ('greyscale (bv-themes--retrieve-palette-value 'fringe-greyscale palette))
-                          ('invisible (bv-themes--retrieve-palette-value 'bg-main palette))
-                          (_ (bv-themes--retrieve-palette-value 'fringe palette)))
-            :background ,(bv-themes--retrieve-palette-value 'bg-main palette))))
+      (ediff-fine-diff-A
+       ((,c :inherit bv-themes-diff-refine-removed)))
 
-      (vertical-border
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'border palette))))
+      (ediff-fine-diff-B
+       ((,c :inherit bv-themes-diff-refine-added)))
 
-      (window-divider
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'border palette))))
-      (window-divider-first-pixel
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'border palette))))
-      (window-divider-last-pixel
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'border palette))))
+      (ediff-fine-diff-C
+       ((,c :inherit bv-themes-diff-refine-changed)))
 
-      (minibuffer-prompt
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-prompt palette)
-            :weight medium)))
+      ;; Smerge
+      (smerge-lower
+       ((,c :inherit diff-added)))
 
-      ;; Search and matching
-      (match
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-yellow-nuanced palette)
-            :weight bold)))
-      (isearch
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-yellow-intense palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
-            :weight bold)))
-      (lazy-highlight
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-cyan-nuanced palette))))
+      (smerge-upper
+       ((,c :inherit diff-removed)))
 
-      ;; Replace
-      (query-replace
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-magenta-intense palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
-            :weight bold)))
+      (smerge-base
+       ((,c :inherit diff-changed)))
 
-      ;; Line numbers
-      (line-number
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-line-number-inactive palette)
-            :background ,(bv-themes--retrieve-palette-value 'bg-line-number-inactive palette))))
-      (line-number-current-line
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-line-number-active palette)
-            :background ,(bv-themes--retrieve-palette-value 'bg-line-number-active palette)
-            :weight medium)))
+      (smerge-markers
+       ((,c :inherit diff-header)))
 
-      ;; Parentheses
-      (show-paren-match
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-paren-match palette)
-            ,@(let ((fg (bv-themes--retrieve-palette-value 'fg-paren-match palette)))
-                (unless (eq fg 'unspecified)
-                  (list :foreground fg)))
-            :weight bold)))
-      (show-paren-mismatch
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-paren-mismatch palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-paren-mismatch palette))))
+      ;; Flyspell
+      (flyspell-incorrect
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-error palette)))))
 
-      ;; Whitespace mode
-      (whitespace-space
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-whitespace palette))))
-      (whitespace-tab
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-whitespace palette))))
-      (whitespace-trailing
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-red-nuanced palette))))
+      (flyspell-duplicate
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
 
-      ;; Package-specific faces
+      ;; Flymake
+      (flymake-error
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-error palette)))))
+
+      (flymake-warning
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
+
+      (flymake-note
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-note palette)))))
+
+      ;; Flycheck
+      (flycheck-error
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-error palette)))))
+
+      (flycheck-warning
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
+
+      (flycheck-info
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-note palette)))))
+
+      ;; Completion frameworks
+      (orderless-match-face-0 ((,c ,@(bv-themes--completion-props 0 palette))))
+      (orderless-match-face-1 ((,c ,@(bv-themes--completion-props 1 palette))))
+      (orderless-match-face-2 ((,c ,@(bv-themes--completion-props 2 palette))))
+      (orderless-match-face-3 ((,c ,@(bv-themes--completion-props 3 palette))))
 
       ;; Vertico
       (vertico-current
@@ -932,6 +1657,113 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
       (which-key-command-description-face
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      ;; Company
+      (company-tooltip
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-popup palette))))
+      (company-tooltip-selection
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-completion palette))))
+      (company-tooltip-common
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette)
+            :weight bold)))
+
+      ;; Org mode
+      (org-block
+       ((,c :background ,(bv-themes--org-block-bg 'default palette)
+            :extend t
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-block-begin-line
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-prose-block-delimiter palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-prose-block-delimiter palette)
+            :extend t
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-block-end-line
+       ((,c :inherit org-block-begin-line)))
+      (org-code
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-code palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-verbatim
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-verbatim palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-table
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-table palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-formula
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-macro palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-quote
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)
+            :slant ,(if italic-constructs 'italic 'normal))))
+      (org-verse
+       ((,c :inherit org-quote)))
+      (org-todo
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-todo palette)
+            :weight bold)))
+      (org-done
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-done palette)
+            :weight medium)))
+      (org-headline-done
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
+      (org-date
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-scheduled
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-scheduled palette))))
+      (org-scheduled-today
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-scheduled palette)
+            :weight bold)))
+      (org-scheduled-previously
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-warning palette))))
+      (org-upcoming-deadline
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-deadline palette))))
+      (org-deadline-announce
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-deadline palette)
+            :weight bold)))
+      (org-time-grid
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
+      (org-upcoming-distant-deadline
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette))))
+      (org-tag
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-tag palette)
+            :weight light)))
+      (org-meta-line
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-document-title
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-heading-0 palette)
+            :weight bold
+            :height 1.8)))
+      (org-document-info
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata palette))))
+      (org-document-info-keyword
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata-value palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-drawer
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-footnote
+       ((,c :inherit link)))
+      (org-ellipsis
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
+      (org-agenda-structure
+       ((,c :inherit bv-themes-heading-1)))
+      (org-agenda-date
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette)
+            :inherit bold)))
+      (org-agenda-date-today
+       ((,c :inherit org-agenda-date :underline t)))
+      (org-agenda-date-weekend
+       ((,c :inherit org-agenda-date :foreground ,(bv-themes--retrieve-palette-value 'date-weekend palette))))
+      (org-checkbox
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'warning palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-priority
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-tag palette))))
+      (org-special-keyword
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata palette)
+            ,@(when mixed-fonts '(:inherit fixed-pitch)))))
+      (org-sexp-date
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette))))
 
       ;; Magit
       (magit-branch-current
@@ -982,71 +1814,51 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hover palette)
             :weight bold)))
 
-      ;; Flycheck/Flymake
-      (flycheck-error
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-err palette)))))
-      (flycheck-warning
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
-      (flycheck-info
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-note palette)))))
+      ;; Rainbow delimiters with proper scaling
+      ,@(cl-loop for i from 1 to 9
+                 for base-colors = '(red orange yellow green cyan blue purple magenta pink)
+                 collect `(,(intern (format "rainbow-delimiters-depth-%d-face" i))
+                           ((,c :foreground ,(bv-themes--retrieve-palette-value
+                                              (nth (mod (1- i) (length base-colors)) base-colors)
+                                              palette)))))
 
-      (flymake-error
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-err palette)))))
-      (flymake-warning
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
-      (flymake-note
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-note palette)))))
+      ;; All-the-icons
+      (all-the-icons-blue ((,c :foreground ,(bv-themes--retrieve-palette-value 'blue-cooler palette))))
+      (all-the-icons-blue-alt ((,c :foreground ,(bv-themes--retrieve-palette-value 'blue-warmer palette))))
+      (all-the-icons-cyan ((,c :foreground ,(bv-themes--retrieve-palette-value 'cyan palette))))
+      (all-the-icons-cyan-alt ((,c :foreground ,(bv-themes--retrieve-palette-value 'cyan-warmer palette))))
+      (all-the-icons-dblue ((,c :foreground ,(bv-themes--retrieve-palette-value 'blue-faint palette))))
+      (all-the-icons-dcyan ((,c :foreground ,(bv-themes--retrieve-palette-value 'cyan-faint palette))))
+      (all-the-icons-dgreen ((,c :foreground ,(bv-themes--retrieve-palette-value 'green-faint palette))))
+      (all-the-icons-dmaroon ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta-faint palette))))
+      (all-the-icons-dorange ((,c :foreground ,(bv-themes--retrieve-palette-value 'red-faint palette))))
+      (all-the-icons-dpink ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta-faint palette))))
+      (all-the-icons-dpurple ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta-cooler palette))))
+      (all-the-icons-dred ((,c :foreground ,(bv-themes--retrieve-palette-value 'red palette))))
+      (all-the-icons-dsilver ((,c :foreground ,(bv-themes--retrieve-palette-value 'cyan-faint palette))))
+      (all-the-icons-dyellow ((,c :foreground ,(bv-themes--retrieve-palette-value 'yellow-faint palette))))
+      (all-the-icons-green ((,c :foreground ,(bv-themes--retrieve-palette-value 'green palette))))
+      (all-the-icons-lblue ((,c :foreground ,(bv-themes--retrieve-palette-value 'blue-cooler palette))))
+      (all-the-icons-lcyan ((,c :foreground ,(bv-themes--retrieve-palette-value 'cyan palette))))
+      (all-the-icons-lgreen ((,c :foreground ,(bv-themes--retrieve-palette-value 'green-warmer palette))))
+      (all-the-icons-lmaroon ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta-warmer palette))))
+      (all-the-icons-lorange ((,c :foreground ,(bv-themes--retrieve-palette-value 'red-warmer palette))))
+      (all-the-icons-lpink ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta palette))))
+      (all-the-icons-lpurple ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta-faint palette))))
+      (all-the-icons-lred ((,c :foreground ,(bv-themes--retrieve-palette-value 'red-faint palette))))
+      (all-the-icons-lsilver ((,c :foreground "gray50")))
+      (all-the-icons-lyellow ((,c :foreground ,(bv-themes--retrieve-palette-value 'yellow-warmer palette))))
+      (all-the-icons-maroon ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta palette))))
+      (all-the-icons-orange ((,c :foreground ,(bv-themes--retrieve-palette-value 'yellow-warmer palette))))
+      (all-the-icons-pink ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta-warmer palette))))
+      (all-the-icons-purple ((,c :foreground ,(bv-themes--retrieve-palette-value 'magenta-cooler palette))))
+      (all-the-icons-purple-alt ((,c :foreground ,(bv-themes--retrieve-palette-value 'blue-warmer palette))))
+      (all-the-icons-red ((,c :foreground ,(bv-themes--retrieve-palette-value 'red palette))))
+      (all-the-icons-red-alt ((,c :foreground ,(bv-themes--retrieve-palette-value 'red-cooler palette))))
+      (all-the-icons-silver ((,c :foreground "gray50")))
+      (all-the-icons-yellow ((,c :foreground ,(bv-themes--retrieve-palette-value 'yellow palette))))
 
-      ;; Company
-      (company-tooltip
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-popup palette))))
-      (company-tooltip-selection
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-completion palette))))
-      (company-tooltip-common
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette)
-            :weight bold)))
-
-      ;; Org agenda
-      (org-agenda-structure
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-heading-0 palette)
-            :weight light
-            :height 1.4)))
-      (org-agenda-date
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette)
-            :weight regular)))
-      (org-agenda-date-today
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-now palette)
-            :weight medium
-            :underline t)))
-      (org-agenda-date-weekend
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-weekend palette)
-            :weight regular)))
-      (org-agenda-done
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-done palette))))
-      (org-agenda-dimmed-todo-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
-
-      ;; Email
-      (message-header-name
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-header-name palette)
-            :weight medium)))
-      (message-header-to
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-recipient palette))))
-      (message-header-subject
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-subject palette)
-            :weight bold)))
-      (message-header-other
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-other palette))))
-      (message-cited-text-1
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-cite-0 palette))))
-      (message-cited-text-2
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-cite-1 palette))))
-      (message-cited-text-3
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-cite-2 palette))))
-      (message-cited-text-4
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'mail-cite-3 palette))))
-
-      ;; Header line faces (for when header-line is used as modeline)
+      ;; Header line faces
       (bv-themes-header-default
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'modeline-fg-active palette)
             :background ,(bv-themes--retrieve-palette-value 'modeline-bg-active palette))))
@@ -1065,79 +1877,7 @@ Supports recursive semantic mappings like Modus themes."
             :background ,(bv-themes--retrieve-palette-value 'red-intense palette))))
       (bv-themes-header-faded
        ((,c :inherit bv-themes-header-default
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
-
-      ;; Rainbow delimiters with proper scaling
-      ,@(cl-loop for i from 1 to 9
-                 for base-colors = '(red orange yellow green cyan blue purple magenta pink)
-                 collect `(,(intern (format "rainbow-delimiters-depth-%d-face" i))
-                           ((,c :foreground ,(bv-themes--retrieve-palette-value
-                                              (nth (mod (1- i) (length base-colors)) base-colors)
-                                              palette)))))
-
-      ;; Tab bar
-      (tab-bar
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-bar palette))))
-      (tab-bar-tab
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-current palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
-            :weight medium)))
-      (tab-bar-tab-inactive
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tab-other palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
-
-      ;; Tooltip
-      (tooltip
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-tooltip palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
-
-      ;; Ansi colors
-      (ansi-color-black
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-black palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-black palette))))
-      (ansi-color-red
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-red palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-red palette))))
-      (ansi-color-green
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-green palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-green palette))))
-      (ansi-color-yellow
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-yellow palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-yellow palette))))
-      (ansi-color-blue
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-blue palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-blue palette))))
-      (ansi-color-magenta
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-magenta palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-magenta palette))))
-      (ansi-color-cyan
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-cyan palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-cyan palette))))
-      (ansi-color-white
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-term-white palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-term-white palette))))
-
-      ;; Eshell
-      (eshell-prompt
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-prompt palette)
-            :weight bold)))
-      (eshell-ls-directory
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette)
-            :weight bold)))
-      (eshell-ls-symlink
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-1 palette))))
-      (eshell-ls-executable
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-2 palette))))
-
-      ;; Dired
-      (dired-directory
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette)
-            :weight bold)))
-      (dired-symlink
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-1 palette))))
-      (dired-broken-symlink
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'warning palette)
-            :weight bold))))))
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)))))))
 
 ;;; Theme generation
 
@@ -1149,8 +1889,20 @@ Supports recursive semantic mappings like Modus themes."
          ,(format "BV theme variant: %s" name))
 
        (let* ((palette (bv-themes--palette-value ',theme-name))
-              (faces (bv-themes--face-specs palette)))
-         (apply #'custom-theme-set-faces ',name faces))
+              (faces (bv-themes--face-specs palette))
+              (ansi-colors (vector
+                           (bv-themes--retrieve-palette-value 'bg-term-black palette)
+                           (bv-themes--retrieve-palette-value 'red palette)
+                           (bv-themes--retrieve-palette-value 'green palette)
+                           (bv-themes--retrieve-palette-value 'yellow palette)
+                           (bv-themes--retrieve-palette-value 'blue palette)
+                           (bv-themes--retrieve-palette-value 'magenta palette)
+                           (bv-themes--retrieve-palette-value 'cyan palette)
+                           (bv-themes--retrieve-palette-value 'bg-term-white palette))))
+         (apply #'custom-theme-set-faces ',name faces)
+         (custom-theme-set-variables
+          ',name
+          (list 'ansi-color-names-vector ansi-colors)))
 
        (provide-theme ',name))))
 
@@ -1216,6 +1968,10 @@ Supports recursive semantic mappings like Modus themes."
                                                  cyan-faint blue-faint purple-faint magenta-faint))
                             ("Intense Variants" . (red-intense orange-intense yellow-intense green-intense
                                                    cyan-intense blue-intense purple-intense magenta-intense))
+                            ("Cooler Variants" . (red-cooler green-cooler blue-cooler yellow-cooler
+                                                  magenta-cooler cyan-cooler))
+                            ("Warmer Variants" . (red-warmer green-warmer blue-warmer yellow-warmer
+                                                  magenta-warmer cyan-warmer))
                             ("Nuanced Backgrounds" . (bg-red-nuanced bg-orange-nuanced bg-yellow-nuanced
                                                       bg-green-nuanced bg-cyan-nuanced bg-blue-nuanced
                                                       bg-purple-nuanced bg-magenta-nuanced))
@@ -1295,7 +2051,7 @@ Supports recursive semantic mappings like Modus themes."
           (special-mode)))
       (switch-to-buffer buf))))
 
-;;; Preset overrides (like Modus themes)
+;;; Preset overrides (inspired by Modus themes)
 
 (defvar bv-themes-preset-overrides-faint
   '((keyword . blue-faint)
@@ -1334,6 +2090,24 @@ Supports recursive semantic mappings like Modus themes."
     (modeline-bg-active . bg-blue-nuanced)
     (modeline-fg-active . fg-main))
   "Preset for vivid, intense colors.")
+
+(defvar bv-themes-preset-overrides-monochrome
+  '((keyword . fg-main)
+    (string . fg-dim)
+    (comment . fg-dim)
+    (fnname . fg-main)
+    (variable . fg-alt)
+    (type . fg-main)
+    (constant . fg-alt)
+    (builtin . fg-main)
+    (docstring . fg-dim)
+    (preprocessor . fg-alt)
+
+    (accent-0 . fg-main)
+    (accent-1 . fg-alt)
+    (accent-2 . fg-dim)
+    (accent-3 . fg-active))
+  "Preset for monochrome styling.")
 
 ;;; Provide a macro for users to evaluate colors in context
 
