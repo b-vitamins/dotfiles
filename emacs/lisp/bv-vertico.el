@@ -31,16 +31,6 @@
                    'completion--in-region)
                  args))))
 
-(defun bv-vertico--format-candidate (orig cand prefix suffix index start)
-  "Add arrow to current candidate."
-  (concat
-   (if (= vertico--index index)
-       (propertize "» " 'face 'vertico-current)
-     "  ")
-   (funcall orig cand prefix suffix index start)))
-
-(advice-add 'vertico--format-candidate :around #'bv-vertico--format-candidate)
-
 (add-hook 'minibuffer-setup-hook 'vertico-repeat-save)
 (global-set-key (kbd "s-s") 'vertico-repeat)
 (defun bv-vertico-kill-region-dwim (&optional count)
