@@ -21,7 +21,7 @@
 (when (boundp 'vertico-resize)
   (setq vertico-resize t))
 (when (boundp 'vertico-count)
-  (setq vertico-count 10))
+  (setq vertico-count 15))
 
 (when (boundp 'completion-in-region-function)
   (setq completion-in-region-function
@@ -56,8 +56,7 @@
           (consult-org-heading buffer)
           (consult-history buffer)
           (consult-xref buffer)
-          (embark-keybinding buffer)
-          (consult-location buffer))))
+          (embark-keybinding buffer))))
 
 (when (boundp 'vertico-multiform-commands)
   (setq vertico-multiform-commands
