@@ -225,7 +225,7 @@
 (add-hook 'window-configuration-change-hook 'bv-modeline-update-windows)
 
 (setq eshell-status-in-modeline nil)
-(setq-default mode-line-format "")
+(setq-default mode-line-format nil)
 
 (with-eval-after-load 'calendar
   (defun calendar-setup-header ()
