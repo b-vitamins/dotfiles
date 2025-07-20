@@ -237,6 +237,7 @@ define_links() {
         LINKS["$DOTFILES_DIR/emacs/lisp"]="$HOME/.config/emacs/lisp"
         LINKS["$DOTFILES_DIR/emacs/setup"]="$HOME/.config/emacs/setup"
         LINKS["$DOTFILES_DIR/emacs/templates"]="$HOME/.config/emacs/templates"
+        LINKS["$DOTFILES_DIR/emacs/themes"]="$HOME/.config/emacs/themes"
 
         # Note: The following are handled by Guix home configuration:
         # - Shell (zsh/zshrc, zsh/zshenv)

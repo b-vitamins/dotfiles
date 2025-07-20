@@ -14,9 +14,9 @@
 (add-to-list 'load-path
              (expand-file-name "lisp" (file-name-directory load-file-name)))
 
-;; Add lisp directory to theme load path for bv-light-theme and bv-dark-theme
+;; Add themes directory to theme load path
 (add-to-list 'custom-theme-load-path
-             (expand-file-name "lisp" (file-name-directory load-file-name)))
+             (expand-file-name "themes" (file-name-directory load-file-name)))
 
 (require 'bv-layout)
 
