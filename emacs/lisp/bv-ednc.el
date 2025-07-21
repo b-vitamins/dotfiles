@@ -89,7 +89,7 @@
      ("o" "Open app" bv-ednc-open-app)])
   (bv-ednc-transient-menu))
 
-(global-set-key (kbd "C-c n") 'bv-ednc-transient)
+(global-set-key (kbd "C-c N") 'bv-ednc-transient)
 
 (provide 'bv-ednc)
 ;;; bv-ednc.el ends here
