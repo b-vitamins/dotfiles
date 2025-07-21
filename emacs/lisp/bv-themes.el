@@ -351,7 +351,7 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
 (defun bv-themes--heading (level palette)
   "Compute heading properties for LEVEL using PALETTE."
   (let* ((user-props (alist-get level bv-themes-headings))
-         (default-heights '(1.8 1.5 1.3 1.2 1.1 1.05 1.0 1.0))
+         (default-heights '(1.2 1.1 1.1 1.1 1.1 1.05 1.0 1.0))
          (height (or (plist-get user-props :height)
                     (nth (1- level) default-heights)))
          (weight (or (plist-get user-props :weight)
