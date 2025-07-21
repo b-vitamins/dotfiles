@@ -31,9 +31,7 @@
   (when (boundp 'org-cite-export-processors)
     (setq org-cite-export-processors '((latex biblatex) (t csl)))))
 
-(with-eval-after-load 'org
-  (when (boundp 'org-mode-map)
-    (define-key org-mode-map (kbd "C-c b") 'org-cite-insert)))
+;; Keybindings moved to bv-citation.el for unified citation interface
 
 (provide 'bv-org-cite)
 ;;; bv-org-cite.el ends here

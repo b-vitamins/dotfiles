@@ -33,10 +33,7 @@
     (setq citar-org-roam-subdir "~/documents/slipbox/slips"))
   (citar-org-roam-mode 1))
 
-(with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "b") 'citar-open)
-    (define-key bv-app-map (kbd "B") 'citar-insert-citation)))
+;; Keybindings moved to bv-citation.el for unified citation interface
 
 (provide 'bv-citar)
 ;;; bv-citar.el ends here
