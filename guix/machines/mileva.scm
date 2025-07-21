@@ -61,8 +61,6 @@
              (guix packages)
              (guix deprecation)
              (guix gexp)
-             (myguix home)
-             (myguix utils)
              (myguix home services emacs)
              (myguix home services nougat)
              (myguix packages base)
