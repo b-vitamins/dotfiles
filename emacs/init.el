@@ -97,7 +97,9 @@
 (require 'bv-org-agenda-files-track) ; Agenda file tracking
 (require 'bv-org-roam)     ; Roam notes
 (require 'bv-org-recur)    ; Recurring tasks
-(require 'bv-citation)     ; Citation management
+(require 'bv-bibtex)       ; BibTeX configuration
+(require 'bv-org-cite)     ; Org-cite configuration
+(require 'bv-citar)        ; Citar citation UI
 
 ;; Documentation and help
 (require 'bv-help)         ; Help enhancements
