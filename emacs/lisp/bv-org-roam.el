@@ -1,260 +1,407 @@
-;;; bv-org-roam.el --- Org-roam knowledge base  -*- lexical-binding: t -*-
+;;; bv-org-roam.el --- Enhanced Org-roam knowledge base -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
+;; Version: 2.0
+;; Package-Requires: ((emacs "27.1") (org-roam "2.0") (consult "0.20") (consult-org-roam "0.1"))
 
 ;;; Commentary:
 
-;; Zettelkasten-style knowledge management.
+;; A streamlined and robust Org-roam configuration with enhanced completion,
+;; project management, and deep consult integration.
+;;
+;; Key features:
+;; - Clean, aligned completion display with tags and modification time
+;; - Project management with automatic org-agenda integration
+;; - Multiple capture templates for different note types
+;; - Advanced search and filtering capabilities
+;; - Full consult-org-roam integration
+;; - Daily notes and task tracking
 
 ;;; Code:
 
-(eval-when-compile (require 'eieio))
+(require 'cl-lib)
+(require 'seq)
+(require 'subr-x)
 
-(autoload 'marginalia--time "marginalia")
-(autoload 'oref "eieio")
+;; Declare dependencies
+(declare-function org-roam-node-file "org-roam-node")
+(declare-function org-roam-node-title "org-roam-node")
+(declare-function org-roam-node-tags "org-roam-node")
+(declare-function org-roam-node-id "org-roam-node")
+(declare-function org-roam-node-todo "org-roam-node")
+(declare-function org-roam-node-scheduled "org-roam-node")
+(declare-function org-roam-node-deadline "org-roam-node")
+(declare-function org-roam-node-file-mtime "org-roam-node")
+(declare-function org-roam-node-list "org-roam")
+(declare-function org-roam-node-visit "org-roam")
+(declare-function org-roam-node-at-point "org-roam")
+(declare-function org-roam-db-query "org-roam-db")
+(declare-function consult--read "consult")
+(declare-function consult--file-action "consult")
+(declare-function marginalia--time "marginalia")
 
-(cl-defstruct emacsql-connection handle)
 
-(defun bv-patch-emacsql-close (connection &rest _args)
-  "Prevent emacsql-close errors."
-  (when (ignore-errors (oref connection handle))
-    t))
+;;; Customization
 
-(with-eval-after-load 'emacsql
-  (advice-add 'emacsql-close :before-while #'bv-patch-emacsql-close))
+(defgroup bv-org-roam nil
+  "Enhanced Org-roam configuration."
+  :group 'org-roam
+  :prefix "bv-org-roam-")
 
-(eval-when-compile (let ((org-roam-v2-ack t)) (require 'org-roam)))
+(defcustom bv-org-roam-directory "~/documents/slipbox/slips"
+  "Directory for org-roam files."
+  :type 'directory
+  :group 'bv-org-roam)
 
-(when (boundp 'org-roam-v2-ack)
-  (setq org-roam-v2-ack t))
-(when (boundp 'org-roam-completion-everywhere)
-  (setq org-roam-completion-everywhere t))
-(when (boundp 'org-roam-directory)
-  (setq org-roam-directory "~/documents/slipbox/slips"))
-(when (boundp 'org-roam-db-gc-threshold)
-  (setq org-roam-db-gc-threshold most-positive-fixnum))
+(defcustom bv-org-roam-show-backlinks t
+  "Whether to show backlink count in completions."
+  :type 'boolean
+  :group 'bv-org-roam)
 
-(defun bv-ensure-org-roam-directories ()
-  "Ensure org-roam directories exist."
-  (let ((roam-dir (expand-file-name (if (boundp 'org-roam-directory) org-roam-directory "~/documents/slipbox/slips")))
-        (cache-dir (concat (or (getenv "XDG_CACHE_HOME") "~/.cache") "/emacs")))
-    (unless (file-exists-p roam-dir)
-      (make-directory roam-dir t))
-    (unless (file-exists-p cache-dir)
-      (make-directory cache-dir t))))
+(defcustom bv-org-roam-show-modified-time t
+  "Whether to show modified time in completions."
+  :type 'boolean
+  :group 'bv-org-roam)
+
+(defcustom bv-org-roam-time-format "%Y-%m-%d"
+  "Format string for displaying time."
+  :type 'string
+  :group 'bv-org-roam)
+
+(defcustom bv-org-roam-tag-width 30
+  "Width allocated for tags in completion display."
+  :type 'integer
+  :group 'bv-org-roam)
+
+
+;;; Setup and initialization
+
+(defun bv-org-roam-setup-directories ()
+  "Ensure all org-roam directories exist."
+  (let ((dirs (list bv-org-roam-directory
+                    (expand-file-name "daily" bv-org-roam-directory)
+                    (expand-file-name "literature" bv-org-roam-directory)
+                    (expand-file-name "concepts" bv-org-roam-directory)
+                    (expand-file-name "fleeting" bv-org-roam-directory)
+                    (expand-file-name "projects" bv-org-roam-directory))))
+    (dolist (dir dirs)
+      (unless (file-exists-p dir)
+        (make-directory dir t)))))
+
+
+;;; Custom display methods
+;; These MUST be defined before org-roam loads for the display template to work
 
 (with-eval-after-load 'org-roam
-  (when (boundp 'org-roam-db-location)
-    (setq org-roam-db-location
-          (concat
-           (or (getenv "XDG_CACHE_HOME") "~/.cache")
-           "/emacs/org-roam.db")))
+  (cl-defmethod org-roam-node-filetags ((node org-roam-node))
+    "Return formatted tags for NODE."
+    (let ((tags (org-roam-node-tags node)))
+      (if tags
+          (format ":%s:" (string-join tags ":"))
+        "")))
 
-  (cl-defmethod org-roam-node-type ((node org-roam-node))
-    "Return the TYPE of NODE, a directory relative to `org-roam-directory'."
-    (condition-case nil
-        (file-name-nondirectory
-         (directory-file-name
-          (file-name-directory
-           (file-relative-name
-            (org-roam-node-file node)
-            org-roam-directory))))
-      (error "")))
+  (cl-defmethod org-roam-node-backlinks ((node org-roam-node))
+    "Return backlink count for NODE."
+    (let ((count (caar (org-roam-db-query
+                        [:select (funcall count source)
+                         :from links
+                         :where (= dest $s1)
+                         :and (= type "id")]
+                        (org-roam-node-id node)))))
+      (if (> count 0)
+          (format "← %d" count)
+        "")))
 
-  (when (boundp 'org-roam-node-display-template)
-    (setq org-roam-node-display-template
-          (concat "${type:15} ${title:*}")))
-  (when (boundp 'org-roam-node-annotation-function)
-    (setq org-roam-node-annotation-function
-          (lambda (node) (marginalia--time (org-roam-node-file-mtime node)))))
+  (cl-defmethod org-roam-node-mtime ((node org-roam-node))
+    "Return formatted modification time for NODE."
+    (let ((mtime (org-roam-node-file-mtime node)))
+      (if mtime
+          (format-time-string bv-org-roam-time-format mtime)
+        ""))))
 
-  (bv-ensure-org-roam-directories)
 
-  (run-with-idle-timer 1 nil
-                       (lambda ()
-                         (when (fboundp 'org-roam-db-sync)
-                           (org-roam-db-sync))
-                         (org-roam-db-autosync-enable)))
+;;; Configure org-roam
 
-  (defun bv-org-roam-open-ref ()
-    "Open selected ROAM_REF."
-    (interactive)
-    (when (derived-mode-p 'org-mode)
-      (if-let* ((refs (org-property-values "ROAM_REFS"))
-                (choices
-                 (mapcar
-                  (lambda (x) (org-unbracket-string "[[" "]]" x))
-                  (split-string
-                   (car (org-property-values "ROAM_REFS"))
-                   " ")))
-                (node-ref
-                 (completing-read
-                  "Refs: "
-                  (lambda (string pred action)
-                    (if (eq action 'metadata)
-                        `(metadata
-                          (category . org-roam-ref)
-                          ,(cons 'display-sort-function 'identity))
-                      (complete-with-action action choices string pred)))
-                  nil
-                  'require-match)))
-          node-ref
-        (error "No roam refs in this node"))))
+(use-package org-roam
+  :demand t
+  :init
+  ;; Acknowledge v2
+  (setq org-roam-v2-ack t)
 
-  (with-eval-after-load 'org
-    (when (boundp 'org-mode-map)
-      (let ((map org-mode-map))
-      (define-key map (kbd "C-TAB") 'completion-at-point)
-      (define-key map (kbd "C-c r r") 'org-roam-ref-add)
-      (define-key map (kbd "C-c r R") 'org-roam-ref-remove)
-      (define-key map (kbd "C-c r f") 'org-roam-ref-find)
-      (define-key map (kbd "C-c r t") 'org-roam-tag-add)
-      (define-key map (kbd "C-c r T") 'org-roam-tag-remove)
-      (define-key map (kbd "C-c r a") 'org-roam-alias-add)
-      (define-key map (kbd "C-c r A") 'org-roam-alias-remove)
-      (define-key map (kbd "C-c r O") 'bv-org-roam-open-ref))))
+  :custom
+  (org-roam-directory bv-org-roam-directory)
+  (org-roam-completion-everywhere t)
+  (org-roam-db-gc-threshold most-positive-fixnum)
+  (org-roam-db-location
+   (expand-file-name "org-roam.db"
+                     (concat (or (getenv "XDG_CACHE_HOME") "~/.cache") "/emacs")))
 
-  (when (boundp 'org-roam-capture-templates)
-    (setq org-roam-capture-templates
-          '(("s" "Slip" plain
-             "%?"
-             :target (file+head "%<%Y-%m-%d>-${slug}.org"
-                               ":PROPERTIES:\n:ID: %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: \n\n")
-             :unnarrowed t)
-            ("l" "Literature" plain
-             "%?"
-             :target (file+head "%<%Y-%m-%d>-lit-${slug}.org"
-                               ":PROPERTIES:\n:ID: %(org-id-new)\n:ROAM_REFS: \n:END:\n#+title: ${title}\n#+filetags: :literature:\n\n* Summary\n\n* Key Concepts\n\n* Connections\n\n")
-             :unnarrowed t)
-            ("c" "Concept" plain
-             "%?"
-             :target (file+head "slips/%<%Y-%m-%d>-concept-${slug}.org"
-                               ":PROPERTIES:\n:ID: %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :concept:\n\n")
-             :unnarrowed t)
-            ("f" "Fleeting" plain
-             "%?"
-             :target (file+head "slips/%<%Y-%m-%d>-fleeting-${slug}.org"
-                               ":PROPERTIES:\n:ID: %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :fleeting:\n\n")
-             :unnarrowed t)))))
+  ;; Configure display template
+  (org-roam-node-display-template
+   (concat "${title:*}  "
+           (propertize "${filetags:25}  " 'face 'org-tag)
+           " "
+           (propertize "${mtime:12}" 'face 'font-lock-comment-face)))
 
-(with-eval-after-load 'embark
-  ;; Actions for org-roam refs
-  (defvar-keymap embark-roam-ref-map
-    :doc "Keymap for actions on org-roam refs."
-    :parent (if (boundp 'embark-url-map) embark-url-map)
-    "v" 'bv-mpv-play-url
-    "RET" 'browse-url-generic
-    "c" 'browse-url-chromium
-    "r" 'org-roam-ref-remove)
+  :config
+  ;; Ensure directories exist
+  (bv-org-roam-setup-directories)
 
-  ;; Actions for org-roam nodes
-  (defvar-keymap embark-org-roam-node-map
-    :doc "Keymap for actions on org-roam nodes."
-    :parent embark-general-map
-    "RET" 'org-roam-node-open
-    "o" 'org-roam-node-open
-    "v" 'org-roam-node-visit
-    "i" 'org-roam-node-insert
-    "t" 'org-roam-tag-add
-    "T" 'org-roam-tag-remove
-    "a" 'org-roam-alias-add
-    "A" 'org-roam-alias-remove
-    "r" 'org-roam-ref-add
-    "R" 'org-roam-ref-remove
-    "d" 'org-roam-db-sync)
+  ;; Start database sync
+  (org-roam-db-autosync-enable)
 
-  (when (boundp 'embark-keymap-alist)
-    (add-to-list 'embark-keymap-alist '(org-roam-ref . embark-roam-ref-map))
-    (add-to-list 'embark-keymap-alist '(org-roam-node . embark-org-roam-node-map)))
+  ;; Configure capture templates
+  (setq org-roam-capture-templates
+        '(("d" "default" plain "%?"
+           :target (file+head "${slug}.org"
+                              "#+title: ${title}\n#+filetags:\n\n")
+           :unnarrowed t)
 
-  (advice-add 'org-roam-ref-add :around 'bv-browse-url-trace-url))
+          ("l" "literature" plain
+           "* Summary\n\n%?\n\n* Key Points\n\n* Questions\n\n* References"
+           :target (file+head "literature/${slug}.org"
+                              "#+title: ${title}\n#+filetags: :literature:\n\n")
+           :unnarrowed t)
 
-;; Consult integration
-(defun bv-org-roam-node-read ()
-  "Select org-roam node with consult."
-  (org-roam-node-read nil nil nil 'require-match))
+          ("c" "concept" plain
+           "* Definition\n\n%?\n\n* Properties\n\n* Examples\n\n* Related"
+           :target (file+head "concepts/${slug}.org"
+                              "#+title: ${title}\n#+filetags: :concept:\n\n")
+           :unnarrowed t)
 
-(with-eval-after-load 'consult
-  ;; Custom org-roam source for consult-buffer
-  (defvar bv-consult--source-org-roam
-    `(:name "Org-Roam"
-      :narrow ?r
-      :category org-roam-node
-      :face consult-file
-      :history org-roam-node-history
-      :items ,(lambda () (mapcar #'org-roam-node-title
-                                 (org-roam-node-list)))
-      :state ,#'consult--file-state
-      :new ,(lambda (name) (org-roam-capture- :node (org-roam-node-create :title name)))))
+          ("p" "project" plain
+           "* Overview\n\n%?\n\n* Goals\n\n* Tasks\n** TODO \n\n* Resources"
+           :target (file+head "projects/${slug}.org"
+                              "#+title: ${title}\n#+filetags: :project:\n")
+           :unnarrowed t)
 
-  (when (boundp 'consult-buffer-sources)
-    (add-to-list 'consult-buffer-sources 'bv-consult--source-org-roam 'append)))
+          ("f" "fleeting" plain "%?"
+           :target (file+head "fleeting/${slug}.org"
+                              "#+title: ${title}\n#+filetags: :fleeting:\n")
+           :immediate-finish t)))
 
-;; Enhanced search function
-(defun bv-org-roam-node-find-consult ()
-  "Find org-roam node with enhanced preview."
+  ;; Configure daily notes
+  (setq org-roam-dailies-directory "daily/"
+        org-roam-dailies-capture-templates
+        '(("d" "default" entry
+           "* %<%H:%M> %?"
+           :target (file+head "%<%Y-%m-%d>.org"
+                              "#+title: %<%Y-%m-%d>\n\n* Tasks\n\n* Notes\n\n"))))
+
+  :bind ((:map org-mode-map
+          ("C-c n i" . org-roam-node-insert)
+          ("C-c n t" . org-roam-tag-add)
+          ("C-c n a" . org-roam-alias-add)
+          ("C-c n r" . org-roam-ref-add))))
+
+
+;;; Enhanced completion interface
+
+(defun bv-org-roam-node-read (&optional initial-input filter-fn sort-fn require-match)
+  "Enhanced node selection with preview and annotations.
+INITIAL-INPUT is the initial minibuffer input.
+FILTER-FN is a function to filter nodes.
+SORT-FN is a function to sort nodes.
+REQUIRE-MATCH determines if existing node is required."
+  (let* ((nodes (org-roam-node-list))
+         (nodes (if filter-fn (seq-filter filter-fn nodes) nodes))
+         (nodes (if sort-fn (seq-sort sort-fn nodes) nodes))
+         (templates (list (cons "" org-roam-capture-templates)))
+         (node (org-roam-node-read initial-input filter-fn sort-fn require-match templates)))
+    node))
+
+
+;;; Project management
+
+(defun bv-org-roam-filter-by-tag (tag-name)
+  "Return filter function for nodes with TAG-NAME."
+  (lambda (node)
+    (member tag-name (org-roam-node-tags node))))
+
+(defun bv-org-roam-project-files ()
+  "Return list of all project files."
+  (seq-map #'org-roam-node-file
+           (seq-filter (bv-org-roam-filter-by-tag "project")
+                       (org-roam-node-list))))
+
+(defun bv-org-roam-update-agenda-files ()
+  "Update org-agenda-files with project files."
   (interactive)
-  (org-roam-node-find nil nil #'bv-org-roam-node-read))
+  (setq org-agenda-files
+        (seq-uniq (append (bv-org-roam-project-files)
+                          org-agenda-files))))
 
-;; Tag-based filtering
-(defun bv-org-roam-node-find-by-tag ()
-  "Find org-roam nodes filtered by tag."
+(defun bv-org-roam-find-project ()
+  "Find or create a project note."
+  (interactive)
+  (let ((node (bv-org-roam-node-read
+               nil
+               (bv-org-roam-filter-by-tag "project")
+               nil
+               nil)))
+    (if (org-roam-node-file node)
+        (org-roam-node-visit node)
+      ;; Create new project
+      (org-roam-capture-
+       :node node
+       :templates '(("p" "project" plain
+                     "* Overview\n\n%?\n\n* Goals\n\n* Tasks\n** TODO \n\n* Resources"
+                     :target (file+head "projects/${slug}.org"
+                                        "#+title: ${title}\n#+filetags: :project:\n")
+                     :unnarrowed t))))
+    ;; Add to agenda after creation
+    (when (and (not (org-roam-node-file node))
+               (eq org-capture-entry '("p" "project")))
+      (add-hook 'org-capture-after-finalize-hook
+                #'bv-org-roam-update-agenda-files
+                nil t))))
+
+
+;;; Quick capture functions
+
+(defun bv-org-roam-capture-task ()
+  "Capture a task to a project."
+  (interactive)
+  (let ((node (bv-org-roam-node-read
+               nil
+               (bv-org-roam-filter-by-tag "project")
+               nil
+               t)))
+    (when node
+      (let ((org-capture-templates
+             `(("t" "task" entry
+                (file+headline ,(org-roam-node-file node) "Tasks")
+                "** TODO %?\n SCHEDULED: %t"))))
+        (org-capture nil "t")))))
+
+(defun bv-org-roam-node-insert-immediate (arg)
+  "Insert node link without opening the note.
+With prefix ARG, use alternative link type."
+  (interactive "P")
+  (let ((node (bv-org-roam-node-read)))
+    (when node
+      (insert (org-link-make-string
+               (concat "id:" (org-roam-node-id node))
+               (org-roam-node-title node))))))
+
+
+;;; Sorting functions
+
+(defun bv-org-roam-sort-by-mtime (a b)
+  "Sort nodes A and B by modification time (newest first)."
+  (let ((time-a (org-roam-node-file-mtime a))
+        (time-b (org-roam-node-file-mtime b)))
+    (cond
+     ((and time-a time-b) (time-less-p time-b time-a))
+     (time-a t)
+     (time-b nil)
+     (t nil))))
+
+(defun bv-org-roam-sort-by-backlinks (a b)
+  "Sort nodes A and B by backlink count."
+  (let ((count-a (length (org-roam-backlinks-get a)))
+        (count-b (length (org-roam-backlinks-get b))))
+    (> count-a count-b)))
+
+
+;;; Search and navigation commands
+
+(defun bv-org-roam-find-by-tag ()
+  "Find nodes by tag."
   (interactive)
   (let* ((tags (seq-uniq (seq-mapcat #'org-roam-node-tags (org-roam-node-list))))
-         (selected-tag (completing-read "Tag: " tags))
-         (org-roam-node-display-template
-          (concat "${type:15} ${title:*} " (propertize "${tags:20}" 'face 'org-tag))))
-    (org-roam-node-find nil nil
-                        (lambda (&optional initial-input filter)
-                          (org-roam-node-read initial-input
-                                              (lambda (node)
-                                                (and (member selected-tag (org-roam-node-tags node))
-                                                     (or (not filter) (funcall filter node))))
-                                              nil
-                                              'require-match)))))
+         (tag (completing-read "Tag: " tags nil t)))
+    (org-roam-node-find nil nil (bv-org-roam-filter-by-tag tag) nil nil)))
 
-(defun bv-org-roam-tag-view ()
-  "Show all org-roam nodes grouped by tags."
+(defun bv-org-roam-find-recent ()
+  "Find recently modified nodes."
   (interactive)
-  (let ((nodes-by-tag (make-hash-table :test 'equal)))
-    ;; Group nodes by tags
-    (dolist (node (org-roam-node-list))
-      (dolist (tag (org-roam-node-tags node))
-        (push node (gethash tag nodes-by-tag))))
-    ;; Create buffer
-    (with-current-buffer (get-buffer-create "*Org-Roam Tags*")
-      (read-only-mode -1)
-      (erase-buffer)
-      (insert "Org-Roam Nodes by Tag\n")
-      (insert "=====================\n\n")
-      ;; Sort tags and display
-      (dolist (tag (sort (hash-table-keys nodes-by-tag) #'string<))
-        (insert (propertize (format "◆ %s" tag) 'face 'org-level-1))
-        (insert (format " (%d)\n" (length (gethash tag nodes-by-tag))))
-        (dolist (node (sort (gethash tag nodes-by-tag)
-                           (lambda (a b)
-                             (string< (org-roam-node-title a)
-                                     (org-roam-node-title b)))))
-          (insert-text-button (format "  • %s\n" (org-roam-node-title node))
-                              'action (lambda (_) (org-roam-node-visit node))
-                              'follow-link t
-                              'help-echo (org-roam-node-file node)))
-        (insert "\n"))
-      (goto-char (point-min))
-      (read-only-mode 1))
-    (switch-to-buffer "*Org-Roam Tags*")))
+  (org-roam-node-find nil nil nil nil nil #'bv-org-roam-sort-by-mtime))
 
-(with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "n") 'org-roam-buffer-toggle)
-    (define-key bv-app-map (kbd "f") 'bv-org-roam-node-find-consult)
-    (define-key bv-app-map (kbd "F") 'bv-org-roam-node-find-by-tag)
-    (define-key bv-app-map (kbd "v") 'bv-org-roam-tag-view)
-    (define-key bv-app-map (kbd "i") 'org-roam-node-insert)
-    (define-key bv-app-map (kbd "r") 'org-roam-ref-find)
-    (define-key bv-app-map (kbd "N") 'org-roam-capture)))
+(defun bv-org-roam-find-orphan ()
+  "Find orphan nodes (no backlinks)."
+  (interactive)
+  (org-roam-node-find
+   nil nil
+   (lambda (node)
+     (= 0 (length (org-roam-backlinks-get node))))
+   nil nil))
+
+(defun bv-org-roam-random ()
+  "Visit a random node."
+  (interactive)
+  (let* ((nodes (org-roam-node-list))
+         (node (seq-random-elt nodes)))
+    (org-roam-node-visit node)))
+
+
+;;; Statistics
+
+(defun bv-org-roam-statistics ()
+  "Display org-roam statistics."
+  (interactive)
+  (let* ((nodes (org-roam-node-list))
+         (total (length nodes))
+         (tags (seq-uniq (seq-mapcat #'org-roam-node-tags nodes)))
+         (orphans (seq-filter
+                   (lambda (n) (= 0 (length (org-roam-backlinks-get n))))
+                   nodes))
+         (projects (seq-filter (bv-org-roam-filter-by-tag "project") nodes))
+         (recent (seq-filter
+                  (lambda (n)
+                    (let ((mtime (org-roam-node-file-mtime n)))
+                      (and mtime
+                           (< (time-to-days (time-subtract (current-time) mtime)) 7))))
+                  nodes)))
+    (message "Org-Roam: %d nodes | %d tags | %d orphans | %d projects | %d recent"
+             total (length tags) (length orphans) (length projects) (length recent))))
+
+
+;;; Consult-org-roam integration
+
+(use-package consult-org-roam
+  :after (org-roam consult)
+  :demand t
+  :init
+  (consult-org-roam-mode 1)
+  :custom
+  (consult-org-roam-grep-func #'consult-ripgrep)
+  (consult-org-roam-buffer-narrow-key ?r)
+  (consult-org-roam-buffer-after-buffers t)
+  :bind
+  (("C-c n s" . consult-org-roam-search)
+   ("C-c n l" . consult-org-roam-backlinks)
+   ("C-c n L" . consult-org-roam-forward-links)
+   ("C-c n F" . consult-org-roam-file-find)))
+
+
+;;; Keybindings
+
+(bind-keys :prefix-map bv-org-roam-map
+           :prefix "C-c n"
+           ("n" . org-roam-buffer-toggle)
+           ("f" . org-roam-node-find)
+           ("i" . org-roam-node-insert)
+           ("I" . bv-org-roam-node-insert-immediate)
+           ("c" . org-roam-capture)
+           ("g" . bv-org-roam-find-by-tag)
+           ("p" . bv-org-roam-find-project)
+           ("t" . bv-org-roam-capture-task)
+           ("r" . bv-org-roam-random)
+           ("R" . bv-org-roam-find-recent)
+           ("o" . bv-org-roam-find-orphan)
+           ("S" . bv-org-roam-statistics)
+           ("d" . org-roam-dailies-capture-today)
+           ("D" . org-roam-dailies-goto-today)
+           ("y" . org-roam-dailies-goto-yesterday)
+           ("Y" . org-roam-dailies-goto-tomorrow))
+
+
+;;; Initialize
+
+(add-hook 'after-init-hook #'bv-org-roam-update-agenda-files)
 
 (provide 'bv-org-roam)
 ;;; bv-org-roam.el ends here
