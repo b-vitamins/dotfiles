@@ -351,7 +351,7 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
 (defun bv-themes--heading (level palette)
   "Compute heading properties for LEVEL using PALETTE."
   (let* ((user-props (alist-get level bv-themes-headings))
-         (default-heights '(1.2 1.1 1.1 1.1 1.1 1.05 1.0 1.0))
+         (default-heights '(1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0))
          (height (or (plist-get user-props :height)
                     (nth (1- level) default-heights)))
          (weight (or (plist-get user-props :weight)
@@ -1732,7 +1732,7 @@ Supports recursive semantic mappings like Modus themes."
       (org-document-title
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-heading-0 palette)
             :weight bold
-            :height 1.8)))
+            :height 1.1)))
       (org-document-info
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata palette))))
       (org-document-info-keyword
