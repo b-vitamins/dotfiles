@@ -59,7 +59,7 @@
 ;; UI enhancements
 (require 'bv-which-key)    ; Key binding hints
 (require 'bv-keycast)      ; Show keys being pressed
-(require 'bv-all-the-icons); Icon support
+(require 'bv-nerd-icons)   ; Nerd Font icon support
 
 ;; Basic functionality
 (require 'bv-calendar)     ; Calendar enhancements
