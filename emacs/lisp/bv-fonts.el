@@ -15,7 +15,7 @@
   "Font configuration and rendering optimization."
   :group 'faces)
 
-(defcustom bv-fonts-default-family "IBM Plex Mono"
+(defcustom bv-fonts-default-family "Fira Code"
   "Default monospace font family for coding."
   :type 'string
   :group 'bv-fonts)
@@ -62,17 +62,24 @@
   ;; Enable ligatures if requested and available
   (when (and bv-fonts-enable-ligatures
              (fboundp 'ligature-mode))
+    ;; Enable the www ligature in every possible major mode
+    (ligature-set-ligatures 't '("www"))
+    ;; Enable ligatures in programming modes
     (ligature-set-ligatures
      'prog-mode
-     '("-->" "->" "->>" "-<" "--<"
-       "=>" "==>" "=/=" "!=" "!=="
-       "||" "&&" "..." ".."
-       "::" ":::" ":=" "=:="
-       "//" "///" "/*" "*/"
-       "</" "/>" "<>" "<<<" ">>>"
-       "<<" ">>" "<|" "|>"
-       "{|" "|}" "[|" "|]"
-       "<<-" "->>"))
+     '("www" "**" "***" "**/" "*>" "*/" "\\\\" "\\\\\\"
+       "{-" "[]" "::" ":::" ":=" "!!" "!=" "!==" "-}"
+       "--" "---" "-->" "->" "->>" "-<" "-<<" "-~"
+       "#{" "#[" "##" "###" "####" "#(" "#?" "#_" "#_("
+       ".-" ".=" ".." "..<" "..." "?=" "??" ";;" "/*"
+       "/**" "/=" "/==" "/>" "//" "///" "&&" "||" "||="
+       "|=" "|>" "^=" "$>" "++" "+++" "+>" "=:=" "=="
+       "===" "==>" "=>" "=>>" "<=" "=<<" "=/=" ">-" ">="
+       ">=>" ">>" ">>-" ">>=" ">>>" "<*" "<*>" "<|" "<|>"
+       "<$" "<$>" "<!--" "<-" "<--" "<->" "<+" "<+>" "<="
+       "<==" "<=>" "<=<" "<>" "<<" "<<-" "<<=" "<<<" "<~"
+       "<~~" "</" "</>" "~@" "~-" "~=" "~>" "~~" "~~>" "%%"
+       "x" ":" "+" "+" "*"))
     (global-ligature-mode 1)))
 
 (defun bv-fonts-configure-faces ()
@@ -92,7 +99,7 @@
 
   ;; Fixed-pitch-serif - alternative monospace with serifs
   (set-face-attribute 'fixed-pitch-serif nil
-                      :family "Iosevka"
+                      :family "Fira Mono"
                       :height 1.0
                       :weight 'regular
                       :slant 'normal)
