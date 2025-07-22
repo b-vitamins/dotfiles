@@ -24,6 +24,19 @@
 (require 'cl-lib)
 (require 'seq)
 (require 'subr-x)
+(eval-when-compile (require 'eieio))
+
+;; Fix for emacsql finalizer errors
+(autoload 'oref "eieio")
+(cl-defstruct emacsql-connection handle)
+
+(defun bv-patch-emacsql-close (connection &rest _args)
+  "Prevent emacsql-close errors."
+  (when (ignore-errors (oref connection handle))
+    t))
+
+(with-eval-after-load 'emacsql
+  (advice-add 'emacsql-close :before-while #'bv-patch-emacsql-close))
 
 ;; Declare dependencies
 (declare-function org-roam-node-file "org-roam-node")
