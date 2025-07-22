@@ -390,7 +390,7 @@ allow-preset-passphrase")))
       (service home-batsignal-service-type)))))
 
 (operating-system
-  (host-name "spärck")
+  (host-name "sparck")
   (timezone "Asia/Kolkata")
   (locale "en_US.utf8")
 
@@ -601,9 +601,9 @@ allow-preset-passphrase")))
 
                  ;; Custom hosts for local development
                  (simple-service 'development-hosts hosts-service-type
-                                 (list (host "127.0.0.1" "spärck.local"
+                                 (list (host "127.0.0.1" "sparck.local"
                                              '("dev.local"))
-                                       (host "::1" "spärck.local"
+                                       (host "::1" "sparck.local"
                                              '("dev.local"))))
 
                  ;; Scheduled jobs using Shepherd timers
