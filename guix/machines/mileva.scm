@@ -91,8 +91,38 @@
   (home-environment
     (packages (append
 
-                      (list font-google-roboto font-fira-go font-fira-sans
-                            font-fira-code font-fira-mono)))
+                      (list ;Original fonts
+                            font-google-roboto
+                            font-fira-go
+                            font-fira-sans
+                            font-fira-code
+                            font-fira-mono
+                            font-tex-gyre
+                            ;; Programming fonts
+                            font-jetbrains-mono
+                            font-hack
+                            font-ibm-plex
+                            font-adobe-source-code-pro
+                            font-victor-mono
+                            ;; Document & UI fonts
+                            font-adobe-source-sans
+                            font-adobe-source-serif
+                            font-dejavu
+                            font-liberation
+                            ;; International support
+                            font-google-noto
+                            font-google-noto-emoji
+                            font-adobe-source-han-sans
+                            font-adobe-source-han-mono
+                            ;; Special purpose
+                            font-stix-two
+                            ;; Tufte-approved fonts
+                            font-et-book
+                            font-sil-gentium
+                            font-sil-charis
+                            font-libertinus
+                            font-charter
+                            font-lato)))
 
     (services
      (list
