@@ -32,6 +32,13 @@
 
 (require 'bv-defaults)
 
+;; Configure fonts for sharp, crystal-clear rendering
+(require 'bv-fonts)
+
+;; Set theme engine to use our configured fonts
+(setq bv-themes-font-family-monospaced bv-fonts-default-family)
+(setq bv-themes-font-family-proportional bv-fonts-variable-family)
+
 ;; Load time and battery before modeline so they're available
 (require 'bv-time)         ; Time display
 (require 'bv-battery)      ; Battery status
