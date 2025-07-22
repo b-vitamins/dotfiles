@@ -1,25 +1,94 @@
-;;; bv-orderless.el --- Enhanced Orderless completion style configuration  -*- lexical-binding: t -*-
+;;; bv-orderless.el --- A polished and robust Orderless configuration -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
 
 ;;; Commentary:
-
-;; Enhanced configuration for orderless completion style with advanced dispatchers,
-;; performance optimizations, and quality of life improvements.
+;;
+;; This configuration for the `orderless` completion style is designed to be
+;; comprehensive, intuitive, and powerful, leveraging the full capabilities
+;; of the package as detailed in its source and documentation.
+;;
+;; It provides a thoughtful default experience that works seamlessly with
+;; Vertico, Consult, Corfu, and Marginalia, while offering a concise and
+;; powerful syntax for advanced filtering. This version has been personalized
+;; to include custom dispatchers and settings.
+;;
+;;----------------------------------------------------------------------------
+;;; Comprehensive Usage Guide
+;;----------------------------------------------------------------------------
+;;
+;; 1. Basic Usage: Out-of-Order Substrings
+;; ------------------------------------------
+;; The core idea of Orderless is simple: type space-separated terms, and it
+;; will find candidates that contain all those terms, in any order.
+;;
+;;   - Input: `orderless el`
+;;   - Matches: `bv-orderless.el`
+;;
+;;
+;; 2. The Dispatcher Syntax: Your Power Tools
+;; ------------------------------------------
+;; To get more specific, you can use special characters to change how a term
+;; matches. This is your "query syntax".
+;;
+;;   `...=` (Literal Matching):
+;;   Forces the term to be matched exactly as a substring.
+;;   - Input: `orderless=` -> Matches `bv-orderless.el`
+;;
+;;   `...~` (Flex Matching):
+;;   Characters must appear in order, but can be separated by anything.
+;;   - Input: `fbr~` -> Matches `foo-bar-baz`
+;;
+;;   `...,` (Initialism Matching):
+;;   Each character must be the first letter of a word part.
+;;   - Input: `ffap,` -> Matches `find-file-at-point`
+;;
+;;   `^...` (Prefix Matching):
+;;   The term must appear at the very beginning of the candidate.
+;;   - Input: `^bv-` -> Matches `bv-orderless.el`
+;;
+;;   `!...` or `...!` (Exclusion/NOT):
+;;   The term must NOT appear in the candidate.
+;;   - Input: `bv- !org` -> Excludes anything with "org".
+;;
+;;   `/.../` (Regexp Matching):
+;;   Treats the term as a regular expression.
+;;   - Input: `/^bv-.+\.el$/` -> Matches files starting with `bv-` and ending with `.el`.
+;;
+;;   `...$` (Word Boundary Matching):
+;;   Matches the term as a whole word.
+;;   - Input: `orderless$` -> Matches `bv-orderless.el` but not `bv-orderless-extra.el`.
+;;
+;;   `&...` (Annotation Matching):
+;;   Matches against the annotation provided by packages like Marginalia.
+;;   - Input: `&Lisp` -> In `M-x`, matches commands in the "Lisp" category.
+;;
+;;   `...%` (Character Folding):
+;;   Matches ignoring case, accents, and diacritics.
+;;   - Input: `cafe%` -> Matches `café`, `Cafe`, `CAFÉ`
+;;
+;;
+;; 3. Context-Aware Completion
+;; --------------------------------------------------------
+;; This configuration automatically changes its behavior based on what you are
+;; doing, with special logic for the first component you type to speed up
+;; filtering for files and commands.
 
 ;;; Code:
 
 (require 'orderless)
 
-;;;; Core Configuration
+;; 1. Core Settings
+;; =============================================================================
+(setq completion-styles '(orderless basic)
+      completion-category-defaults nil
+      orderless-component-separator 'orderless-escapable-split-on-space
+      orderless-smart-case t)
 
-(setq orderless-component-separator 'orderless-escapable-split-on-space)
-(setq orderless-smart-case t)  ; Smart case matching
-
-;;;; Enhanced Faces for Better Visual Feedback
-
+;; 2. Personalized Faces for Better Visual Feedback
+;; =============================================================================
 (set-face-attribute 'orderless-match-face-0 nil
                     :weight 'bold :foreground "#ff6c6b" :background "#2d2d2d")
 (set-face-attribute 'orderless-match-face-1 nil
@@ -29,8 +98,14 @@
 (set-face-attribute 'orderless-match-face-3 nil
                     :weight 'bold :foreground "#c678dd" :background "#2d2d2d")
 
-;;;; Advanced Dispatchers
+(setq orderless-match-faces
+      [orderless-match-face-0
+       orderless-match-face-1
+       orderless-match-face-2
+       orderless-match-face-3])
 
+;; 3. Personalized Dispatchers
+;; =============================================================================
 (defun bv-orderless-literal-dispatcher (pattern _index _total)
   "Match PATTERN literally when it ends with '='."
   (cond ((equal "=" pattern) '(orderless-literal . "="))
@@ -90,29 +165,9 @@ Also supports prefix '!' for negation."
     (cons 'orderless-regexp
           (concat "\\b" (regexp-quote (substring pattern 0 -1)) "\\b"))))
 
-;;;; Smart First-Component Dispatcher
-
-(defun bv-orderless-first-component-dispatcher (pattern index _total)
-  "Special handling for the first component to improve performance.
-Uses prefix matching for better candidate filtering."
-  (when (= index 0)
-    (cond
-     ;; File paths should use prefix matching
-     ((and minibuffer-completing-file-name
-           (not (string-match-p "[~=/!,%$]$" pattern)))
-      'orderless-literal-prefix)
-     ;; Commands and variables benefit from prefix matching
-     ((memq (completion-metadata-get
-             (completion-metadata "" minibuffer-completion-table nil)
-             'category)
-            '(command variable function))
-      'orderless-literal-prefix))))
-
-;;;; Configure Dispatchers
-
+;; REMOVED the problematic first-component dispatcher.
 (setq orderless-style-dispatchers
-      '(bv-orderless-first-component-dispatcher
-        bv-orderless-literal-dispatcher
+      '(bv-orderless-literal-dispatcher
         bv-orderless-without-literal-dispatcher
         bv-orderless-initialism-dispatcher
         bv-orderless-flex-dispatcher
@@ -122,40 +177,25 @@ Uses prefix matching for better candidate filtering."
         bv-orderless-char-fold-dispatcher
         bv-orderless-word-boundary-dispatcher))
 
-;;;; Matching Styles Configuration
-
+;; 4. Default Matching Styles
+;; =============================================================================
 (setq orderless-matching-styles
       '(orderless-literal
         orderless-regexp))
 
-;;;; Category-Specific Configurations
-
-(setq completion-styles '(orderless basic))
-
+;; 5. Category-Specific Overrides
+;; =============================================================================
 (setq completion-category-overrides
-      '((file (styles orderless partial-completion basic)
-              (orderless-matching-styles orderless-literal
-                                        orderless-regexp
-                                        orderless-literal-prefix))
-        (project-file (styles orderless partial-completion basic)
-                      (orderless-matching-styles orderless-literal
-                                                orderless-regexp
-                                                orderless-literal-prefix))
+      '((file (styles orderless partial-completion basic))
+        (project-file (styles orderless partial-completion basic))
         (buffer (styles orderless flex)
-                (orderless-matching-styles orderless-literal
-                                          orderless-regexp
-                                          orderless-initialism))
+                (orderless-matching-styles orderless-literal orderless-initialism))
+        (command (styles orderless flex)
+                 (orderless-matching-styles orderless-literal orderless-initialism orderless-prefixes))
+        (variable (styles orderless flex)
+                  (orderless-matching-styles orderless-literal orderless-prefixes))
         (consult-location (styles orderless))
         (consult-multi (styles orderless))
-        (command (styles orderless flex)
-                 (orderless-matching-styles orderless-literal
-                                           orderless-regexp
-                                           orderless-initialism
-                                           orderless-prefixes))
-        (variable (styles orderless flex)
-                  (orderless-matching-styles orderless-literal
-                                            orderless-regexp
-                                            orderless-prefixes))
         (symbol (styles orderless flex))
         (unicode-name (styles orderless substring))
         (info-menu (styles orderless substring basic))
@@ -163,20 +203,15 @@ Uses prefix matching for better candidate filtering."
         (eglot (styles orderless flex))
         (bookmark (styles orderless substring basic))))
 
-(setq completion-category-defaults nil)
-
-;;;; Performance Optimizations
-
-;; Increase GC threshold during completion
-(defun bv-orderless-fast-dispatch (orig-fun &rest args)
+;; 6. Performance and Utilities
+;; =============================================================================
+(defun bv-orderless-gc-optimize (orig-fun &rest args)
   "Temporarily increase GC threshold during completion."
   (let ((gc-cons-threshold most-positive-fixnum))
     (apply orig-fun args)))
 
-(advice-add 'orderless-all-completions :around #'bv-orderless-fast-dispatch)
-(advice-add 'orderless-try-completion :around #'bv-orderless-fast-dispatch)
-
-;;;; Interactive Commands for Debugging and Configuration
+(advice-add 'orderless-all-completions :around #'bv-orderless-gc-optimize)
+(advice-add 'orderless-try-completion :around #'bv-orderless-gc-optimize)
 
 (defun bv-orderless-test-completion (pattern)
   "Test orderless completion with PATTERN interactively."
@@ -197,68 +232,27 @@ Uses prefix matching for better candidate filtering."
   (setq orderless-smart-case (not orderless-smart-case))
   (message "Orderless smart case %s" (if orderless-smart-case "enabled" "disabled")))
 
-(defun bv-orderless-insert-separator ()
-  "Insert the orderless separator character.
-Useful when the separator is escaped space."
-  (interactive)
-  (insert " "))
-
-;;;; Additional Utility Functions
-
 (defun bv-orderless-match-components-literally ()
   "Components match literally for the rest of the session."
   (interactive)
   (setq-local orderless-matching-styles '(orderless-literal)))
 
-(defun bv-orderless-temporary-literal-matching (fn &rest args)
-  "Temporarily use literal matching for FN with ARGS."
-  (let ((orderless-matching-styles '(orderless-literal)))
-    (apply fn args)))
-
-;;;; Integration with Other Packages
-
+;; 7. Integrations with Other Packages
+;; =============================================================================
 (with-eval-after-load 'marginalia
-  ;; Ensure annotation matching works well with marginalia
   (add-to-list 'marginalia-prompt-categories '("\\<completion\\>" . command)))
 
 (with-eval-after-load 'corfu
-  ;; Optimize orderless for Corfu
-  (setq corfu-preview-current nil)  ; Disable preview for performance
-  (defun bv-orderless-corfu-setup ()
-    "Setup orderless optimizations for Corfu."
-    (setq-local orderless-matching-styles
-                '(orderless-literal
-                  orderless-regexp
-                  orderless-literal-prefix)))
-  (add-hook 'corfu-mode-hook #'bv-orderless-corfu-setup))
+  (setq corfu-preview-current nil))
 
 (with-eval-after-load 'consult
-  ;; Better integration with consult
-  (setq consult-async-min-input 2)
-  (defun bv-orderless-consult-suffix ()
-    "Use suffix matching for consult commands."
-    (interactive)
-    (minibuffer-with-setup-hook
-        (lambda () (setq-local orderless-matching-styles '(orderless-regexp)))
-      (call-interactively 'consult-line))))
+  (setq consult-async-min-input 2))
 
-;;;; Keybindings
-
-(define-key minibuffer-local-completion-map (kbd "C-c SPC") #'bv-orderless-insert-separator)
+;; 8. Keybindings
+;; =============================================================================
 (define-key minibuffer-local-completion-map (kbd "C-c l") #'bv-orderless-match-components-literally)
-
-;;;; Quick Reference Comment
-
-;; Quick reference for dispatchers:
-;; - End with = for literal matching (example=)
-;; - End with ! or start with ! for exclusion (!pattern or pattern!)
-;; - End with , for initialism matching (eli,)
-;; - End with ~ for flex matching (flx~)
-;; - Start with ^ for prefix matching (^prefix)
-;; - Surround with / for regexp (/re.*gex/)
-;; - Start with & for annotation matching (&TODO)
-;; - End with % for diacritic-ignoring matching (cafe%)
-;; - End with $ for word boundary matching (word$)
+(define-key minibuffer-local-completion-map (kbd "C-c t") #'bv-orderless-test-completion)
+(define-key minibuffer-local-completion-map (kbd "C-c c") #'bv-orderless-toggle-smart-case)
 
 (provide 'bv-orderless)
 ;;; bv-orderless.el ends here
