@@ -128,8 +128,9 @@
     (setq dired-listing-switches "-alh --group-directories-first")
     
     ;; Custom face for directories
-    (set-face-attribute 'nerd-icons-dired-dir-face nil
-                        :foreground (face-attribute 'dired-directory :foreground))))
+    (when (facep 'nerd-icons-dired-dir-face)
+      (set-face-attribute 'nerd-icons-dired-dir-face nil
+                          :foreground (face-attribute 'dired-directory :foreground)))))
 
 ;;; Ibuffer configuration
 (defun bv-nerd-icons-configure-ibuffer ()
