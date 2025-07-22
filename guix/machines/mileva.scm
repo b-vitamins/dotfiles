@@ -346,11 +346,11 @@ allow-preset-passphrase")))
                                                                   "~/.ssh/id_ed25519")
                                                                  (port 22))
 
-                                                   ;; Spärck (laptop)
+                                                   ;; Sparck (laptop)
                                                    (openssh-host (name
-                                                                  "spärck")
+                                                                  "sparck")
                                                                  (host-name
-                                                                  "spärck.local")
+                                                                  "sparck.local")
                                                                  (user "b")
                                                                  (identity-file
                                                                   "~/.ssh/id_ed25519")
