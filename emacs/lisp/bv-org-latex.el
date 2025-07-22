@@ -6,7 +6,7 @@
 
 ;;; Commentary:
 ;; Enhanced LaTeX preview configuration for Org mode with automatic scaling
-;; for multiple displays (laptop, monitor, TV) using TeX Gyre Pagella Math font.
+;; for multiple displays (laptop, TV) using TeX Gyre Pagella Math font.
 
 ;;; Code:
 
@@ -44,8 +44,7 @@
 (defcustom bv-org-latex-display-overrides
   '(;; Update these with your actual display names
     ;; Run M-x bv-org-latex-list-displays to find your display names
-    ("LG TV" . ((dpi . 49) (type . tv)))       ; Your 45" 1080p TV
-    ("DP-1" . ((dpi . 49)  (type . tv)))        ; Alternative name for TV
+    ("DP-1" . ((dpi . 49)  (type . tv)))        ; LG 45" 1080p TV
     ("eDP-1" . ((dpi . 323) (type . laptop))))  ; Laptop 14" 4K (3840x2400)
   "Manual DPI overrides for specific displays.
 Check your display names with: M-x bv-org-latex-list-displays"
