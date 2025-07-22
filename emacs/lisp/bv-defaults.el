@@ -28,9 +28,8 @@
       indicate-empty-lines nil
       cursor-in-non-selected-windows nil
       cursor-type '(bar . 1)              ; Thin vertical bar cursor (1 pixel wide)
-      blink-cursor-mode nil               ; Disable cursor blinking
+      blink-cursor-blinks 0               ; Disable cursor blinking
       initial-major-mode 'text-mode
-      default-major-mode 'text-mode
       font-lock-maximum-decoration nil
       font-lock-maximum-size nil
       auto-fill-mode nil
@@ -50,9 +49,10 @@
 
 (menu-bar-mode -1)
 
-;; Enable line numbers globally
-(when (fboundp 'global-display-line-numbers-mode)
-  (global-display-line-numbers-mode 1))
+;; Enable line numbers in programming modes
+(when (fboundp 'display-line-numbers-mode)
+  (add-hook 'prog-mode-hook #'display-line-numbers-mode)
+  (add-hook 'conf-mode-hook #'display-line-numbers-mode))
 
 (setq ring-bell-function 'ignore
       visible-bell nil)
@@ -86,13 +86,16 @@
   (setq-default shell-file-name "/bin/zsh")
   (setq explicit-shell-file-name "/bin/zsh"))
 
-(defadvice term-sentinel (around my-advice-term-sentinel (proc msg))
-  (if (memq (process-status proc) '(signal exit))
-      (let ((buffer (process-buffer proc)))
-        ad-do-it
-        (kill-buffer buffer))
-    ad-do-it))
-(ad-activate 'term-sentinel)
+;; Kill terminal buffer on process exit
+(defun bv-term-sentinel-advice (orig-fun proc msg)
+  "Kill terminal buffer when process exits."
+  (funcall orig-fun proc msg)
+  (when (memq (process-status proc) '(signal exit))
+    (let ((buffer (process-buffer proc)))
+      (when (buffer-live-p buffer)
+        (kill-buffer buffer)))))
+
+(advice-add 'term-sentinel :around #'bv-term-sentinel-advice)
 
 ;; Ensure cursor type is applied to frames
 (add-to-list 'default-frame-alist '(cursor-type . (bar . 1)))
@@ -106,6 +109,47 @@
 ;; Also set it for the initial frame
 (when (display-graphic-p)
   (setq cursor-type '(bar . 1)))
+
+;; Disable cursor blinking
+(blink-cursor-mode -1)
+
+;; Recent files tracking
+(require 'recentf)
+(setq recentf-max-menu-items 25
+      recentf-max-saved-items 200
+      recentf-exclude '("/tmp/" "/ssh:" "/sudo:"
+                        "COMMIT_EDITMSG" ".*-autoloads\\.el"
+                        "[/\\]\\elpa/"))
+(recentf-mode 1)
+
+;; Minibuffer history
+(require 'savehist)
+(setq savehist-file (expand-file-name "history" user-emacs-directory))
+(savehist-mode 1)
+
+;; Auto-save and backup configuration
+(setq backup-directory-alist
+      `((".*" . ,(expand-file-name "backups" user-emacs-directory)))
+      auto-save-file-name-transforms
+      `((".*" ,(expand-file-name "auto-saves/" user-emacs-directory) t))
+      backup-by-copying t
+      version-control t
+      delete-old-versions t
+      kept-new-versions 6
+      kept-old-versions 2
+      create-lockfiles nil)
+
+;; Create directories if they don't exist
+(dolist (dir (list (expand-file-name "backups" user-emacs-directory)
+                   (expand-file-name "auto-saves" user-emacs-directory)))
+  (unless (file-exists-p dir)
+    (make-directory dir t)))
+
+;; Enable electric pairs in programming modes
+(add-hook 'prog-mode-hook #'electric-pair-local-mode)
+
+;; Performance optimization for LSP and other processes
+(setq read-process-output-max (* 1024 1024)) ; 1mb
 
 (provide 'bv-defaults)
 ;;; bv-defaults.el ends here

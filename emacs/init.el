@@ -74,6 +74,10 @@
 
 ;; Completion frameworks
 (require 'bv-completion)   ; Base completion setup
+(require 'bv-orderless)    ; Orderless completion style
+(require 'bv-marginalia)   ; Rich annotations
+(require 'bv-consult)      ; Consult commands
+(require 'bv-embark)       ; Contextual actions
 (require 'bv-vertico)      ; Vertical completion
 (require 'bv-corfu)        ; In-buffer completion
 (require 'bv-tempel)       ; Template expansion
