@@ -27,6 +27,7 @@
              (gnu packages python)
              (gnu packages docker)
              (gnu packages base)
+             (gnu packages bash)
              (gnu packages databases)
              (gnu packages package-management)
              (gnu services)
@@ -219,10 +220,6 @@ inode/directory=org.gnome.Nautilus.desktop
                                                         ("colored-completion-prefix" . #t)
                                                         ("menu-complete-display-prefix" . #t)))))
 
-      ;; Scheduled User's Job Execution
-      (service home-mcron-service-type
-               (home-mcron-configuration (jobs (list %garbage-collector-job))))
-
       ;; Configuration files
       ;; Using simple-service to extend the existing home-files-service-type
       (simple-service 'sparck-dotfiles home-files-service-type
@@ -332,6 +329,14 @@ allow-preset-passphrase")))
                                                    ;; GitLab
                                                    (openssh-host (name
                                                                   "gitlab.com")
+                                                                 (user "git")
+                                                                 (identity-file
+                                                                  "~/.ssh/id_ed25519")
+                                                                 (port 22))
+
+                                                   ;; Codeberg
+                                                   (openssh-host (name
+                                                                  "codeberg.org")
                                                                  (user "git")
                                                                  (identity-file
                                                                   "~/.ssh/id_ed25519")
@@ -607,9 +612,20 @@ allow-preset-passphrase")))
                                   ;; Garbage collection every 3 days at 3AM (less frequent for laptop)
                                   (shepherd-timer '(garbage-collection)
                                                   "0 3 */3 * *"
-                                                  #~(list #$(file-append guix
-                                                             "/bin/guix") "gc"
-                                                          "-F" "20G")
+                                                  #~(list #$(file-append bash
+                                                             "/bin/bash") "-c"
+                                                          (string-append
+                                                           "mkdir -p /var/log/guix-gc && "
+                                                           "LOG_FILE=/var/log/guix-gc/gc-$(date +%Y%m%d-%H%M%S).log && "
+                                                           "exec > \"$LOG_FILE\" 2>&1 && "
+                                                           "echo \"Starting garbage collection at $(date)\" && "
+                                                           "df -h / && "
+                                                           #$(file-append guix
+                                                              "/bin/guix")
+                                                           " gc -F 20G && "
+                                                           "echo \"Garbage collection completed at $(date)\" && "
+                                                           "df -h / && "
+                                                           "find /var/log/guix-gc -name 'gc-*.log' -mtime +30 -delete"))
                                                   #:requirement '(guix-daemon))
 
                                   ))
