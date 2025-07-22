@@ -154,28 +154,6 @@
           (mark " " (name 30 -1)
                 " " filename))))
 
-;;; Modeline configuration
-(defun bv-nerd-icons-configure-modeline ()
-  "Configure nerd-icons for the modeline."
-  ;; Add icon to mode name in modeline
-  (defun bv-nerd-icons-mode-line-mode-icon ()
-    "Return an icon for the current major mode."
-    (let ((icon (nerd-icons-icon-for-mode major-mode)))
-      (if (not (eq icon major-mode))
-          (concat icon " ")
-        "")))
-  
-  ;; Advise mode-line-mode-name to include icon
-  (advice-add 'format-mode-line :around
-              (lambda (orig-fun &rest args)
-                (let ((result (apply orig-fun args)))
-                  (if (and (stringp result)
-                           (string-match-p "%" result))
-                      result
-                    (if (stringp result)
-                        (concat (bv-nerd-icons-mode-line-mode-icon) result)
-                      result))))))
-
 ;;; Additional integrations
 (defun bv-nerd-icons-configure-integrations ()
   "Configure nerd-icons for various other packages."
@@ -241,7 +219,6 @@
   (bv-nerd-icons-configure-completion)
   (bv-nerd-icons-configure-dired)
   (bv-nerd-icons-configure-ibuffer)
-  (bv-nerd-icons-configure-modeline)
   (bv-nerd-icons-configure-integrations)
   (bv-nerd-icons-setup-fonts)
   
