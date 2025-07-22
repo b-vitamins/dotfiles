@@ -26,6 +26,7 @@
              (gnu packages python)
              (gnu packages docker)
              (gnu packages base)
+             (gnu packages bash)
              (gnu packages databases)
              (gnu packages package-management)
              (gnu services)
@@ -200,7 +201,7 @@ image/webp=org.gnome.eog.desktop
 video/mp4=mpv.desktop
 video/x-matroska=mpv.desktop
 video/webm=mpv.desktop
-audio/mpeg=mpv.desktop
+audio/mpeg=audacious.desktop
 audio/flac=audacious.desktop
 audio/mp3=audacious.desktop
 text/plain=org.gnome.TextEditor.desktop
@@ -222,10 +223,6 @@ inode/directory=org.gnome.Nautilus.desktop
                                                         ("colored-stats" . #t)
                                                         ("colored-completion-prefix" . #t)
                                                         ("menu-complete-display-prefix" . #t)))))
-
-      ;; Scheduled User's Job Execution
-      (service home-mcron-service-type
-               (home-mcron-configuration (jobs (list %garbage-collector-job))))
 
       ;; Configuration files
       ;; Using simple-service to extend the existing home-files-service-type
@@ -336,6 +333,14 @@ allow-preset-passphrase")))
                                                    ;; GitLab
                                                    (openssh-host (name
                                                                   "gitlab.com")
+                                                                 (user "git")
+                                                                 (identity-file
+                                                                  "~/.ssh/id_ed25519")
+                                                                 (port 22))
+
+                                                   ;; Codeberg
+                                                   (openssh-host (name
+                                                                  "codeberg.org")
                                                                  (user "git")
                                                                  (identity-file
                                                                   "~/.ssh/id_ed25519")
@@ -748,147 +753,198 @@ collation-server = utf8mb4_unicode_ci")))
                                   ;; Garbage collection daily at 4AM
                                   (shepherd-timer '(garbage-collection)
                                                   "0 4 * * *"
-                                                  #~(list #$(file-append guix
-                                                             "/bin/guix") "gc"
-                                                          "-F" "50G")
+                                                  #~(list #$(file-append bash
+                                                             "/bin/bash") "-c"
+                                                          (string-append
+                                                           "mkdir -p /var/log/guix-gc && "
+                                                           "LOG_FILE=/var/log/guix-gc/gc-$(date +%Y%m%d-%H%M%S).log && "
+                                                           "exec > \"$LOG_FILE\" 2>&1 && "
+                                                           "echo \"Starting garbage collection at $(date)\" && "
+                                                           "df -h / && "
+                                                           #$(file-append guix
+                                                              "/bin/guix")
+                                                           " gc -F 50G && "
+                                                           "echo \"Garbage collection completed at $(date)\" && "
+                                                           "df -h / && "
+                                                           "find /var/log/guix-gc -name 'gc-*.log' -mtime +30 -delete"))
                                                   #:requirement '(guix-daemon))
 
                                   ;; Update package database weekly on Sunday at 3AM
                                   (shepherd-timer '(update-package-database)
                                                   "0 3 * * 0"
-                                                  #~(list #$(file-append guix
-                                                             "/bin/guix")
-                                                     "package"
-                                                     "--list-generations")
-                                                  #:requirement '(guix-daemon))
+                                                  #~(list #$(file-append bash
+                                                             "/bin/bash") "-c"
+                                                          (string-append
+                                                           "mkdir -p /var/log/guix-updates && "
+                                                           "LOG_FILE=/var/log/guix-updates/update-$(date +%Y%m%d-%H%M%S).log && "
+                                                           "exec > \"$LOG_FILE\" 2>&1 && "
+                                                           "echo \"Starting package database update at $(date)\" && "
+                                                           #$(file-append guix
+                                                              "/bin/guix")
+                                                           " pull && "
+                                                           "echo \"Package database updated at $(date)\" && "
+                                                           #$(file-append guix
+                                                              "/bin/guix")
+                                                           " package --list-generations && "
+                                                           "find /var/log/guix-updates -name 'update-*.log' -mtime +30 -delete"))
+                                                  #:requirement '(guix-daemon
+                                                                  networking))
 
                                   ;; Docker cleanup weekly on Saturday at 2AM
                                   (shepherd-timer '(docker-cleanup)
                                                   "0 2 * * 6"
-                                                  #~(list #$(file-append
-                                                             docker-cli
-                                                             "/bin/docker")
-                                                          "system" "prune"
-                                                          "-af")
+                                                  #~(list #$(file-append bash
+                                                             "/bin/bash") "-c"
+                                                          (string-append
+                                                           "mkdir -p /var/log/docker-cleanup && "
+                                                           "LOG_FILE=/var/log/docker-cleanup/cleanup-$(date +%Y%m%d-%H%M%S).log && "
+                                                           "exec > \"$LOG_FILE\" 2>&1 && "
+                                                           "echo \"Starting Docker cleanup at $(date)\" && "
+                                                           "echo \"Disk usage before cleanup:\" && "
+                                                           "df -h /var/lib/docker && "
+                                                           #$(file-append
+                                                              docker-cli
+                                                              "/bin/docker")
+                                                           " system df && "
+                                                           #$(file-append
+                                                              docker-cli
+                                                              "/bin/docker")
+                                                           " system prune -af --volumes && "
+                                                           "echo \"Docker cleanup completed at $(date)\" && "
+                                                           "echo \"Disk usage after cleanup:\" && "
+                                                           "df -h /var/lib/docker && "
+                                                           #$(file-append
+                                                              docker-cli
+                                                              "/bin/docker")
+                                                           " system df && "
+                                                           "find /var/log/docker-cleanup -name 'cleanup-*.log' -mtime +30 -delete"))
                                                   #:requirement '(dockerd))
 
                                   ;; Clean CUDA cache monthly on the 1st at 3AM
                                   (shepherd-timer '(cuda-cache-cleanup)
                                                   "0 3 1 * *"
-                                                  #~(list #$(file-append
-                                                             coreutils
-                                                             "/bin/rm") "-rf"
-                                                     "/home/b/.nv/ComputeCache"))
+                                                  #~(list #$(file-append bash
+                                                             "/bin/bash") "-c"
+                                                          (string-append
+                                                           "mkdir -p /var/log/cuda-cleanup && "
+                                                           "LOG_FILE=/var/log/cuda-cleanup/cleanup-$(date +%Y%m%d-%H%M%S).log && "
+                                                           "exec > \"$LOG_FILE\" 2>&1 && "
+                                                           "echo \"Starting CUDA cache cleanup at $(date)\" && "
+                                                           "if [ -d /home/b/.nv/ComputeCache ]; then "
+                                                           "  SIZE=$(du -sh /home/b/.nv/ComputeCache 2>/dev/null | cut -f1 || echo '0B') && "
+                                                           "  echo \"CUDA cache size before cleanup: $SIZE\" && "
+                                                           "  "
+                                                           #$(file-append
+                                                              coreutils
+                                                              "/bin/rm")
+                                                           " -rf /home/b/.nv/ComputeCache && "
+                                                           "  echo \"CUDA cache cleaned successfully\" "
+                                                           "else "
+                                                           "  echo \"No CUDA cache directory found\" "
+                                                           "fi && "
+                                                           "echo \"CUDA cache cleanup completed at $(date)\" && "
+                                                           "find /var/log/cuda-cleanup -name 'cleanup-*.log' -mtime +90 -delete"))
+                                                  #:requirement '(user-processes))
 
                                   ;; Daily backup of critical files to Google Drive at 1AM
                                   (shepherd-timer '(rclone-backup-critical)
                                                   "0 1 * * *"
-                                                  #~(begin
-                                                      (setenv "HOME" "/home/b")
-                                                      (system* #$(file-append
-                                                                  rclone
-                                                                  "/bin/rclone")
-                                                       "sync"
-                                                       "/home/b/documents"
-                                                       "remote:backup/documents"
-                                                       "--exclude"
-                                                       "*.tmp"
-                                                       "--exclude"
-                                                       "*~"
-                                                       "--exclude"
-                                                       ".#*")
-                                                      (system* #$(file-append
-                                                                  rclone
-                                                                  "/bin/rclone")
-                                                       "sync"
-                                                       "/home/b/projects"
-                                                       "remote:backup/projects"
-                                                       "--exclude"
-                                                       "**/.git/**"
-                                                       "--exclude"
-                                                       "**/node_modules/**"
-                                                       "--exclude"
-                                                       "**/__pycache__/**"
-                                                       "--exclude"
-                                                       "**/target/**"
-                                                       "--exclude"
-                                                       "**/.venv/**"
-                                                       "--exclude"
-                                                       "**/venv/**"
-                                                       "--exclude"
-                                                       "**/.cargo/**"
-                                                       "--exclude"
-                                                       "**/dist/**"
-                                                       "--exclude"
-                                                       "**/build/**"
-                                                       "--exclude"
-                                                       "*.pyc"
-                                                       "--exclude"
-                                                       "*.pyo"
-                                                       "--exclude"
-                                                       "*.so"
-                                                       "--exclude"
-                                                       "*.o"
-                                                       "--exclude"
-                                                       "*.a"
-                                                       "--exclude"
-                                                       "*.tar.gz"
-                                                       "--exclude"
-                                                       "*.zip")
-                                                      (system* #$(file-append
-                                                                  rclone
-                                                                  "/bin/rclone")
-                                                       "sync"
-                                                       "/home/b/.password-store"
-                                                       "remote:backup/password-store")
-                                                      (system* #$(file-append
-                                                                  rclone
-                                                                  "/bin/rclone")
-                                                       "sync" "/home/b/.ssh"
-                                                       "remote:backup/ssh")
-                                                      (system* #$(file-append
-                                                                  rclone
-                                                                  "/bin/rclone")
-                                                       "sync" "/home/b/.gnupg"
-                                                       "remote:backup/gnupg"))
-                                                  #:requirement '(networking))
+                                                  #~(list #$(file-append bash
+                                                             "/bin/bash") "-c"
+                                                          (string-append
+                                                           ;; Create log directory and set up logging
+                                                           "mkdir -p /var/log/rclone-backup && "
+                                                           "LOG_FILE=/var/log/rclone-backup/critical-$(date +%Y%m%d-%H%M%S).log && "
+                                                           "exec > \"$LOG_FILE\" 2>&1 && "
+                                                           "echo \"Starting critical backup at $(date)\" && "
+                                                           ;; Run as user 'b' with proper environment
+                                                           "su - b -c '"
+                                                           ;; Documents backup
+                                                           #$(file-append
+                                                              rclone
+                                                              "/bin/rclone")
+                                                           " sync /home/b/documents remote:backup/documents"
+                                                           " --exclude \"*.tmp\" --exclude \"*~\" --exclude \".#*\""
+                                                           " --log-level INFO && "
+                                                           ;; Projects backup
+                                                           #$(file-append
+                                                              rclone
+                                                              "/bin/rclone")
+                                                           " sync /home/b/projects remote:backup/projects"
+                                                           " --exclude \"**/.git/**\" --exclude \"**/node_modules/**\""
+                                                           " --exclude \"**/__pycache__/**\" --exclude \"**/target/**\""
+                                                           " --exclude \"**/.venv/**\" --exclude \"**/venv/**\""
+                                                           " --exclude \"**/.cargo/**\" --exclude \"**/dist/**\""
+                                                           " --exclude \"**/build/**\" --exclude \"*.pyc\""
+                                                           " --exclude \"*.pyo\" --exclude \"*.so\""
+                                                           " --exclude \"*.o\" --exclude \"*.a\""
+                                                           " --exclude \"*.tar.gz\" --exclude \"*.zip\""
+                                                           " --log-level INFO && "
+                                                           ;; Password store backup
+                                                           #$(file-append
+                                                              rclone
+                                                              "/bin/rclone")
+                                                           " sync /home/b/.password-store remote:backup/password-store"
+                                                           " --log-level INFO && "
+                                                           ;; SSH config backup
+                                                           #$(file-append
+                                                              rclone
+                                                              "/bin/rclone")
+                                                           " sync /home/b/.ssh remote:backup/ssh"
+                                                           " --log-level INFO && "
+                                                           ;; GnuPG backup
+                                                           #$(file-append
+                                                              rclone
+                                                              "/bin/rclone")
+                                                           " sync /home/b/.gnupg remote:backup/gnupg"
+                                                           " --log-level INFO"
+                                                           "' && "
+                                                           "echo \"Backup completed successfully at $(date)\" && "
+                                                           ;; Keep only last 7 days of logs
+                                                           "find /var/log/rclone-backup -name 'critical-*.log' -mtime +7 -delete"))
+                                                  #:requirement '(networking
+                                                                  user-processes))
 
                                   ;; Weekly backup of larger/less critical files on Sunday at 2AM
                                   (shepherd-timer '(rclone-backup-weekly)
                                                   "0 2 * * 0"
-                                                  #~(begin
-                                                      (setenv "HOME" "/home/b")
-                                                      (system* #$(file-append
-                                                                  rclone
-                                                                  "/bin/rclone")
-                                                       "sync"
-                                                       "/home/b/pictures"
-                                                       "remote:backup/pictures"
-                                                       "--exclude"
-                                                       "*.tmp")
-                                                      (system* #$(file-append
-                                                                  rclone
-                                                                  "/bin/rclone")
-                                                       "sync"
-                                                       "/home/b/.config"
-                                                       "remote:backup/config"
-                                                       "--include"
-                                                       "alacritty/**"
-                                                       "--include"
-                                                       "mpv/**"
-                                                       "--include"
-                                                       "emacs/**"
-                                                       "--include"
-                                                       "git/**"
-                                                       "--include"
-                                                       "direnv/**"
-                                                       "--include"
-                                                       "*.conf"
-                                                       "--include"
-                                                       "*.toml"
-                                                       "--exclude"
-                                                       "*"))
-                                                  #:requirement '(networking))))
+                                                  #~(list #$(file-append bash
+                                                             "/bin/bash") "-c"
+                                                          (string-append
+                                                           ;; Create log directory and set up logging
+                                                           "mkdir -p /var/log/rclone-backup && "
+                                                           "LOG_FILE=/var/log/rclone-backup/weekly-$(date +%Y%m%d-%H%M%S).log && "
+                                                           "exec > \"$LOG_FILE\" 2>&1 && "
+                                                           "echo \"Starting weekly backup at $(date)\" && "
+                                                           ;; Run as user 'b' with proper environment
+                                                           "su - b -c '"
+                                                           ;; Pictures backup
+                                                           #$(file-append
+                                                              rclone
+                                                              "/bin/rclone")
+                                                           " sync /home/b/pictures remote:backup/pictures"
+                                                           " --exclude \"*.tmp\""
+                                                           " --log-level INFO && "
+                                                           ;; Config backup (selective)
+                                                           #$(file-append
+                                                              rclone
+                                                              "/bin/rclone")
+                                                           " sync /home/b/.config remote:backup/config"
+                                                           " --filter \"+ alacritty/**\""
+                                                           " --filter \"+ mpv/**\""
+                                                           " --filter \"+ emacs/**\""
+                                                           " --filter \"+ git/**\""
+                                                           " --filter \"+ direnv/**\""
+                                                           " --filter \"+ *.conf\""
+                                                           " --filter \"+ *.toml\""
+                                                           " --filter \"- *\""
+                                                           " --log-level INFO"
+                                                           "' && "
+                                                           "echo \"Weekly backup completed successfully at $(date)\" && "
+                                                           ;; Keep only last 4 weeks of logs
+                                                           "find /var/log/rclone-backup -name 'weekly-*.log' -mtime +28 -delete"))
+                                                  #:requirement '(networking
+                                                                  user-processes))))
 
                  ;; Environment variables for Wayland preference
                  (simple-service 'wayland-environment
