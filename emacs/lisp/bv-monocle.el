@@ -34,7 +34,7 @@
 
 
 (defvar bv-monocle-ignore-modes
-  '(minibuffer-mode which-key-mode minibuffer-inactive-mode dashboard-mode)
+  '(minibuffer-mode which-key-mode minibuffer-inactive-mode)
   "Modes to exclude from global olivetti.")
 
 (defvar bv-monocle-ignore-buffers

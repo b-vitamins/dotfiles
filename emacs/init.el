@@ -60,7 +60,6 @@
 (require 'bv-which-key)    ; Key binding hints
 (require 'bv-keycast)      ; Show keys being pressed
 (require 'bv-all-the-icons); Icon support
-(require 'bv-dashboard)    ; Startup dashboard
 
 ;; Basic functionality
 (require 'bv-calendar)     ; Calendar enhancements

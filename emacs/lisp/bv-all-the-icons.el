@@ -246,11 +246,6 @@ If FRAME is provided, setup fontsets for that frame."
 
     (pop-to-buffer (current-buffer))))
 
-;; Dashboard configuration
-(with-eval-after-load 'dashboard
-  (when (and (boundp 'dashboard-set-file-icons)
-             (not (display-graphic-p)))
-    (setq dashboard-set-file-icons nil)))
 
 ;; Provide install instructions if needed
 (unless (or bv-all-the-icons-enabled
