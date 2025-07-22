@@ -169,10 +169,13 @@
     (builtin . purple)             ; Built-in functions - wisteria
     (string . green)               ; String literals - jade
     (docstring . green-faint)      ; Documentation
+    (docmarkup . green-warmer)     ; Documentation markup
     (comment . fg-inactive)        ; Comments
     (constant . orange)            ; Constants - sienna
     (fnname . blue)                ; Function names - sky
+    (function-call . blue-faint)   ; Function calls - lighter sky
     (variable . yellow-intense)    ; Variables - gold
+    (variable-use . yellow)        ; Variable references - lighter gold
     (type . purple-warmer)         ; Type names - wisteria
     (preprocessor . orange-faint)  ; Preprocessor directives
     (rx-construct . purple)        ; Regex constructs
@@ -180,10 +183,14 @@
     (number . orange-cooler)       ; Numbers
     (operator . cyan-cooler)       ; Operators
     (property . yellow-warmer)     ; Properties
+    (property-use . yellow)        ; Property references
     (punctuation . fg-dim)         ; Punctuation
     (bracket . fg-main)            ; Brackets
     (delimiter . fg-dim)           ; Delimiters
     (escape . red-faint)           ; Escape sequences
+    (regexp . purple)              ; Regular expressions
+    (warning . red)                ; Warnings
+    (error . red-intense)          ; Errors
 
     ;; === UI Elements ===
     ;; Headers/Headings
@@ -232,6 +239,12 @@
     (bg-match . "#d8f5f5")         ; General match
     (bg-search-replace . "#f0e0fd") ; Replace highlight
 
+    ;; Search regexp groups
+    (bg-search-rx-group-0 . bg-magenta-nuanced)
+    (bg-search-rx-group-1 . bg-cyan-nuanced)
+    (bg-search-rx-group-2 . bg-yellow-nuanced)
+    (bg-search-rx-group-3 . bg-green-nuanced)
+
     ;; Completion match levels
     (fg-completion-match-0 . cyan-intense)
     (fg-completion-match-1 . orange-intense)
@@ -272,6 +285,14 @@
     (success . green)              ; Success states
     (warning . yellow)             ; Warnings
     (error . red)                  ; Errors
+
+    ;; Prominent status backgrounds
+    (bg-prominent-err . bg-red-intense)
+    (fg-prominent-err . fg-main)
+    (bg-prominent-note . bg-cyan-intense)
+    (fg-prominent-note . fg-main)
+    (bg-prominent-warning . bg-yellow-intense)
+    (fg-prominent-warning . fg-main)
 
     ;; === Special Purpose ===
     (bg-popup . "#f4f4f7")         ; Popup backgrounds

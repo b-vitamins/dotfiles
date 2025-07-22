@@ -84,8 +84,9 @@ Each level can have:
                                    (:style symbol))))
   :group 'bv-themes)
 
-(defcustom bv-themes-bold-constructs nil
-  "When non-nil, use bold for function names and similar constructs."
+(defcustom bv-themes-bold-constructs t
+  "When non-nil, use bold for function names and similar constructs.
+This creates a stronger visual hierarchy by default."
   :type 'boolean
   :group 'bv-themes)
 
@@ -102,6 +103,36 @@ Each level can have:
 (defcustom bv-themes-mixed-fonts nil
   "Non-nil to enable inheritance from `fixed-pitch' in some faces."
   :type 'boolean
+  :group 'bv-themes)
+
+(defcustom bv-themes-weight-hierarchy 'sophisticated
+  "Weight hierarchy style for syntax highlighting.
+Options:
+- `traditional': Minimal weight variation (mostly normal)
+- `moderate': Selective use of medium and bold
+- `sophisticated': Rich weight hierarchy with all available weights
+- `custom': Use custom weights defined in `bv-themes-custom-weights'"
+  :type '(choice (const :tag "Traditional (minimal)" traditional)
+                 (const :tag "Moderate (selective)" moderate)
+                 (const :tag "Sophisticated (rich)" sophisticated)
+                 (const :tag "Custom" custom))
+  :group 'bv-themes)
+
+(defcustom bv-themes-custom-weights nil
+  "Custom weight assignments for syntax elements.
+An alist mapping syntax element types to font weights.
+Example: '((keyword . bold) (function . medium) (variable . normal))"
+  :type '(alist :key-type symbol
+                :value-type (choice (const :tag "Thin" thin)
+                                   (const :tag "Extra Light" ultralight)
+                                   (const :tag "Light" light)
+                                   (const :tag "Semi Light" semilight)
+                                   (const :tag "Normal" normal)
+                                   (const :tag "Medium" medium)
+                                   (const :tag "Semi Bold" semibold)
+                                   (const :tag "Bold" bold)
+                                   (const :tag "Extra Bold" ultrabold)
+                                   (const :tag "Black" black)))
   :group 'bv-themes)
 
 ;;; User Options - Org Mode
@@ -162,15 +193,6 @@ Can be nil (default), `intense', `accented', `underline', or `faint'."
                  (const :tag "Faint" faint))
   :group 'bv-themes)
 
-(defcustom bv-themes-paren-match nil
-  "Style for parenthesis matching.
-Can be nil (default), `intense', `subtle', `underline', or `bold'."
-  :type '(choice (const :tag "Default" nil)
-                 (const :tag "Intense" intense)
-                 (const :tag "Subtle" subtle)
-                 (const :tag "Underline" underline)
-                 (const :tag "Bold" bold))
-  :group 'bv-themes)
 
 (defcustom bv-themes-region nil
   "Style for region highlighting.
@@ -248,6 +270,60 @@ Can be nil (default), `intense', `faint', or `color-coded'."
                  (const :tag "Color-coded" color-coded))
   :group 'bv-themes)
 
+;;; User Options - Syntax Highlighting
+
+(defcustom bv-themes-syntax-highlighting nil
+  "Fine-grained control over syntax highlighting styles.
+This is an alist where each element is (FACE-CATEGORY . PROPERTIES).
+Available categories:
+  - `strings': String literals styling
+  - `comments': Comments and documentation
+  - `functions': Function names and calls
+  - `constants': Constants and literals
+  - `operators': Mathematical and logical operators
+  - `delimiters': Brackets, parens, and punctuation
+  - `regexp': Regular expressions
+  - `escapes': Escape sequences
+
+Properties can include:
+  - `bold': Use bold weight
+  - `italic': Use italic slant
+  - `underline': Add underline
+  - `box': Add subtle box
+  - `background': Use nuanced background
+  - `intense': Use more vivid colors"
+  :type '(alist :key-type (choice (const :tag "Strings" strings)
+                                  (const :tag "Comments" comments)
+                                  (const :tag "Functions" functions)
+                                  (const :tag "Constants" constants)
+                                  (const :tag "Operators" operators)
+                                  (const :tag "Delimiters" delimiters)
+                                  (const :tag "Regexps" regexp)
+                                  (const :tag "Escapes" escapes))
+                :value-type (set :tag "Properties"
+                                 (const :tag "Bold" bold)
+                                 (const :tag "Italic" italic)
+                                 (const :tag "Underline" underline)
+                                 (const :tag "Box" box)
+                                 (const :tag "Background" background)
+                                 (const :tag "Intense" intense)))
+  :group 'bv-themes)
+
+(defcustom bv-themes-paren-match 'intense
+  "Style for parenthesis matching.
+Options:
+  - `intense': Colored background with bold (default)
+  - `subtle': Colored background only
+  - `bold': Bold weight only
+  - `underline': Underline matched parens
+  - `intense-foreground': Colored foreground with bold"
+  :type '(choice (const :tag "Intense background" intense)
+                 (const :tag "Subtle background" subtle)
+                 (const :tag "Bold only" bold)
+                 (const :tag "Underline" underline)
+                 (const :tag "Intense foreground" intense-foreground))
+  :group 'bv-themes)
+
 ;;; User Options - Prompts
 
 (defcustom bv-themes-prompts nil
@@ -306,47 +382,211 @@ ALPHA of 0.0 returns COLOR1, 1.0 returns COLOR2."
   (let ((amount (or amount 0.2)))
     (cl-destructuring-bind (h s l) (apply #'color-rgb-to-hsl
                                           (color-name-to-rgb color))
-      (color-hsl-to-hex h (min 1.0 (+ s amount)) l))))
+      (apply #'color-rgb-to-hex
+             (color-hsl-to-rgb h (min 1.0 (+ s amount)) l)))))
 
 (defun bv-themes--desaturate (color &optional amount)
   "Make COLOR less saturated by AMOUNT (default 0.3)."
   (let ((amount (or amount 0.3)))
     (cl-destructuring-bind (h s l) (apply #'color-rgb-to-hsl
                                           (color-name-to-rgb color))
-      (color-hsl-to-hex h (max 0.0 (- s amount)) l))))
+      (apply #'color-rgb-to-hex
+             (color-hsl-to-rgb h (max 0.0 (- s amount)) l)))))
 
 (defun bv-themes--rotate-hue (color degrees)
   "Rotate COLOR hue by DEGREES."
   (cl-destructuring-bind (h s l) (apply #'color-rgb-to-hsl
                                         (color-name-to-rgb color))
-    (color-hsl-to-hex (mod (+ h (/ degrees 360.0)) 1.0) s l)))
+    (apply #'color-rgb-to-hex
+           (color-hsl-to-rgb (mod (+ h (/ degrees 360.0)) 1.0) s l))))
+
+;;; Helper functions for conditional styling
+
+(defun bv-themes--bold-weight ()
+  "Conditional use of a heavier text weight."
+  (when bv-themes-bold-constructs
+    (list :inherit 'bold)))
+
+(defun bv-themes--slant ()
+  "Conditional use of italics for slant attribute."
+  (when bv-themes-italic-constructs
+    (list :inherit 'italic)))
+
+(defun bv-themes--fixed-pitch ()
+  "Conditional use of fixed pitch font."
+  (when bv-themes-mixed-fonts
+    (list :inherit 'fixed-pitch)))
+
+(defun bv-themes--variable-pitch-ui ()
+  "Conditional use of variable pitch for UI elements."
+  (when bv-themes-variable-pitch-ui
+    (list :inherit 'variable-pitch)))
+
+(defun bv-themes--syntax-extra-props (category palette)
+  "Get extra properties for syntax CATEGORY from user preferences.
+Returns a property list of additional face attributes."
+  (let ((props (cdr (assq category bv-themes-syntax-highlighting)))
+        result)
+    (when props
+      (when (memq 'bold props)
+        (setq result (append result '(:weight bold))))
+      (when (memq 'italic props)
+        (setq result (append result '(:slant italic))))
+      (when (memq 'underline props)
+        (setq result (append result '(:underline t))))
+      (when (memq 'box props)
+        (setq result (append result
+                            `(:box (:line-width -1
+                                    :color ,(bv-themes--retrieve-palette-value 'border palette))))))
+      (when (memq 'background props)
+        (let ((bg-key (pcase category
+                        ('strings 'bg-green-nuanced)
+                        ('comments 'bg-cyan-nuanced)
+                        ('functions 'bg-blue-nuanced)
+                        ('constants 'bg-yellow-nuanced)
+                        ('operators 'bg-magenta-nuanced)
+                        ('delimiters 'bg-red-nuanced)
+                        ('regexp 'bg-purple-nuanced)
+                        ('escapes 'bg-orange-nuanced)
+                        (_ 'bg-dim))))
+          (setq result (append result
+                              `(:background ,(bv-themes--retrieve-palette-value bg-key palette))))))
+      (when (memq 'intense props)
+        ;; For intense, we'll modify the color retrieval in syntax-color
+        (setq result (append result '(:bv-themes-intense t)))))
+    result))
 
 ;;; Property Computation Functions
 
-(defun bv-themes--syntax-color (base-color palette)
+(defun bv-themes--get-weight-for-element (element)
+  "Get font weight for syntax ELEMENT based on hierarchy settings."
+  (pcase bv-themes-weight-hierarchy
+    ('traditional
+     ;; Minimal weight variation - mostly normal
+     (pcase element
+       ('keyword (if bv-themes-bold-constructs 'medium 'normal))
+       ('fnname (if bv-themes-bold-constructs 'medium 'normal))
+       ('function-call 'normal)
+       ('type 'normal)
+       ('builtin 'normal)
+       ('constant 'normal)
+       ('variable 'normal)
+       ('string 'normal)
+       ('comment 'normal)
+       ('warning 'bold)
+       (_ 'normal)))
+    ('moderate
+     ;; Selective use of medium and bold
+     (pcase element
+       ('keyword 'medium)
+       ('fnname 'medium)
+       ('function-call 'normal)
+       ('type 'medium)
+       ('builtin 'normal)
+       ('constant 'normal)
+       ('variable 'normal)
+       ('string 'normal)
+       ('comment 'normal)
+       ('warning 'bold)
+       ('error 'bold)
+       (_ 'normal)))
+    ('sophisticated
+     ;; Rich weight hierarchy using all available weights
+     (pcase element
+       ;; Primary importance - keywords control flow
+       ('keyword 'semibold)
+       ;; Function definitions are important structural elements
+       ('fnname 'bold)
+       ;; Function calls are less important than definitions
+       ('function-call 'medium)
+       ;; Types define structure
+       ('type 'semibold)
+       ;; Built-ins are important but shouldn't dominate
+       ('builtin 'medium)
+       ;; Constants are semantically important
+       ('constant 'medium)
+       ;; Variables are frequent, keep them light
+       ('variable 'normal)
+       ;; Variable references even lighter
+       ('variable-use 'light)
+       ;; Properties slightly emphasized
+       ('property 'medium)
+       ('property-use 'normal)
+       ;; Strings are content, not structure
+       ('string 'normal)
+       ;; Numbers stand out slightly
+       ('number 'medium)
+       ;; Operators are structural
+       ('operator 'semibold)
+       ;; Comments are secondary
+       ('comment 'light)
+       ;; Doc strings slightly more important than comments
+       ('docstring 'semilight)
+       ;; Warnings and errors must stand out
+       ('warning 'bold)
+       ('error 'bold)
+       ;; Preprocessor directives
+       ('preprocessor 'medium)
+       ;; Punctuation hierarchy
+       ('bracket 'medium)      ; Structural brackets
+       ('delimiter 'normal)    ; Commas, semicolons
+       ('punctuation 'light)   ; Other punctuation
+       ;; Regex elements
+       ('regexp 'medium)
+       ('escape 'medium)
+       ;; Default
+       (_ 'normal)))
+    ('custom
+     ;; Use custom weights
+     (or (alist-get element bv-themes-custom-weights) 'normal))
+    (_
+     'normal)))
+
+(defun bv-themes--syntax-color (base-color palette &optional category)
   "Compute syntax color based on user settings.
-BASE-COLOR is the palette key, PALETTE is the current palette."
-  (let ((color (bv-themes--retrieve-palette-value base-color palette)))
-    (pcase bv-themes-syntax
-      ('faint
-       (list :foreground (bv-themes--blend color
-                                           (bv-themes--retrieve-palette-value 'bg-main palette)
-                                           0.4)))
-      ('intense
-       (list :foreground (bv-themes--intensify color 0.3)))
-      ('monochrome
-       (list :foreground (bv-themes--retrieve-palette-value 'fg-main palette)
-             :weight (if (memq base-color '(keyword fnname type)) 'medium 'normal)))
-      ('rainbow
-       (list :foreground color
-             :weight (if (memq base-color '(keyword fnname)) 'medium 'normal)))
-      ('tinted
-       (list :foreground (bv-themes--desaturate color 0.2)))
-      ('alt
-       (let ((alt-key (intern (format "%s-alt" base-color))))
-         (list :foreground (or (bv-themes--retrieve-palette-value alt-key palette) color))))
-      (_
-       (list :foreground color)))))
+BASE-COLOR is the palette key, PALETTE is the current palette.
+Optional CATEGORY is used for fine-grained styling preferences."
+  (let* ((color (bv-themes--retrieve-palette-value base-color palette))
+         (weight (bv-themes--get-weight-for-element base-color))
+         (extra-props (when category (bv-themes--syntax-extra-props category palette)))
+         ;; Check if intense is requested via extra props
+         (intense-p (plist-get extra-props :bv-themes-intense))
+         ;; Remove our internal marker
+         (extra-props (cl-loop for (k v) on extra-props by #'cddr
+                               unless (eq k :bv-themes-intense)
+                               collect k and collect v))
+         base-props)
+    ;; Compute base properties
+    (setq base-props
+          (pcase bv-themes-syntax
+            ('faint
+             (list :foreground (bv-themes--blend color
+                                                 (bv-themes--retrieve-palette-value 'bg-main palette)
+                                                 0.4)
+                   :weight weight))
+            ('intense
+             (list :foreground (bv-themes--intensify color 0.3)
+                   :weight weight))
+            ('monochrome
+             (list :foreground (bv-themes--retrieve-palette-value 'fg-main palette)
+                   :weight weight))
+            ('rainbow
+             (list :foreground color
+                   :weight weight))
+            ('tinted
+             (list :foreground (bv-themes--desaturate color 0.2)
+                   :weight weight))
+            ('alt
+             (let ((alt-key (intern (format "%s-alt" base-color))))
+               (list :foreground (or (bv-themes--retrieve-palette-value alt-key palette) color)
+                     :weight weight)))
+            (_
+             (list :foreground (if intense-p
+                                   (bv-themes--intensify color 0.3)
+                                 color)
+                   :weight weight))))
+    ;; Merge with extra properties, extra props take precedence
+    (append extra-props base-props)))
 
 (defun bv-themes--heading (level palette)
   "Compute heading properties for LEVEL using PALETTE."
@@ -521,15 +761,18 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
   (pcase bv-themes-paren-match
     ('intense
      `(:background ,(bv-themes--retrieve-palette-value 'bg-paren-match-intense palette)
-       :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)))
+       :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
+       :weight bold))
     ('subtle
      `(:background ,(bv-themes--retrieve-palette-value 'bg-paren-match palette)))
     ('underline
      `(:underline ,(bv-themes--retrieve-palette-value 'accent-0 palette)
        :weight bold))
     ('bold
-     `(:inherit bold
-       :background ,(bv-themes--retrieve-palette-value 'bg-paren-match palette)))
+     `(:inherit bold))
+    ('intense-foreground
+     `(:foreground ,(bv-themes--retrieve-palette-value 'accent-0-intense palette)
+       :weight bold))
     (_
      `(:background ,(bv-themes--retrieve-palette-value 'bg-paren-match palette)
        :foreground ,(bv-themes--retrieve-palette-value 'fg-paren-match palette)))))
@@ -599,6 +842,28 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
   "Face for critical information."
   :group 'bv-themes)
 
+;;; Typography helper faces
+
+(defface bv-themes-bold nil
+  "Helper face for conditional bold styling."
+  :group 'bv-themes)
+
+(defface bv-themes-slant nil
+  "Helper face for conditional italic/slant styling."
+  :group 'bv-themes)
+
+(defface bv-themes-fixed-pitch nil
+  "Helper face for fixed pitch text."
+  :group 'bv-themes)
+
+(defface bv-themes-variable-pitch nil
+  "Helper face for variable pitch text."
+  :group 'bv-themes)
+
+(defface bv-themes-ui-variable-pitch nil
+  "Helper face for variable pitch UI elements."
+  :group 'bv-themes)
+
 ;;; Additional semantic faces
 
 (defface bv-themes-accent-0 nil
@@ -629,6 +894,32 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
 
 (defface bv-themes-mark-other nil
   "Face for other marks."
+  :group 'bv-themes)
+
+;;; Error/Warning/Note faces
+
+(defface bv-themes-lang-error nil
+  "Face for language-specific error indicators."
+  :group 'bv-themes)
+
+(defface bv-themes-lang-note nil
+  "Face for language-specific note indicators."
+  :group 'bv-themes)
+
+(defface bv-themes-lang-warning nil
+  "Face for language-specific warning indicators."
+  :group 'bv-themes)
+
+(defface bv-themes-prominent-error nil
+  "Face for prominent error messages."
+  :group 'bv-themes)
+
+(defface bv-themes-prominent-note nil
+  "Face for prominent notes."
+  :group 'bv-themes)
+
+(defface bv-themes-prominent-warning nil
+  "Face for prominent warnings."
   :group 'bv-themes)
 
 ;;; Diff and version control faces
@@ -690,6 +981,58 @@ BASE-COLOR is the palette key, PALETTE is the current palette."
     (eval `(defface ,(intern (format "bv-themes-heading-%d-rainbow" n)) nil
              ,(format "Rainbow variant of heading level %d." n)
              :group 'bv-themes))))
+
+;;; Search and highlighting faces
+
+(defface bv-themes-search-current nil
+  "Face for current search match."
+  :group 'bv-themes)
+
+(defface bv-themes-search-lazy nil
+  "Face for lazy search highlighting."
+  :group 'bv-themes)
+
+(defface bv-themes-search-replace nil
+  "Face for search replacement."
+  :group 'bv-themes)
+
+(defface bv-themes-search-rx-group-0 nil
+  "Face for regexp group 0 in search."
+  :group 'bv-themes)
+
+(defface bv-themes-search-rx-group-1 nil
+  "Face for regexp group 1 in search."
+  :group 'bv-themes)
+
+(defface bv-themes-search-rx-group-2 nil
+  "Face for regexp group 2 in search."
+  :group 'bv-themes)
+
+(defface bv-themes-search-rx-group-3 nil
+  "Face for regexp group 3 in search."
+  :group 'bv-themes)
+
+;;; Completion faces
+
+(defface bv-themes-completion-match-0 nil
+  "Face for first level completion match."
+  :group 'bv-themes)
+
+(defface bv-themes-completion-match-1 nil
+  "Face for second level completion match."
+  :group 'bv-themes)
+
+(defface bv-themes-completion-match-2 nil
+  "Face for third level completion match."
+  :group 'bv-themes)
+
+(defface bv-themes-completion-match-3 nil
+  "Face for fourth level completion match."
+  :group 'bv-themes)
+
+(defface bv-themes-completion-selected nil
+  "Face for selected completion item."
+  :group 'bv-themes)
 
 ;;; Palette utilities
 
@@ -778,6 +1121,22 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'bg-main palette)
             :background ,(bv-themes--retrieve-palette-value 'red-intense palette))))
 
+      ;; Typography helper faces
+      (bv-themes-bold
+       ((,c ,@(bv-themes--bold-weight))))
+
+      (bv-themes-slant
+       ((,c ,@(bv-themes--slant))))
+
+      (bv-themes-fixed-pitch
+       ((,c ,@(bv-themes--fixed-pitch))))
+
+      (bv-themes-variable-pitch
+       ((,c :family ,font-prop)))
+
+      (bv-themes-ui-variable-pitch
+       ((,c ,@(bv-themes--variable-pitch-ui))))
+
       ;; Accent faces
       (bv-themes-accent-0
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette))))
@@ -798,6 +1157,24 @@ Supports recursive semantic mappings like Modus themes."
       (bv-themes-mark-other
        ((,c :inherit bold :background ,(bv-themes--retrieve-palette-value 'bg-mark-other palette)
             :foreground ,(bv-themes--retrieve-palette-value 'fg-mark-other palette))))
+
+      ;; Error/Warning/Note faces with language-specific underlines
+      (bv-themes-lang-error
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-error palette)))))
+      (bv-themes-lang-note
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-note palette)))))
+      (bv-themes-lang-warning
+       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
+
+      (bv-themes-prominent-error
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-prominent-err palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-prominent-err palette))))
+      (bv-themes-prominent-note
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-prominent-note palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-prominent-note palette))))
+      (bv-themes-prominent-warning
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-prominent-warning palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-prominent-warning palette))))
 
       ;; Diff faces
       (bv-themes-diff-added
@@ -876,97 +1253,165 @@ Supports recursive semantic mappings like Modus themes."
 
       (trailing-whitespace ((,c :background ,(bv-themes--retrieve-palette-value 'bg-space-error palette))))
 
-      ;; Font lock faces with syntax variants
-      (font-lock-keyword-face
-       ((,c ,@(bv-themes--syntax-color 'keyword palette)
-            :weight ,(if bold-constructs 'medium 'normal))))
-
-      (font-lock-string-face
-       ((,c ,@(bv-themes--syntax-color 'string palette))))
-
-      (font-lock-comment-face
-       ((,c ,@(bv-themes--syntax-color 'comment palette)
-            :slant ,(if italic-constructs 'italic 'normal))))
-
-      (font-lock-function-name-face
-       ((,c ,@(bv-themes--syntax-color 'fnname palette))))
-
-      (font-lock-variable-name-face
-       ((,c ,@(bv-themes--syntax-color 'variable palette))))
-
-      (font-lock-type-face
-       ((,c ,@(bv-themes--syntax-color 'type palette))))
-
-      (font-lock-constant-face
-       ((,c ,@(bv-themes--syntax-color 'constant palette))))
+      ;; Font lock faces with syntax variants and fine-grained control
+      (font-lock-bracket-face
+       ((,c ,@(bv-themes--syntax-color 'bracket palette 'delimiters))))
 
       (font-lock-builtin-face
-       ((,c ,@(bv-themes--syntax-color 'builtin palette))))
+       ((,c :inherit bv-themes-bold
+            ,@(bv-themes--syntax-color 'builtin palette 'functions))))
+
+      (font-lock-comment-delimiter-face
+       ((,c :inherit font-lock-comment-face)))
+
+      (font-lock-comment-face
+       ((,c :inherit bv-themes-slant
+            ,@(bv-themes--syntax-color 'comment palette 'comments))))
+
+      (font-lock-constant-face
+       ((,c ,@(bv-themes--syntax-color 'constant palette 'constants))))
+
+      (font-lock-delimiter-face
+       ((,c ,@(bv-themes--syntax-color 'delimiter palette 'delimiters))))
+
+      (font-lock-doc-face
+       ((,c :inherit bv-themes-slant
+            ,@(bv-themes--syntax-color 'docstring palette 'comments))))
+
+      (font-lock-doc-markup-face
+       ((,c :inherit bv-themes-slant
+            ,@(bv-themes--syntax-color 'docmarkup palette 'comments))))
+
+      (font-lock-escape-face
+       ((,c ,@(let ((props (bv-themes--syntax-color 'escape palette 'escapes)))
+                ;; Make escape sequences stand out by default with slight weight increase
+                (unless (assq 'escapes bv-themes-syntax-highlighting)
+                  (plist-put props :weight 'medium))
+                props))))
+
+      (font-lock-function-call-face
+       ((,c ,@(bv-themes--syntax-color 'function-call palette 'functions))))
+
+      (font-lock-function-name-face
+       ((,c ,@(bv-themes--syntax-color 'fnname palette 'functions))))
+
+      (font-lock-keyword-face
+       ((,c :inherit bv-themes-bold
+            ,@(bv-themes--syntax-color 'keyword palette))))
+
+      (font-lock-misc-punctuation-face
+       ((,c ,@(bv-themes--syntax-color 'punctuation palette 'delimiters))))
+
+      (font-lock-negation-char-face
+       ((,c :inherit error)))
+
+      (font-lock-number-face
+       ((,c ,@(bv-themes--syntax-color 'number palette 'constants))))
+
+      (font-lock-operator-face
+       ((,c ,@(bv-themes--syntax-color 'operator palette 'operators))))
 
       (font-lock-preprocessor-face
        ((,c ,@(bv-themes--syntax-color 'preprocessor palette))))
 
-      (font-lock-warning-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'warning palette)
-            :weight bold)))
-
-      (font-lock-doc-face
-       ((,c ,@(bv-themes--syntax-color 'docstring palette)
-            :slant ,(if italic-constructs 'italic 'normal))))
-
-      (font-lock-negation-char-face
-       ((,c ,@(bv-themes--syntax-color 'fnname palette))))
-
-      (font-lock-regexp-grouping-backslash
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'rx-backslash palette))))
-
-      (font-lock-regexp-grouping-construct
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'rx-construct palette))))
-
-      ;; Additional font-lock faces
-      (font-lock-number-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'number palette))))
-
-      (font-lock-operator-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'operator palette))))
-
       (font-lock-property-name-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'property palette))))
+       ((,c ,@(bv-themes--syntax-color 'property palette))))
+
+      (font-lock-property-use-face
+       ((,c ,@(bv-themes--syntax-color 'property-use palette))))
 
       (font-lock-punctuation-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'punctuation palette))))
+       ((,c ,@(bv-themes--syntax-color 'punctuation palette 'delimiters))))
 
-      (font-lock-bracket-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'bracket palette))))
+      (font-lock-regexp-face
+       ((,c ,@(let ((props (bv-themes--syntax-color 'regexp palette 'regexp)))
+                ;; Regexps benefit from slight emphasis by default
+                (unless (assq 'regexp bv-themes-syntax-highlighting)
+                  (plist-put props :weight 'medium))
+                props))))
 
-      (font-lock-delimiter-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'delimiter palette))))
+      (font-lock-regexp-grouping-backslash
+       ((,c :inherit bv-themes-bold
+            ,@(let ((props (bv-themes--syntax-color 'rx-backslash palette 'regexp)))
+                ;; Grouping backslashes should really stand out
+                (unless (plist-get props :background)
+                  (plist-put props :foreground
+                            (bv-themes--intensify
+                             (plist-get props :foreground) 0.2)))
+                props))))
 
-      (font-lock-escape-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'escape palette))))
+      (font-lock-regexp-grouping-construct
+       ((,c :inherit bv-themes-bold
+            ,@(let ((props (bv-themes--syntax-color 'rx-construct palette 'regexp)))
+                ;; Grouping constructs also need emphasis
+                (unless (plist-get props :background)
+                  (plist-put props :foreground
+                            (bv-themes--intensify
+                             (plist-get props :foreground) 0.2)))
+                props))))
 
-      (font-lock-misc-punctuation-face
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'punctuation palette))))
+      (font-lock-string-face
+       ((,c ,@(bv-themes--syntax-color 'string palette 'strings))))
+
+      (font-lock-type-face
+       ((,c :inherit bv-themes-bold
+            ,@(bv-themes--syntax-color 'type palette))))
+
+      (font-lock-variable-name-face
+       ((,c ,@(bv-themes--syntax-color 'variable palette))))
+
+      (font-lock-variable-use-face
+       ((,c ,@(bv-themes--syntax-color 'variable-use palette))))
+
+      (font-lock-warning-face
+       ((,c :inherit bv-themes-bold
+            ,@(bv-themes--syntax-color 'warning palette))))
 
       ;; Search and replace
       (isearch
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-current palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+       ((,c :inherit bv-themes-search-current)))
 
       (isearch-fail
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-fail palette)
             :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
 
       (lazy-highlight
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-lazy palette)
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+       ((,c :inherit bv-themes-search-lazy)))
 
       (match
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-match palette)
             :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
 
       (query-replace
+       ((,c :inherit bv-themes-search-replace)))
+
+      ;; BV theme search faces
+      (bv-themes-search-current
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-current palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (bv-themes-search-lazy
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-lazy palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (bv-themes-search-replace
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-replace palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (bv-themes-search-rx-group-0
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-rx-group-0 palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (bv-themes-search-rx-group-1
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-rx-group-1 palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (bv-themes-search-rx-group-2
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-rx-group-2 palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+
+      (bv-themes-search-rx-group-3
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-search-rx-group-3 palette)
             :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
 
       ;; Line numbers
@@ -1216,6 +1661,23 @@ Supports recursive semantic mappings like Modus themes."
 
       (completions-first-difference
        ((,c ,@(bv-themes--completion-props 1 palette))))
+
+      ;; BV themes completion faces
+      (bv-themes-completion-match-0
+       ((,c ,@(bv-themes--completion-props 0 palette))))
+
+      (bv-themes-completion-match-1
+       ((,c ,@(bv-themes--completion-props 1 palette))))
+
+      (bv-themes-completion-match-2
+       ((,c ,@(bv-themes--completion-props 2 palette))))
+
+      (bv-themes-completion-match-3
+       ((,c ,@(bv-themes--completion-props 3 palette))))
+
+      (bv-themes-completion-selected
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-completion palette)
+            :extend t)))
 
       ;; Bookmark
       (bookmark-face
@@ -1587,15 +2049,36 @@ Supports recursive semantic mappings like Modus themes."
       (flyspell-duplicate
        ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
 
-      ;; Flymake
+      ;; Flymake comprehensive diagnostic faces
       (flymake-error
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-error palette)))))
-
+       ((,c :inherit bv-themes-lang-error)))
       (flymake-warning
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
-
+       ((,c :inherit bv-themes-lang-warning)))
       (flymake-note
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-note palette)))))
+       ((,c :inherit bv-themes-lang-note)))
+
+      ;; Echo area messages
+      (flymake-error-echo
+       ((,c :inherit error)))
+      (flymake-warning-echo
+       ((,c :inherit warning)))
+      (flymake-note-echo
+       ((,c :inherit success)))
+
+      ;; End-of-line diagnostics
+      (flymake-end-of-line-diagnostics-face
+       ((,c :inherit bv-themes-slant
+            :height 0.85
+            :box ,(bv-themes--retrieve-palette-value 'border palette))))
+      (flymake-error-echo-at-eol
+       ((,c :inherit flymake-end-of-line-diagnostics-face
+            :foreground ,(bv-themes--retrieve-palette-value 'error palette))))
+      (flymake-warning-echo-at-eol
+       ((,c :inherit flymake-end-of-line-diagnostics-face
+            :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+      (flymake-note-echo-at-eol
+       ((,c :inherit flymake-end-of-line-diagnostics-face
+            :foreground ,(bv-themes--retrieve-palette-value 'info palette))))
 
       ;; Flycheck
       (flycheck-error
@@ -1785,27 +2268,45 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-dim palette)
             :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
 
-      ;; Tree-sitter
-      (tree-sitter-hl-face:function
-       ((,c ,@(bv-themes--syntax-color 'fnname palette))))
-      (tree-sitter-hl-face:function.call
-       ((,c ,@(bv-themes--syntax-color 'fnname palette))))
-      (tree-sitter-hl-face:keyword
-       ((,c ,@(bv-themes--syntax-color 'keyword palette))))
-      (tree-sitter-hl-face:string
-       ((,c ,@(bv-themes--syntax-color 'string palette))))
-      (tree-sitter-hl-face:type
-       ((,c ,@(bv-themes--syntax-color 'type palette))))
-      (tree-sitter-hl-face:variable
-       ((,c ,@(bv-themes--syntax-color 'variable palette))))
-      (tree-sitter-hl-face:comment
-       ((,c ,@(bv-themes--syntax-color 'comment palette))))
-      (tree-sitter-hl-face:constant
-       ((,c ,@(bv-themes--syntax-color 'constant palette))))
-      (tree-sitter-hl-face:property
-       ((,c ,@(bv-themes--syntax-color 'variable palette))))
 
-      ;; LSP/Eglot
+      ;; EIN (Emacs IPython Notebook) faces
+      (ein:basecell-input-area-face
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-dim palette)
+            :extend t)))
+      (ein:cell-output-area
+       (( ))) ; no styling
+      (ein:cell-output-area-error
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-removed palette)
+            :extend t)))
+      (ein:cell-output-stderr
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-removed palette)
+            :extend t)))
+      (ein:markdowncell-input-area-face
+       (( ))) ; no styling
+      (ein:notification-tab-normal
+       ((,c :underline t)))
+
+      ;; Base error/warning/success faces
+      (error
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'error palette))))
+      (warning
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+      (success
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'info palette))))
+
+      ;; Eldoc
+      (eldoc-highlight-function-argument
+       ((,c :inherit bold
+            :background ,(bv-themes--retrieve-palette-value 'bg-active-argument palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-active-argument palette))))
+
+      ;; LSP/Eglot comprehensive faces
+      (eglot-mode-line
+       ((,c :inherit bv-themes-bold
+            :foreground ,(bv-themes--retrieve-palette-value 'modeline-info palette))))
+      (eglot-diagnostic-tag-unnecessary-face
+       ((,c :inherit bv-themes-lang-note)))
+
       (lsp-face-highlight-textual
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hover palette))))
       (lsp-face-highlight-read
@@ -1813,6 +2314,49 @@ Supports recursive semantic mappings like Modus themes."
       (lsp-face-highlight-write
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-hover palette)
             :weight bold)))
+
+      ;; LSP headerline breadcrumb
+      (lsp-headerline-breadcrumb-separator-face
+       ((,c :inherit shadow)))
+      (lsp-headerline-breadcrumb-path-face
+       ((,c :inherit font-lock-string-face)))
+      (lsp-headerline-breadcrumb-path-error-face
+       ((,c :inherit (lsp-headerline-breadcrumb-path-face bv-themes-lang-error))))
+      (lsp-headerline-breadcrumb-path-warning-face
+       ((,c :inherit (lsp-headerline-breadcrumb-path-face bv-themes-lang-warning))))
+      (lsp-headerline-breadcrumb-path-info-face
+       ((,c :inherit (lsp-headerline-breadcrumb-path-face bv-themes-lang-note))))
+      (lsp-headerline-breadcrumb-path-hint-face
+       ((,c :inherit (lsp-headerline-breadcrumb-path-face bv-themes-lang-note))))
+      (lsp-headerline-breadcrumb-project-prefix-face
+       ((,c :inherit bold :foreground ,(bv-themes--retrieve-palette-value 'name palette))))
+      (lsp-headerline-breadcrumb-symbols-face
+       ((,c :inherit (bold font-lock-doc-face))))
+
+      ;; LSP UI elements
+      (lsp-face-rename
+       ((,c :inherit bv-themes-search-replace)))
+      (lsp-modeline-code-actions-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'modeline-warning palette))))
+      (lsp-signature-highlight-function-argument
+       ((,c :inherit bold
+            :background ,(bv-themes--retrieve-palette-value 'bg-active-argument palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-active-argument palette))))
+
+      ;; LSP-UI package (if used)
+      (lsp-ui-doc-background
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-dim palette))))
+      (lsp-ui-sideline-symbol
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)
+            :box (:line-width -1 :color ,(bv-themes--retrieve-palette-value 'border palette)))))
+      (lsp-ui-sideline-current-symbol
+       ((,c :inherit bold
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
+            :box (:line-width -1 :color ,(bv-themes--retrieve-palette-value 'border palette)))))
+      (lsp-ui-sideline-code-action
+       ((,c :inherit lsp-modeline-code-actions-face)))
+      (lsp-ui-sideline-symbol-info
+       ((,c :inherit bv-themes-slant)))
 
       ;; Rainbow delimiters with proper scaling
       ,@(cl-loop for i from 1 to 9
@@ -1879,6 +2423,24 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :inherit bv-themes-header-default
             :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)))))))
 
+;;; Hooks and state
+
+(defvar bv-themes-after-load-theme-hook nil
+  "Hook run after a BV theme is loaded.
+Functions in this hook can access the current theme's palette
+using `bv-themes--current-theme-palette'.")
+
+(defvar bv-themes--current-theme nil
+  "The currently loaded BV theme.")
+
+(defvar bv-themes--current-palette nil
+  "The palette of the currently loaded theme.")
+
+(defun bv-themes--current-theme-palette ()
+  "Return the palette of the currently loaded theme.
+Returns nil if no BV theme is loaded."
+  bv-themes--current-palette)
+
 ;;; Theme generation
 
 (defmacro bv-themes-theme (name palette)
@@ -1902,7 +2464,10 @@ Supports recursive semantic mappings like Modus themes."
          (apply #'custom-theme-set-faces ',name faces)
          (custom-theme-set-variables
           ',name
-          (list 'ansi-color-names-vector ansi-colors)))
+          (list 'ansi-color-names-vector ansi-colors))
+         ;; Set current theme state
+         (setq bv-themes--current-theme ',name)
+         (setq bv-themes--current-palette palette))
 
        (provide-theme ',name))))
 
@@ -1917,7 +2482,9 @@ Supports recursive semantic mappings like Modus themes."
    (list (intern (completing-read "Load theme: "
                                   (mapcar #'symbol-name bv-themes-variants)))))
   (mapc #'disable-theme custom-enabled-themes)
-  (load-theme theme t))
+  (load-theme theme t)
+  ;; Run after-load hook
+  (run-hooks 'bv-themes-after-load-theme-hook))
 
 (defun bv-themes-toggle ()
   "Toggle between light and dark themes."
