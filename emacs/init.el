@@ -79,6 +79,7 @@
 (require 'bv-consult)      ; Consult commands
 (require 'bv-embark)       ; Contextual actions
 (require 'bv-vertico)      ; Vertical completion
+(require 'bv-cape)         ; Completion at point extensions
 (require 'bv-corfu)        ; In-buffer completion
 (require 'bv-tempel)       ; Template expansion
 
