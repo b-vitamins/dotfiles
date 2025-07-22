@@ -11,7 +11,7 @@ This is a comprehensive dotfiles repository for a GNU/Linux development environm
 - **User**: Ayan Das (b), graduate student at Indian Institute of Science
 - **Machines**: 
   - `mileva`: AMD Ryzen 9 5900X workstation with RTX 3060, 64GB RAM (primary)
-  - `spärck`: ThinkPad laptop with 32GB RAM (mobile)
+  - `sparck`: ThinkPad laptop with 32GB RAM (mobile)
 - **Preferences**: Direct communication, minimal comments, research-driven approach
 - **Git**: Conventional commits, no GPG signing required
 
@@ -158,7 +158,7 @@ The Guix system configuration uses:
 ## Current Machines
 
 - `mileva`: Primary development workstation (64GB RAM, RTX 3060, multiple NVMe drives)
-- `spärck`: ThinkPad laptop (32GB RAM, optimized for battery life)
+- `sparck`: ThinkPad laptop (32GB RAM, optimized for battery life)
 - Machine detection via hostname in setup scripts
 
 ## Code Style Guidelines

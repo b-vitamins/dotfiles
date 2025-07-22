@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
-- Emacs daemon service configuration for mileva and spärck machines
+- Emacs daemon service configuration for mileva and sparck machines
 - Git completions integration from Guix profiles in Zsh configuration
 - Comprehensive Zsh user manual with modern command replacements
 - LD_LIBRARY_PATH export and claude alias in Zsh configuration
@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Resolved Zsh startup errors and plugin loading issues
 - Removed redundant custom zprofile configuration
 - Corrected multiple import and configuration errors in mileva.scm
-- Fixed indentation in spärck system services configuration
+- Fixed indentation in sparck system services configuration
 ### Removed
 - Obsolete Emacs configuration files
 
@@ -67,9 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Redesigned UI module with automatic theme switching and header line support.
 - Major refactor of `bv-ui.el` with comprehensive UI configuration system including environment variable support, compatibility layer for Emacs 30+, enhanced theme switching with time-based automation, improved font management, configurable window decorations, and extensive documentation.
 - Removed obsolete machine configurations for `leibniz` and manifests for haskell-manifest.scm, julia-manifest.scm, guile-manifest.scm, scientific-manifest.scm.
-- Added new machine configurations for `mileva` (AMD Ryzen 9 5900X workstation) and `spärck` (ThinkPad laptop).
+- Added new machine configurations for `mileva` (AMD Ryzen 9 5900X workstation) and `sparck` (ThinkPad laptop).
 - Enhanced `mileva` home configuration with zprofile and fzf-tab integration.
-- Enhanced `spärck` home configuration with comprehensive services.
+- Enhanced `sparck` home configuration with comprehensive services.
 - Optimized MPV configuration for RTX 3060 with GPU shaders and hardware acceleration.
 - Completely rewrote Alacritty configuration for better Emacs workflow integration and improved keybindings.
 - Complete rewrite of Zsh configuration with modern shell experience including advanced prompt, completion system, and plugin management.

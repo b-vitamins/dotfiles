@@ -16,7 +16,7 @@ cd ~/projects/dotfiles
 
 # System configuration (choose your machine)
 sudo guix system reconfigure ~/projects/dotfiles/guix/machines/mileva.scm  # Workstation
-sudo guix system reconfigure ~/projects/dotfiles/guix/machines/spärck.scm  # Laptop
+sudo guix system reconfigure ~/projects/dotfiles/guix/machines/sparck.scm  # Laptop
 ```
 
 ## Essential Commands
@@ -49,7 +49,7 @@ activate       # Source venv/bin/activate
 
 ## Key Features
 
-- **Machines**: `mileva` (workstation), `spärck` (laptop) - fully reproducible configs
+- **Machines**: `mileva` (workstation), `sparck` (laptop) - fully reproducible configs
 - **Shell**: Zsh with modern prompt, FZF integration, smart completions
 - **Editor**: Emacs 30+ with LSP, tree-sitter, custom modules
 - **Tools**: Modern CLI replacements (eza, bat, ripgrep, fd, delta)
