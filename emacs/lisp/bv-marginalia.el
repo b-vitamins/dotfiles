@@ -12,8 +12,8 @@
 
 (require 'marginalia)
 
-;; Align annotations to the right
-(setq marginalia-align 'right)
+;; Align annotations to the left
+(setq marginalia-align 'left)
 
 ;; Enable marginalia mode
 (marginalia-mode 1)
