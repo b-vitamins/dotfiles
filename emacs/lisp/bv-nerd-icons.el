@@ -44,18 +44,18 @@
   (setq nerd-icons-scale-factor bv-nerd-icons-scale-factor)
   
   ;; Add custom file associations
-  (dolist (ext-icon '(("scm" nerd-icons-devicon "nf-dev-code" :face nerd-icons-red)
-                      ("rkt" nerd-icons-devicon "nf-dev-code" :face nerd-icons-red-alt)
-                      ("fnl" nerd-icons-devicon "nf-dev-code" :face nerd-icons-lblue)
-                      ("janet" nerd-icons-devicon "nf-dev-code" :face nerd-icons-purple)
+  (dolist (ext-icon '(("scm" nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red)
+                      ("rkt" nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red-alt)
+                      ("fnl" nerd-icons-sucicon "nf-seti-lua" :face nerd-icons-lblue)
+                      ("janet" nerd-icons-sucicon "nf-custom-clojure" :face nerd-icons-purple)
                       ("epub" nerd-icons-faicon "nf-fa-book" :face nerd-icons-green)
-                      ("guix" nerd-icons-devicon "nf-dev-code" :face nerd-icons-orange)
-                      ("nix" nerd-icons-devicon "nf-dev-code" :face nerd-icons-blue)
+                      ("guix" nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-orange)
+                      ("nix" nerd-icons-mdicon "nf-md-nix" :face nerd-icons-blue)
                       ("direnv" nerd-icons-octicon "nf-oct-file_directory" :face nerd-icons-yellow)))
     (add-to-list 'nerd-icons-extension-icon-alist ext-icon))
   
   ;; Add custom regex associations
-  (dolist (regex-icon '(("\\.?guix" nerd-icons-devicon "nf-dev-code" :face nerd-icons-orange)
+  (dolist (regex-icon '(("\\.?guix" nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-orange)
                         ("Dockerfile" nerd-icons-devicon "nf-dev-docker" :face nerd-icons-cyan)
                         ("docker-compose" nerd-icons-devicon "nf-dev-docker" :face nerd-icons-cyan)
                         ("\\.envrc" nerd-icons-octicon "nf-oct-file_directory" :face nerd-icons-yellow)
@@ -67,11 +67,11 @@
   
   ;; Add mode icons
   (dolist (mode-icon '((emacs-lisp-mode nerd-icons-sucicon "nf-custom-emacs" :face nerd-icons-purple)
-                       (scheme-mode nerd-icons-devicon "nf-dev-code" :face nerd-icons-red)
-                       (geiser-mode nerd-icons-devicon "nf-dev-code" :face nerd-icons-red)
-                       (racket-mode nerd-icons-devicon "nf-dev-code" :face nerd-icons-red-alt)
+                       (scheme-mode nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red)
+                       (geiser-mode nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red)
+                       (racket-mode nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red-alt)
                        (clojure-mode nerd-icons-devicon "nf-dev-clojure" :face nerd-icons-green)
-                       (fennel-mode nerd-icons-devicon "nf-dev-code" :face nerd-icons-lblue)
+                       (fennel-mode nerd-icons-sucicon "nf-seti-lua" :face nerd-icons-lblue)
                        (python-mode nerd-icons-devicon "nf-dev-python" :face nerd-icons-dblue)
                        (rust-mode nerd-icons-devicon "nf-dev-rust" :face nerd-icons-maroon)
                        (go-mode nerd-icons-devicon "nf-dev-go" :face nerd-icons-blue)
