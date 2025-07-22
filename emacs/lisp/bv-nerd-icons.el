@@ -99,9 +99,12 @@
   ;; Enable nerd-icons-completion globally
   (nerd-icons-completion-mode 1)
   
-  ;; Set up marginalia integration if available
+  ;; Set up marginalia integration
   (with-eval-after-load 'marginalia
-    (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
+    (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup)
+    ;; If marginalia-mode is already active, set it up immediately
+    (when (bound-and-true-p marginalia-mode)
+      (nerd-icons-completion-marginalia-setup)))
   
   ;; Configure completion categories
   (setq nerd-icons-completion-mode-hooks
@@ -247,6 +250,9 @@
   
   ;; Optimize performance
   (setq inhibit-compacting-font-caches t))
+
+;;; Initialize nerd-icons when the module is loaded
+(bv-nerd-icons-init)
 
 ;;; Feature provision
 (provide 'bv-nerd-icons)
