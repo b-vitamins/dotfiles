@@ -52,5 +52,8 @@
 
 (setq org-hide-emphasis-markers t)
 
+;; Enable visual line mode globally
+(global-visual-line-mode 1)
+
 (provide 'bv-layout)
 ;;; bv-layout.el ends here
