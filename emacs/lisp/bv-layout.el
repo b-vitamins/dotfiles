@@ -20,8 +20,8 @@
                '(width      . 81)
                '(vertical-scroll-bars . nil)
                '(internal-border-width . 24)
-               '(left-fringe    . 1)
-               '(right-fringe   . 1)
+               '(left-fringe    . 0)
+               '(right-fringe   . 0)
                '(tool-bar-lines . 0)
                '(menu-bar-lines . 0))))
 
@@ -44,7 +44,7 @@
 (menu-bar-mode -1)
 (setq x-underline-at-descent-line t)
 
-(setq window-divider-default-right-width 24
+(setq window-divider-default-right-width 0
       window-divider-default-places 'right-only)
 (window-divider-mode 1)
 
