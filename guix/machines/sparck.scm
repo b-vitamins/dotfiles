@@ -490,6 +490,7 @@ allow-preset-passphrase")))
              %my-gnome-shell-assets
              ;; Media (workstation needs full media capabilities)
              %media-players
+             %media-converters
              ;; Documents
              %latex-core
              %latex-extended
