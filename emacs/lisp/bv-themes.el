@@ -2401,10 +2401,10 @@ Supports recursive semantic mappings like Modus themes."
       (nerd-icons-red-alt ((,c :foreground ,(bv-themes--retrieve-palette-value 'red-cooler palette))))
       (nerd-icons-silver ((,c :foreground "gray50")))
       (nerd-icons-yellow ((,c :foreground ,(bv-themes--retrieve-palette-value 'yellow palette))))
-      
+
       ;; Nerd-icons-dired
       (nerd-icons-dired-dir-face ((,c :foreground ,(bv-themes--retrieve-palette-value 'blue palette))))
-      
+
       ;; Nerd-icons-ibuffer
       (nerd-icons-ibuffer-dir-face ((,c :foreground ,(bv-themes--retrieve-palette-value 'blue palette))))
       (nerd-icons-ibuffer-file-face ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
@@ -2430,7 +2430,77 @@ Supports recursive semantic mappings like Modus themes."
             :background ,(bv-themes--retrieve-palette-value 'red-intense palette))))
       (bv-themes-header-faded
        ((,c :inherit bv-themes-header-default
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)))))))
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
+
+      ;; Elfeed faces - RSS feed reader
+      ;; Log buffer faces
+      (elfeed-log-date-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette))))
+
+      (elfeed-log-debug-level-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
+
+      (elfeed-log-error-level-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'red-intense palette)
+            :weight bold)))
+
+      (elfeed-log-info-level-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'cyan palette))))
+
+      (elfeed-log-warn-level-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'yellow-intense palette))))
+
+      ;; Elfeed-score specific faces
+      (elfeed-score-date-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette)
+            :slant italic)))  ; Distinguish from regular log dates
+
+      (elfeed-score-debug-level-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))
+
+      (elfeed-score-error-level-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'red-intense palette)
+            :weight bold)))
+
+      (elfeed-score-info-level-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'cyan-faint palette))))
+
+      (elfeed-score-scoring-explain-text-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0-intense palette)
+            :background ,(bv-themes--retrieve-palette-value 'bg-cyan-nuanced palette)
+            :weight bold)))  ; Highlight matched text in explanations
+
+      (elfeed-score-warn-level-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'yellow palette))))
+
+      ;; Search buffer faces - the main interface
+      (elfeed-search-date-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette))))
+
+      (elfeed-search-feed-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-1-faint palette))))  ; Subtle orange for feed names
+
+      (elfeed-search-filter-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-3-intense palette)
+            :weight bold)))  ; Purple for active filter - important UI element
+
+      (elfeed-search-last-update-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)
+            :slant italic)))  ; Subtle timestamp info
+
+      (elfeed-search-tag-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-2 palette))))  ; Green for tags - categorical data
+
+      (elfeed-search-title-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette))))  ; Dimmed for read entries
+
+      (elfeed-search-unread-count-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0-intense palette)
+            :weight bold)))  ; Bright cyan for unread count - attention grabbing
+
+      (elfeed-search-unread-title-face
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
+            :weight bold))))))  ; Bold and bright for unread - primary content
 
 ;;; Hooks and state
 
