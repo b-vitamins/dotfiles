@@ -11,6 +11,11 @@
 
 ;;; Code:
 
+;; Declare external variables to silence elint warnings
+(defvar native-comp-jit-compilation)
+(defvar native-comp-async-report-warnings-errors)
+(defvar inhibit-startup-echo-area-message)
+
 ;; Defer garbage collection during startup
 (setq gc-cons-threshold most-positive-fixnum
       gc-cons-percentage 0.6)
@@ -37,16 +42,19 @@
         (undecorated . t)))
 
 ;; Prevent unwanted runtime compilation
-(setq native-comp-deferred-compilation nil)
+(when (boundp 'native-comp-jit-compilation)
+  (setq native-comp-jit-compilation nil))
 
 ;; Silence compiler warnings
-(setq native-comp-async-report-warnings-errors 'silent)
+(when (boundp 'native-comp-async-report-warnings-errors)
+  (setq native-comp-async-report-warnings-errors 'silent))
 
 ;; Prevent resize during startup
 (setq frame-inhibit-implied-resize t)
 
 ;; Remove command line options from startup
-(setq inhibit-startup-echo-area-message t)
+(when (boundp 'inhibit-startup-echo-area-message)
+  (setq inhibit-startup-echo-area-message t))
 
 ;; Restore settings after startup
 (defun bv-early-init-restore ()
@@ -57,7 +65,8 @@
   ;; Restore file handlers
   (setq file-name-handler-alist bv--file-name-handler-alist)
   ;; Re-enable runtime compilation
-  (setq native-comp-deferred-compilation t))
+  (when (boundp 'native-comp-jit-compilation)
+    (setq native-comp-jit-compilation t)))
 
 (add-hook 'emacs-startup-hook #'bv-early-init-restore)
 
