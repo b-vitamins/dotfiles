@@ -148,6 +148,7 @@
 (require 'bv-guix)         ; Guix integration
 
 ;; Language configurations
+(require 'bv-lang-elisp)   ; Emacs Lisp development
 (require 'bv-lang-scheme)  ; Scheme development
 
 ;; Utilities
