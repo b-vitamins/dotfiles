@@ -73,7 +73,6 @@
              (myguix packages python-pqrs)
              (myguix packages video)
              (myguix services desktop)
-             (myguix services mcron)
              (myguix services oci-containers)
              (myguix system install)
              (myguix system linux-initrd)
@@ -488,9 +487,6 @@ allow-preset-passphrase")))
              %audio-system
              %bluetooth-system
              %my-gnome-shell-assets
-             ;; Media (workstation needs full media capabilities)
-             %media-players
-             %media-converters
              ;; Documents
              %latex-core
              %latex-extended
@@ -583,17 +579,6 @@ allow-preset-passphrase")))
                  (service guix-home-service-type
                           `(("b" ,%my-home-config)))
 
-                 (service prometheus-node-exporter-service-type
-                          (prometheus-node-exporter-configuration (web-listen-address
-                                                                   ":9100")))
-
-                 (service vnstat-service-type
-                          (vnstat-configuration (database-directory
-                                                 "/var/lib/vnstat")
-                                                (save-interval 5)
-                                                (bandwidth-detection? #t)
-                                                (use-logging 2)))
-
                  ;; Miscellaneous Services
                  (service sysctl-service-type
                           (sysctl-configuration (settings (append '(("net.ipv4.ip_forward" . "1")
@@ -606,30 +591,6 @@ allow-preset-passphrase")))
                                              '("dev.local"))
                                        (host "::1" "sparck.local"
                                              '("dev.local"))))
-
-                 ;; Scheduled jobs using Shepherd timers
-                 (simple-service 'system-timers shepherd-root-service-type
-                                 (list
-                                  ;; Garbage collection every 3 days at 3AM (less frequent for laptop)
-                                  (shepherd-timer '(garbage-collection)
-                                                  "0 3 */3 * *"
-                                                  #~(list #$(file-append bash
-                                                             "/bin/bash") "-c"
-                                                          (string-append
-                                                           "mkdir -p /var/log/guix-gc && "
-                                                           "LOG_FILE=/var/log/guix-gc/gc-$(date +%Y%m%d-%H%M%S).log && "
-                                                           "exec > \"$LOG_FILE\" 2>&1 && "
-                                                           "echo \"Starting garbage collection at $(date)\" && "
-                                                           "df -h / && "
-                                                           #$(file-append guix
-                                                              "/bin/guix")
-                                                           " gc -F 20G && "
-                                                           "echo \"Garbage collection completed at $(date)\" && "
-                                                           "df -h / && "
-                                                           "find /var/log/guix-gc -name 'gc-*.log' -mtime +30 -delete"))
-                                                  #:requirement '(guix-daemon))
-
-                                  ))
 
                  ;; Environment variables for Wayland preference
                  (simple-service 'wayland-environment
