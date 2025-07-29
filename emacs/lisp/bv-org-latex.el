@@ -91,8 +91,8 @@ Check your display names with: M-x bv-org-latex-list-displays"
 ;; Utility functions
 (defun bv-org-latex--get-cache-dir ()
   "Get the XDG-compliant cache directory."
-  (expand-file-name "emacs/org-latex-preview/"
-                    (or (getenv "XDG_CACHE_HOME") "~/.cache")))
+  (expand-file-name "emacs/ltximg/"
+                    (or (getenv "XDG_STATE_HOME") "~/.local/state")))
 
 (defun bv-org-latex--get-current-monitor-name ()
   "Get the name of the current monitor."
