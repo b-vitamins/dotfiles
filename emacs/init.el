@@ -150,6 +150,7 @@
 ;; Language configurations
 (require 'bv-lang-c-cpp)   ; C/C++ development
 (require 'bv-lang-clojure) ; Clojure development
+(require 'bv-lang-common-lisp) ; Common Lisp development
 (require 'bv-lang-elisp)   ; Emacs Lisp development
 (require 'bv-lang-javascript) ; JavaScript/TypeScript development
 (require 'bv-lang-julia)   ; Julia development
