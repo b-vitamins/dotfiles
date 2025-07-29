@@ -150,6 +150,7 @@
 ;; Language configurations
 (require 'bv-lang-elisp)   ; Emacs Lisp development
 (require 'bv-lang-javascript) ; JavaScript/TypeScript development
+(require 'bv-lang-julia)   ; Julia development
 (require 'bv-lang-latex)   ; LaTeX development
 (require 'bv-lang-python)  ; Python development
 (require 'bv-lang-rust)    ; Rust development
