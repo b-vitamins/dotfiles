@@ -147,6 +147,9 @@
 (require 'bv-geiser)       ; Scheme/Guile
 (require 'bv-guix)         ; Guix integration
 
+;; Language configurations
+(require 'bv-lang-scheme)  ; Scheme development
+
 ;; Utilities
 (require 'bv-power-menu)   ; Power management
 (require 'bv-display-wttr) ; Weather display
