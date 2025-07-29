@@ -162,6 +162,7 @@
 (require 'bv-lang-nix)     ; Nix development
 (require 'bv-lang-ocaml)   ; OCaml development
 (require 'bv-lang-python)  ; Python development
+(require 'bv-lang-r)       ; R development
 (require 'bv-lang-rust)    ; Rust development
 (require 'bv-lang-scheme)  ; Scheme development
 
