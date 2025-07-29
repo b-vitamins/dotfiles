@@ -227,6 +227,7 @@ detect_environment() {
 # -----------------------------------------------------------------------------
 
 declare -A LINKS
+declare -A COPIES
 
 define_links() {
     # Only add non-Guix links if not in guix-only mode
@@ -249,8 +250,9 @@ define_links() {
         # DO NOT create symlinks for these!
 
         # qBittorrent is not managed by Guix, so we handle it here
+        # We copy instead of symlink because qBittorrent modifies config files
         if [[ -d "$DOTFILES_DIR/qBittorrent" ]]; then
-            LINKS["$DOTFILES_DIR/qBittorrent"]="$HOME/.config/qBittorrent"
+            COPIES["$DOTFILES_DIR/qBittorrent"]="$HOME/.config/qBittorrent"
         fi
     fi
 
@@ -374,6 +376,55 @@ create_symlink() {
     fi
 }
 
+copy_files() {
+    local source="$1"
+    local target="$2"
+    local target_dir
+
+    # Check if source exists
+    if [[ ! -e "$source" ]]; then
+        log ERROR "Source does not exist: $source"
+        return 1
+    fi
+
+    # Create parent directory if needed
+    target_dir="$(dirname "$target")"
+    if [[ ! -d "$target_dir" ]]; then
+        debug "Creating directory: $target_dir"
+        if [[ "$DRY_RUN" == false ]]; then
+            mkdir -p "$target_dir" || {
+                log ERROR "Failed to create directory: $target_dir"
+                return 1
+            }
+        fi
+    fi
+
+    # Handle existing target
+    if [[ -e "$target" ]]; then
+        if [[ "$FORCE" == true ]]; then
+            log WARNING "Removing existing target: $target"
+            if [[ "$DRY_RUN" == false ]]; then
+                rm -rf "$target"
+            fi
+        else
+            log INFO "Target already exists, skipping copy: $target"
+            return 0
+        fi
+    fi
+
+    # Copy files/directory
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "  Would copy: $source -> $target"
+    else
+        cp -r "$source" "$target" && {
+            log SUCCESS "Copied: $source -> $target"
+        } || {
+            log ERROR "Failed to copy: $target"
+            return 1
+        }
+    fi
+}
+
 # -----------------------------------------------------------------------------
 # Git hooks installation
 # -----------------------------------------------------------------------------
@@ -453,6 +504,7 @@ main() {
     log INFO "Creating configuration symlinks..."
     local failed=0
     local created=0
+    local copied=0
     local skipped=0
 
     for source in "${!LINKS[@]}"; do
@@ -462,6 +514,18 @@ main() {
             failed=$((failed + 1))
         fi
     done
+
+    # Copy files (for applications that modify their config)
+    if [[ ${#COPIES[@]} -gt 0 ]]; then
+        log INFO "Copying configuration files..."
+        for source in "${!COPIES[@]}"; do
+            if copy_files "$source" "${COPIES[$source]}"; then
+                copied=$((copied + 1))
+            else
+                failed=$((failed + 1))
+            fi
+        done
+    fi
 
     echo
 
@@ -475,7 +539,8 @@ main() {
     log INFO "Setup Summary"
     echo "============="
     echo "  Created: $created symlinks"
-    [[ $failed -gt 0 ]] && echo "  Failed:  $failed symlinks"
+    [[ $copied -gt 0 ]] && echo "  Copied:  $copied directories"
+    [[ $failed -gt 0 ]] && echo "  Failed:  $failed operations"
     [[ "$DRY_RUN" == true ]] && echo "  (DRY RUN - no actual changes made)"
     echo
 
