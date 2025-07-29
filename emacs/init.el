@@ -154,6 +154,7 @@
 (require 'bv-lang-elisp)   ; Emacs Lisp development
 (require 'bv-lang-erlang-elixir) ; Erlang/Elixir development
 (require 'bv-lang-go)     ; Go development
+(require 'bv-lang-haskell) ; Haskell development
 (require 'bv-lang-javascript) ; JavaScript/TypeScript development
 (require 'bv-lang-julia)   ; Julia development
 (require 'bv-lang-latex)   ; LaTeX development
