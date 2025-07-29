@@ -152,6 +152,7 @@
 (require 'bv-lang-javascript) ; JavaScript/TypeScript development
 (require 'bv-lang-julia)   ; Julia development
 (require 'bv-lang-latex)   ; LaTeX development
+(require 'bv-lang-lua)     ; Lua development
 (require 'bv-lang-python)  ; Python development
 (require 'bv-lang-rust)    ; Rust development
 (require 'bv-lang-scheme)  ; Scheme development
