@@ -149,6 +149,7 @@
 
 ;; Language configurations
 (require 'bv-lang-elisp)   ; Emacs Lisp development
+(require 'bv-lang-python)  ; Python development
 (require 'bv-lang-scheme)  ; Scheme development
 
 ;; Utilities
