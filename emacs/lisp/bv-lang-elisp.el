@@ -103,13 +103,12 @@
   "Align let bindings in the current form."
   (interactive)
   (save-excursion
-    (let ((start (point)))
-      (backward-up-list)
-      (when (looking-at "(let\\*?\\s-*(")
-        (down-list 2)
-        (let ((beg (point)))
-          (up-list)
-          (align-regexp beg (point) "\\(\\s-*\\)" 1 1 nil))))))
+    (backward-up-list)
+    (when (looking-at "(let\\*?\\s-*(")
+      (down-list 2)
+      (let ((beg (point)))
+        (up-list)
+        (align-regexp beg (point) "\\(\\s-*\\)" 1 1 nil)))))
 
 ;; Package development helpers
 (defun bv-elisp-generate-autoloads ()
@@ -124,7 +123,8 @@
 (defun bv-elisp-byte-compile-and-load ()
   "Byte compile and load current file."
   (interactive)
-  (byte-compile-file buffer-file-name t))
+  (byte-compile-file buffer-file-name)
+  (load (concat (file-name-sans-extension buffer-file-name) ".elc")))
 
 ;; Documentation helpers - use helpful when available
 (defun bv-elisp-describe-thing-at-point ()

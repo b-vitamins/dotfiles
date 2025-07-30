@@ -12,6 +12,22 @@
 (declare-function global-guix-prettify-mode "guix-prettify")
 (declare-function guix-prettify-mode "guix-prettify")
 (declare-function guix-devel-mode "guix-devel")
+(declare-function guix-devel-build-package-definition "guix-devel")
+(declare-function guix-devel-lint-package "guix-devel")
+(declare-function info-lookup-add-help "info-look")
+(declare-function transient-define-prefix "transient")
+(declare-function guix-packages-by-name "guix")
+(declare-function guix-installed-packages "guix")
+(declare-function guix-installed-user-packages "guix")
+(declare-function guix-generations "guix")
+(declare-function guix-services-from-system-config "guix")
+
+;; External variables
+(defvar guix-directory)
+(defvar guix-repl-use-server)
+
+;; Suppress byte-compiler warning for transient menu
+(defvar bv-guix-transient-menu)
 
 (defgroup bv-guix nil
   "GNU Guix settings."
@@ -70,23 +86,27 @@
                ("(Guile)Variable Index" nil nil nil)
                ("(Guix)Programming Index" nil nil nil))))
 
+(with-eval-after-load 'transient
+  (transient-define-prefix bv-guix-transient-menu ()
+    "GNU Guix"
+    [["Packages"
+      ("p" "Search packages" guix-packages-by-name)
+      ("i" "Installed packages" guix-installed-packages)
+      ("u" "Upgradable packages" guix-installed-user-packages)]
+     ["Development"
+      ("b" "Build package" bv-guix-build-package)
+      ("l" "Lint package" bv-guix-lint-package)
+      ("f" "Format buffer" bv-guix-format-buffer)]
+     ["System"
+      ("g" "Generations" guix-generations)
+      ("s" "Services" guix-services-from-system-config)]]))
+
 (defun bv-guix-transient ()
   "Transient menu for Guix."
   (interactive)
-  (transient-define-prefix bv-guix-transient-menu ()
-    "GNU Guix"
-    ["Packages"
-     ("p" "Search packages" guix-packages-by-name)
-     ("i" "Installed packages" guix-installed-packages)
-     ("u" "Upgradable packages" guix-installed-user-packages)]
-    ["Development"
-     ("b" "Build package" bv-guix-build-package)
-     ("l" "Lint package" bv-guix-lint-package)
-     ("f" "Format buffer" bv-guix-format-buffer)]
-    ["System"
-     ("g" "Generations" guix-generations)
-     ("s" "Services" guix-services-from-system-config)])
-  (bv-guix-transient-menu))
+  (if (fboundp 'bv-guix-transient-menu)
+      (bv-guix-transient-menu)
+    (message "Transient not available")))
 
 (global-set-key (kbd "C-c G") 'bv-guix-transient)
 

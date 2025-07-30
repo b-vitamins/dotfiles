@@ -11,6 +11,15 @@
 
 ;;; Code:
 
+;; External function declarations
+(declare-function ligature-set-ligatures "ligature" (modes ligature-list))
+(declare-function global-ligature-mode "ligature" (&optional arg))
+
+;; External variable declarations
+(defvar x-gtk-use-system-tooltips)
+(defvar x-gtk-antialiasing-mode)
+(defvar cairo-font-options)
+
 (defgroup bv-fonts nil
   "Font configuration and rendering optimization."
   :group 'faces)

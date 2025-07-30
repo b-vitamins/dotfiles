@@ -11,7 +11,12 @@
 ;;; Code:
 
 (autoload 'graphviz-dot-mode "graphviz-dot-mode")
-(autoload 'org-redisplay-inline-images "org")
+
+;; Declare external functions to satisfy elint
+(declare-function org-redisplay-inline-images "org" (&optional include-linked refresh beg end))
+
+;; Forward declarations
+(declare-function bv-graphviz-display-inline-images "bv-graphviz")
 
 ;; File associations
 (add-to-list 'auto-mode-alist '("\\.dot\\'" . graphviz-dot-mode))

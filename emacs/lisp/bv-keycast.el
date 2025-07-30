@@ -12,6 +12,10 @@
 
 (require 'keycast)
 
+;; Declare external variables from keycast package
+(defvar keycast--this-command-keys)
+(defvar keycast--this-command)
+
 (defun bv-keycast-active-window-p ()
   "Return non-nil if current window is active."
   (eq (selected-window) (old-selected-window)))

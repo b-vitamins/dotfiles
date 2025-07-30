@@ -12,6 +12,24 @@
 (declare-function geiser-eros-mode "geiser-eros")
 (declare-function geiser-repl "geiser-repl")
 (declare-function geiser-eval-definition "geiser-mode")
+(declare-function geiser-eval-buffer "geiser-mode")
+(declare-function geiser-eval-last-sexp "geiser-mode")
+(declare-function geiser-eval-region "geiser-mode")
+(declare-function geiser-repl-clear-buffer "geiser-repl")
+(declare-function geiser-doc-symbol-at-point "geiser-doc")
+(declare-function geiser-doc-module "geiser-doc")
+(declare-function transient-define-prefix "transient")
+
+(defvar geiser-default-implementation)
+(defvar geiser-active-implementations)
+(defvar geiser-repl-query-on-kill-p)
+(defvar geiser-repl-history-filename)
+(defvar geiser-repl-add-project-paths)
+(defvar geiser-mode-map)
+(defvar geiser-repl-window-allow-split)
+(defvar org-structure-template-alist)
+(defvar org-babel-default-header-args:scheme)
+(defvar scheme-mode-map)
 
 (defgroup bv-geiser nil
   "Scheme development settings."
@@ -69,9 +87,7 @@
 (with-eval-after-load 'ob-scheme
   (setq org-babel-default-header-args:scheme '((:results . "value"))))
 
-(defun bv-geiser-transient ()
-  "Transient menu for Geiser."
-  (interactive)
+(with-eval-after-load 'transient
   (transient-define-prefix bv-geiser-transient-menu ()
     "Scheme Development"
     ["Evaluation"
@@ -85,8 +101,14 @@
      ("c" "Clear REPL" geiser-repl-clear-buffer)]
     ["Documentation"
      ("d" "Symbol doc" geiser-doc-symbol-at-point)
-     ("m" "Module doc" geiser-doc-module)])
-  (bv-geiser-transient-menu))
+     ("m" "Module doc" geiser-doc-module)]))
+
+(defun bv-geiser-transient ()
+  "Transient menu for Geiser."
+  (interactive)
+  (if (fboundp 'bv-geiser-transient-menu)
+      (bv-geiser-transient-menu)
+    (message "Transient not available")))
 
 (with-eval-after-load 'scheme-mode
   (define-key scheme-mode-map (kbd "C-c s") 'bv-geiser-transient))

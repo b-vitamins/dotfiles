@@ -10,10 +10,14 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 (autoload 'git-link--exec "git-link")
 (autoload 'git-link--branch "git-link")
 (autoload 'git-link--parse-remote "git-link")
 (autoload 'git-link--relative-filename "git-link")
+
+(declare-function magit-add-section-hook "magit" (hook function &optional at append local))
 
 (with-eval-after-load 'git-link
   (advice-add 'git-link :around
@@ -33,6 +37,8 @@
   (interactive)
   (when (boundp 'git-link-use-commit)
     (let ((git-link-use-commit t))
+      ;; git-link-use-commit affects git-link behavior dynamically
+      (ignore git-link-use-commit)
       (if (git-link--relative-filename)
           (call-interactively 'git-link)
         (call-interactively 'git-link-commit)))))
