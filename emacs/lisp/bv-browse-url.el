@@ -22,7 +22,9 @@
 
 ;; Add https scheme if missing
 (defun bv-browse-url-add-scheme (fun url &rest args)
-  "Add https scheme to URL if missing."
+  "Add https scheme to URL if missing.
+FUN is the original `browse-url' function to call.
+URL is the URL to process, with additional ARGS passed through."
   (let ((link (if (string-match "^[a-zA-Z]+:" url)
                   url
                 (concat "https://" url))))

@@ -224,7 +224,7 @@ This is a placeholder - you would need to implement actual detection."
 ;;; Integration with theme system
 
 (defun bv-circadian-exempt-p ()
-  "Return t if current buffer should be exempt from theme changes."
+  "Return t if current buffer should be exempt from theme change."
   ;; You can customize this to exempt certain modes or buffers
   nil)
 

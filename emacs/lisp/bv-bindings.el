@@ -11,6 +11,8 @@
 
 ;;; Code:
 
+(defvar org-mode-map)
+
 (global-set-key (kbd "C-x k") 'kill-current-buffer)
 
 (defun new-frame ()

@@ -35,8 +35,10 @@
 (require 'bv-citar)
 
 ;; Define citation keymap
-(defvar-keymap bv-citation-map
-  :doc "Keymap for citation commands.")
+(defvar bv-citation-map
+  (let ((map (make-sparse-keymap)))
+    map)
+  "Keymap for citation commands.")
 
 ;; Basic citation operations
 (define-key bv-citation-map (kbd "i") 'citar-insert-citation)
@@ -70,12 +72,12 @@
   (call-interactively 'citar-insert-citation)
   (save-excursion
     (backward-char)
-    (citar-open)))
+    (call-interactively 'citar-open)))
 
 (defun bv-citation-create-note ()
   "Create a new note for a citation using org-roam."
   (interactive)
-  (citar-open-notes))
+  (call-interactively 'citar-open-notes))
 
 ;; Add to citation map
 (define-key bv-citation-map (kbd "I") 'bv-citation-insert-and-open)

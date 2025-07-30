@@ -14,6 +14,17 @@
 (autoload 'calc-dispatch "calc" nil t)
 (autoload 'quick-calc "calc" nil t)
 
+;; External variable declarations
+(defvar calc-display-trail)
+(defvar calc-window-height)
+(defvar calc-currency-exchange-rates-file)
+(defvar calc-currency-base-currency)
+(defvar calc-currency-update-interval)
+(defvar bv-app-map)
+
+;; External function declarations
+(declare-function calc-eval "calc" (str &optional separator &rest args))
+
 ;; Basic calc settings
 (with-eval-after-load 'calc
   (when (boundp 'calc-display-trail)

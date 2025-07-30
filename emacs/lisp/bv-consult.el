@@ -22,6 +22,27 @@
 (require 'recentf)
 (require 'project)
 
+;; External variable declarations
+(defvar consult--narrow-config)
+(defvar consult--narrow)
+(defvar consult--preview-function)
+(defvar consult-narrow-map)
+(defvar xref-show-xrefs-function)
+(defvar xref-show-definitions-function)
+(defvar isearch-mode-map)
+
+;; External function declarations
+(declare-function orderless-compile "orderless" (pattern &optional style))
+(declare-function orderless--highlight "orderless" (regexps ignore-case str))
+(declare-function dom-by-tag "dom" (dom tag))
+(declare-function dom-attr "dom" (node attribute))
+(declare-function string-remove-prefix "subr-x" (prefix string))
+(declare-function consult-xref "consult-xref" (fetcher &optional alist))
+(declare-function consult-imenu "consult-imenu" (&optional options))
+(declare-function consult-imenu-multi "consult-imenu" (&optional options))
+(declare-function consult-compile-error "consult-compile" (&optional project))
+(declare-function consult-flymake "consult-flymake" (&optional project))
+
 ;;;; Custom Variables
 
 (defgroup bv-consult nil
@@ -126,7 +147,10 @@ Disabled by default for performance."
 ;;;; Orderless Integration
 
 (defun bv-consult--orderless-regexp-compiler (input type &rest _config)
-  "Orderless regexp compiler for consult."
+  "Orderless regexp compiler for consult.
+INPUT is the search input string.
+TYPE is the compilation type.
+_CONFIG is additional configuration (ignored)."
   (when (require 'orderless nil t)
     (setq input (cdr (orderless-compile input)))
     (cons
@@ -134,7 +158,8 @@ Disabled by default for performance."
      (lambda (str) (orderless--highlight input t str)))))
 
 (defun bv-consult--with-orderless (&rest args)
-  "Use orderless for the current command if available."
+  "Use orderless for the current command if available.
+ARGS are passed to the original function."
   (if (require 'orderless nil t)
       (minibuffer-with-setup-hook
           (lambda ()
@@ -170,7 +195,8 @@ Disabled by default for performance."
     ht))
 
 (defun bv-consult--simple-uniquify (files)
-  "Simple uniquification - add parent dir to duplicates only."
+  "Simple uniquification - add parent dir to duplicates only.
+FILES is a list of file paths to uniquify."
   (let ((name-count (make-hash-table :test 'equal))
         (result nil))
     ;; Count occurrences
@@ -299,7 +325,8 @@ Disabled by default for performance."
   (consult-line (thing-at-point 'symbol)))
 
 (defun bv-consult-ripgrep-at-point (&optional dir)
-  "Ripgrep with thing at point or region."
+  "Ripgrep with thing at point or region.
+DIR is the directory to search in (defaults to project root)."
   (interactive "P")
   (let ((initial (if (use-region-p)
                      (buffer-substring-no-properties
@@ -307,8 +334,14 @@ Disabled by default for performance."
                    (thing-at-point 'symbol))))
     (consult-ripgrep dir initial)))
 
-(defun bv-consult-find-file-with-preview (prompt &optional dir default mustmatch initial pred)
-  "Find file with preview support."
+(defun bv-consult-find-file-with-preview (prompt &optional dir _default mustmatch initial pred)
+  "Find file with preview support.
+PROMPT is the minibuffer prompt string.
+DIR is the directory to search in.
+DEFAULT is the default file name.
+MUSTMATCH controls whether input must match existing file.
+INITIAL is the initial input.
+PRED is a predicate function to filter files."
   (let ((default-directory (or dir default-directory))
         (minibuffer-completing-file-name t))
     (consult--read #'read-file-name-internal
@@ -406,7 +439,7 @@ Disabled by default for performance."
 
    ;; Delayed preview for grep commands
    consult-ripgrep consult-git-grep consult-grep
-   consult-bookmark consult-recent-file consult-xref
+   consult-bookmark consult-recent-file
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
    :preview-key '(:debounce 0.4 any)

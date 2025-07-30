@@ -22,6 +22,26 @@
 ;;; Code:
 
 (require 'cape)
+(require 'cl-lib)
+
+;; External function declarations
+(declare-function yas--all-templates "yasnippet" (&optional tables))
+(declare-function yas--get-snippet-tables "yasnippet" (&optional mode))
+(declare-function yas-lookup-snippet "yasnippet" (name &optional mode noerror))
+(declare-function yas-expand-snippet "yasnippet" (template &optional start end expand-env))
+(declare-function project-current "project" (&optional maybe-prompt directory))
+(declare-function project-root "project" (project))
+(declare-function project-files "project" (project &optional dirs))
+(declare-function eglot-completion-at-point "eglot" ())
+(declare-function cape-keyword "cape" (&optional arg))
+(declare-function cape-tex "cape" (&optional arg))
+(declare-function cape-emoji "cape" (&optional arg))
+(declare-function cape-sgml "cape" (&optional arg))
+(declare-function cape-rfc1345 "cape" (&optional arg))
+
+;; External variable declarations
+(defvar yas-minor-mode)
+(defvar cape-tex-prefix-required)
 
 ;;; Constants
 
@@ -274,6 +294,10 @@
 ;;; Eglot Integration
 
 (defvar bv-cape--eglot-super nil)
+
+;; Forward declaration for byte compiler
+(declare-function bv-cape--get-eglot-super "bv-cape" ())
+(declare-function bv-cape-setup-eglot "bv-cape" ())
 
 (with-eval-after-load 'eglot
   (defun bv-cape--get-eglot-super ()

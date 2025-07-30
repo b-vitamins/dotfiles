@@ -13,12 +13,16 @@
 (eval-when-compile
   (require 'citar))
 
+;; Declare external variables to avoid warnings
+(defvar org-cite-global-bibliography)
+
 (with-eval-after-load 'citar
   (when (boundp 'citar-library-paths)
     (setq citar-library-paths (list "~/documents/library")))
   (when (boundp 'citar-notes-paths)
     (setq citar-notes-paths (list "~/documents/slipbox/slips")))
-  (when (boundp 'citar-bibliography)
+  (when (and (boundp 'citar-bibliography)
+             (boundp 'org-cite-global-bibliography))
     (setq citar-bibliography org-cite-global-bibliography)))
 
 (autoload 'citar-embark-mode "citar-embark")
@@ -31,7 +35,9 @@
     (setq citar-org-roam-note-title-template "${title} - ${author editor}"))
   (when (boundp 'citar-org-roam-subdir)
     (setq citar-org-roam-subdir "~/documents/slipbox/slips"))
-  (citar-org-roam-mode 1))
+  (when (and (featurep 'org-roam)
+             (file-directory-p (expand-file-name "~/documents/slipbox/slips")))
+    (citar-org-roam-mode 1)))
 
 ;; Keybindings moved to bv-citation.el for unified citation interface
 

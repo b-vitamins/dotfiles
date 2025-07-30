@@ -12,6 +12,13 @@
 (require 'calendar)
 (require 'holidays)
 
+;; Declare external functions and variables to avoid elint warnings
+(declare-function special-mode "simple" ())
+(defvar bv-themes-default)
+
+;; Silence byte-compiler warning for missing function
+(eval-when-compile (require 'simple))
+
 (setq calendar-week-start-day 1
       calendar-date-style 'iso)
 (defface bv-calendar-header
@@ -92,15 +99,15 @@
              (left-margin (/ (- usable-width content-width) 2)))
         (bv-calendar-render-months months-data left-margin)))))
 
-(defun bv-calendar-render-months (months-data left-margin)
-  "Render MONTHS-DATA with LEFT-MARGIN."
+(defun bv-calendar-render-months (months-data margin-left)
+  "Render MONTHS-DATA with MARGIN-LEFT."
   (let ((month-strings (mapcar (lambda (data)
                                  (bv-calendar-format-month
                                   (car data) (cadr data)))
                                months-data)))
     (let ((max-lines (apply #'max (mapcar #'length month-strings))))
       (dotimes (line max-lines)
-        (insert (make-string (max 0 left-margin) ?\s))
+        (insert (make-string (max 0 margin-left) ?\s))
         (dotimes (m (length month-strings))
           (let* ((month-lines (nth m month-strings))
                  (month-line (or (nth line month-lines) "")))
@@ -155,7 +162,7 @@
             (define-key map [mouse-1]
               `(lambda () (interactive)
                  (setq bv-calendar-current-date ',date)
-                 (bv-calendar-update-highlight)))
+                 (bv-calendar-refresh)))
             (setq current-line
                   (concat current-line
                           (propertize day-text

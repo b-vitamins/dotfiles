@@ -14,20 +14,47 @@
 
 (require 'seq)
 
+;; Declare external variables to avoid elint warnings
+(defvar minibuffer-history-variable)
+(defvar tab-always-indent)
+(defvar minibuffer-prompt-properties)
+(defvar completion-show-help)
+(defvar completions-format)
+(defvar completions-header-format)
+(defvar minibuffer-mode-map)
+(defvar completion-in-region-mode-map)
+(defvar file-name-shadow-properties)
+(defvar file-name-shadow-tty-properties)
+(defvar minibuffer-local-completion-map)
+(defvar minibuffer-local-map)
+(defvar enable-recursive-minibuffers)
+(defvar history-length)
+
+;; Declare external functions to avoid elint warnings
+(declare-function minibufferp "subr" (&optional buffer))
+(declare-function minibuffer-next-completion "minibuffer")
+(declare-function minibuffer-previous-completion "minibuffer")
+(declare-function vertico-directory-tidy "ext:vertico" ())
+(declare-function file-name-shadow-mode "rfn-eshadow" (&optional arg))
+(declare-function minibuffer-default-add-completions "minibuffer")
+(declare-function abbreviate-file-name "files" (filename))
+(declare-function exit-minibuffer "minibuffer")
+(declare-function cursor-intangible-mode "simple" (&optional arg))
+
 ;; Better history sorting - recent items first
 (defun bv-completion-sort-by-history (candidates)
   "Sort CANDIDATES by history, putting recent items first."
   (let ((hist (and (minibufferp)
                    (symbol-value minibuffer-history-variable))))
     (if hist
-        (sort candidates
-              (lambda (a b)
-                (let ((a-pos (seq-position hist a))
-                      (b-pos (seq-position hist b)))
-                  (cond ((and a-pos b-pos) (< a-pos b-pos))
-                        (a-pos t)
-                        (b-pos nil)
-                        (t (string< a b))))))
+        (seq-sort (lambda (a b)
+                    (let ((a-pos (seq-position hist a))
+                          (b-pos (seq-position hist b)))
+                      (cond ((and a-pos b-pos) (< a-pos b-pos))
+                            (a-pos t)
+                            (b-pos nil)
+                            (t (string< a b)))))
+                  candidates)
       candidates)))
 
 ;; Core minibuffer configuration
