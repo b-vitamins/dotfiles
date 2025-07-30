@@ -131,6 +131,7 @@ ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     Managed by this script:
     - Emacs (init files, lisp modules, templates)
     - Guix System (channels.scm only)
+    - Claude Code (settings, agents, global preferences)
     - qBittorrent configuration (if present)
     - Git hooks installation
 
@@ -241,6 +242,11 @@ define_links() {
         LINKS["$DOTFILES_DIR/emacs/themes"]="$HOME/.config/emacs/themes"
         LINKS["$DOTFILES_DIR/emacs/elfeed.score"]="$HOME/.config/emacs/elfeed.score"
 
+        # Claude Code configuration
+        if [[ -d "$DOTFILES_DIR/claude" ]]; then
+            setup_claude_config
+        fi
+
         # Note: The following are handled by Guix home configuration:
         # - Shell (zsh/zshrc, zsh/zshenv)
         # - Git (git/gitconfig, git/gitignore)
@@ -267,6 +273,82 @@ define_links() {
             for machine in "$DOTFILES_DIR"/guix/machines/*.scm; do
                 [[ -f "$machine" ]] && echo "  - $(basename "$machine" .scm)"
             done
+        fi
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Claude Code configuration setup
+# -----------------------------------------------------------------------------
+
+setup_claude_config() {
+    local claude_config_dir="$HOME/.claude"
+
+    debug "Setting up Claude Code configuration..."
+
+    # Create .claude directory if it doesn't exist
+    if [[ ! -d "$claude_config_dir" ]]; then
+        debug "Creating Claude config directory: $claude_config_dir"
+        if [[ "$DRY_RUN" == false ]]; then
+            mkdir -p "$claude_config_dir"
+        fi
+    fi
+
+    # Setup individual files
+    setup_claude_file "CLAUDE.md" "$claude_config_dir/CLAUDE.md"
+    setup_claude_file "settings.json" "$claude_config_dir/settings.json"
+    setup_claude_file "settings.local.json" "$claude_config_dir/settings.local.json"
+
+    # Setup agents directory
+    if [[ -d "$DOTFILES_DIR/claude/agents" ]]; then
+        local agents_dir="$claude_config_dir/agents"
+        if [[ ! -d "$agents_dir" ]]; then
+            debug "Creating agents directory: $agents_dir"
+            if [[ "$DRY_RUN" == false ]]; then
+                mkdir -p "$agents_dir"
+            fi
+        fi
+
+        for agent_file in "$DOTFILES_DIR/claude/agents"/*.md; do
+            if [[ -f "$agent_file" ]]; then
+                local agent_name="$(basename "$agent_file")"
+                setup_claude_file "agents/$agent_name" "$agents_dir/$agent_name"
+            fi
+        done
+    fi
+}
+
+setup_claude_file() {
+    local relative_path="$1"
+    local target_path="$2"
+    local source_path="$DOTFILES_DIR/claude/$relative_path"
+
+    # Check if source exists
+    if [[ ! -f "$source_path" ]]; then
+        log WARNING "Claude config file not found: $source_path"
+        return 1
+    fi
+
+    # Check if target already exists
+    if [[ -f "$target_path" ]]; then
+        if [[ "$FORCE" == true ]]; then
+            log WARNING "Overwriting existing Claude config: $target_path"
+            if [[ "$DRY_RUN" == false ]]; then
+                cp "$source_path" "$target_path"
+                log SUCCESS "Updated Claude config: $relative_path"
+            else
+                echo "  Would overwrite: $relative_path"
+            fi
+        else
+            debug "Claude config already exists, skipping: $relative_path"
+        fi
+    else
+        # Copy new file
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "  Would create: $relative_path"
+        else
+            cp "$source_path" "$target_path"
+            log SUCCESS "Created Claude config: $relative_path"
         fi
     fi
 }
