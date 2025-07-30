@@ -12,6 +12,41 @@
 (require 'embark)
 (require 'embark-consult)
 
+;; External function declarations
+(declare-function which-key--hide-popup-ignore-command "which-key")
+(declare-function which-key--show-keymap "which-key" (keymap-name keymap &optional prefix filter))
+(declare-function embark--target-type "embark")
+(declare-function embark--target "embark")
+(declare-function embark--act "embark" (action target &optional quit))
+(declare-function embark-completing-read-prompter "embark" (keymap update &optional no-default))
+(declare-function helpful-symbol "helpful" (symbol))
+(declare-function magit-status "magit" (&optional directory))
+(declare-function magit-file-dispatch "magit-file")
+(declare-function org-open-at-point "org" (&optional in-emacs reference-buffer))
+(declare-function org-cycle "org" (&optional arg))
+(declare-function org-todo "org" (&optional arg))
+(declare-function org-set-tags "org" (&optional arg just-align))
+(declare-function org-deadline "org" (arg &optional time))
+(declare-function org-schedule "org" (arg &optional time))
+(declare-function org-archive-subtree "org" (&optional find-done))
+(declare-function org-refile "org" (&optional arg default-buffer rfloc msg))
+(declare-function org-narrow-to-subtree "org")
+(declare-function org-cut-subtree "org" (&optional n))
+(declare-function org-copy-subtree "org" (&optional n cut))
+
+;; External variable declarations
+(defvar embark-indicators)
+(defvar embark-general-map)
+(defvar embark-file-map)
+(defvar embark-buffer-map)
+(defvar embark-symbol-map)
+(defvar embark-url-map)
+(defvar embark-keymap-alist)
+(defvar embark-target-injection-hooks)
+(defvar embark-around-action-hooks)
+(defvar embark-mixed-indicator-delay)
+(defvar embark-candidate-collectors)
+
 ;;; Core Settings - Optimized defaults
 
 (setq embark-quit-after-action nil         ; Stay in minibuffer by default
@@ -35,14 +70,10 @@ This is a more sophisticated version that shows the target info too."
       (let* ((current-target (car (or targets '("No target"))))
              (formatted-target (if (stringp current-target)
                                    (truncate-string-to-width current-target 40)
-                                 "No target"))
-             (which-key-separator " → ")
-             (which-key-prefix-prefix "+"))
+                                 "No target")))
         (which-key--show-keymap
          (format "Embark on '%s'" formatted-target)
-         (if prefix (lookup-key keymap prefix) keymap)
-         nil nil t (lambda (binding)
-                     (not (string-suffix-p "-argument" (cdr binding)))))))))
+         (if prefix (lookup-key keymap prefix) keymap))))))
 
 ;; Use which-key style if available
 (when (require 'which-key nil t)
@@ -93,12 +124,12 @@ Remove common prefixes/suffixes, clean up whitespace."
          (str (plist-get target :target))
          (type (plist-get target :type)))
     (kill-new
-     (pcase type
-       ('url (format "[%s](%s)" (read-string "Link text: " str) str))
-       ('file (format "[%s](./%s)"
-                      (file-name-nondirectory str)
-                      (file-relative-name str)))
-       (_ (format "[%s]" str))))))
+     (cond
+      ((eq type 'url) (format "[%s](%s)" (read-string "Link text: " str) str))
+      ((eq type 'file) (format "[%s](./%s)"
+                               (file-name-nondirectory str)
+                               (file-relative-name str)))
+      (t (format "[%s]" str))))))
 
 (defun bv-embark-open-externally (file)
   "Open FILE with system's default application."
@@ -191,7 +222,7 @@ Remove common prefixes/suffixes, clean up whitespace."
   "Act on the entire minibuffer contents as a single target."
   (interactive)
   (let ((contents (minibuffer-contents-no-properties)))
-    (embark--act (list :target contents :type 'general))))
+    (embark--act 'embark-general-map contents)))
 
 ;;; Integration with Consult
 
@@ -276,7 +307,7 @@ Remove common prefixes/suffixes, clean up whitespace."
 (defun bv-embark-keymap-help ()
   "Use completion for action selection with preview."
   (interactive)
-  (embark-completing-read-prompter))
+  (embark-completing-read-prompter embark-general-map nil))
 
 (define-key embark-general-map "?" #'bv-embark-keymap-help)
 

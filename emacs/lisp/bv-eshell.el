@@ -17,9 +17,12 @@
 (declare-function project-eshell "project")
 (declare-function consult-history "consult")
 (declare-function ansi-color-filter-apply "ansi-color")
+(defvar user-emacs-directory)
+(defvar eshell-hist-mode-map)
 
 (defun bv-eshell-project (&optional arg)
-  "Open eshell in project root or current directory."
+  "Open eshell in project root or current directory.
+With prefix ARG, prompt for project selection."
   (interactive "P")
   (if (and (fboundp 'project-current) (project-current))
       (project-eshell)

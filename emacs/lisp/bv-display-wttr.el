@@ -7,9 +7,15 @@
 
 ;;; Code:
 
+(require 'url)
 
 (declare-function display-wttr-mode "display-wttr")
 (declare-function display-wttr-update "display-wttr")
+
+(defvar display-wttr-format)
+(defvar display-wttr-locations)
+(defvar display-wttr-interval)
+(defvar display-wttr-mode)
 
 (defgroup bv-weather nil
   "Weather display settings."
@@ -51,7 +57,7 @@
                      (url-encode-url bv-weather-location)
                      (url-encode-url bv-weather-format))))
     (url-retrieve url
-                  (lambda (status)
+                  (lambda (_status)
                     (goto-char (point-min))
                     (re-search-forward "\n\n")
                     (message "Weather: %s"

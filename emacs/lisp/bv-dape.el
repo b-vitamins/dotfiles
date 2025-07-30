@@ -12,6 +12,9 @@
 
 (require 'dape nil t)
 
+;; Silence byte-compiler warnings
+(defvar user-emacs-directory)
+
 (when (featurep 'dape)
   (when (boundp 'dape-buffer-window-arrangement)
     (setq dape-buffer-window-arrangement 'right))
@@ -41,8 +44,8 @@
   (when (fboundp 'dape-breakpoint-global-mode)
     (dape-breakpoint-global-mode 1))
 
-  (add-hook 'dape-on-stopped-hooks 'dape-info)
-  (add-hook 'dape-on-start-hooks
+  (add-hook 'dape-stopped-hook 'dape-info)
+  (add-hook 'dape-start-hook
             (lambda () (save-some-buffers t t))))
 
 (with-eval-after-load 'bv-bindings

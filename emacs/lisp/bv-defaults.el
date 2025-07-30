@@ -11,6 +11,52 @@
 
 ;;; Code:
 
+;; Declare external variables to avoid elint warnings
+(defvar user-emacs-directory)
+(defvar inhibit-startup-screen)
+(defvar inhibit-startup-message)
+(defvar inhibit-startup-echo-area-message)
+(defvar initial-scratch-message)
+(defvar initial-buffer-choice)
+(defvar frame-title-format)
+(defvar use-file-dialog)
+(defvar use-dialog-box)
+(defvar pop-up-windows)
+(defvar indicate-empty-lines)
+(defvar cursor-in-non-selected-windows)
+(defvar cursor-type)
+(defvar blink-cursor-blinks)
+(defvar initial-major-mode)
+(defvar font-lock-maximum-decoration)
+(defvar font-lock-maximum-size)
+(defvar auto-fill-mode)
+(defvar fill-column)
+(defvar confirm-nonexistent-file-or-buffer)
+(defvar completion-styles)
+(defvar org-return-follows-link)
+(defvar ring-bell-function)
+(defvar visible-bell)
+(defvar temp-buffer-max-height)
+(defvar window-min-height)
+(defvar uniquify-buffer-name-style)
+(defvar uniquify-separator)
+(defvar uniquify-after-kill-buffer-p)
+(defvar uniquify-ignore-buffers-re)
+(defvar explicit-shell-file-name)
+(defvar backup-directory-alist)
+(defvar auto-save-file-name-transforms)
+(defvar backup-by-copying)
+(defvar version-control)
+(defvar delete-old-versions)
+(defvar kept-new-versions)
+(defvar kept-old-versions)
+(defvar create-lockfiles)
+(defvar recentf-max-menu-items)
+(defvar recentf-max-saved-items)
+(defvar recentf-exclude)
+(defvar savehist-file)
+(defvar read-process-output-max)
+
 ;; Keep custom settings in separate file
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file)
@@ -88,7 +134,9 @@
 
 ;; Kill terminal buffer on process exit
 (defun bv-term-sentinel-advice (orig-fun proc msg)
-  "Kill terminal buffer when process exits."
+  "Kill terminal buffer when process exits.
+ORIG-FUN is the original sentinel function, PROC is the process,
+and MSG is the process message."
   (funcall orig-fun proc msg)
   (when (memq (process-status proc) '(signal exit))
     (let ((buffer (process-buffer proc)))

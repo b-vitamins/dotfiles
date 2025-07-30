@@ -21,6 +21,45 @@
 ;;; Code:
 
 (require 'corfu)
+(require 'cl-lib)
+
+;;; External Variables
+
+(defvar savehist-additional-variables)
+(defvar completion-at-point-functions)
+(defvar completion-in-region--data)
+(defvar completion-extra-properties)
+(defvar corfu-history--hash)
+(defvar corfu-excluded-modes)
+(defvar corfu-preserve-symlinks)
+(defvar corfu-history-duplicate)
+(defvar corfu-history-decay)
+(defvar corfu-popupinfo-delay)
+(defvar corfu-popupinfo-max-width)
+(defvar corfu-popupinfo-max-height)
+(defvar corfu-popupinfo-min-width)
+(defvar corfu-popupinfo-min-height)
+(defvar corfu-popupinfo-resize)
+(defvar corfu-popupinfo-hide)
+(defvar corfu-popupinfo--frame)
+(defvar corfu-echo-delay)
+(defvar corfu-quick1)
+(defvar corfu-quick2)
+(defvar corfu-map)
+(defvar read-passwd-map)
+(defvar corfu--index)
+
+;;; External Functions
+
+(declare-function corfu-history-mode "corfu-history" (&optional arg))
+(declare-function corfu-popupinfo-mode "corfu-popupinfo" (&optional arg))
+(declare-function corfu-echo-mode "corfu-echo" (&optional arg))
+(declare-function corfu-info-documentation "corfu-info" ())
+(declare-function corfu-info-location "corfu-info" ())
+(declare-function corfu-quick-complete "corfu-quick" ())
+(declare-function corfu-quick-insert "corfu-quick" ())
+(declare-function consult-completion-in-region "consult" (start end collection &optional predicate))
+(declare-function bv-cape-clear-caches "bv-cape" ())
 
 ;;; Custom Variables
 
@@ -154,7 +193,8 @@
     (error "   ")))  ; Fallback on any error
 
 (defun bv-corfu-margin-formatter (metadata)
-  "Safe margin formatter with error handling."
+  "Safe margin formatter with error handling.
+METADATA contains completion metadata used for formatting."
   (when metadata
     #'bv-corfu--format-candidate))
 
@@ -217,7 +257,9 @@
   (corfu-popupinfo-mode 1))
 
 (defun bv-corfu--popupinfo-doc-cache (orig-fun candidate)
-  "Cache documentation with bounds checking."
+  "Cache documentation with bounds checking.
+ORIG-FUN is the original documentation function.
+CANDIDATE is the completion candidate to get documentation for."
   (condition-case nil
       (or (gethash candidate bv-corfu--popupinfo-cache)
           (when-let ((doc (funcall orig-fun candidate)))

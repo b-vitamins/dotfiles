@@ -12,6 +12,18 @@
 (declare-function make-llm-ollama "llm-ollama")
 (declare-function ellama-chat "ellama")
 (declare-function ellama-ask-about "ellama")
+(declare-function ellama-code-review "ellama")
+(declare-function ellama-code-improve "ellama")
+(declare-function ellama-code-explain "ellama")
+(declare-function transient-define-prefix "transient")
+(declare-function auth-source-pick-first-password "auth-source")
+(declare-function bv-ellama-transient "bv-ellama")
+
+(defvar ellama-keymap-prefix)
+(defvar ellama-long-lines-length)
+(defvar llm-warn-on-nonfree)
+(defvar ellama-provider)
+(defvar ellama-providers)
 
 (defgroup bv-ellama nil
   "LLM interface settings."
@@ -65,21 +77,19 @@
 (defun bv-ellama-chat-local ()
   "Start chat with local LLM."
   (interactive)
-  (let ((ellama-provider (alist-get "local" ellama-providers nil nil 'string=)))
+  (let ((ellama-provider (alist-get "local" ellama-providers nil nil #'string=)))
     (ellama-chat)))
 
 (defun bv-ellama-switch-provider ()
   "Switch LLM provider."
   (interactive)
-  (let* ((providers (mapcar 'car ellama-providers))
+  (let* ((providers (mapcar #'car ellama-providers))
          (choice (completing-read "Provider: " providers)))
-    (setq ellama-provider (alist-get choice ellama-providers nil nil 'string=))
+    (setq ellama-provider (alist-get choice ellama-providers nil nil #'string=))
     (message "Switched to %s" choice)))
 
-(defun bv-ellama-transient ()
-  "Transient menu for Ellama."
-  (interactive)
-  (transient-define-prefix bv-ellama-transient-menu ()
+(with-eval-after-load 'transient
+  (transient-define-prefix bv-ellama-transient ()
     "Local LLM"
     ["Chat"
      ("c" "Chat" ellama-chat)
@@ -91,9 +101,8 @@
      ("e" "Explain" ellama-code-explain)]
     ["Settings"
      ("s" "Switch provider" bv-ellama-switch-provider)])
-  (bv-ellama-transient-menu))
 
-(global-set-key (kbd "C-c e") 'bv-ellama-transient)
+  (global-set-key (kbd "C-c e") 'bv-ellama-transient))
 
 (provide 'bv-ellama)
 ;;; bv-ellama.el ends here

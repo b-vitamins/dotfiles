@@ -15,6 +15,36 @@
 (declare-function emms-track "emms")
 (declare-function emms-track-set "emms")
 (declare-function emms-playlist-insert-track "emms")
+(declare-function emms-stop "emms")
+(declare-function emms-playlist-clear "emms")
+(declare-function emms-playlist-mode-first "emms-playlist-mode")
+(declare-function emms-playlist-mode-play-smart "emms-playlist-mode")
+(declare-function emms-play-url "emms")
+(declare-function emms-track-description "emms")
+(declare-function emms-playlist-current-selected-track "emms")
+(declare-function emms-pause "emms")
+(declare-function emms-start "emms")
+(declare-function emms-next "emms")
+(declare-function emms-previous "emms")
+(declare-function emms-toggle-repeat-playlist "emms")
+(declare-function emms-toggle-random-playlist "emms")
+(declare-function emms-playlist-mode-kill-track "emms-playlist-mode")
+(declare-function transient-define-prefix "transient")
+(declare-function bv-emms-transient-menu "bv-emms")
+
+;; External variables
+(defvar emms-player-list)
+(defvar emms-info-functions)
+(defvar emms-source-file-default-directory)
+(defvar emms-playlist-buffer-name)
+(defvar emms-playlist-mode-center-when-go)
+(defvar emms-history-file)
+(defvar emms-repeat-playlist)
+(defvar emms-mode-line-format)
+(defvar emms-mode-line-icon-enabled-p)
+(defvar emms-player-mpv-parameters)
+(defvar emms-player-playing-p)
+(defvar emms-playlist-mode-map)
 
 (defgroup bv-emms nil
   "Multimedia system settings."
@@ -93,9 +123,7 @@
   (define-key emms-playlist-mode-map "d" 'emms-playlist-mode-kill-track)
   (define-key emms-playlist-mode-map "c" 'emms-playlist-clear))
 
-(defun bv-emms-transient ()
-  "Transient menu for EMMS."
-  (interactive)
+(with-eval-after-load 'transient
   (transient-define-prefix bv-emms-transient-menu ()
     "Music Player"
     ["Playback"
@@ -110,7 +138,11 @@
      ("i" "Current track" bv-emms-show-current)]
     ["Options"
      ("r" "Toggle repeat" emms-toggle-repeat-playlist)
-     ("R" "Toggle random" emms-toggle-random-playlist)])
+     ("R" "Toggle random" emms-toggle-random-playlist)]))
+
+(defun bv-emms-transient ()
+  "Transient menu for EMMS."
+  (interactive)
   (bv-emms-transient-menu))
 
 (global-set-key (kbd "C-c m") 'bv-emms-transient)

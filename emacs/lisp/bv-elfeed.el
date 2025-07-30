@@ -7,7 +7,7 @@
 ;;; Commentary:
 ;;
 ;; Advanced Elfeed configuration for academic paper reading, especially suited for
-;; ML/Physics research. Features automatic ArXiv paper downloading, intelligent
+;; ML/Physics research.  Features automatic ArXiv paper downloading, intelligent
 ;; scoring, and bibliography management.
 ;;
 ;; INSTALLATION:
@@ -89,6 +89,22 @@
 (require 'org-ref)
 (require 'bibtex-completion)
 
+;; External variable declarations
+(defvar elfeed-score-serde-score-file)
+(defvar org-ref-pdf-directory)
+(defvar elfeed-score-score-default)
+
+;; External function declarations
+(declare-function elfeed-db-get-all-entries "elfeed-db")
+(declare-function arxiv-get-pdf-add-bibtex-entry "org-ref-arxiv")
+(declare-function elfeed-db-compact "elfeed-db")
+(declare-function elfeed-score-load-score-file "elfeed-score")
+(declare-function elfeed-score-enable "elfeed-score")
+(declare-function elfeed-score-scoring-score-entry "elfeed-score")
+(declare-function elfeed-score-scoring-get-score-from-entry "elfeed-score")
+(declare-function elfeed-make-tagger "elfeed")
+(declare-function with-elfeed-db-visit "elfeed-db" (entry feed &rest body) t)
+
 (defgroup bv-elfeed nil
   "Advanced RSS feed reader settings."
   :group 'applications)
@@ -155,7 +171,7 @@
 ;;; Core Elfeed configuration with XDG paths
 (setq elfeed-db-directory (expand-file-name "emacs/elfeed/db" bv-xdg-data-home)
       elfeed-enclosure-default-dir (expand-file-name "emacs/elfeed/enclosures" bv-xdg-cache-home)
-      elfeed-score-score-file (expand-file-name "emacs/elfeed/score.el" bv-xdg-data-home)
+      elfeed-score-serde-score-file (expand-file-name "emacs/elfeed/score.el" bv-xdg-data-home)
       elfeed-search-filter bv-elfeed-default-filter
       elfeed-feeds bv-elfeed-feeds
       elfeed-show-entry-switch 'pop-to-buffer
@@ -241,7 +257,6 @@
                    elfeed-show-entry
                  (elfeed-search-selected :single)))
          (link (elfeed-entry-link entry))
-         (title (elfeed-entry-title entry))
          (match-idx (string-match "arxiv.org/abs/\\([0-9.]*\\)" link))
          (arxiv-id (when match-idx (match-string 1 link))))
 
@@ -335,7 +350,8 @@
   (when (file-exists-p bv-elfeed-score-file)
     (elfeed-score-load-score-file bv-elfeed-score-file))
   ;; Enable elfeed-score globally
-  (setq elfeed-score-score-default 0)
+  (when (boundp 'elfeed-score-score-default)
+    (setq elfeed-score-score-default 0))
   (elfeed-score-enable))
 
 ;;; Enhanced search functions
@@ -388,7 +404,9 @@
 (defun bv-elfeed-mark-all-read ()
   "Mark all visible entries as read."
   (interactive)
-  (mark-whole-buffer)
+  (save-excursion
+    (goto-char (point-min))
+    (push-mark (point-max) nil t))
   (elfeed-search-untag-all-unread))
 
 (defun bv-elfeed-toggle-star ()
@@ -403,7 +421,7 @@
 
 ;;; Auto-tagging for physics/ML papers
 (defun bv-elfeed-physics-ml-autotag (entry)
-  "Auto-tag physics and ML papers based on content."
+  "Auto-tag physics and ML papers based on ENTRY content."
   (let ((title (downcase (or (elfeed-entry-title entry) "")))
         (link (elfeed-entry-link entry))
         (categories (elfeed-meta entry :categories)))
@@ -463,19 +481,21 @@
 (defun bv-elfeed-db-cleanup ()
   "Clean up old entries from database."
   (interactive)
-  (let ((cutoff-time (- (float-time) (* 90 86400))) ; 90 days ago
-        (removed 0))
-    (dolist (entry (elfeed-db-get-all-entries))
-      (when (and (< (elfeed-entry-date entry) cutoff-time)
-                 (not (or (elfeed-tagged-p 'star entry)
-                         (elfeed-tagged-p 'downloaded entry))))
-        ;; Mark as read and remove from unread
-        (elfeed-untag entry 'unread)
-        (cl-incf removed)))
-    (elfeed-db-save)
-    (when (fboundp 'elfeed-db-compact)
-      (elfeed-db-compact))
-    (message "Cleaned %d old entries (marked as read)" removed)))
+  (if (not (fboundp 'elfeed-db-get-all-entries))
+      (message "elfeed-db-get-all-entries not available")
+    (let ((cutoff-time (- (float-time) (* 90 86400))) ; 90 days ago
+          (removed 0))
+      (dolist (entry (elfeed-db-get-all-entries))
+        (when (and (< (elfeed-entry-date entry) cutoff-time)
+                   (not (or (elfeed-tagged-p 'star entry)
+                           (elfeed-tagged-p 'downloaded entry))))
+          ;; Mark as read and remove from unread
+          (elfeed-untag entry 'unread)
+          (cl-incf removed)))
+      (elfeed-db-save)
+      (when (fboundp 'elfeed-db-compact)
+        (elfeed-db-compact))
+      (message "Cleaned %d old entries (marked as read)" removed))))
 
 (defun bv-elfeed-remove-feed-entries (feed-url-substring)
   "Remove all entries from feeds matching FEED-URL-SUBSTRING."
@@ -499,7 +519,7 @@
         (downloaded-entries 0)
         (feeds-count (hash-table-count elfeed-db-feeds)))
 
-    (with-elfeed-db-visit (entry feed)
+    (with-elfeed-db-visit (entry _feed)
       (cl-incf total-entries)
       (when (elfeed-tagged-p 'unread entry)
         (cl-incf unread-entries))
@@ -532,7 +552,7 @@
   (if (not (featurep 'elfeed-score))
       (message "elfeed-score not loaded")
     (let ((count 0))
-      (with-elfeed-db-visit (entry feed)
+      (with-elfeed-db-visit (entry _feed)
         (when (fboundp 'elfeed-score-scoring-score-entry)
           (elfeed-score-scoring-score-entry entry)
           (cl-incf count)))

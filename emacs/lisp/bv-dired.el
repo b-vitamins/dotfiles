@@ -14,6 +14,13 @@
 (autoload 'dired-rsync "dired-rsync" nil t)
 (autoload 'embark-open-externally "embark" nil t)
 
+(defvar dired-mode-map)
+(declare-function dired-get-marked-files "dired")
+(declare-function dired-hide-details-mode "dired")
+(declare-function kill-current-buffer "simple")
+(declare-function toggle-truncate-lines "simple")
+(declare-function dired-jump "dired-x")
+
 (defun bv-dired-open-externally ()
   "Open marked files with external program."
   (interactive)

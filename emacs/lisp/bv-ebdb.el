@@ -7,11 +7,11 @@
 
 ;;; Code:
 
-
 (declare-function ebdb-display-all-records "ebdb")
 (declare-function ebdb-create-record-extended "ebdb")
 (declare-function ebdb-search "ebdb")
 (declare-function ebdb-mail "ebdb")
+(declare-function ebdb-prompt-for-string "ebdb")
 
 (defgroup bv-ebdb nil
   "Contact database settings."
@@ -73,9 +73,9 @@
   (define-key ebdb-mode-map "/" 'bv-ebdb-search-name)
   (define-key ebdb-mode-map "@" 'bv-ebdb-search-email))
 
-(defun bv-ebdb-transient ()
-  "Transient menu for EBDB."
-  (interactive)
+;; Autoload transient when the command is first called
+;;;###autoload (autoload 'bv-ebdb-transient-menu "bv-ebdb" nil t)
+(with-eval-after-load 'transient
   (transient-define-prefix bv-ebdb-transient-menu ()
     "EBDB Contact Database"
     ["Display"
@@ -84,10 +84,10 @@
      ("e" "Search by email" bv-ebdb-search-email)]
     ["Edit"
      ("c" "Create contact" ebdb-create-record-extended)
-     ("m" "Add from mail" bv-ebdb-add-from-mail)])
-  (bv-ebdb-transient-menu))
+     ("m" "Add from mail" bv-ebdb-add-from-mail)]))
 
-(global-set-key (kbd "C-c b") 'bv-ebdb-transient)
+;; Keybinding for the transient menu
+(global-set-key (kbd "C-c b") 'bv-ebdb-transient-menu)
 
 (provide 'bv-ebdb)
 ;;; bv-ebdb.el ends here
