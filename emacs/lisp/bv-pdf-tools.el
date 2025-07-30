@@ -26,7 +26,13 @@
   ;; Don't use themed mode by default - it inverts colors including figures
   (pdf-view-themed-minor-mode -1))
 
-(add-hook 'pdf-view-mode-hook #'bv-pdf-tools-setup)
+(defun bv-pdf-tools-install-and-setup ()
+  "Install PDF tools and setup the hook."
+  (pdf-tools-install :no-query)
+  (add-hook 'pdf-view-mode-hook #'bv-pdf-tools-setup))
+
+;; Install PDF tools on first PDF file access
+(add-hook 'pdf-view-mode-hook #'bv-pdf-tools-install-and-setup)
 
 
 ;; PDF view settings
@@ -92,8 +98,7 @@
   (when (boundp 'pdf-view-use-unicode-ligther)
     (setq pdf-view-use-unicode-ligther nil)))
 
-;; Install PDF tools on first use
-(pdf-tools-install :no-query)
+;; PDF tools will be installed on first use via the hook above
 
 (provide 'bv-pdf-tools)
 ;;; bv-pdf-tools.el ends here
