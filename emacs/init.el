@@ -83,6 +83,9 @@
 (require 'bv-corfu)        ; In-buffer completion
 (require 'bv-tempel)       ; Template expansion
 
+;; Transient menus
+(require 'bv-transient)    ; Centralized transient menu definitions
+
 ;; Shell and terminal
 (require 'bv-eat)          ; Terminal emulator
 (require 'bv-eshell)       ; Emacs shell

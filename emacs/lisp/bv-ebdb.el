@@ -73,21 +73,6 @@
   (define-key ebdb-mode-map "/" 'bv-ebdb-search-name)
   (define-key ebdb-mode-map "@" 'bv-ebdb-search-email))
 
-;; Autoload transient when the command is first called
-;;;###autoload (autoload 'bv-ebdb-transient-menu "bv-ebdb" nil t)
-(with-eval-after-load 'transient
-  (transient-define-prefix bv-ebdb-transient-menu ()
-    "EBDB Contact Database"
-    ["Display"
-     ("a" "All contacts" ebdb-display-all-records)
-     ("s" "Search by name" bv-ebdb-search-name)
-     ("e" "Search by email" bv-ebdb-search-email)]
-    ["Edit"
-     ("c" "Create contact" ebdb-create-record-extended)
-     ("m" "Add from mail" bv-ebdb-add-from-mail)]))
-
-;; Keybinding for the transient menu
-(global-set-key (kbd "C-c b") 'bv-ebdb-transient-menu)
 
 (provide 'bv-ebdb)
 ;;; bv-ebdb.el ends here

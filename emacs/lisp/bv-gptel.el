@@ -14,9 +14,7 @@
 (declare-function gptel-quick "gptel")
 (declare-function gptel-menu "gptel")
 (declare-function gptel-abort "gptel")
-(declare-function transient-define-prefix "transient")
 (declare-function auth-source-pick-first-password "auth-source")
-(declare-function bv-gptel-transient-menu "bv-gptel")
 
 (defvar gptel-default-mode)
 (defvar gptel-use-tools)
@@ -76,24 +74,6 @@
 (with-eval-after-load 'embark
   (define-key embark-general-map "?" 'gptel-quick))
 
-(with-eval-after-load 'transient
-  (with-suppressed-warnings ((free-vars bv-gptel-transient-menu))
-    (transient-define-prefix bv-gptel-transient-menu ()
-      "AI Assistant"
-      ["Chat"
-       ("c" "New chat" bv-gptel-chat)
-       ("s" "Send region" bv-gptel-send-region)
-       ("r" "Rewrite" bv-gptel-rewrite)
-       ("q" "Quick query" gptel-quick)]
-      ["Settings"
-       ("m" "Menu" gptel-menu)])))
-
-(defun bv-gptel-transient ()
-  "Transient menu for GPTel."
-  (interactive)
-  (bv-gptel-transient-menu))
-
-(global-set-key (kbd "C-c g") 'bv-gptel-transient)
 
 (provide 'bv-gptel)
 ;;; bv-gptel.el ends here

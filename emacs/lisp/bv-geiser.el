@@ -18,7 +18,6 @@
 (declare-function geiser-repl-clear-buffer "geiser-repl")
 (declare-function geiser-doc-symbol-at-point "geiser-doc")
 (declare-function geiser-doc-module "geiser-doc")
-(declare-function transient-define-prefix "transient")
 
 (defvar geiser-default-implementation)
 (defvar geiser-active-implementations)
@@ -87,31 +86,6 @@
 (with-eval-after-load 'ob-scheme
   (setq org-babel-default-header-args:scheme '((:results . "value"))))
 
-(with-eval-after-load 'transient
-  (transient-define-prefix bv-geiser-transient-menu ()
-    "Scheme Development"
-    ["Evaluation"
-     ("e" "Eval definition" geiser-eval-definition)
-     ("r" "Eval region" geiser-eval-region)
-     ("b" "Eval buffer" bv-geiser-eval-buffer)
-     ("l" "Eval last sexp" bv-geiser-eval-last-sexp)]
-    ["REPL"
-     ("z" "Switch to REPL" geiser-repl)
-     ("Z" "REPL here" bv-geiser-repl-here)
-     ("c" "Clear REPL" geiser-repl-clear-buffer)]
-    ["Documentation"
-     ("d" "Symbol doc" geiser-doc-symbol-at-point)
-     ("m" "Module doc" geiser-doc-module)]))
-
-(defun bv-geiser-transient ()
-  "Transient menu for Geiser."
-  (interactive)
-  (if (fboundp 'bv-geiser-transient-menu)
-      (bv-geiser-transient-menu)
-    (message "Transient not available")))
-
-(with-eval-after-load 'scheme-mode
-  (define-key scheme-mode-map (kbd "C-c s") 'bv-geiser-transient))
 
 (provide 'bv-geiser)
 ;;; bv-geiser.el ends here

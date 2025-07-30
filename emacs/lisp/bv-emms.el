@@ -29,8 +29,6 @@
 (declare-function emms-toggle-repeat-playlist "emms")
 (declare-function emms-toggle-random-playlist "emms")
 (declare-function emms-playlist-mode-kill-track "emms-playlist-mode")
-(declare-function transient-define-prefix "transient")
-(declare-function bv-emms-transient-menu "bv-emms")
 
 ;; External variables
 (defvar emms-player-list)
@@ -123,29 +121,6 @@
   (define-key emms-playlist-mode-map "d" 'emms-playlist-mode-kill-track)
   (define-key emms-playlist-mode-map "c" 'emms-playlist-clear))
 
-(with-eval-after-load 'transient
-  (transient-define-prefix bv-emms-transient-menu ()
-    "Music Player"
-    ["Playback"
-     ("p" "Play/Pause" bv-emms-toggle)
-     ("n" "Next" emms-next)
-     ("b" "Previous" emms-previous)
-     ("s" "Stop" emms-stop)]
-    ["Playlist"
-     ("l" "Show playlist" emms-playlist-mode-go)
-     ("d" "Play directory" bv-emms-play-directory)
-     ("u" "Play URL" bv-emms-play-url)
-     ("i" "Current track" bv-emms-show-current)]
-    ["Options"
-     ("r" "Toggle repeat" emms-toggle-repeat-playlist)
-     ("R" "Toggle random" emms-toggle-random-playlist)]))
-
-(defun bv-emms-transient ()
-  "Transient menu for EMMS."
-  (interactive)
-  (bv-emms-transient-menu))
-
-(global-set-key (kbd "C-c m") 'bv-emms-transient)
 
 (provide 'bv-emms)
 ;;; bv-emms.el ends here

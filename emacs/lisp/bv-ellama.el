@@ -15,9 +15,7 @@
 (declare-function ellama-code-review "ellama")
 (declare-function ellama-code-improve "ellama")
 (declare-function ellama-code-explain "ellama")
-(declare-function transient-define-prefix "transient")
 (declare-function auth-source-pick-first-password "auth-source")
-(declare-function bv-ellama-transient "bv-ellama")
 
 (defvar ellama-keymap-prefix)
 (defvar ellama-long-lines-length)
@@ -88,21 +86,6 @@
     (setq ellama-provider (alist-get choice ellama-providers nil nil #'string=))
     (message "Switched to %s" choice)))
 
-(with-eval-after-load 'transient
-  (transient-define-prefix bv-ellama-transient ()
-    "Local LLM"
-    ["Chat"
-     ("c" "Chat" ellama-chat)
-     ("l" "Local chat" bv-ellama-chat-local)
-     ("a" "Ask about" ellama-ask-about)]
-    ["Code"
-     ("r" "Review" ellama-code-review)
-     ("i" "Improve" ellama-code-improve)
-     ("e" "Explain" ellama-code-explain)]
-    ["Settings"
-     ("s" "Switch provider" bv-ellama-switch-provider)])
-
-  (global-set-key (kbd "C-c e") 'bv-ellama-transient))
 
 (provide 'bv-ellama)
 ;;; bv-ellama.el ends here

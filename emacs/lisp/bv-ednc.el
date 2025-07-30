@@ -14,10 +14,6 @@
 (declare-function ednc-dismiss-notification "ednc")
 (declare-function ednc--update-log-buffer "ednc")
 (declare-function ednc-mode "ednc")
-(declare-function transient-define-prefix "transient")
-
-;; Function created by transient-define-prefix below
-(declare-function bv-ednc-transient "bv-ednc")
 
 (defgroup bv-ednc nil
   "Desktop notification settings."
@@ -82,15 +78,6 @@
   (add-hook 'ednc-notification-presentation-functions
             (lambda (&rest _) (force-mode-line-update t))))
 
-(with-eval-after-load 'transient
-  (transient-define-prefix bv-ednc-transient ()
-    "Desktop Notifications"
-    ["Actions"
-     ("l" "Show log" bv-ednc-show-notification-log)
-     ("d" "Dismiss last" bv-ednc-dismiss-last)
-     ("D" "Dismiss all" bv-ednc-dismiss-all)
-     ("o" "Open app" bv-ednc-open-app)])
-  (global-set-key (kbd "C-c N") #'bv-ednc-transient))
 
 (provide 'bv-ednc)
 ;;; bv-ednc.el ends here

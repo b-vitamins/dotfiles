@@ -60,21 +60,6 @@
   (interactive)
   (pulseaudio-control-toggle-current-sink-mute))
 
-(defun bv-audio-transient ()
-  "Transient menu for audio control."
-  (interactive)
-  (transient-define-prefix bv-audio-transient-menu ()
-    "Audio Control"
-    ["Volume"
-     ("+" "Increase" bv-audio-increase-volume :transient t)
-     ("-" "Decrease" bv-audio-decrease-volume :transient t)
-     ("m" "Toggle mute" bv-audio-toggle-mute)]
-    ["Devices"
-     ("s" "Select sink" pulseaudio-control-select-sink-by-name)
-     ("i" "Select source" pulseaudio-control-select-source-by-name)])
-  (bv-audio-transient-menu))
-
-(global-set-key (kbd "C-c v") 'bv-audio-transient)
 
 (global-set-key (kbd "<XF86AudioRaiseVolume>") 'bv-audio-increase-volume)
 (global-set-key (kbd "<XF86AudioLowerVolume>") 'bv-audio-decrease-volume)

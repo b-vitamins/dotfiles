@@ -57,31 +57,6 @@
   (when (yes-or-no-p "Suspend system? ")
     (async-start-process "suspend" bv-power-loginctl-path nil "suspend")))
 
-(defun bv-power-transient ()
-  "Transient menu for power management."
-  (interactive)
-  (transient-define-prefix bv-power-transient-menu ()
-    "Power Management"
-    ["Session"
-     ("l" "Lock" bv-power-lock)
-     ("o" "Logout" (lambda () (interactive)
-                     (when (yes-or-no-p "Logout? ")
-                       (async-start-process "logout" bv-power-loginctl-path nil
-                                            "terminate-session" (getenv "XDG_SESSION_ID")))))]
-    ["System"
-     ("s" "Suspend" bv-power-suspend)
-     ("h" "Hibernate" (lambda () (interactive)
-                        (when (yes-or-no-p "Hibernate? ")
-                          (async-start-process "hibernate" bv-power-loginctl-path nil "hibernate"))))
-     ("S" "Shutdown" (lambda () (interactive)
-                       (when (yes-or-no-p "Shutdown system? ")
-                         (async-start-process "shutdown" bv-power-loginctl-path nil "poweroff"))))
-     ("r" "Reboot" (lambda () (interactive)
-                     (when (yes-or-no-p "Reboot system? ")
-                       (async-start-process "reboot" bv-power-loginctl-path nil "reboot"))))])
-  (bv-power-transient-menu))
-
-(global-set-key (kbd "C-x q") 'bv-power-transient)
 
 (provide 'bv-power-menu)
 ;;; bv-power-menu.el ends here

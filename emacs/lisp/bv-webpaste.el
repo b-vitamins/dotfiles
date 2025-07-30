@@ -59,19 +59,6 @@
               (message "Pasted to: %s" url)
               (kill-new url))))
 
-(defun bv-webpaste-transient ()
-  "Transient menu for webpaste."
-  (interactive)
-  (transient-define-prefix bv-webpaste-transient-menu ()
-    "Web Paste"
-    ["Paste"
-     ("p" "Buffer/region" bv-webpaste-paste-dwim)
-     ("b" "Buffer" webpaste-paste-buffer)
-     ("r" "Region" webpaste-paste-region)
-     ("d" "Defun" bv-webpaste-paste-defun)])
-  (bv-webpaste-transient-menu))
-
-(global-set-key (kbd "C-c P") 'bv-webpaste-transient)
 
 (provide 'bv-webpaste)
 ;;; bv-webpaste.el ends here

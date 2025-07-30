@@ -71,20 +71,6 @@
   (define-key ytdl--dl-list-mode-map "a" 'ytdl-download)
   (define-key ytdl--dl-list-mode-map "d" 'ytdl-download-delete))
 
-(defun bv-ytdl-transient ()
-  "Transient menu for ytdl."
-  (interactive)
-  (transient-define-prefix bv-ytdl-transient-menu ()
-    "Media Downloader"
-    ["Download"
-     ("u" "From URL" bv-ytdl-download-url)
-     ("a" "Audio only" bv-ytdl-download-audio)
-     ("v" "Video" bv-ytdl-download-video)]
-    ["Manage"
-     ("l" "Show downloads" ytdl-show-list)])
-  (bv-ytdl-transient-menu))
-
-(global-set-key (kbd "C-c y") 'bv-ytdl-transient)
 
 (provide 'bv-yt-dlp)
 ;;; bv-yt-dlp.el ends here
