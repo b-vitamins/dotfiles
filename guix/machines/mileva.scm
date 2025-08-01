@@ -22,6 +22,7 @@
              (gnu packages gnome)
              (gnu packages gnome-xyz)
              (gnu packages shellutils)
+             (gnu packages mp3)
              (gnu packages node)
              (gnu packages python)
              (gnu packages docker)
@@ -348,7 +349,52 @@ allow-preset-passphrase")))
 
       ;; Miscellaneous Home Services
       (service home-beets-service-type
-               (home-beets-configuration (directory "/home/b/music")))))))
+               (home-beets-configuration (directory "/home/b/music")
+                                         (extra-packages (list ffmpeg
+                                                               chromaprint))
+                                         (extra-options '("library: ~/.local/share/beets/library.db"
+                                                          "plugins: fetchart embedart lyrics lastgenre chroma scrub mbsync convert duplicates discogs"
+                                                          "import:"
+                                                          "  copy: yes"
+                                                          "  move: no"
+                                                          "  write: yes"
+                                                          "  resume: ask"
+                                                          "  quiet_fallback: skip"
+                                                          "  timid: no"
+                                                          "paths:"
+                                                          "  default: %the{$albumartist}/$album%aunique{}/$track - $title"
+                                                          "  singleton: Non-Album/$artist - $title"
+                                                          "  comp: Compilations/$album%aunique{}/$track - $title"
+                                                          "asciify_paths: yes"
+                                                          "per_disc_numbering: yes"
+                                                          "original_date: yes"
+                                                          "ignore_hidden: yes"
+                                                          "threaded: yes"
+                                                          "fetchart:"
+                                                          "  auto: yes"
+                                                          "  sources: coverart amazon albumart wikipedia filesystem"
+                                                          "embedart:"
+                                                          "  auto: yes"
+                                                          "lyrics:"
+                                                          "  auto: yes"
+                                                          "lastgenre:"
+                                                          "  auto: yes"
+                                                          "  source: track"
+                                                          "chroma:"
+                                                          "  auto: yes"
+                                                          "scrub:"
+                                                          "  auto: yes"
+                                                          "convert:"
+                                                          "  auto: no"
+                                                          "  dest: ~/.cache/beets/converted"
+                                                          "  format: mp3"
+                                                          "  formats:"
+                                                          "    mp3: ffmpeg -i $source -y -aq 2 $dest"))))
+
+      (service home-nougat-service-type
+               (nougat-configuration (batch-size 10)
+                                     (workers 6)
+                                     (cache-dir "/home/b/.cache/nougat")))))))
 
 (operating-system
   (host-name "mileva")
@@ -436,6 +482,8 @@ allow-preset-passphrase")))
              %compiler-toolchains
              %version-control
              %compression-tools
+             ;; Media
+             %media-players
              ;; Development - Languages (workstation needs all)
              %c-cpp-development
              %rust-development
