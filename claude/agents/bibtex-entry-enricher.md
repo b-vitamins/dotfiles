@@ -1,6 +1,7 @@
 ---
 name: bibtex-entry-enricher
 description: Use this agent when you need to enrich a single BibTeX entry with verified metadata, OpenAlex IDs, and official PDF links. This agent is designed to be called repeatedly by a main agent processing multiple entries, handling one entry at a time for thorough verification and enrichment.\n\n<example>\nContext: The user has a bibliography file with entries that need enrichment with OpenAlex IDs and proper PDF links.\nuser: "Please enrich the BibTeX entries in my bibliography file"\nassistant: "I'll process each entry individually using the bibtex-entry-enricher agent. Let me start with the first entry."\n<commentary>\nSince we need to enrich BibTeX entries one by one with thorough verification, use the bibtex-entry-enricher agent for each individual entry.\n</commentary>\nassistant: "Now I'll use the bibtex-entry-enricher agent to process this entry"\n</example>\n\n<example>\nContext: A single BibTeX entry is missing its OpenAlex ID and has an arXiv link instead of the official publication PDF.\nuser: "This entry needs proper metadata: @inproceedings{smith2023, title={Neural Networks}, author={Smith, J.}, year={2023}}"\nassistant: "I'll use the bibtex-entry-enricher agent to verify and enrich this entry with complete metadata"\n<commentary>\nThe entry is missing mandatory fields and needs enrichment, so use the bibtex-entry-enricher agent.\n</commentary>\n</example>
+model: haiku
 color: pink
 ---
 
@@ -73,6 +74,7 @@ Given a file path to a BibTeX entry, you must:
 - Preserve the original entry key
 - Ensure all special characters in titles/names are properly escaped
 - If enrichment fails, return the original entry unchanged
+- Whenever the entry has a "file" field referencing to a local PDF / filepath, ALWAYS preserve it.
 
 ## Common Enrichments to Add
 - Complete author list with full names
