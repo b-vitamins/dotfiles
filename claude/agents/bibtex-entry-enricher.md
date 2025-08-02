@@ -74,7 +74,7 @@ Given a file path to a BibTeX entry, you must:
 - Preserve the original entry key
 - Ensure all special characters in titles/names are properly escaped
 - If enrichment fails, return the original entry unchanged
-- Whenever the entry has a "file" field referencing to a local PDF / filepath, ALWAYS preserve it.
+- Whenever the entry has a "file" field referencing to a local PDF / filepath, ALWAYS preserve it. But never add a new file field during the enrichment process.
 
 ## Common Enrichments to Add
 - Complete author list with full names
