@@ -14,6 +14,25 @@
 (require 'subr-x)
 (require 'cl-lib)
 
+;; External variables
+(defvar display-time-string)
+(defvar org-mode-line-string)
+(defvar Info-current-node)
+(defvar no-mode-line)
+(defvar eshell-status-in-modeline)
+(defvar Info-use-header-line)
+(defvar org-capture-mode)
+(defvar shell-file-name)
+
+;; External functions
+(declare-function vc-backend "vc-hooks" (file))
+(declare-function derived-mode-p "subr" (&rest modes))
+(declare-function bound-and-true-p "subr" (var))
+
+;; Functions defined in with-eval-after-load blocks
+(declare-function calendar-setup-header "bv-modeline")
+(declare-function org-capture-turn-off-header-line "bv-modeline")
+
 (defun shorten-directory (dir max-length)
   "Show up to MAX-LENGTH characters of directory name DIR."
   (let ((path (reverse (split-string (abbreviate-file-name dir) "/")))
@@ -42,7 +61,6 @@
 (defun bv-modeline-compose (status name primary secondary)
   "Compose modeline string from STATUS, NAME, PRIMARY and SECONDARY."
   (let* ((char-width    (window-font-width nil 'header-line))
-         (window        (get-buffer-window (current-buffer)))
          (space-up      +0.15)
          (space-down    -0.20)
          (prefix (cond ((string= status "RO")
@@ -80,7 +98,7 @@
     (cond (modified  "**") (read-only "RO") (t "RW"))))
 
 (defun bv-modeline-default-mode ()
-  "Default modeline for prog-mode and text-mode."
+  "Default modeline for `prog-mode' and `text-mode'."
   (let ((buffer-name (format-mode-line "%b"))
         (mode-name   (bv-mode-name))
         (branch      (vc-branch))
@@ -100,52 +118,64 @@
                            position))))
 
 (defun bv-modeline-org-agenda-mode-p ()
+  "Return non-nil if current buffer is in `org-agenda-mode'."
   (derived-mode-p 'org-agenda-mode))
 
 (defun bv-modeline-org-agenda-mode ()
+  "Modeline format for `org-agenda-mode'."
   (bv-modeline-compose (bv-modeline-status)
                        "Agenda"
                        ""
                        (format-time-string "%A %-e %B %Y")))
 
 (defun bv-modeline-org-capture-mode-p ()
+  "Return non-nil if current buffer is in `org-capture-mode'."
   (bound-and-true-p org-capture-mode))
 
 (defun bv-modeline-org-capture-mode ()
+  "Modeline format for `org-capture-mode'."
   (bv-modeline-compose (bv-modeline-status)
                        "Capture"
                        "(org)"
                        ""))
 
 (defun bv-modeline-term-mode-p ()
+  "Return non-nil if current buffer is in `term-mode'."
   (derived-mode-p 'term-mode))
 
 (defun bv-modeline-vterm-mode-p ()
+  "Return non-nil if current buffer is in `vterm-mode'."
   (derived-mode-p 'vterm-mode))
 
 (defun bv-modeline-term-mode ()
+  "Modeline format for terminal modes (`term-mode' and `vterm-mode')."
   (bv-modeline-compose " >_ "
                        "Terminal"
                        (concat "(" shell-file-name ")")
                        (shorten-directory default-directory 32)))
 
 (defun bv-modeline-message-mode-p ()
+  "Return non-nil if current buffer is in `message-mode'."
   (derived-mode-p 'message-mode))
 
 (defun bv-modeline-message-mode ()
+  "Modeline format for `message-mode'."
   (bv-modeline-compose (bv-modeline-status)
                        "Message" "(draft)" ""))
 
 (defun bv-modeline-info-mode-p ()
+  "Return non-nil if current buffer is in `Info-mode'."
   (derived-mode-p 'Info-mode))
 
 (defun bv-modeline-info-mode ()
+  "Modeline format for `Info-mode'."
   (bv-modeline-compose (bv-modeline-status)
                        "Info"
                        (concat "(" Info-current-node ")")
                        ""))
 
 (defun bv-modeline-calendar-mode-p ()
+  "Return non-nil if current buffer is in `calendar-mode'."
   (derived-mode-p 'calendar-mode))
 
 (defun bv-modeline-calendar-mode ()
@@ -153,9 +183,11 @@
   "")
 
 (defun bv-modeline-completion-list-mode-p ()
+  "Return non-nil if current buffer is in `completion-list-mode'."
   (derived-mode-p 'completion-list-mode))
 
 (defun bv-modeline-completion-list-mode ()
+  "Modeline format for `completion-list-mode'."
   (let ((buffer-name (format-mode-line "%b"))
         (mode-name   (bv-mode-name))
         (position    (format-mode-line "%l:%c")))
@@ -163,9 +195,11 @@
                          buffer-name "" position)))
 
 (defun bv-modeline-prog-mode-p ()
+  "Return non-nil if current buffer is in `prog-mode'."
   (derived-mode-p 'prog-mode))
 
 (defun bv-modeline-text-mode-p ()
+  "Return non-nil if current buffer is in `text-mode'."
   (derived-mode-p 'text-mode))
 
 (setq org-mode-line-string nil)
@@ -175,13 +209,14 @@
                         (force-mode-line-update))))
 
 (defun bv-modeline-org-clock-mode-p ()
+  "Return non-nil if org-clock is active."
   org-mode-line-string)
 
 (defun bv-modeline-org-clock-mode ()
+  "Modeline format when org-clock is active."
   (let ((buffer-name (format-mode-line "%b"))
         (mode-name   (bv-mode-name))
-        (branch      (vc-branch))
-        (position    (format-mode-line "%l:%c")))
+        (branch      (vc-branch)))
     (bv-modeline-compose (bv-modeline-status)
                          buffer-name
                          (concat "(" mode-name
