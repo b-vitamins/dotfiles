@@ -21,7 +21,7 @@
   :type 'integer
   :group 'bv-mpv)
 
-;; Declare functions to avoid warnings
+;; Declare functions and variables to avoid warnings
 (declare-function mpv-start "mpv")
 (declare-function mpv-run-command "mpv")
 (declare-function mpv-get-property "mpv")
@@ -47,6 +47,8 @@
 (declare-function ytdl--download-async "ytdl")
 (declare-function ytdl--eval-field "ytdl")
 (declare-function ytdl--eval-list "ytdl")
+
+(defvar mpv-seek-step)
 
 ;; Load mpv after idle delay
 (run-with-idle-timer bv-mpv-idle-delay t
