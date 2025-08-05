@@ -9,6 +9,22 @@
 ;;; Code:
 
 (require 'marginalia)
+(require 'cl-lib)
+
+;; Declare external variables to avoid warnings
+(defvar marginalia-cache-size)
+(defvar marginalia-annotators)
+(defvar completion-list-mode-map)
+(defvar vertico-buffer-mode)
+
+;; Declare external functions
+(declare-function marginalia-annotate-file "marginalia")
+(declare-function marginalia-annotate-buffer "marginalia")
+(declare-function marginalia-annotate-symbol "marginalia")
+(declare-function marginalia--affixate "marginalia")
+(declare-function marginalia--remote-file-p "marginalia")
+(declare-function marginalia--full-candidate "marginalia")
+(declare-function customize-save-variable "cus-edit")
 
 ;;; Core Settings - Optimized defaults
 
@@ -98,7 +114,7 @@
 ;;; Custom Annotators - Enhanced information display
 
 (defun bv-marginalia-annotate-file (cand)
-  "Enhanced file annotator with git status."
+  "Enhanced file annotator with git status for CAND."
   (when-let ((attrs (marginalia-annotate-file cand)))
     ;; Add git status if in a git repo
     (when (and (not (marginalia--remote-file-p cand))
@@ -132,7 +148,7 @@
     attrs))
 
 (defun bv-marginalia-annotate-buffer (cand)
-  "Enhanced buffer annotator with process info and file path."
+  "Enhanced buffer annotator with process info and file path for CAND."
   (let ((base-annotation (marginalia-annotate-buffer cand)))
     (when base-annotation
       ;; Add parent directory for file buffers
@@ -149,7 +165,7 @@
       base-annotation)))
 
 (defun bv-marginalia-annotate-symbol (cand)
-  "Enhanced symbol annotator with better formatting."
+  "Enhanced symbol annotator with better formatting for CAND."
   (let ((base (marginalia-annotate-symbol cand)))
     ;; Make the symbol class more readable
     (when base
@@ -165,11 +181,13 @@
 (setq marginalia-annotators
       (mapcar
        (lambda (x)
-         (pcase (car x)
-           ('file (append x '(bv-marginalia-annotate-file builtin none)))
-           ('buffer (append x '(bv-marginalia-annotate-buffer marginalia-annotate-buffer builtin none)))
-           ('symbol (append x '(bv-marginalia-annotate-symbol marginalia-annotate-symbol builtin none)))
-           (_ (append x '(builtin none)))))
+         (cond ((eq (car x) 'file)
+                (append x '(bv-marginalia-annotate-file builtin none)))
+               ((eq (car x) 'buffer)
+                (append x '(bv-marginalia-annotate-buffer marginalia-annotate-buffer builtin none)))
+               ((eq (car x) 'symbol)
+                (append x '(bv-marginalia-annotate-symbol marginalia-annotate-symbol builtin none)))
+               (t (append x '(builtin none)))))
        '((command marginalia-annotate-command marginalia-annotate-binding)
          (embark-keybinding marginalia-annotate-embark-keybinding)
          (customize-group marginalia-annotate-customize-group)
@@ -256,7 +274,8 @@
 ;;; Performance optimizations for large collections
 
 (defun bv-marginalia-inhibit-for-large-collections (orig-fun &rest args)
-  "Inhibit annotations for very large candidate collections."
+  "Inhibit annotations for very large candidate collections.
+Applies ORIG-FUN to ARGS only if collection is reasonably sized."
   (if (and (> (length (car args)) 10000)
            (not (eq this-command 'consult-line))) ; Keep for consult-line
       nil
@@ -271,6 +290,7 @@
 ;; Ensure marginalia works well with our Vertico enhancements
 (with-eval-after-load 'vertico
   ;; Adjust field width based on window width when using vertico-buffer
+  (declare-function bv-marginalia-adjust-field-width "bv-marginalia")
   (defun bv-marginalia-adjust-field-width ()
     "Adjust marginalia field width for vertico-buffer display."
     (when (bound-and-true-p vertico-buffer-mode)
