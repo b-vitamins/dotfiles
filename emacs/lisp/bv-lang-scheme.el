@@ -6,12 +6,12 @@
 
 ;;; Commentary:
 
-;; Guile Scheme development environment with tree-sitter, LSP, Geiser/Arei, and Guix integration.
+;; Guile Scheme development environment with Arei (async nREPL) and Guix integration.
+;; Uses Arei as the primary REPL backend with fallback to Geiser when needed.
 
 ;;; Code:
 
 (require 'scheme)
-(require 'eglot)
 
 ;; External variables
 (defvar scheme-indent-function)
@@ -25,13 +25,12 @@
 (autoload 'arei-mode "arei" nil t)
 (autoload 'arei-eval-last-sexp "arei" nil t)
 (autoload 'arei-eval-region "arei" nil t)
+(autoload 'arei-eval-defun "arei" nil t)
 (autoload 'arei-switch-to-repl "arei" nil t)
+(autoload 'arei-interrupt "arei" nil t)
+(autoload 'sesman-start "sesman" nil t)
 (autoload 'guix-devel-mode "guix-devel" nil t)
 (autoload 'guix-prettify-mode "guix-prettify" nil t)
-
-;; Remap to tree-sitter mode when available
-(when (treesit-language-available-p 'scheme)
-  (add-to-list 'major-mode-remap-alist '(scheme-mode . scheme-ts-mode)))
 
 ;; File associations
 (add-to-list 'auto-mode-alist '("\\.scm\\'" . scheme-mode))
@@ -41,26 +40,14 @@
 ;; Guile-specific settings
 (setq scheme-program-name "guile")
 
-;; Configure guile-lsp-server when available
-(with-eval-after-load 'eglot
-  (add-to-list 'eglot-server-programs
-               '((scheme-mode scheme-ts-mode) . ("guile-lsp-server"))))
-
-;; Scheme-specific eglot settings
-(defun bv-scheme-eglot-config ()
-  "Configure eglot for Scheme development."
-  (setq-local eglot-stay-out-of '(flymake))  ; Prefer Geiser's error checking
-  (setq-local eglot-ignored-server-capabilities '(:documentHighlightProvider)))
-
-(add-hook 'scheme-mode-hook #'bv-scheme-eglot-config)
-(when (fboundp 'scheme-ts-mode)
-  (add-hook 'scheme-ts-mode-hook #'bv-scheme-eglot-config))
+;; Disable geiser auto-mode to prevent interference with Arei
+(setq geiser-mode-auto-p nil)
 
 ;; Indentation settings
 (setq scheme-indent-function 'scheme-smart-indent-function)
 
 ;; REPL backend selection
-(defvar bv-scheme-repl-backend 'geiser
+(defvar bv-scheme-repl-backend 'arei
   "Scheme REPL backend to use.  Either 'geiser or 'arei.")
 
 ;; Enhanced REPL interaction (works with both Geiser and Arei)
@@ -68,10 +55,10 @@
   "Send region if active, otherwise send current definition."
   (interactive)
   (cond
-   ((and (eq bv-scheme-repl-backend 'arei) (fboundp 'arei-mode))
+   ((and (eq bv-scheme-repl-backend 'arei) (fboundp 'arei-eval-region))
     (if (use-region-p)
         (arei-eval-region (region-beginning) (region-end))
-      (arei-eval-last-sexp)))
+      (arei-eval-defun)))
    ((fboundp 'geiser-eval-region)
     (if (use-region-p)
         (geiser-eval-region (region-beginning) (region-end))
@@ -89,6 +76,20 @@
     (geiser-repl))
    (t
     (message "No Scheme REPL backend available"))))
+
+(defun bv-scheme-connect-repl ()
+  "Connect to Scheme nREPL server (Arei/Ares)."
+  (interactive)
+  (if (and (eq bv-scheme-repl-backend 'arei) (fboundp 'sesman-start))
+      (sesman-start)
+    (message "Arei not available or not selected as backend")))
+
+(defun bv-scheme-interrupt-evaluation ()
+  "Interrupt current Scheme evaluation."
+  (interactive)
+  (if (and (eq bv-scheme-repl-backend 'arei) (fboundp 'arei-interrupt))
+      (arei-interrupt)
+    (message "Interrupt not available for current backend")))
 
 ;; Guile-specific compilation
 (defun bv-scheme-compile-file ()
@@ -121,8 +122,6 @@
   (setq-local electric-pair-preserve-balance t))
 
 (add-hook 'scheme-mode-hook #'bv-scheme-setup-pairs)
-(when (fboundp 'scheme-ts-mode)
-  (add-hook 'scheme-ts-mode-hook #'bv-scheme-setup-pairs))
 
 ;; Keybindings
 (defvar bv-scheme-mode-map
@@ -130,6 +129,8 @@
     (define-key map (kbd "C-c C-k") #'bv-scheme-compile-file)
     (define-key map (kbd "C-c C-s") #'bv-scheme-send-region-or-defun)
     (define-key map (kbd "C-c C-z") #'bv-scheme-switch-to-repl)
+    (define-key map (kbd "C-c C-r") #'bv-scheme-connect-repl)
+    (define-key map (kbd "C-c C-b") #'bv-scheme-interrupt-evaluation)
     (define-key map (kbd "C-c g b") #'bv-scheme-guix-build)
     (define-key map (kbd "C-c g l") #'bv-scheme-guix-lint)
     (define-key map (kbd "C-c g f") #'bv-scheme-guix-style)
@@ -150,8 +151,6 @@
       (guix-prettify-mode 1))))
 
 (add-hook 'scheme-mode-hook #'bv-scheme-setup-guix-dev)
-(when (fboundp 'scheme-ts-mode)
-  (add-hook 'scheme-ts-mode-hook #'bv-scheme-setup-guix-dev))
 
 ;; Integration with bv-geiser (if loaded)
 (with-eval-after-load 'bv-geiser
@@ -159,12 +158,20 @@
   ;; This ensures our custom functions work well with it
   (setq geiser-mode-auto-p t))
 
+;; Setup Arei mode for Scheme buffers
+(defun bv-scheme-setup-arei ()
+  "Setup Arei mode for Scheme development."
+  (when (and (eq bv-scheme-repl-backend 'arei)
+             (fboundp 'arei-mode))
+    (arei-mode 1)))
+
+(add-hook 'scheme-mode-hook #'bv-scheme-setup-arei)
+
 ;; Integration with Arei (if available)
 (with-eval-after-load 'arei
-  (when (eq bv-scheme-repl-backend 'arei)
-    (add-hook 'scheme-mode-hook 'arei-mode)
-    (when (fboundp 'scheme-ts-mode)
-      (add-hook 'scheme-ts-mode-hook 'arei-mode))))
+  ;; Arei provides excellent async Scheme support with nREPL protocol
+  ;; Additional configuration can be added here
+  nil)
 
 ;; Guix development helpers
 (defun bv-scheme-insert-guix-package ()
@@ -201,8 +208,6 @@
   (prettify-symbols-mode 1))
 
 (add-hook 'scheme-mode-hook #'bv-scheme-prettify-symbols)
-(when (fboundp 'scheme-ts-mode)
-  (add-hook 'scheme-ts-mode-hook #'bv-scheme-prettify-symbols))
 
 (provide 'bv-lang-scheme)
 ;;; bv-lang-scheme.el ends here
