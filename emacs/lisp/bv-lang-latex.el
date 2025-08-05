@@ -39,6 +39,7 @@
 (defvar preview-scale-function)
 (defvar auctex-latexmk-inherit-TeX-PDF-mode)
 (defvar completion-at-point-functions)
+(defvar ispell-parser)
 
 ;; External functions
 (declare-function TeX-command "tex-buf" (name file))
@@ -63,6 +64,7 @@
 (declare-function preview-section "preview" ())
 (declare-function preview-clearout "preview" (&optional start end keep-dir))
 (declare-function auctex-latexmk-setup "auctex-latexmk" ())
+(declare-function flyspell-mode "flyspell" (&optional arg))
 
 ;; Optional package loading
 (autoload 'cdlatex-mode "cdlatex" nil t)
@@ -71,11 +73,15 @@
 (autoload 'turn-on-reftex "reftex" nil t)
 
 ;; Enable tree-sitter for LaTeX when available
-(when (treesit-language-available-p 'latex)
-  (add-to-list 'major-mode-remap-alist '(latex-mode . latex-ts-mode))
-  (add-to-list 'major-mode-remap-alist '(plain-tex-mode . latex-ts-mode)))
+;; NOTE: Emacs doesn't include a built-in latex-ts-mode yet,
+;; so we use the built-in latex-mode from tex-mode.el
+;; (when (and (treesit-language-available-p 'latex)
+;;            (fboundp 'latex-ts-mode))
+;;   (add-to-list 'major-mode-remap-alist '(latex-mode . latex-ts-mode))
+;;   (add-to-list 'major-mode-remap-alist '(LaTeX-mode . latex-ts-mode))
+;;   (add-to-list 'major-mode-remap-alist '(plain-tex-mode . latex-ts-mode)))
 
-;; File associations
+;; File associations - use AUCTeX LaTeX-mode
 (add-to-list 'auto-mode-alist '("\\.tex\\'" . LaTeX-mode))
 (add-to-list 'auto-mode-alist '("\\.sty\\'" . LaTeX-mode))
 (add-to-list 'auto-mode-alist '("\\.cls\\'" . LaTeX-mode))
