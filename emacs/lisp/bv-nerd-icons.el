@@ -61,7 +61,7 @@
                         ("\\.envrc" nerd-icons-octicon "nf-oct-file_directory" :face nerd-icons-yellow)
                         ("Makefile" nerd-icons-devicon "nf-dev-gnu" :face nerd-icons-dorange)
                         ("CMakeLists.txt" nerd-icons-devicon "nf-dev-cmake" :face nerd-icons-red)
-                        ("LICENSE" nerd-icons-octicon "nf-oct-law" :face nerd-icons-dgray)
+                        ("LICENSE" nerd-icons-octicon "nf-oct-law" :face nerd-icons-dsilver)
                         ("README" nerd-icons-octicon "nf-oct-book" :face nerd-icons-lcyan)))
     (add-to-list 'nerd-icons-regexp-icon-alist regex-icon))
   
