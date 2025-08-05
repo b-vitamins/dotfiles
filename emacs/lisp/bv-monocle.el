@@ -10,9 +10,11 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'olivetti nil t)
 (autoload 'hide-mode-line-mode "hide-mode-line" nil t)
 (autoload 'global-hide-mode-line-mode "hide-mode-line" nil t)
+
 
 (defvar bv--monocle-previous-window-configuration nil
   "Window configuration before entering monocle mode.")
