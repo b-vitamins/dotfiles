@@ -196,6 +196,13 @@ and MSG is the process message."
 ;; Enable electric pairs in programming modes
 (add-hook 'prog-mode-hook #'electric-pair-local-mode)
 
+;; Tree-sitter configuration
+(when (fboundp 'treesit-available-p)
+  ;; Add both home and system profile paths for tree-sitter grammars
+  (setq treesit-extra-load-path
+        '("/home/b/.guix-home/profile/lib/tree-sitter"
+          "/run/current-system/profile/lib/tree-sitter")))
+
 ;; Performance optimization for LSP and other processes
 (setq read-process-output-max (* 1024 1024)) ; 1mb
 
