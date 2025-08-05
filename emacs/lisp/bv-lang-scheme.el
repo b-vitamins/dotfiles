@@ -48,7 +48,7 @@
 
 ;; REPL backend selection
 (defvar bv-scheme-repl-backend 'arei
-  "Scheme REPL backend to use.  Either 'geiser or 'arei.")
+  "Scheme REPL backend to use.  Either `geiser' or `arei'.")
 
 ;; Enhanced REPL interaction (works with both Geiser and Arei)
 (defun bv-scheme-send-region-or-defun ()
