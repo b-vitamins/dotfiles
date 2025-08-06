@@ -49,6 +49,20 @@ Transform a markdown-formatted research paper into a comprehensive Beamer presen
 - NO figure references
 - NO placeholders - complete all content
 
+## Critical Processing Requirements
+
+**MANDATORY**: Before beginning any presentation creation, you must follow these processing rules:
+
+1. **Extensive Appendix Coverage**: Include comprehensive coverage of results from ALL appendices in the presentation - this is absolutely mandatory. Appendices often contain crucial proofs, experimental details, and additional results that are essential for a complete academic presentation.
+
+2. **Incremental Processing**: DO NOT try to read the entire paper all at once and write the whole presentation at once. This approach leads to incomplete coverage and missed details.
+
+3. **Section-by-Section Approach**: Work through the markdown file section by section, processing each part incrementally and building the presentation progressively.
+
+4. **Progress Tracking**: Use TodoWrite extensively to track your progress through each section. Create specific milestones for each major section and mark completion only after thorough processing.
+
+5. **Complete Mathematical Coverage**: Every equation, theorem, lemma, proof, and mathematical detail from the main paper AND appendices must be preserved and included in the presentation.
+
 ## Your Workflow
 
 ### Phase 1: Initial Analysis
