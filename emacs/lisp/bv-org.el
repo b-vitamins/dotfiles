@@ -75,6 +75,8 @@
            "/emacs/org-id-locations"))))
 
 
+(declare-function bv-org-rename-buffer-to-title "bv-org")
+
 (with-eval-after-load 'org
   (setopt org-M-RET-may-split-line '((default . nil)))
   (setopt org-insert-heading-respect-content t)
@@ -176,23 +178,28 @@
           ("paper" . ?P)
           ("course" . ?C)))
 
-  (defun bv-org-rename-buffer-to-title (&optional end)
-    "Rename buffer to #+TITLE: value."
+  (defun bv-org-rename-buffer-to-title (&optional _end)
+    "Rename buffer to #+TITLE: value, handling PROPERTIES drawers."
     (interactive)
-    (let ((case-fold-search t) (beg (or (and end (point)) (point-min))))
+    (let ((case-fold-search t))
       (save-excursion
-        (when end (goto-char end) (setq end (line-end-position)))
-        (goto-char beg)
+        (goto-char (point-min))
+        ;; Search in first 30 lines for #+TITLE
         (when (re-search-forward
                "^[[:space:]]*#\\+TITLE:[[:space:]]*\\(.*?\\)[[:space:]]*$"
-               end
+               (save-excursion (goto-char (point-min))
+                              (forward-line 30)
+                              (point))
                t)
-          (rename-buffer (match-string 1)))))
+          (let ((title (match-string 1)))
+            (when (and title (not (string-empty-p title)))
+              (rename-buffer title t))))))
     nil)
 
   (defun bv-org-rename-buffer-to-title-config ()
-    "Add buffer renaming to font-lock."
-    (font-lock-add-keywords nil '(bv-org-rename-buffer-to-title)))
+    "Run buffer renaming setup for org mode."
+    ;; Run immediately when opening the file
+    (bv-org-rename-buffer-to-title))
 
   (add-hook 'org-mode-hook 'bv-org-rename-buffer-to-title-config)
   (with-eval-after-load 'notmuch (require 'ol-notmuch))

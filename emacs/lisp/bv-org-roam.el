@@ -21,7 +21,9 @@
 ;; All commands are under the `C-c n' prefix:
 ;;
 ;;   C-c n f   - Find or create a slip
-;;   C-c n s   - Create new slip with manual number (e.g., 1a2b)
+;;   C-c n c   - Create slip with tags (C-u for numbering)
+;;   C-c n C   - Quick capture (no tags/numbering)
+;;   C-c n s   - Same as 'c' (legacy binding)
 ;;   C-c n i   - Insert link to slip at point
 ;;   C-c n I   - Insert link without opening the slip
 ;;   C-c n b   - Toggle backlinks buffer
@@ -36,11 +38,11 @@
 ;; Workflow:
 ;;
 ;; 1. Creating Slips:
-;;    - Use `C-c n s' to create a new slip
-;;    - Enter a unique number (e.g., "1", "1a", "1a1")
-;;    - Numbers create branching paths: 1 → 1a → 1a1
-;;    - Select tags from predefined academic categories
-;;    - Title should capture the core idea
+;;    - `C-c n c' - Standard capture with tag selection
+;;    - `C-c n C' - Quick capture (title only)
+;;    - `C-u C-c n c' - With optional slip numbering
+;;    - Tag selection uses quick keys (p=physics, m=math, etc.)
+;;    - Press SPC during tag selection for full list
 ;;
 ;; 2. Linking Slips:
 ;;    - Use `C-c n i' while writing to insert links
@@ -136,14 +138,37 @@
   :group 'bv-org-roam)
 
 (defvar bv-org-roam-common-tags
-  '("physics" "problem" "concept" "algorithm" "theorem"
-    "idea" "deeplearn" "report" "review" "index"
-    "quantum" "systems" "complexity" "information"
-    "mathematics" "statistics" "computation")
+  '("physics" "mathematics" "computation" "quantum" "statistics"
+    "deeplearn" "algorithm" "theorem" "proof" "concept"
+    "problem" "solution" "idea" "hypothesis" "experiment"
+    "review" "summary" "index" "reference" "question")
   "Common tags for org-roam slips.")
+
+(defvar bv-org-roam-enable-numbering nil
+  "Whether to prompt for slip numbering during capture.")
+
+(defvar bv-org-roam-quick-tags
+  '(("p" . "physics")
+    ("m" . "mathematics")
+    ("c" . "computation")
+    ("d" . "deeplearn")
+    ("a" . "algorithm")
+    ("t" . "theorem")
+    ("i" . "idea")
+    ("r" . "review")
+    ("q" . "question"))
+  "Quick key bindings for common tags.")
 
 (defvar bv-org-roam-map (make-sparse-keymap)
   "Keymap for bv-org-roam commands.")
+
+(defun bv-org-roam-slug-from-title (title)
+  "Convert TITLE to a slug using hyphens instead of underscores."
+  (let ((slug (downcase title)))
+    (setq slug (replace-regexp-in-string "[^[:alnum:][:digit:]]+" "-" slug))
+    (setq slug (replace-regexp-in-string "^-" "" slug))
+    (setq slug (replace-regexp-in-string "-$" "" slug))
+    slug))
 
 (defun bv-patch-emacsql-close (connection &rest _args)
   "Prevent `emacsql-close' errors for CONNECTION.
@@ -233,8 +258,16 @@ Ignore ARGS."
 
 (setq org-roam-capture-templates
       '(("s" "slip" plain "%?"
-         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                            "#+title: ${title}\n#+date: %<%Y-%m-%d>\n#+filetags: %(bv-org-roam-select-tags-string)\n\n")
+         :target (file+head "%<%Y-%m-%d-%H%M%S>-%(bv-org-roam-slug-from-title \"${title}\").org"
+                            "#+TITLE: ${title}\n#+DATE: %<%Y-%m-%d>\n#+FILETAGS: %(bv-org-roam-select-tags-string)\n\n")
+         :unnarrowed t)
+        ("q" "quick" plain "%?"
+         :target (file+head "%<%Y-%m-%d-%H%M%S>-%(bv-org-roam-slug-from-title \"${title}\").org"
+                            "#+TITLE: ${title}\n#+DATE: %<%Y-%m-%d>\n\n")
+         :unnarrowed t)
+        ("n" "numbered" plain "%?"
+         :target (file+head "%<%Y-%m-%d-%H%M%S>-%(bv-org-roam-slug-from-title \"${title}\").org"
+                            "#+TITLE: ${title}%(when (plist-get org-roam-capture--info :number) (format \"\n:PROPERTIES:\n:ROAM_ALIASES: %s\n:END:\" (plist-get org-roam-capture--info :number)))\n#+DATE: %<%Y-%m-%d>\n#+FILETAGS: %(bv-org-roam-select-tags-string)\n\n")
          :unnarrowed t)))
 
 (with-eval-after-load 'org
@@ -268,19 +301,30 @@ REQUIRE-MATCH determines if existing node is required."
             (org-roam-node-list)))
 
 (defun bv-org-roam-select-tags ()
-  "Select tags from predefined list with completion."
+  "Select tags with quick keys or completion."
   (let ((selected-tags '())
-        (available-tags bv-org-roam-common-tags))
-    (while (let ((tag (completing-read
-                      (format "Tag (empty to finish)%s: "
-                              (if selected-tags
-                                  (format " [%s]" (string-join selected-tags ":"))
-                                ""))
-                      available-tags nil nil)))
-             (when (not (string-empty-p tag))
-               (push tag selected-tags)
-               (setq available-tags (delete tag available-tags))
-               t)))
+        (continue t))
+    (while continue
+      (let* ((quick-keys (mapconcat (lambda (pair)
+                                     (format "[%s]%s" (car pair) (cdr pair)))
+                                   bv-org-roam-quick-tags " "))
+             (prompt (format "Tags%s:\n%s\n[RET to finish, SPC for all tags]: "
+                            (if selected-tags
+                                (format " (%s)" (string-join selected-tags ", "))
+                              "")
+                            quick-keys))
+             (input (read-char prompt)))
+        (cond
+         ((= input ?\r) (setq continue nil))
+         ((= input ?\s)
+          (let ((tag (completing-read "Select tag: " bv-org-roam-common-tags nil t)))
+            (when (and tag (not (string-empty-p tag))
+                      (not (member tag selected-tags)))
+              (push tag selected-tags))))
+         (t
+          (let ((quick-tag (cdr (assoc (char-to-string input) bv-org-roam-quick-tags))))
+            (when (and quick-tag (not (member quick-tag selected-tags)))
+              (push quick-tag selected-tags)))))))
     (nreverse selected-tags)))
 
 (defun bv-org-roam-select-tags-string ()
@@ -288,25 +332,44 @@ REQUIRE-MATCH determines if existing node is required."
   (let ((tags (bv-org-roam-select-tags)))
     (if tags (format ":%s:" (string-join tags ":")) "")))
 
-(defun bv-org-roam-capture-slip ()
-  "Capture a new slip with manual number and tag selection."
-  (interactive)
-  (let* ((number (read-string "Number: "))
-         (title (read-string "Title: "))
-         (tags (bv-org-roam-select-tags))
-         (tags-string (if tags (format ":%s:" (string-join tags ":")) "")))
-    (when (bv-org-roam-number-exists-p number)
-      (error "Number %s already exists" number))
-    (setq org-roam-capture--info
-          (append org-roam-capture--info
-                  `((number . ,number)
-                    (tags . ,tags-string))))
+(defun bv-org-roam-read-slip-number ()
+  "Read slip number with validation and suggestions."
+  (when bv-org-roam-enable-numbering
+    (let* ((existing-numbers (seq-filter
+                              (lambda (alias)
+                                (string-match "^[0-9]+[a-z0-9]*$" alias))
+                              (seq-mapcat #'org-roam-node-aliases
+                                         (org-roam-node-list))))
+           (number (completing-read
+                   "Slip number (optional, e.g., 1, 1a, 1a1): "
+                   existing-numbers nil nil)))
+      (when (and (not (string-empty-p number))
+                (bv-org-roam-number-exists-p number))
+        (error "Number %s already exists" number))
+      (unless (string-empty-p number) number))))
+
+(defun bv-org-roam-capture-slip (&optional arg)
+  "Capture a slip with smart defaults.
+With prefix ARG, enable slip numbering."
+  (interactive "P")
+  (let* ((title (read-string "Title: "))
+         (number (when arg (bv-org-roam-read-slip-number)))
+         (org-roam-capture--info
+          (when number
+            `((number . ,number)))))
     (org-roam-capture-
      :node (org-roam-node-create :title title)
-     :templates '(("s" "slip" plain "%?"
-                  :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                     "#+title: ${title}\n:PROPERTIES:\n:ROAM_ALIASES: ${number}\n:END:\n#+date: %<%Y-%m-%d>\n#+filetags: ${tags}\n\n")
+     :templates '(("n" "numbered" plain "%?"
+                  :target (file+head "%<%Y-%m-%d-%H%M%S>-%(bv-org-roam-slug-from-title \"${title}\").org"
+                                     "#+TITLE: ${title}%(when (plist-get org-roam-capture--info :number) (format \"\n:PROPERTIES:\n:ROAM_ALIASES: %s\n:END:\" (plist-get org-roam-capture--info :number)))\n#+DATE: %<%Y-%m-%d>\n#+FILETAGS: %(bv-org-roam-select-tags-string)\n\n")
                   :unnarrowed t)))))
+
+(defun bv-org-roam-quick-capture ()
+  "Quick capture without tags or numbering."
+  (interactive)
+  (org-roam-capture- :goto nil
+                    :keys "q"
+                    :templates org-roam-capture-templates))
 
 (defun bv-org-roam-node-insert-immediate (arg &rest args)
   "Insert node link without opening the note.
@@ -362,6 +425,8 @@ ARGS are passed to `org-roam-node-insert'."
 (define-key bv-org-roam-map (kbd "f") 'org-roam-node-find)
 (define-key bv-org-roam-map (kbd "i") 'org-roam-node-insert)
 (define-key bv-org-roam-map (kbd "I") 'bv-org-roam-node-insert-immediate)
+(define-key bv-org-roam-map (kbd "c") 'bv-org-roam-capture-slip)
+(define-key bv-org-roam-map (kbd "C") 'bv-org-roam-quick-capture)
 (define-key bv-org-roam-map (kbd "s") 'bv-org-roam-capture-slip)
 (define-key bv-org-roam-map (kbd "r") 'bv-org-roam-random)
 (define-key bv-org-roam-map (kbd "b") 'org-roam-buffer-toggle)
