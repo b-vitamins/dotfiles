@@ -7,15 +7,24 @@
 ;;; Commentary:
 
 ;; Daily journaling with org-roam.
+;;
+;; This module configures org-roam-dailies for daily note-taking.
+;; It sets up capture templates for default, morning, and evening entries,
+;; and provides keybinding integration for quick access to daily notes.
 
 ;;; Code:
 
-(autoload 'org-roam-dailies-map "org-roam-dailies" "" nil 'keymap)
-(autoload 'org-roam-dailies-goto-today "org-roam-dailies")
-(autoload 'org-roam-dailies-capture-today "org-roam-dailies")
-(autoload 'org-roam-dailies-goto-yesterday "org-roam-dailies")
-(autoload 'org-roam-dailies-goto-tomorrow "org-roam-dailies")
-(autoload 'org-roam-dailies-goto-date "org-roam-dailies")
+(defvar org-roam-dailies-directory)
+(defvar org-roam-dailies-capture-templates)
+(defvar mode-specific-map)
+(defvar bv-app-map)
+
+(autoload 'org-roam-dailies-map "org-roam-dailies" "Keymap for org-roam dailies commands." nil 'keymap)
+(autoload 'org-roam-dailies-goto-today "org-roam-dailies" "Go to today's daily note.")
+(autoload 'org-roam-dailies-capture-today "org-roam-dailies" "Capture entry for today's daily note.")
+(autoload 'org-roam-dailies-goto-yesterday "org-roam-dailies" "Go to yesterday's daily note.")
+(autoload 'org-roam-dailies-goto-tomorrow "org-roam-dailies" "Go to tomorrow's daily note.")
+(autoload 'org-roam-dailies-goto-date "org-roam-dailies" "Go to daily note for specific date.")
 
 (with-eval-after-load 'org-roam-dailies
   (when (boundp 'org-roam-dailies-directory)

@@ -32,6 +32,12 @@
 (declare-function org-recur-finish "org-recur")
 (declare-function org-recur-schedule-today "org-recur")
 
+;; Declare variables to avoid warnings
+(defvar org-recur-finish-done)
+(defvar org-recur-finish-archive)
+(defvar org-recur-mode-map)
+(defvar org-recur-agenda-mode-map)
+
 ;; Load org-recur after idle delay
 (run-with-idle-timer bv-org-recur-idle-delay t
                      (lambda ()

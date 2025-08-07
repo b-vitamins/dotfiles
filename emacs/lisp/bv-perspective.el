@@ -13,6 +13,20 @@
 (require 'perspective nil t)
 (declare-function project-prompt-project-dir "project")
 (declare-function project-switch-project "project")
+(declare-function persp-switch "perspective")
+(declare-function persp-kill "perspective")
+(declare-function persp-rename "perspective")
+(declare-function persp-add-buffer "perspective")
+(declare-function persp-set-buffer "perspective")
+(declare-function persp-switch-to-buffer "perspective")
+(declare-function persp-import "perspective")
+(declare-function persp-next "perspective")
+(declare-function persp-prev "perspective")
+(declare-function persp-mode "perspective")
+(declare-function consult-customize "consult")
+(defvar user-emacs-directory)
+(defvar bv-app-map)
+(defvar project-switch-commands)
 
 (when (boundp 'persp-mode-prefix-key)
   (setq persp-mode-prefix-key (kbd "C-x P")))
@@ -55,7 +69,8 @@
 (add-hook 'after-init-hook 'persp-mode)
 
 (with-eval-after-load 'consult
-  (when (fboundp 'consult-customize)
+  (when (and (fboundp 'consult-customize)
+             (fboundp 'persp-switch-to-buffer))
     (consult-customize persp-switch-to-buffer :preview-key "M-.")))
 
 (provide 'bv-perspective)

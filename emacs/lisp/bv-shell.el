@@ -12,6 +12,11 @@
 
 (require 'sh-script nil t)
 
+;; Declare external functions
+(declare-function project-root "project" (project))
+(declare-function project-current "project" (&optional may-prompt dir))
+(declare-function consult-history "consult" (&rest args))
+
 (when (featurep 'sh-script)
   (when (boundp 'sh-basic-offset)
     (setq sh-basic-offset 2))

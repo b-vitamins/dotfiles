@@ -1,4 +1,4 @@
-;;; bv-window.el --- Window management configuration  -*- lexical-binding: t -*-
+;;; bv-window.el --- Window management configuration -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -11,6 +11,17 @@
 ;;; Code:
 
 (require 'ace-window nil t)
+
+;; Declare external variables
+(defvar aw-keys)
+(defvar aw-background)
+(defvar aw-scope)
+(defvar aw-ignore-current)
+(defvar aw-display-mode-overlay)
+(defvar aw-leading-char-style)
+
+;; Declare external functions
+(declare-function ace-window "ace-window" (&optional arg))
 
 (when (boundp 'aw-keys)
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))

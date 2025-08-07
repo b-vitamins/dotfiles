@@ -14,6 +14,14 @@
 (declare-function pulseaudio-control-decrease-volume "pulseaudio-control")
 (declare-function pulseaudio-control-toggle-current-sink-mute "pulseaudio-control")
 
+(defvar pulseaudio-control-pactl-path)
+(defvar pulseaudio-control-volume-step)
+(defvar pulseaudio-control-volume-verbose)
+(defvar pulseaudio-control-sink-mute-string)
+(defvar pulseaudio-control-sink-volume-strings)
+(defvar pulseaudio-control-source-mute-string)
+(defvar pulseaudio-control-source-volume-strings)
+
 (defgroup bv-pulseaudio nil
   "Audio control settings."
   :group 'bv)
@@ -33,15 +41,14 @@
                      (lambda ()
                        (require 'pulseaudio-control nil t)))
 
-(setq pulseaudio-control-pactl-path "pactl"
-      pulseaudio-control-volume-step bv-pulseaudio-volume-step
-      pulseaudio-control-volume-verbose nil
-      pulseaudio-control-sink-mute-string "[M]"
-      pulseaudio-control-sink-volume-strings '("" "" "")
-      pulseaudio-control-source-mute-string "[M]"
-      pulseaudio-control-source-volume-strings '("" ""))
-
 (with-eval-after-load 'pulseaudio-control
+  (setq pulseaudio-control-pactl-path "pactl"
+        pulseaudio-control-volume-step bv-pulseaudio-volume-step
+        pulseaudio-control-volume-verbose nil
+        pulseaudio-control-sink-mute-string "[M]"
+        pulseaudio-control-sink-volume-strings '("" "" "")
+        pulseaudio-control-source-mute-string "[M]"
+        pulseaudio-control-source-volume-strings '("" ""))
   (pulseaudio-control-default-sink-mode)
   (pulseaudio-control-default-source-mode))
 

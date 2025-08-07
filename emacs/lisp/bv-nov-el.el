@@ -13,6 +13,11 @@
 (autoload 'nov-mode "nov")
 (autoload 'olivetti-mode "olivetti")
 
+(defvar nov-text-width)
+(defvar nov-save-place-file)
+
+(declare-function bv-nov-setup-faces "bv-nov-el")
+
 (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
 
 (with-eval-after-load 'nov

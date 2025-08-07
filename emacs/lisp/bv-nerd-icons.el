@@ -12,6 +12,21 @@
 (require 'nerd-icons-dired)
 (require 'nerd-icons-ibuffer)
 
+;; Declare external variables to avoid warnings
+(defvar nerd-icons-completion-mode-hooks)
+(defvar which-key-prefix-prefix)
+(defvar marginalia-mode)
+
+;; Declare external functions
+(declare-function nerd-icons-completion-marginalia-setup "nerd-icons-completion")
+(declare-function nerd-icons-completion-completion-metadata-get "nerd-icons-completion" (metadata category))
+(declare-function treemacs-load-theme "treemacs" (theme-name))
+(declare-function nerd-icons-icon-for-mode "nerd-icons" (mode))
+(declare-function nerd-icons-insert "nerd-icons")
+(declare-function nerd-icons-icon-for-file "nerd-icons" (file))
+(declare-function nerd-icons-install-fonts "nerd-icons")
+(declare-function nerd-icons-faicon "nerd-icons" (icon-name &rest args))
+
 (defgroup bv-nerd-icons nil
   "Nerd Icons configuration."
   :group 'bv)
@@ -107,18 +122,19 @@
       (nerd-icons-completion-marginalia-setup)))
   
   ;; Configure completion categories
-  (setq nerd-icons-completion-mode-hooks
-        '(marginalia-mode-hook
-          selectrum-mode-hook
-          icomplete-mode-hook
-          vertico-mode-hook))
+  (when (boundp 'nerd-icons-completion-mode-hooks)
+    (setq nerd-icons-completion-mode-hooks
+          '(marginalia-mode-hook
+            selectrum-mode-hook
+            icomplete-mode-hook
+            vertico-mode-hook)))
   
   ;; Ensure icons appear in all completion UIs
   (advice-add #'completion-metadata-get :around #'nerd-icons-completion-completion-metadata-get))
 
 ;;; Dired configuration
 (defun bv-nerd-icons-configure-dired ()
-  "Configure nerd-icons for dired mode."
+  "Configure nerd-icons for Dired mode."
   ;; Enable nerd-icons in dired
   (add-hook 'dired-mode-hook #'nerd-icons-dired-mode)
   
@@ -165,14 +181,6 @@
   ;; Company integration
   (with-eval-after-load 'company
     (when (fboundp 'nerd-icons-icon-for-mode)
-      (defun bv-nerd-icons-company-format (candidate)
-        "Add icons to company candidates."
-        (let ((icon (nerd-icons-icon-for-mode
-                     (get-text-property 0 'company-backend candidate))))
-          (if (not (eq icon major-mode))
-              (concat icon " " candidate)
-            candidate)))
-      
       (advice-add 'company-fill-propertize :filter-args
                   (lambda (args)
                     (let ((candidate (car args)))
@@ -181,12 +189,21 @@
   
   ;; Which-key integration
   (with-eval-after-load 'which-key
-    (setq which-key-prefix-prefix
-          (concat (nerd-icons-faicon "nf-fa-caret_right"
-                                     :face 'nerd-icons-green)
-                  " "))))
+    (when (boundp 'which-key-prefix-prefix)
+      (setq which-key-prefix-prefix
+            (concat (nerd-icons-faicon "nf-fa-caret_right"
+                                       :face 'nerd-icons-green)
+                    " ")))))
 
 ;;; Helper functions
+(defun bv-nerd-icons-company-format (candidate)
+  "Add icons to company CANDIDATE."
+  (let ((icon (nerd-icons-icon-for-mode
+               (get-text-property 0 'company-backend candidate))))
+    (if (not (eq icon major-mode))
+        (concat icon " " candidate)
+      candidate)))
+
 (defun bv-nerd-icons-insert-icon ()
   "Interactively insert a nerd icon."
   (interactive)

@@ -12,6 +12,11 @@
 (declare-function webpaste-paste-region "webpaste")
 (declare-function webpaste-paste-buffer-or-region "webpaste")
 
+(defvar webpaste-provider-priority)
+(defvar webpaste-paste-confirmation)
+(defvar webpaste-open-in-browser)
+(defvar request-storage-directory)
+
 (defgroup bv-webpaste nil
   "Web paste service settings."
   :group 'bv)

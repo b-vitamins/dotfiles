@@ -10,6 +10,15 @@
 
 ;;; Code:
 
+;; External variables
+(defvar ispell-program-name)
+(defvar ispell-personal-dictionary)
+(defvar ispell-dictionary)
+(defvar flyspell-issue-welcome-flag)
+(defvar flyspell-issue-message-flag)
+(defvar dictionary-server)
+(defvar bv-app-map)
+
 ;; Enable spell checking in text modes
 (add-hook 'text-mode-hook #'flyspell-mode)
 (add-hook 'org-mode-hook #'flyspell-mode)

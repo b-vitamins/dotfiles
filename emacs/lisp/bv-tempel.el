@@ -13,6 +13,9 @@
 (require 'tempel)
 (declare-function tempel-complete "tempel")
 (declare-function tempel-expand "tempel")
+(defvar org-mode-syntax-table)
+(defvar user-emacs-directory)
+(defvar completion-at-point-functions)
 
 (when (boundp 'tempel-trigger-prefix)
   (setq tempel-trigger-prefix ";"))

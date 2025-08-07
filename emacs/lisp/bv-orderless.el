@@ -12,7 +12,7 @@
 ;;
 ;; It provides a thoughtful default experience that works seamlessly with
 ;; Vertico, Consult, Corfu, and Marginalia, while offering a concise and
-;; powerful syntax for advanced filtering. This version has been personalized
+;; powerful syntax for advanced filtering.  This version has been personalized
 ;; to include custom dispatchers and settings.
 ;;
 ;;----------------------------------------------------------------------------
@@ -31,7 +31,7 @@
 ;; 2. The Dispatcher Syntax: Your Power Tools
 ;; ------------------------------------------
 ;; To get more specific, you can use special characters to change how a term
-;; matches. This is your "query syntax".
+;; matches.  This is your "query syntax".
 ;;
 ;;   `...=` (Literal Matching):
 ;;   Forces the term to be matched exactly as a substring.
@@ -79,6 +79,15 @@
 ;;; Code:
 
 (require 'orderless)
+
+;; External variable declarations for elint compliance
+(defvar completion-styles)
+(defvar completion-category-defaults)
+(defvar completion-category-overrides)
+(defvar corfu-preview-current)
+(defvar consult-async-min-input)
+(defvar minibuffer-local-completion-map)
+(defvar marginalia-prompt-categories)
 
 ;; 1. Core Settings
 ;; =============================================================================
@@ -206,7 +215,9 @@ Also supports prefix '!' for negation."
 ;; 6. Performance and Utilities
 ;; =============================================================================
 (defun bv-orderless-gc-optimize (orig-fun &rest args)
-  "Temporarily increase GC threshold during completion."
+  "Temporarily increase GC threshold during completion.
+ORIG-FUN is the original function being advised.
+ARGS are the arguments passed to ORIG-FUN."
   (let ((gc-cons-threshold most-positive-fixnum))
     (apply orig-fun args)))
 

@@ -18,6 +18,7 @@
 (declare-function project-prefixed-buffer-name "project")
 (declare-function compilation--default-buffer-name "compile")
 (declare-function org-capture "org-capture")
+(defvar user-emacs-directory)
 
 (defvar bv-project-dominating-files
   '(".project.el"
@@ -45,7 +46,7 @@
     (cons 'explicit (locate-dominating-file dir root))))
 
 (defun bv-project-org-capture ()
-  "Run org-capture in project root."
+  "Run `org-capture' in project root."
   (interactive)
   (when-let ((default-dir (project-root (project-current t))))
     (dir-locals-read-from-dir default-dir)

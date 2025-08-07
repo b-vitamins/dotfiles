@@ -13,6 +13,18 @@
 
 (require 'tramp)
 (require 'cl-lib)
+(require 'pcase)
+
+;; Declare external variables and functions to avoid warnings
+(defvar user-emacs-directory)
+(defvar remote-file-name-inhibit-cache)
+(defvar vc-ignore-dir-regexp)
+(defvar tramp-use-ssh-controlmaster-options)
+(defvar embark-keymap-alist)
+(declare-function consult--read "consult")
+(declare-function consult--directory-prompt "consult")
+(declare-function consult--file-prompt "consult")
+(declare-function vterm "vterm")
 
 (defgroup bv-tramp nil
   "TRAMP configuration for BV."
@@ -167,7 +179,7 @@
     (user-error "Vterm is not available")))
 
 (defun bv-tramp-dired ()
-  "Open dired on remote host."
+  "Open Dired on remote host."
   (interactive)
   (bv-tramp-run 'dired :directory))
 

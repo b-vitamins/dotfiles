@@ -47,7 +47,7 @@
     ("DP-1" . ((dpi . 49)  (type . tv)))        ; LG 45" 1080p TV
     ("eDP-1" . ((dpi . 323) (type . laptop))))  ; Laptop 14" 4K (3840x2400)
   "Manual DPI overrides for specific displays.
-Check your display names with: M-x bv-org-latex-list-displays"
+Check your display names with: \[bv-org-latex-list-displays]"
   :type '(alist :key-type string :value-type plist)
   :group 'bv-org-latex)
 
@@ -99,7 +99,7 @@ Check your display names with: M-x bv-org-latex-list-displays"
   (cdr (assq 'name (frame-monitor-attributes))))
 
 (defun bv-org-latex--calculate-dpi (pixel-width mm-width)
-  "Calculate DPI from pixel and mm dimensions."
+  "Calculate DPI from PIXEL-WIDTH and MM-WIDTH dimensions."
   (if (and pixel-width mm-width (> mm-width 0))
       (round (/ (* pixel-width 25.4) mm-width))
     nil))
@@ -140,7 +140,7 @@ Check your display names with: M-x bv-org-latex-list-displays"
           :mm-width mm-width)))
 
 (defun bv-org-latex--calculate-scale-for-display (display-info)
-  "Calculate optimal scale based on display characteristics."
+  "Calculate optimal scale based on DISPLAY-INFO characteristics."
   (let* ((dpi (plist-get display-info :dpi))
          (display-type (plist-get display-info :type))
          (profile (alist-get display-type bv-org-latex-display-profiles))
@@ -324,8 +324,8 @@ Check your display names with: M-x bv-org-latex-list-displays"
              (or (plist-get display-info :name) "Unknown")
              (plist-get display-info :dpi))))
 
-(defun bv-org-latex-monitor-change-hook (&optional frame)
-  "Hook to run when monitor configuration changes."
+(defun bv-org-latex-monitor-change-hook (&optional _frame)
+  "Hook to run when monitor configuration change."
   (when (and (derived-mode-p 'org-mode) bv-org-latex-auto-scale)
     (let* ((old-scale bv-org-latex-scale)
            (display-info (bv-org-latex--get-display-info))
@@ -354,7 +354,7 @@ Check your display names with: M-x bv-org-latex-list-displays"
 ;; Hook into display change events
 (add-hook 'window-configuration-change-hook #'bv-org-latex-monitor-change-hook)
 (add-hook 'after-make-frame-functions #'bv-org-latex-monitor-change-hook)
-(add-hook 'focus-in-hook #'bv-org-latex-monitor-change-hook)
+(add-function :after after-focus-change-function #'bv-org-latex-monitor-change-hook)
 
 ;; Handle moving frames between monitors
 (add-hook 'move-frame-functions #'bv-org-latex-monitor-change-hook)

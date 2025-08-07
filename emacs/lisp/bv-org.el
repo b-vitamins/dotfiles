@@ -12,17 +12,37 @@
 
 (define-prefix-command 'bv-org-timer-map)
 
-(eval-when-compile 
+(eval-when-compile
   (require 'org-refile)
   (require 'org-modern))
 
 ;; Load LaTeX preview configuration early
 (require 'bv-org-latex nil t)
 
+;; External function declarations
 (autoload 'consult--buffer-state "consult")
 (autoload 'org-timer-value-string "org-timer")
 (autoload 'org-html-stable-ids-add "ox-html-stable-ids")
 (autoload 'org-buffer-list "org")
+(declare-function olivetti-mode "olivetti")
+(declare-function global-org-modern-mode "org-modern")
+
+;; External variable declarations
+(defvar mode-specific-map)
+(defvar consult-buffer-sources)
+(defvar org-timer-mode-line-string)
+(defvar org-id-locations-file)
+(defvar org-timer-pause-time)
+(defvar org-agenda-files)
+(defvar org-capture-templates)
+(defvar org-modern-todo)
+(defvar org-modern-timestamp)
+(defvar org-modern-statistics)
+(defvar org-modern-tag)
+(defvar org-modern-priority)
+(defvar org-modern-hide-stars)
+(defvar org-hide-leading-stars)
+(defvar bv-app-map)
 
 (with-eval-after-load 'ox-html
   (require 'ox-html-stable-ids)
@@ -33,7 +53,7 @@
 
 (with-eval-after-load 'consult
   (when (boundp 'consult-buffer-sources)
-    (add-to-list 'consult-buffer-sources 
+    (add-to-list 'consult-buffer-sources
                  `(:name "Org"
                          :narrow ?o
                          :category buffer
@@ -61,7 +81,7 @@
   (setq org-adapt-indentation nil)
   (setq org-edit-src-content-indentation 0)
   (setq org-startup-indented t)
-  
+
   (defun bv-org-timer-update-mode-line ()
     "Update timer in mode line."
     (if (and (boundp 'org-timer-pause-time) org-timer-pause-time)
@@ -70,7 +90,7 @@
         (setq org-timer-mode-line-string
               (substring (org-timer-value-string) 0 -1)))
       (force-mode-line-update)))
-  
+
   (setq org-outline-path-complete-in-steps nil)
   (setq org-refile-use-outline-path 'full-file-path)
   (setq org-refile-allow-creating-parent-nodes 'confirm)
@@ -155,7 +175,7 @@
           ("thesis" . ?T)
           ("paper" . ?P)
           ("course" . ?C)))
-  
+
   (defun bv-org-rename-buffer-to-title (&optional end)
     "Rename buffer to #+TITLE: value."
     (interactive)
@@ -169,15 +189,15 @@
                t)
           (rename-buffer (match-string 1)))))
     nil)
-  
+
   (defun bv-org-rename-buffer-to-title-config ()
     "Add buffer renaming to font-lock."
     (font-lock-add-keywords nil '(bv-org-rename-buffer-to-title)))
-  
+
   (add-hook 'org-mode-hook 'bv-org-rename-buffer-to-title-config)
   (with-eval-after-load 'notmuch (require 'ol-notmuch))
   (add-hook 'org-mode-hook 'olivetti-mode)
-  
+
   (with-eval-after-load 'org-modern
     (when (boundp 'org-modern-todo)
       (setq org-modern-todo nil))
@@ -193,24 +213,23 @@
       (setq org-modern-hide-stars nil))
     (when (boundp 'org-hide-leading-stars)
       (setq org-hide-leading-stars t)))
-  
+
   (advice-add
    'org-timer-update-mode-line
    :override
    'bv-org-timer-update-mode-line)
   (add-hook 'org-timer-stop-hook 'bv-org-timer-reset)
-  
+
   (with-eval-after-load 'bv-keymaps
     (when (boundp 'bv-app-map)
       (define-key bv-app-map (kbd "o") 'bv-org-timer-map)))
-  
+
   (when (boundp 'bv-org-timer-map)
     (define-key bv-org-timer-map (kbd "s") 'org-timer-start)
     (define-key bv-org-timer-map (kbd "q") 'org-timer-stop)
     (define-key bv-org-timer-map (kbd "p") 'org-timer-pause-or-continue)
     (define-key bv-org-timer-map (kbd "t") 'org-timer-set-timer))
-  
-  
+
   (autoload 'global-org-modern-mode "org-modern"))
 
 (provide 'bv-org)

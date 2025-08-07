@@ -16,6 +16,39 @@
 (require 'vertico-quick)
 (autoload 'consult-completion-in-region "consult")
 
+;; Declare external variables and functions to avoid warnings
+(defvar completion-in-region-function)
+(defvar minor-mode-list)
+(defvar vertico--index)
+(defvar vertico--candidates)
+(defvar vertico-map)
+(defvar vertico-multiform-map)
+
+(declare-function vertico--metadata-get "vertico" (key))
+(declare-function vertico--candidate "vertico" (&optional n))
+(declare-function vertico-insert "vertico")
+(declare-function vertico-next "vertico" (&optional arg))
+(declare-function vertico-previous "vertico" (&optional arg))
+(declare-function vertico-next-group "vertico" (&optional arg))
+(declare-function vertico-previous-group "vertico" (&optional arg))
+(declare-function vertico-multiform-vertical "vertico-multiform")
+(declare-function vertico-multiform-grid "vertico-multiform")
+(declare-function vertico-multiform-buffer "vertico-multiform")
+(declare-function vertico-quick-jump "vertico-quick")
+(declare-function vertico-repeat "vertico-repeat")
+(declare-function vertico-repeat-save "vertico-repeat")
+(declare-function vertico-repeat-select "vertico-repeat")
+(declare-function vertico-directory-enter "vertico-directory")
+(declare-function vertico-directory-delete-char "vertico-directory")
+(declare-function vertico-directory-delete-word "vertico-directory")
+(declare-function vertico-directory-up "vertico-directory")
+(declare-function vertico-directory-tidy "vertico-directory")
+(declare-function vertico--update "vertico")
+(declare-function vertico--setup "vertico")
+(declare-function vertico--format-candidate "vertico")
+(declare-function vertico-sort-history-length-alpha "vertico")
+(declare-function vertico-sort-alpha "vertico")
+
 ;;; Core Settings - Sensible defaults that work everywhere
 
 (setq vertico-cycle t                    ; Enable cycling for continuous flow
@@ -115,7 +148,8 @@
 
 ;; Kill region DWIM - from your original config
 (defun bv-vertico-kill-region-dwim (&optional count)
-  "Kill region or delete word/directory intelligently."
+  "Kill region or delete word/directory intelligently.
+COUNT specifies the number of words to delete when no region is active."
   (interactive "p")
   (if (use-region-p)
       (kill-region (region-beginning) (region-end) 'region)
@@ -171,10 +205,14 @@
         (consult-theme grid)))
 
 ;; Transform function support (simplified)
-(defvar bv-vertico-transform-functions nil)
+(defvar bv-vertico-transform-functions nil
+  "List of functions to transform candidates in vertico.
+Each function should take a candidate string and return a modified string.")
 
 (cl-defmethod vertico--format-candidate :around
   (cand prefix suffix index start)
+  "Apply transform functions to candidate CAND if configured.
+PREFIX, SUFFIX, INDEX, and START are passed to the next method."
   (when bv-vertico-transform-functions
     (dolist (fun (ensure-list bv-vertico-transform-functions))
       (setq cand (funcall fun cand))))

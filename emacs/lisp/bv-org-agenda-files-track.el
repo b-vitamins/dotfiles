@@ -10,8 +10,9 @@
 
 ;;; Code:
 
-(require 'org-agenda-files-track-ql)
-(autoload 'org-ql--normalize-query "org-ql")
+(declare-function org-ql-select "org-ql" (buffers-or-files query &rest rest))
+(declare-function org-agenda-files "org" (&optional unrestricted archives))
+(defvar org-agenda-include-diary)
 
 (when (boundp 'org-agenda-include-diary)
   (setq org-agenda-include-diary nil))

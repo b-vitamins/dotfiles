@@ -12,6 +12,8 @@
 
 (autoload 'pdf-view-mode "pdf-view")
 (autoload 'pdf-view-themed-minor-mode "pdf-view")
+(autoload 'pdf-view-midnight-minor-mode "pdf-view")
+(autoload 'pdf-view-redisplay "pdf-view")
 (autoload 'pdf-tools-enable-minor-modes "pdf-tools")
 (autoload 'pdf-tools-install "pdf-tools")
 

@@ -14,6 +14,11 @@
 (autoload 'org-ql-view "org-ql")
 (autoload 'org-ql-sparse-tree "org-ql")
 
+;; External function declarations
+(declare-function project-files "project" (project &optional dirs))
+(declare-function project-current "project" (&optional maybe-prompt directory))
+(declare-function org-agenda-files "org" (&optional unrestricted archives))
+
 (with-eval-after-load 'org-ql
   ;; Predefined searches
   (when (boundp 'org-ql-views)

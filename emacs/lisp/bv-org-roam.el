@@ -104,6 +104,7 @@
 (declare-function nerd-icons-codicon "nerd-icons")
 (declare-function org-roam-db-autosync-enable "org-roam-db")
 (declare-function consult-ripgrep "consult")
+(declare-function consult-org-roam-mode "consult-org-roam" (&optional arg))
 
 (defvar org-roam-v2-ack)
 (defvar org-roam-directory)
@@ -257,12 +258,8 @@ Ignore ARGS."
 INITIAL-INPUT is the initial minibuffer input.
 FILTER-FN filters nodes, SORT-FN sorts them.
 REQUIRE-MATCH determines if existing node is required."
-  (let* ((nodes (org-roam-node-list))
-         (nodes (if filter-fn (seq-filter filter-fn nodes) nodes))
-         (nodes (if sort-fn (seq-sort sort-fn nodes) nodes))
-         (templates (list (cons "" org-roam-capture-templates)))
-         (node (org-roam-node-read initial-input filter-fn sort-fn require-match templates)))
-    node))
+  (let ((templates (list (cons "" org-roam-capture-templates))))
+    (org-roam-node-read initial-input filter-fn sort-fn require-match templates)))
 
 (defun bv-org-roam-number-exists-p (number)
   "Check if NUMBER already exists as an alias."

@@ -12,6 +12,15 @@
 (declare-function ytdl-download "ytdl")
 (declare-function ytdl-download-audio "ytdl")
 (declare-function ytdl-download-video "ytdl")
+(declare-function ytdl-download-delete "ytdl")
+
+;; External variables from ytdl package
+(defvar ytdl-command)
+(defvar ytdl-download-folder)
+(defvar ytdl-music-folder)
+(defvar ytdl-video-folder)
+(defvar ytdl-mode-line)
+(defvar ytdl--dl-list-mode-map)
 
 (defgroup bv-ytdl nil
   "YouTube downloader settings."

@@ -103,10 +103,13 @@
 (defun bv-org-agenda-quick-task ()
   "Quickly add a task without leaving current context."
   (interactive)
+  (require 'org-capture)
   (let ((org-capture-templates
          '(("q" "Quick task" entry
             (file "~/documents/org/tasks.org")
             "* TODO %?\n  SCHEDULED: %t\n"))))
+    ;; Suppress warning: org-capture-templates is used dynamically by org-capture
+    (ignore org-capture-templates)
     (org-capture nil "q")))
 
 ;; Keybindings

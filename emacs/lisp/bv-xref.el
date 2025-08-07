@@ -10,6 +10,8 @@
 
 ;;; Code:
 
+(declare-function consult-xref "consult-xref" (fetcher &optional alist))
+
 (with-eval-after-load 'xref
   (when (boundp 'xref-auto-jump-to-first-definition)
     (setq xref-auto-jump-to-first-definition 'move))
