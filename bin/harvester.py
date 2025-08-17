@@ -22,7 +22,7 @@ __version__ = "1.0.0"
 
 
 def load_config():
-    """Loads configuration from XDG config directory."""
+    """Load configuration from XDG config directory."""
     config_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
     config_path = Path(config_home) / "harvester" / "config.json"
 
@@ -51,9 +51,8 @@ def load_config():
         try:
             with open(config_path, "r") as f:
                 config = json.load(f)
-                # Merge with defaults
                 for key, value in config.items():
-                    if value is not None:  # Allow explicit None in config
+                    if value is not None:
                         defaults[key] = value
             print(f"Loaded configuration from {config_path}")
         except Exception as e:
@@ -63,7 +62,7 @@ def load_config():
 
 
 def get_xdg_docs_dir():
-    """Gets XDG documents directory from user-dirs.dirs."""
+    """Get XDG documents directory from user-dirs.dirs."""
     config_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
     user_dirs_file = Path(config_home) / "user-dirs.dirs"
 
@@ -72,26 +71,30 @@ def get_xdg_docs_dir():
             with open(user_dirs_file, "r") as f:
                 for line in f:
                     if line.startswith("XDG_DOCUMENTS_DIR="):
-                        # Extract path, handling quotes and $HOME
                         path = line.split("=", 1)[1].strip().strip('"')
                         path = path.replace("$HOME", os.path.expanduser("~"))
                         return path
         except (IOError, OSError):
             pass
-
-    # Fallback to ~/Documents
     return os.path.expanduser("~/Documents")
 
 
 def save_default_config():
-    """Saves default configuration file as example."""
+    """Save default configuration file as example."""
     config_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
     config_dir = Path(config_home) / "harvester"
     config_path = config_dir / "config.json.example"
 
-    config_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        config_dir.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        print(f"Error: Permission denied creating config directory '{config_dir}'")
+        print("Please check that you have write access to the parent directory")
+        sys.exit(1)
+    except OSError as e:
+        print(f"Error: Failed to create config directory '{config_dir}': {e}")
+        sys.exit(1)
 
-    # Use XDG documents directory
     docs_dir = get_xdg_docs_dir()
 
     example_config = {
@@ -113,8 +116,7 @@ def save_default_config():
 
 class ArXivAggregator:
     def __init__(self, categories: List[str], use_oai: bool = False):
-        """
-        Initializes aggregator with arXiv categories.
+        """Initialize aggregator with arXiv categories.
 
         Args:
             categories: List of arXiv category codes
@@ -127,24 +129,20 @@ class ArXivAggregator:
         self.oai_base_url = "http://export.arxiv.org/oai2"
 
     def fetch_category_rss(self, category: str, max_retries: int = 3) -> List[Dict]:
-        """Fetches papers from category RSS feed with retry logic."""
+        """Fetch papers from category RSS feed with retry logic."""
         url = f"http://export.arxiv.org/rss/{category}"
 
         for attempt in range(max_retries):
             try:
-                # Fetch RSS feed
                 req = Request(url, headers={"User-Agent": "ArXiv-Harvester/1.0"})
                 with urlopen(req, timeout=30) as response:
                     rss_data = response.read()
 
-                # Parse RSS XML
                 root = ET.fromstring(rss_data)
                 papers = []
 
-                # Debug: Check if we found any items
                 items = root.findall(".//item")
                 if not items:
-                    # Check if this is a valid RSS feed with skip days
                     skip_days = root.findall(".//skipDays/day")
                     if skip_days:
                         skipdays = [
@@ -161,9 +159,7 @@ class ArXivAggregator:
                         "    No items found in RSS feed (likely due to publishing schedule)"
                     )
 
-                # RSS 2.0 structure: rss/channel/item
                 for item in items:
-                    # Extract basic fields
                     title = item.find("title")
                     link = item.find("link")
                     description = item.find("description")
@@ -173,11 +169,9 @@ class ArXivAggregator:
                     if title is None or link is None:
                         continue
 
-                    # Extract arXiv ID from link
                     link_text = link.text if link.text is not None else ""
                     arxiv_id = link_text.split("/abs/")[-1] if link_text else ""
 
-                    # Parse authors
                     authors = (
                         dc_creator.text
                         if dc_creator is not None and dc_creator.text is not None
@@ -185,7 +179,6 @@ class ArXivAggregator:
                     )
                     authors = self._parse_authors(authors)
 
-                    # Extract categories from title (usually in parentheses at the end)
                     title_text = (
                         title.text.replace("\n", " ").strip()
                         if title.text is not None
@@ -196,16 +189,13 @@ class ArXivAggregator:
                     if catmatch:
                         cats = catmatch.group(1).split()
                         categories = [c.strip() for c in cats]
-                        # Remove categories from title
                         title_text = title_text[: catmatch.start()].strip()
 
-                    # Clean abstract
                     abstract = (
                         description.text.replace("\n", " ").strip()
                         if description is not None and description.text is not None
                         else ""
                     )
-                    # Remove HTML tags if any
                     abstract = re.sub("<[^<]+?>", "", abstract)
 
                     paper = {
@@ -236,7 +226,6 @@ class ArXivAggregator:
                     )
                     return []
 
-        # Add explicit return for type safety - should not reach here
         return []
 
     def fetch_oai_pmh(
@@ -246,8 +235,7 @@ class ArXivAggregator:
         category: Optional[str] = None,
         resumption_token: Optional[str] = None,
     ) -> Tuple[List[Dict], Optional[str]]:
-        """
-        Fetches papers using OAI-PMH protocol.
+        """Fetch papers using OAI-PMH protocol.
 
         Args:
             from_date: Start date (YYYY-MM-DD)
@@ -261,10 +249,8 @@ class ArXivAggregator:
         papers = []
 
         if resumption_token:
-            # Continue previous harvest
             params = {"verb": "ListRecords", "resumptionToken": resumption_token}
         else:
-            # New harvest request
             params = {"verb": "ListRecords", "metadataPrefix": "arXiv"}
 
             if category:
@@ -301,27 +287,22 @@ class ArXivAggregator:
             return papers, None
 
         try:
-            # Parse XML response
             root = ET.fromstring(response)
 
-            # Define namespaces
             ns = {
                 "oai": "http://www.openarchives.org/OAI/2.0/",
                 "arxiv": "http://arxiv.org/OAI/arXiv/",
             }
 
-            # Check for errors
             errors = root.findall(".//oai:error", ns)
             if errors:
                 for error in errors:
                     print(f"OAI-PMH Error: {error.get('code')} - {error.text}")
                 return papers, None
 
-            # Extract records
             records = root.findall(".//oai:record", ns)
 
             for record in records:
-                # Skip deleted records
                 header = record.find("oai:header", ns)
                 if header is not None and header.get("status") == "deleted":
                     continue
@@ -330,12 +311,10 @@ class ArXivAggregator:
                 if metadata is None:
                     continue
 
-                # Extract paper information
                 paper = self._parse_oai_record(metadata, ns)
                 if paper:
                     papers.append(paper)
 
-            # Check for resumption token (for pagination)
             resumption = root.find(".//oai:resumptionToken", ns)
             next_token = resumption.text if resumption is not None else None
 
@@ -346,9 +325,8 @@ class ArXivAggregator:
             return papers, None
 
     def _parse_oai_record(self, metadata: ET.Element, ns: dict) -> Optional[Dict]:
-        """Parses single OAI-PMH record."""
+        """Parse single OAI-PMH record."""
         try:
-            # Extract basic metadata
             arxiv_id_elem = metadata.find("arxiv:id", ns)
             title_elem = metadata.find("arxiv:title", ns)
             abstract_elem = metadata.find("arxiv:abstract", ns)
@@ -364,7 +342,6 @@ class ArXivAggregator:
             title = title_elem.text.replace("\n", " ").strip()
             abstract = abstract_elem.text.replace("\n", " ").strip()
 
-            # Parse authors
             authors = []
             for author in metadata.findall("arxiv:authors/arxiv:author", ns):
                 keyname = author.find("arxiv:keyname", ns)
@@ -375,18 +352,15 @@ class ArXivAggregator:
                         name = f"{forenames.text} {name}"
                     authors.append(name)
 
-            # Parse categories
             categories = []
             primary_category = None
 
-            # Primary category
             primary = metadata.find("arxiv:categories", ns)
             if primary is not None and primary.text:
                 cats = primary.text.split()
                 categories = cats
                 primary_category = cats[0] if cats else None
 
-            # Dates
             created_elem = metadata.find("arxiv:created", ns)
             if created_elem is None or created_elem.text is None:
                 return None
@@ -394,7 +368,6 @@ class ArXivAggregator:
             updated = metadata.find("arxiv:updated", ns)
             updated_date = updated.text if updated is not None else created
 
-            # Generate links
             link = f"http://arxiv.org/abs/{arxiv_id}"
             pdf_link = f"http://arxiv.org/pdf/{arxiv_id}.pdf"
 
@@ -418,8 +391,7 @@ class ArXivAggregator:
     def harvest_date_range(
         self, from_date: str, until_date: str, delay: float = 2.0
     ) -> None:
-        """
-        Harvests papers from all categories for date range using OAI-PMH.
+        """Harvest papers from all categories for date range using OAI-PMH.
 
         Args:
             from_date: Start date in YYYY-MM-DD
@@ -451,20 +423,17 @@ class ArXivAggregator:
             for paper in papers:
                 arxiv_id = paper["arxiv_id"]
 
-                # Only include papers that match specified categories
-                matching_categories = [
+                matches = [
                     cat for cat in paper["all_categories"] if cat in self.categories
                 ]
 
-                if matching_categories:
-                    # Track which categories this paper appears in
-                    for cat in matching_categories:
+                if matches:
+                    for cat in matches:
                         self.category_counts[cat] += 1
 
                     if arxiv_id not in all_papers:
                         all_papers[arxiv_id] = paper
                     else:
-                        # Merge category information
                         existing = all_papers[arxiv_id]
                         all_cats = set(
                             existing["all_categories"] + paper["all_categories"]
@@ -479,17 +448,15 @@ class ArXivAggregator:
             time.sleep(delay)
 
         self.papers = all_papers
-        print()  # Clear the progress line
+        print()
         print(
             f"Harvested {len(self.papers)} papers matching specified categories from {from_date} to {until_date}"
         )
 
     def _parse_authors(self, authors: str) -> List[str]:
-        """Parses author string into list of names."""
-        # Remove HTML tags if present
+        """Parse author string into list of names."""
         cleaned = re.sub("<[^<]+?>", "", authors)
 
-        # Split by comma and clean up
         if "," in cleaned:
             result = [a.strip() for a in cleaned.split(",")]
         else:
@@ -498,8 +465,7 @@ class ArXivAggregator:
         return result
 
     def _sanitize_filename(self, name: str) -> str:
-        """
-        Sanitizes filename to prevent path traversal.
+        """Sanitize filename to prevent path traversal.
 
         Args:
             name: User-provided filename
@@ -510,38 +476,28 @@ class ArXivAggregator:
         if not name:
             raise ValueError("Filename cannot be empty")
 
-        # Convert to Path object to handle different path separators
         path = Path(name)
 
-        # Check for absolute paths and reject them
         if path.is_absolute():
             raise ValueError(f"Absolute paths not allowed: {name}")
 
-        # Extract just the filename component, discarding any directory parts
-        # This prevents path traversal even with relative paths like "../../../file"
         safename = path.name
 
-        # Additional safety check: ensure no path separators remain
         if os.sep in safename or (os.altsep and os.altsep in safename):
             raise ValueError(f"Path separators not allowed in filename: {name}")
 
-        # Check for empty filename after sanitization
         if not safename or safename in (".", ".."):
             raise ValueError(f"Invalid filename: {name}")
 
-        # Remove any remaining dangerous characters while preserving legitimate ones
-        # Allow letters, numbers, spaces, hyphens, underscores, and dots
         safename = re.sub(r"[^\w\s.-]", "", safename)
 
-        # Ensure we still have a valid filename
         if not safename.strip():
             raise ValueError(f"Filename contains no valid characters: {name}")
 
         return safename.strip()
 
     def aggregate(self, delay: float = 1.0) -> None:
-        """
-        Fetches papers from all categories using RSS and aggregates, removing duplicates.
+        """Fetch papers from all categories using RSS and aggregate, removing duplicates.
 
         Args:
             delay: Seconds to wait between requests
@@ -562,13 +518,11 @@ class ArXivAggregator:
             for paper in papers:
                 arxiv_id = paper["arxiv_id"]
 
-                # Track which categories this paper appears in
                 self.category_counts[category] += 1
 
                 if arxiv_id not in all_papers:
                     all_papers[arxiv_id] = paper
                 else:
-                    # Merge category information
                     existing = all_papers[arxiv_id]
                     all_cats = set(existing["all_categories"] + paper["all_categories"])
                     existing["all_categories"] = list(all_cats)
@@ -576,7 +530,6 @@ class ArXivAggregator:
         self.papers = all_papers
         print(f"\nAggregated {len(self.papers)} unique papers")
 
-        # Provide helpful guidance if no papers were found
         if len(self.papers) == 0:
             from datetime import datetime
 
@@ -599,8 +552,7 @@ class ArXivAggregator:
         exclude: Optional[List[str]] = None,
         min_categories: int = 1,
     ) -> Dict:
-        """
-        Filters papers based on criteria.
+        """Filter papers based on criteria.
 
         Args:
             keywords: Include papers with these keywords in title/abstract
@@ -612,25 +564,21 @@ class ArXivAggregator:
         """
         filtered = {}
 
-        # Filter out empty and whitespace-only strings from keyword lists
         if keywords:
             keywords = [kw.strip() for kw in keywords if kw and kw.strip()]
         if exclude:
             exclude = [kw.strip() for kw in exclude if kw and kw.strip()]
 
         for arxiv_id, paper in self.papers.items():
-            # Check minimum categories
             if len(paper["all_categories"]) < min_categories:
                 continue
 
             text = (paper["title"] + " " + paper["abstract"]).lower()
 
-            # Check inclusion keywords (only if non-empty list after filtering)
             if keywords:
                 if not any(kw.lower() in text for kw in keywords):
                     continue
 
-            # Check exclusion keywords (only if non-empty list after filtering)
             if exclude:
                 if any(kw.lower() in text for kw in exclude):
                     continue
@@ -647,8 +595,7 @@ class ArXivAggregator:
         until_date: Optional[str] = None,
         outdir: Optional[str] = None,
     ) -> None:
-        """
-        Saves aggregated papers to file.
+        """Save aggregated papers to file.
 
         Args:
             filename: Output filename (auto-generated if None)
@@ -657,29 +604,34 @@ class ArXivAggregator:
             until_date: End date for filename generation (YYYY-MM-DD)
             outdir: Output directory (uses XDG data dir if None)
         """
-        # Determine output directory
         if outdir is None:
-            # Use XDG_DATA_HOME or fallback
             xdg_data_home = os.environ.get(
                 "XDG_DATA_HOME", os.path.expanduser("~/.local/share")
             )
             outdir = os.path.join(xdg_data_home, "harvester")
 
         dirpath = Path(outdir).expanduser()
-        dirpath.mkdir(parents=True, exist_ok=True)
+        try:
+            dirpath.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            print(f"Error: Permission denied creating directory '{dirpath}'")
+            print(
+                "Please check that you have write access to the parent directory or specify a different output directory with --output-dir"
+            )
+            sys.exit(1)
+        except OSError as e:
+            print(f"Error: Failed to create directory '{dirpath}': {e}")
+            sys.exit(1)
 
         if filename is None:
             if from_date and until_date:
-                # Format dates for filename (YYYYMMDD)
-                fromstr = from_date.replace("-", "")
-                untilstr = until_date.replace("-", "")
-                filename = f"arxiv-papers-{fromstr}-{untilstr}.{format}"
+                start = from_date.replace("-", "")
+                end = until_date.replace("-", "")
+                filename = f"arxiv-papers-{start}-{end}.{format}"
             else:
-                # Fallback to current date for RSS feeds
-                date_str = datetime.now().strftime("%Y%m%d")
-                filename = f"arxiv-papers-{date_str}.{format}"
+                today = datetime.now().strftime("%Y%m%d")
+                filename = f"arxiv-papers-{today}.{format}"
 
-        # Sanitize filename to prevent path traversal attacks
         filename = self._sanitize_filename(filename)
         outpath = dirpath / filename
 
@@ -695,18 +647,16 @@ class ArXivAggregator:
         print(f"Saved {len(self.papers)} papers to {outpath}")
 
     def _save_markdown(self, filepath: Path) -> None:
-        """Saves papers in Markdown format."""
+        """Save papers in Markdown format."""
         with open(filepath, "w") as f:
             f.write(f"# ArXiv Papers - {datetime.now().strftime('%Y-%m-%d')}\n\n")
             f.write(f"Total papers: {len(self.papers)}\n\n")
 
-            # Statistics
             f.write("## Statistics by Category\n\n")
             for cat in self.categories:
                 f.write(f"- **{cat}**: {self.category_counts[cat]} papers\n")
             f.write("\n---\n\n")
 
-            # Papers grouped by primary category
             papers_by_category = defaultdict(list)
             for paper in self.papers.values():
                 papers_by_category[paper["primary_category"]].append(paper)
@@ -731,7 +681,7 @@ class ArXivAggregator:
                     f.write("---\n\n")
 
     def print_summary(self) -> None:
-        """Prints summary statistics."""
+        """Print summary statistics."""
         print("\n" + "=" * 50)
         print("SUMMARY")
         print("=" * 50)
@@ -740,22 +690,18 @@ class ArXivAggregator:
         for cat in self.categories:
             print(f"  {cat}: {self.category_counts[cat]}")
 
-        # Cross-listing statistics
         crosslisted = sum(
             1 for p in self.papers.values() if len(p["all_categories"]) > 1
         )
         print(f"\nCross-listed papers: {crosslisted}")
 
-        # Date range of papers
         if self.papers:
             dates = []
             for p in self.papers.values():
                 try:
-                    # Try parsing ISO date format first (OAI-PMH)
                     date = datetime.strptime(p["published"][:10], "%Y-%m-%d")
                 except ValueError:
                     try:
-                        # Try parsing RSS date format
                         from email.utils import parsedate_to_datetime
 
                         date = parsedate_to_datetime(p["published"])
@@ -764,13 +710,12 @@ class ArXivAggregator:
                 dates.append(date)
 
             if dates:
-                mindate = min(dates)
-                maxdate = max(dates)
-                print(f"\nDate range: {mindate.date()} to {maxdate.date()}")
+                start = min(dates)
+                end = max(dates)
+                print(f"\nDate range: {start.date()} to {end.date()}")
 
 
 def main():
-    # Load configuration
     config = load_config()
 
     parser = argparse.ArgumentParser(
@@ -818,7 +763,6 @@ CATEGORIES:
         % {"prog": os.path.basename(sys.argv[0]).replace(".py", "")},
     )
 
-    # Add version and config arguments first
     parser.add_argument(
         "-v", "--version", action="version", version=f"%(prog)s {__version__}"
     )
@@ -842,7 +786,6 @@ CATEGORIES:
         help="Harvesting method: rss for recent papers, oai for date ranges",
     )
 
-    # Date range options for OAI-PMH
     parser.add_argument(
         "--from-date", type=str, help="Start date for OAI harvesting (YYYY-MM-DD)"
     )
@@ -855,7 +798,6 @@ CATEGORIES:
         help="Harvest papers from last N days (alternative to date range)",
     )
 
-    # Output options
     parser.add_argument("--output", type=str, help="Output filename")
     parser.add_argument(
         "--output-dir",
@@ -870,7 +812,6 @@ CATEGORIES:
         help="Output format (default: %(default)s)",
     )
 
-    # Filtering options
     parser.add_argument("--keywords", nargs="+", help="Filter by keywords")
     parser.add_argument(
         "--exclude", nargs="+", help="Exclude papers with these keywords"
@@ -884,64 +825,102 @@ CATEGORIES:
 
     args = parser.parse_args()
 
-    # Handle config example generation
     if args.save_config_example:
         config_path = save_default_config()
         print(f"Example configuration saved to: {config_path}")
         print("Copy it to config.json in the same directory and modify as needed.")
         sys.exit(0)
 
-    # Initialize aggregator
+    if args.days_back and (args.from_date or args.until_date):
+        parser.error(
+            "--days-back cannot be used with --from-date or --until-date. Use either --days-back OR specify date range with --from-date/--until-date."
+        )
+
     aggregator = ArXivAggregator(args.categories, use_oai=(args.method == "oai"))
 
-    # Determine harvesting method and execute
     fromdate = None
     untildate = None
 
-    if args.method == "oai":
-        # Set up date range
-        if args.days_back:
-            # Calculate date range from days_back
-            until_date = datetime.now().date()
-            from_date = until_date - timedelta(days=args.days_back)
-            fromdate = from_date.strftime("%Y-%m-%d")
-            untildate = until_date.strftime("%Y-%m-%d")
-        elif args.from_date and args.until_date:
-            fromdate = args.from_date
-            untildate = args.until_date
+    try:
+        if args.method == "oai":
+            if args.days_back:
+                end_date = datetime.now().date()
+                start_date = end_date - timedelta(days=args.days_back)
+                fromdate = start_date.strftime("%Y-%m-%d")
+                untildate = end_date.strftime("%Y-%m-%d")
+            elif args.from_date and args.until_date:
+                fromdate = args.from_date
+                untildate = args.until_date
+            else:
+                date = datetime.now().date() - timedelta(days=1)
+                fromdate = date.strftime("%Y-%m-%d")
+                untildate = date.strftime("%Y-%m-%d")
+
+            print(f"Harvesting papers from {fromdate} to {untildate} using OAI-PMH...")
+            aggregator.harvest_date_range(fromdate, untildate)
         else:
-            # Default to yesterday's papers
-            yesterday = datetime.now().date() - timedelta(days=1)
-            fromdate = yesterday.strftime("%Y-%m-%d")
-            untildate = yesterday.strftime("%Y-%m-%d")
+            print(
+                f"Fetching recent papers from {len(args.categories)} categories using RSS..."
+            )
+            aggregator.aggregate()
 
-        print(f"Harvesting papers from {fromdate} to {untildate} using OAI-PMH...")
-        aggregator.harvest_date_range(fromdate, untildate)
-    else:
-        # Use RSS for recent papers
-        print(
-            f"Fetching recent papers from {len(args.categories)} categories using RSS..."
+        if args.keywords or args.exclude or args.min_categories > 1:
+            print("\nApplying filters...")
+            filtered = aggregator.filter_papers(
+                keywords=args.keywords,
+                exclude=args.exclude,
+                min_categories=args.min_categories,
+            )
+            aggregator.papers = filtered
+            print(f"Filtered to {len(filtered)} papers")
+
+        output_format = args.format
+        if args.output and "." in args.output:
+            file_ext = args.output.lower().split(".")[-1]
+            if file_ext in ["json", "js"]:
+                detected_format = "json"
+            elif file_ext in ["md", "markdown"]:
+                detected_format = "markdown"
+            else:
+                detected_format = None
+
+            if detected_format and output_format == config["format"]:
+                output_format = detected_format
+                print(f"Auto-detected {detected_format} format from file extension")
+            elif detected_format and detected_format != output_format:
+                print(
+                    f"Warning: File extension suggests {detected_format} format, but {output_format} format specified"
+                )
+
+        aggregator.save_results(
+            args.output, output_format, fromdate, untildate, args.output_dir
         )
-        aggregator.aggregate()
 
-    # Apply filters if specified
-    if args.keywords or args.exclude or args.min_categories > 1:
-        print("\nApplying filters...")
-        filtered = aggregator.filter_papers(
-            keywords=args.keywords,
-            exclude=args.exclude,
-            min_categories=args.min_categories,
-        )
-        aggregator.papers = filtered
-        print(f"Filtered to {len(filtered)} papers")
+        aggregator.print_summary()
 
-    # Save results with date range info for filename generation
-    aggregator.save_results(
-        args.output, args.format, fromdate, untildate, args.output_dir
-    )
+    except KeyboardInterrupt:
+        print("\n\nOperation cancelled by user.")
+        if hasattr(aggregator, "papers") and aggregator.papers:
+            try:
+                print(f"Saving {len(aggregator.papers)} papers collected so far...")
+                output_format = args.format
+                if args.output and "." in args.output:
+                    file_ext = args.output.lower().split(".")[-1]
+                    if file_ext in ["json", "js"] and output_format == config["format"]:
+                        output_format = "json"
+                    elif (
+                        file_ext in ["md", "markdown"]
+                        and output_format == config["format"]
+                    ):
+                        output_format = "markdown"
 
-    # Print summary
-    aggregator.print_summary()
+                aggregator.save_results(
+                    args.output, output_format, fromdate, untildate, args.output_dir
+                )
+                print("Partial results saved successfully.")
+            except Exception as e:
+                print(f"Failed to save partial results: {e}")
+        sys.exit(130)
 
 
 if __name__ == "__main__":
