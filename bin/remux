@@ -1,0 +1,4068 @@
+#!/bin/sh
+#
+# Video container remuxing utility with parallel processing support
+#
+
+# Script metadata
+VERSION="2.0.0"
+PROGNAME="${0##*/}"
+
+# Error codes (following sysexits.h conventions)
+EXIT_SUCCESS=0
+EXIT_USAGE=64
+EXIT_DATAERR=65
+EXIT_NOINPUT=66
+EXIT_UNAVAILABLE=69
+EXIT_SOFTWARE=70
+EXIT_CANTCREAT=73
+EXIT_IOERR=74
+EXIT_CONFIG=78
+EXIT_DEPENDENCY=69
+EXIT_OPERATION=70
+EXIT_SIGNAL=130
+EXIT_SECURITY=77
+
+# Security constants
+MAX_PATH_LENGTH=4096
+MAX_FILENAME_LENGTH=255
+MAX_PARALLEL_JOBS=64
+MAX_CONFIG_FILE_SIZE=1048576  # 1MB
+MAX_FILE_SIZE_BYTES=107374182400  # 100GB
+ALLOWED_EXTENSIONS=".m2ts .mkv .mp4 .avi .mov .wmv .flv .webm .ogv .3gp .mxf"
+FORBIDDEN_PATHS="/etc /usr /var /boot /sys /proc /dev /run"
+SECURE_UMASK=077
+
+# Global state
+CONFIG_LOADED=0
+JOBS_RUNNING=0
+TEMP_DIR=""
+CLEANUP_REQUIRED=0
+VERBOSE=0
+SECURITY_CHECKS_ENABLED=1
+PRIVILEGE_DROP_REQUESTED=0
+INPUT_VALIDATION_STRICT=1
+JOB_PIDS=""
+
+# Progress tracking global variables
+PROGRESS_ENABLED=1
+START_TIME=""
+TOTAL_SIZE_BYTES=0
+PROCESSED_SIZE_BYTES=0
+TOTAL_FILES=0
+PROCESSED_FILES=0
+FAILED_FILES=0
+PROGRESS_UPDATE_INTERVAL=2  # Optimized for performance
+LAST_PROGRESS_UPDATE=0
+PROGRESS_FILE=""
+SHARED_PROGRESS_DIR=""
+PROGRESS_MONITOR_PID=""
+
+# Resume capability constants
+STATE_FILE_VERSION="1.1"
+STATE_FILE_MIN_VERSION="1.0"
+STATE_BACKUP_RETENTION=5
+STALE_JOB_THRESHOLD=86400  # 24 hours in seconds
+MAX_STATE_FILE_SIZE=1048576  # 1MB limit
+
+# Resume capability global variables
+RESUME_MODE=0
+LIST_JOBS_MODE=0
+NO_RESUME=0
+CLEANUP_STALE_MODE=0
+STATE_DIR=""
+CURRENT_JOB_ID=""
+DETECTED_STALE_JOBS=""
+
+# State file optimization variables
+STATE_UPDATE_COUNTER=0
+STATE_BACKUP_FREQUENCY=10  # Backup every 10 updates instead of every update
+STATE_CACHE_ENABLED=1
+
+# Default configuration
+DEFAULT_INPUT_DIR=""
+DEFAULT_OUTPUT_DIR=""
+DEFAULT_FROM_EXT=""
+DEFAULT_TO_EXT=""
+DEFAULT_PARALLEL_JOBS=""
+DEFAULT_OVERWRITE=0
+DEFAULT_SELECT_BEST=0
+
+# Advanced configuration
+DEFAULT_SHOW_STREAMS=0
+DEFAULT_AUTO_FORMAT=0
+DEFAULT_PRESERVE_METADATA=1
+DEFAULT_PRESERVE_CHAPTERS=1
+DEFAULT_VERIFY_OUTPUT=0
+DEFAULT_AUDIO_STREAMS="best"
+DEFAULT_VIDEO_STREAMS="best"
+DEFAULT_SUBTITLE_STREAMS="none"
+DEFAULT_TEMPLATE=""
+DEFAULT_PATTERN=""
+DEFAULT_FILE_LIST=""
+
+# Signal handling with graceful shutdown
+trap 'handle_signal INT' INT
+trap 'handle_signal TERM' TERM
+trap 'handle_signal QUIT' QUIT
+
+# Security functions
+sanitize_input() {
+    local input="$1"
+    local max_length="${2:-1024}"
+    local context="${3:-general}"
+
+    if [ -z "$input" ]; then
+        log_error "Empty input not allowed for $context"
+        return 1
+    fi
+
+    if [ ${#input} -gt "$max_length" ]; then
+        log_error "Input too long for $context (max: $max_length, got: ${#input})"
+        return 1
+    fi
+
+    case "$input" in
+        *[[:cntrl:]]*)
+            log_error "Control characters not allowed in $context input"
+            return 1
+            ;;
+    esac
+
+    case "$context" in
+        "extension")
+            case "$input" in
+                .*) ;; # Must start with dot
+                *)
+                    log_error "Extensions must start with dot"
+                    return 1
+                    ;;
+            esac
+            # Check against allowed extensions
+            case " $ALLOWED_EXTENSIONS " in
+                *" $input "*) ;; # Extension is allowed
+                *)
+                    log_error "Extension '$input' not in allowed list: $ALLOWED_EXTENSIONS"
+                    return 1
+                    ;;
+            esac
+            ;;
+        "number")
+            case "$input" in
+                ''|*[!0-9]*)
+                    log_error "Invalid number: $input"
+                    return 1
+                    ;;
+            esac
+            ;;
+        "pattern")
+            # Validate glob patterns - reject dangerous ones
+            case "$input" in
+                *'$(('*|*'`'*|*'${'*)
+                    log_error "Command substitution not allowed in patterns"
+                    return 1
+                    ;;
+                */../*|*/../*|../*|*/..)
+                    log_error "Path traversal not allowed in patterns"
+                    return 1
+                    ;;
+            esac
+            ;;
+    esac
+
+    printf '%s' "$input"
+    return 0
+}
+
+validate_file_size() {
+    local file="$1"
+    local max_size="${2:-$MAX_FILE_SIZE_BYTES}"
+
+    if [ ! -f "$file" ]; then
+        return 0  # File doesn't exist, size check not applicable
+    fi
+
+    local file_size
+    file_size=$(stat -c%s "$file" 2>/dev/null || echo "0")
+
+    if [ "$file_size" -gt "$max_size" ]; then
+        log_error "File too large: $file ($file_size bytes, max: $max_size)"
+        return 1
+    fi
+
+    return 0
+}
+
+check_privilege_escalation() {
+    # Ensure script is not running with unnecessary privileges
+    if [ "$(id -u)" -eq 0 ]; then
+        log_error "Security: This script should not be run as root"
+        log_error "Please run as a regular user with appropriate permissions"
+        return 1
+    fi
+
+    # Check for setuid/setgid
+    if [ -u "$0" ] || [ -g "$0" ]; then
+        log_error "Security: Script has setuid/setgid permissions, which is dangerous"
+        return 1
+    fi
+
+    return 0
+}
+
+secure_temp_file() {
+    local prefix="${1:-remux}"
+    local suffix="${2:-.tmp}"
+    local temp_file
+
+    # Set secure umask for temp files
+    local old_umask
+    old_umask=$(umask)
+    umask "$SECURE_UMASK"
+
+    # Create secure temporary file
+    if command -v mktemp >/dev/null 2>&1; then
+        temp_file=$(mktemp --tmpdir "${prefix}.XXXXXX${suffix}") || {
+            umask "$old_umask"
+            log_error "Failed to create secure temporary file"
+            return 1
+        }
+    else
+        # Fallback with secure permissions
+        temp_file="${TMPDIR:-/tmp}/${prefix}.$$${suffix}"
+        if ! touch "$temp_file" 2>/dev/null; then
+            umask "$old_umask"
+            log_error "Failed to create temporary file: $temp_file"
+            return 1
+        fi
+        chmod 600 "$temp_file" 2>/dev/null || {
+            rm -f "$temp_file" 2>/dev/null
+            umask "$old_umask"
+            log_error "Failed to set secure permissions on temporary file"
+            return 1
+        }
+    fi
+
+    umask "$old_umask"
+    printf '%s' "$temp_file"
+    return 0
+}
+
+escape_ffmpeg_arg() {
+    local arg="$1"
+    # Escape special characters for ffmpeg
+    # Replace single quotes with '\'' (close quote, escaped quote, open quote)
+    printf '%s' "$arg" | sed "s/'/'\\\\''/g"
+}
+
+handle_signal() {
+    signal="${1:-UNKNOWN}"
+    # Prevent recursive signal handling
+    trap '' INT TERM QUIT
+
+    case "$signal" in
+        INT)
+            log_error "Operation cancelled by user (SIGINT)"
+            ;;
+        TERM)
+            log_error "Operation terminated (SIGTERM)"
+            ;;
+        QUIT)
+            log_error "Operation quit (SIGQUIT)"
+            ;;
+        *)
+            log_error "Operation cancelled by user"
+            ;;
+    esac
+
+    if [ "$JOBS_RUNNING" -gt 0 ]; then
+        log_info "Gracefully stopping $JOBS_RUNNING running jobs..."
+        # More secure way to kill child processes - avoid pkill which can be dangerous
+        # Store job PIDs and kill them specifically
+        if [ -n "$JOB_PIDS" ]; then
+            for pid in $JOB_PIDS; do
+                # Verify PID is actually our child before killing
+                if kill -0 "$pid" 2>/dev/null && ps -p "$pid" -o ppid= | grep -q "^[[:space:]]*$$[[:space:]]*$"; then
+                    kill -TERM "$pid" 2>/dev/null || true
+                fi
+            done
+            sleep 2
+            # Force kill if still running
+            for pid in $JOB_PIDS; do
+                if kill -0 "$pid" 2>/dev/null; then
+                    kill -KILL "$pid" 2>/dev/null || true
+                fi
+            done
+        fi
+        wait 2>/dev/null || true
+    fi
+
+    # Clean up any pending state file locks
+    cleanup_state_locks
+    cleanup_temp_files
+    exit $EXIT_SIGNAL
+}
+
+cleanup_temp_files() {
+    if [ "$CLEANUP_REQUIRED" = 1 ] && [ -n "$TEMP_DIR" ]; then
+        # Verify temp directory is actually temporary before removal
+        case "$TEMP_DIR" in
+            /tmp/*|"${TMPDIR:-/tmp}"/*|/var/tmp/*)
+                if [ -d "$TEMP_DIR" ]; then
+                    log_debug "Cleaning up temporary directory: $TEMP_DIR"
+                    # Secure cleanup - remove contents first, then directory
+                    find "$TEMP_DIR" -mindepth 1 -delete 2>/dev/null || {
+                        # Fallback for systems without find -delete
+                        find "$TEMP_DIR" -type f -exec rm -f {} + 2>/dev/null || true
+                        find "$TEMP_DIR" -depth -type d -exec rmdir {} + 2>/dev/null || true
+                    }
+                    rmdir "$TEMP_DIR" 2>/dev/null || true
+                fi
+                ;;
+            *)
+                log_warn "Temp directory outside expected location, not cleaning: $TEMP_DIR"
+                ;;
+        esac
+    fi
+
+    # Clean up any temporary files created during processing
+    if command -v find >/dev/null 2>&1; then
+        find /tmp -name "remux_*.tmp" -user "$(id -u)" -delete 2>/dev/null || true
+    fi
+}
+
+# Progress tracking functions
+# Initialize progress tracking
+init_progress_tracking() {
+    local job_id="$1"
+    SHARED_PROGRESS_DIR="$STATE_DIR/progress"
+    PROGRESS_FILE="$SHARED_PROGRESS_DIR/${job_id}.progress"
+
+    # Create progress directory
+    if ! mkdir -p "$SHARED_PROGRESS_DIR" 2>/dev/null; then
+        log_warn "Cannot create progress directory, disabling progress tracking"
+        PROGRESS_ENABLED=0
+        return 1
+    fi
+
+    # Initialize progress file
+    cat > "$PROGRESS_FILE" << EOF
+# Progress tracking file
+# Version: 1.0
+# Job ID: $job_id
+# Started: $(date -Iseconds)
+total_files=0
+processed_files=0
+failed_files=0
+total_size_bytes=0
+processed_size_bytes=0
+start_time=$(date +%s)
+last_update=$(date +%s)
+current_file=""
+files_per_minute=0
+bytes_per_second=0
+eta_seconds=0
+EOF
+
+    START_TIME=$(date +%s)
+    log_debug "Progress tracking initialized: $PROGRESS_FILE"
+    return 0
+}
+
+# Update progress statistics atomically
+update_progress() {
+    [ "$PROGRESS_ENABLED" != 1 ] && return 0
+    [ -z "$PROGRESS_FILE" ] && return 0
+
+    local current_time=$(date +%s)
+    local temp_file="${PROGRESS_FILE}.tmp.$$"
+
+    # Rate limiting - only update every PROGRESS_UPDATE_INTERVAL seconds
+    if [ $((current_time - LAST_PROGRESS_UPDATE)) -lt $PROGRESS_UPDATE_INTERVAL ]; then
+        return 0
+    fi
+
+    LAST_PROGRESS_UPDATE=$current_time
+
+    # Calculate rates and ETA
+    local elapsed=$((current_time - START_TIME))
+    local files_per_minute=0
+    local bytes_per_second=0
+    local eta_seconds=0
+
+    if [ "$elapsed" -gt 0 ]; then
+        files_per_minute=$((PROCESSED_FILES * 60 / elapsed))
+        bytes_per_second=$((PROCESSED_SIZE_BYTES / elapsed))
+
+        if [ "$files_per_minute" -gt 0 ] && [ "$TOTAL_FILES" -gt "$PROCESSED_FILES" ]; then
+            local remaining_files=$((TOTAL_FILES - PROCESSED_FILES))
+            eta_seconds=$((remaining_files * 60 / files_per_minute))
+        fi
+    fi
+
+    # Atomic update of progress file
+    cat > "$temp_file" << EOF
+# Progress tracking file
+# Version: 1.0
+# Updated: $(date -Iseconds)
+total_files=$TOTAL_FILES
+processed_files=$PROCESSED_FILES
+failed_files=$FAILED_FILES
+total_size_bytes=$TOTAL_SIZE_BYTES
+processed_size_bytes=$PROCESSED_SIZE_BYTES
+start_time=$START_TIME
+last_update=$current_time
+current_file="${1:-}"
+files_per_minute=$files_per_minute
+bytes_per_second=$bytes_per_second
+eta_seconds=$eta_seconds
+EOF
+
+    if mv "$temp_file" "$PROGRESS_FILE" 2>/dev/null; then
+        log_debug "Progress updated: $PROCESSED_FILES/$TOTAL_FILES files, $(format_bytes $PROCESSED_SIZE_BYTES)/$(format_bytes $TOTAL_SIZE_BYTES)"
+    else
+        rm -f "$temp_file" 2>/dev/null || true
+    fi
+}
+
+# Display live progress updates
+show_progress() {
+    [ "$PROGRESS_ENABLED" != 1 ] && return 0
+    [ -z "$PROGRESS_FILE" ] || [ ! -f "$PROGRESS_FILE" ] && return 0
+
+    # Read current progress values
+    local total_files processed_files failed_files
+    local total_size_bytes processed_size_bytes
+    local files_per_minute bytes_per_second eta_seconds
+    local current_file
+
+    # Parse progress file safely
+    while IFS='=' read -r key value; do
+        case "$key" in
+            total_files) total_files="$value" ;;
+            processed_files) processed_files="$value" ;;
+            failed_files) failed_files="$value" ;;
+            total_size_bytes) total_size_bytes="$value" ;;
+            processed_size_bytes) processed_size_bytes="$value" ;;
+            files_per_minute) files_per_minute="$value" ;;
+            bytes_per_second) bytes_per_second="$value" ;;
+            eta_seconds) eta_seconds="$value" ;;
+            current_file) current_file="$value" ;;
+        esac
+    done < "$PROGRESS_FILE" 2>/dev/null
+
+    # Calculate percentage
+    local percentage=0
+    if [ "${total_files:-0}" -gt 0 ]; then
+        percentage=$(((processed_files * 100) / total_files))
+    fi
+
+    # Format file sizes
+    local processed_size_fmt=$(format_bytes "${processed_size_bytes:-0}")
+    local total_size_fmt=$(format_bytes "${total_size_bytes:-0}")
+
+    # Format speed
+    local speed_fmt=$(format_speed "${bytes_per_second:-0}")
+
+    # Format ETA
+    local eta_fmt=$(format_duration "${eta_seconds:-0}")
+
+    # Format current file (truncate if too long)
+    local current_file_display=""
+    if [ -n "$current_file" ]; then
+        current_file_display=$(printf '%.50s' "$current_file")
+        if [ ${#current_file} -gt 50 ]; then
+            current_file_display="${current_file_display}..."
+        fi
+    fi
+
+    # Live progress display using carriage return
+    printf "\r[%3d%%] %d/%d files (%d failed) | %s/%s | %s | ETA: %s | %s" \
+        "$percentage" "${processed_files:-0}" "${total_files:-0}" "${failed_files:-0}" \
+        "$processed_size_fmt" "$total_size_fmt" \
+        "$speed_fmt" "$eta_fmt" \
+        "$current_file_display"
+}
+
+# Format bytes into human readable form
+format_bytes() {
+    local bytes="${1:-0}"
+
+    if [ "$bytes" -lt 1024 ]; then
+        printf "%d B" "$bytes"
+    elif [ "$bytes" -lt 1048576 ]; then
+        printf "%.1f KB" "$(awk "BEGIN {printf \"%.1f\", $bytes / 1024}")"
+    elif [ "$bytes" -lt 1073741824 ]; then
+        printf "%.1f MB" "$(awk "BEGIN {printf \"%.1f\", $bytes / 1048576}")"
+    else
+        printf "%.1f GB" "$(awk "BEGIN {printf \"%.1f\", $bytes / 1073741824}")"
+    fi
+}
+
+# Format speed in human readable form
+format_speed() {
+    local bytes_per_second="${1:-0}"
+
+    if [ "$bytes_per_second" -lt 1048576 ]; then
+        printf "%.1f KB/s" "$(awk "BEGIN {printf \"%.1f\", $bytes_per_second / 1024}")"
+    else
+        printf "%.1f MB/s" "$(awk "BEGIN {printf \"%.1f\", $bytes_per_second / 1048576}")"
+    fi
+}
+
+# Format duration in human readable form
+format_duration() {
+    local seconds="${1:-0}"
+
+    if [ "$seconds" -lt 60 ]; then
+        printf "%ds" "$seconds"
+    elif [ "$seconds" -lt 3600 ]; then
+        local minutes=$((seconds / 60))
+        local remaining_seconds=$((seconds % 60))
+        printf "%dm%ds" "$minutes" "$remaining_seconds"
+    else
+        local hours=$((seconds / 3600))
+        local remaining_minutes=$(((seconds % 3600) / 60))
+        printf "%dh%dm" "$hours" "$remaining_minutes"
+    fi
+}
+
+# Start progress monitoring background process
+start_progress_monitor() {
+    [ "$PROGRESS_ENABLED" != 1 ] && return 0
+
+    # Background progress display
+    {
+        while [ -f "$PROGRESS_FILE" ]; do
+            show_progress
+            sleep "$PROGRESS_UPDATE_INTERVAL"
+        done
+    } &
+
+    PROGRESS_MONITOR_PID=$!
+    log_debug "Started progress monitor (PID: $PROGRESS_MONITOR_PID)"
+}
+
+# Stop progress monitoring
+stop_progress_monitor() {
+    [ "$PROGRESS_ENABLED" != 1 ] && return 0
+
+    if [ -n "${PROGRESS_MONITOR_PID:-}" ]; then
+        kill "$PROGRESS_MONITOR_PID" 2>/dev/null || true
+        wait "$PROGRESS_MONITOR_PID" 2>/dev/null || true
+        unset PROGRESS_MONITOR_PID
+    fi
+
+    # Final progress display
+    show_progress
+    printf "\n"  # Move to next line after progress
+
+    # Clean up progress files
+    if [ -n "$PROGRESS_FILE" ] && [ -f "$PROGRESS_FILE" ]; then
+        rm -f "$PROGRESS_FILE" 2>/dev/null || true
+    fi
+}
+
+# Update file processing statistics
+notify_file_started() {
+    local file_path="$1"
+    local file_size="${2:-0}"
+
+    [ "$PROGRESS_ENABLED" != 1 ] && return 0
+    [ -z "$PROGRESS_FILE" ] && return 0
+
+    # Extract relative path for display
+    local relative_path="$file_path"
+    if [ -n "${INPUT_DIR:-}" ]; then
+        relative_path="${file_path#"$INPUT_DIR"/}"
+    fi
+
+    # Use file locking for parallel safety
+    local lock_file="${PROGRESS_FILE}.lock"
+    if acquire_file_lock "$lock_file" 2; then
+        update_progress "$relative_path"
+        release_file_lock "$lock_file"
+    fi
+}
+
+notify_file_completed() {
+    local file_path="$1"
+    local file_size="${2:-0}"
+
+    [ "$PROGRESS_ENABLED" != 1 ] && return 0
+    [ -z "$PROGRESS_FILE" ] && return 0
+
+    # Use file locking for parallel safety
+    local lock_file="${PROGRESS_FILE}.lock"
+    if acquire_file_lock "$lock_file" 2; then
+        # Read current values from progress file to handle parallel updates
+        local current_processed=$(grep "^processed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+        local current_size=$(grep "^processed_size_bytes=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+
+        PROCESSED_FILES=$((current_processed + 1))
+        PROCESSED_SIZE_BYTES=$((current_size + file_size))
+
+        update_progress
+        release_file_lock "$lock_file"
+    fi
+}
+
+notify_file_failed() {
+    local file_path="$1"
+    local file_size="${2:-0}"
+    local reason="${3:-unknown}"
+
+    [ "$PROGRESS_ENABLED" != 1 ] && return 0
+    [ -z "$PROGRESS_FILE" ] && return 0
+
+    # Use file locking for parallel safety
+    local lock_file="${PROGRESS_FILE}.lock"
+    if acquire_file_lock "$lock_file" 2; then
+        # Read current values from progress file to handle parallel updates
+        local current_processed=$(grep "^processed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+        local current_failed=$(grep "^failed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+        local current_size=$(grep "^processed_size_bytes=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+
+        PROCESSED_FILES=$((current_processed + 1))
+        FAILED_FILES=$((current_failed + 1))
+        PROCESSED_SIZE_BYTES=$((current_size + file_size))
+
+        update_progress
+        release_file_lock "$lock_file"
+    fi
+}
+
+# Display comprehensive summary statistics
+show_summary_stats() {
+    local job_id="$1"
+    local end_time=$(date +%s)
+    local total_duration=$((end_time - START_TIME))
+
+    printf "\n"
+    log_info "=== REMUX OPERATION SUMMARY ==="
+    log_info "Job ID: ${job_id:-N/A}"
+    log_info "Total files: $TOTAL_FILES"
+    log_info "Successfully processed: $((PROCESSED_FILES - FAILED_FILES))"
+    log_info "Failed: $FAILED_FILES"
+    log_info "Total size processed: $(format_bytes $PROCESSED_SIZE_BYTES)"
+    log_info "Duration: $(format_duration $total_duration)"
+
+    if [ "$total_duration" -gt 0 ]; then
+        local avg_files_per_minute=$((PROCESSED_FILES * 60 / total_duration))
+        local avg_speed=$((PROCESSED_SIZE_BYTES / total_duration))
+        log_info "Average speed: $avg_files_per_minute files/min, $(format_speed $avg_speed)"
+    fi
+
+    # Show failed files if any
+    if [ "$FAILED_FILES" -gt 0 ] && [ -n "$job_id" ]; then
+        log_info ""
+        log_info "Failed files:"
+        awk '/^\[failed\]$/{in_failed=1; next} /^\[/{in_failed=0} in_failed && /^[^#]/ && NF>0 {print "  " $0}' "$STATE_DIR/$job_id.state" 2>/dev/null || true
+    fi
+
+    log_info "==============================="
+}
+
+# Logging functions with timestamps and levels
+log_error() {
+    printf "[%s] ERROR: %s\n" "$(date '+%H:%M:%S')" "$1" >&2
+}
+
+log_warn() {
+    printf "[%s] WARNING: %s\n" "$(date '+%H:%M:%S')" "$1" >&2
+}
+
+log_info() {
+    printf "[%s] INFO: %s\n" "$(date '+%H:%M:%S')" "$1"
+}
+
+log_debug() {
+    if [ "$VERBOSE" = 1 ]; then
+        printf "[%s] DEBUG: %s\n" "$(date '+%H:%M:%S')" "$1" >&2
+    fi
+}
+
+log_fatal() {
+    printf "[%s] FATAL: %s\n" "$(date '+%H:%M:%S')" "$1" >&2
+    cleanup_temp_files
+    exit "${2:-$EXIT_SOFTWARE}"
+}
+
+# Validation functions with enhanced security
+validate_path() {
+    path="$1"
+    type="$2"
+
+    if [ -z "$path" ]; then
+        log_error "Path cannot be empty"
+        return 1
+    fi
+
+    # Security: Check path length
+    if [ ${#path} -gt "$MAX_PATH_LENGTH" ]; then
+        log_error "Path too long (max: $MAX_PATH_LENGTH, got: ${#path})"
+        return 1
+    fi
+
+    # Security: Check for forbidden paths
+    case " $FORBIDDEN_PATHS " in
+        *" $(printf '%s' "$path" | cut -d/ -f1-2) "*|*" $(printf '%s' "$path" | cut -d/ -f1-3) "*)
+            log_error "Access to system paths forbidden: $path"
+            return 1
+            ;;
+    esac
+
+    # Security: Reject network paths if not explicitly enabled
+    case "$path" in
+        //*|*://*|\\\\*)
+            log_error "Network paths not supported for security reasons: $path"
+            return 1
+            ;;
+    esac
+
+    log_debug "Validating $type path: $path"
+
+    # Convert to absolute path for security
+    if command -v realpath >/dev/null 2>&1; then
+        if ! normalized_path=$(realpath "$path" 2>/dev/null); then
+            log_error "Cannot resolve path: $path"
+            log_error "Suggestion: Check path syntax and parent directory existence"
+            return 1
+        fi
+        log_debug "Normalized path: $normalized_path"
+        path="$normalized_path"
+    else
+        # Fallback for systems without realpath
+        case "$path" in
+            /*) ;; # Already absolute
+            *) path="$(pwd)/$path" ;;
+        esac
+        # Manual normalization - remove . and .. components safely
+        path=$(printf '%s' "$path" | sed 's|/\./|/|g; s|//\+|/|g')
+        while case "$path" in */../*) true;; *) false;; esac; do
+            path=$(printf '%s' "$path" | sed 's|/[^/]\+/\.\./|/|')
+        done
+        # Remove trailing /.. and /.
+        path=$(printf '%s' "$path" | sed 's|/\.\.$||; s|/\.$||')
+        log_debug "Manually normalized path: $path"
+    fi
+
+    # Security check - prevent directory traversal
+    case "$path" in
+        */../*|*/./*|../*|*/..|./*|*..*)
+            log_error "Path contains unsafe directory traversal: $path"
+            log_error "Suggestion: Use absolute paths without .. or . components"
+            return 1
+            ;;
+    esac
+
+    # Check for null bytes and other dangerous characters
+    case "$path" in
+        *[[:cntrl:]]*)
+            log_error "Path contains control characters: $path"
+            return 1
+            ;;
+    esac
+
+    if [ "$type" = "input" ]; then
+        if [ ! -e "$path" ]; then
+            log_error "Input path does not exist: $path"
+            log_error "Suggestion: Verify the path is correct and accessible"
+            return 1
+        fi
+        if [ ! -d "$path" ]; then
+            log_error "Input path is not a directory: $path"
+            return 1
+        fi
+        if [ ! -r "$path" ]; then
+            log_error "Input directory is not readable: $path"
+            log_error "Suggestion: Check file permissions (chmod +r)"
+            return 1
+        fi
+        # Test write permission by creating a temporary file
+        if ! touch "$path/.remux_test_$$" 2>/dev/null; then
+            log_warn "Input directory may not be writable (cannot create temporary files)"
+        else
+            rm -f "$path/.remux_test_$$" 2>/dev/null || true
+        fi
+    elif [ "$type" = "output" ]; then
+        # For output, check if parent directory exists and is writable
+        parent_dir=$(dirname "$path")
+        if [ ! -d "$parent_dir" ]; then
+            log_error "Output parent directory does not exist: $parent_dir"
+            log_error "Suggestion: Create parent directory first (mkdir -p)"
+            return 1
+        fi
+        if [ ! -w "$parent_dir" ]; then
+            log_error "Output parent directory is not writable: $parent_dir"
+            log_error "Suggestion: Check directory permissions (chmod +w)"
+            return 1
+        fi
+        # Test write permission by creating output directory if needed
+        if [ ! -d "$path" ]; then
+            if ! mkdir -p "$path" 2>/dev/null; then
+                log_error "Cannot create output directory: $path"
+                return 1
+            fi
+        fi
+        if [ ! -w "$path" ]; then
+            log_error "Output directory is not writable: $path"
+            log_error "Suggestion: Check directory permissions (chmod +w)"
+            return 1
+        fi
+    fi
+
+    log_debug "Path validation successful: $path"
+    return 0
+}
+
+validate_extension() {
+    ext="$1"
+    ext_type="${2:-unknown}"
+
+    if [ -z "$ext" ]; then
+        log_error "File extension cannot be empty"
+        return 1
+    fi
+
+    log_debug "Validating $ext_type extension: $ext"
+
+    # Ensure extension starts with dot
+    case "$ext" in
+        .*)
+            ;;
+        *)
+            log_debug "Adding missing dot to extension: $ext"
+            ext=".$ext"
+            ;;
+    esac
+
+    # Check for dangerous characters in extension
+    case "$ext" in
+        *[[:space:]]*|*/*|*\\*|*\**|*\?*|*\$*|*\`*|*\;*|*\&*|*\|*|*\<*|*\>*)
+            log_error "Extension contains unsafe characters: $ext"
+            log_error "Suggestion: Use only alphanumeric characters and dots"
+            return 1
+            ;;
+    esac
+
+    # Validate against supported video container extensions
+    case "$ext" in
+        .mkv|.mp4|.avi|.mov|.m2ts|.ts|.mts|.webm|.mxf|.asf|.wmv)
+            log_debug "Extension validation successful: $ext"
+            printf "%s" "$ext"
+            return 0
+            ;;
+        *)
+            log_error "Unsupported $ext_type file extension: $ext"
+            log_error "Supported container formats:"
+            log_error "  Matroska: .mkv (recommended for remuxing)"
+            log_error "  MP4: .mp4 (widely compatible)"
+            log_error "  AVI: .avi (legacy format)"
+            log_error "  QuickTime: .mov"
+            log_error "  Blu-ray: .m2ts, .ts, .mts"
+            log_error "  Web: .webm"
+            log_error "  Professional: .mxf"
+            log_error "  Windows: .asf, .wmv"
+            log_error "Suggestion: Use .mkv for best compatibility and features"
+            return 1
+            ;;
+    esac
+}
+
+validate_conversion() {
+    from_ext="$1"
+    to_ext="$2"
+
+    log_debug "Validating conversion: $from_ext -> $to_ext"
+
+    # Most video container conversions are valid for remuxing
+    # Only prevent same-to-same conversions
+    if [ "$from_ext" = "$to_ext" ]; then
+        log_error "Input and output extensions cannot be the same: $from_ext"
+        log_error "Suggestion: Choose a different output format"
+        return 1
+    fi
+
+    # Warn about potentially problematic conversions
+    case "$from_ext:$to_ext" in
+        .webm:.mp4|.webm:.avi)
+            log_warn "Converting WebM to $to_ext may not preserve all streams"
+            log_warn "Suggestion: Consider using .mkv for better compatibility"
+            ;;
+        .mxf:*)
+            log_warn "MXF files may contain professional codecs requiring special handling"
+            ;;
+        *.asf|*.wmv:.*)
+            log_warn "Windows Media formats may have compatibility issues"
+            ;;
+    esac
+
+    log_debug "Conversion validation successful: $from_ext -> $to_ext"
+    return 0
+}
+
+validate_parallel_jobs() {
+    jobs="$1"
+
+    if [ -z "$jobs" ]; then
+        log_error "Parallel jobs value cannot be empty"
+        return 1
+    fi
+
+    log_debug "Validating parallel jobs: $jobs"
+
+    # Security: Use the sanitize_input function
+    if ! sanitized_jobs=$(sanitize_input "$jobs" 8 "number"); then
+        log_error "Invalid parallel jobs value: $jobs"
+        log_error "Must be a positive integer (e.g., 1, 2, 4, 8)"
+        log_error "Suggestion: Use $(nproc 2>/dev/null || echo 4) for automatic CPU detection"
+        return 1
+    fi
+    jobs="$sanitized_jobs"
+
+    if [ "$jobs" -le 0 ]; then
+        log_error "Parallel jobs must be greater than 0: $jobs"
+        log_error "Suggestion: Use 1 for single-threaded processing"
+        return 1
+    fi
+
+    # Security: Enforce strict maximum to prevent resource exhaustion
+    if [ "$jobs" -gt "$MAX_PARALLEL_JOBS" ]; then
+        log_error "Parallel jobs ($jobs) exceeds security limit ($MAX_PARALLEL_JOBS)"
+        log_error "This limit prevents resource exhaustion attacks"
+        return 1
+    fi
+
+    # Get system information for warnings
+    available_cores=$(nproc 2>/dev/null || echo 4)
+    available_mem_gb=$(awk '/MemTotal/ {printf "%.0f", $2/1024/1024}' /proc/meminfo 2>/dev/null || echo 4)
+
+    if [ "$jobs" -gt "$available_cores" ]; then
+        log_warn "Job count ($jobs) exceeds available CPU cores ($available_cores)"
+        log_warn "This may reduce performance due to context switching"
+    fi
+
+    if [ "$jobs" -gt 32 ]; then
+        log_warn "Very high parallel job count may overwhelm system: $jobs"
+        log_warn "Consider reducing to 8-16 for optimal performance"
+    fi
+
+    # Estimate memory usage (rough calculation)
+    estimated_mem_per_job=1  # GB per job (conservative estimate)
+    estimated_total_mem=$((jobs * estimated_mem_per_job))
+    if [ "$estimated_total_mem" -gt "$available_mem_gb" ]; then
+        log_warn "High job count may exceed available memory"
+        log_warn "Estimated usage: ${estimated_total_mem}GB, Available: ${available_mem_gb}GB"
+        log_warn "Consider reducing job count to prevent swapping"
+    fi
+
+    log_debug "Parallel jobs validation successful: $jobs"
+    return 0
+}
+
+# Configuration functions
+get_config_dir() {
+    config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
+    printf "%s/remux" "$config_home"
+}
+
+get_config_file() {
+    printf "%s/config" "$(get_config_dir)"
+}
+
+load_config() {
+    config_file="$(get_config_file)"
+
+    if [ -f "$config_file" ]; then
+        log_info "Loading configuration from $config_file"
+
+        # Security: Check config file size
+        if ! validate_file_size "$config_file" "$MAX_CONFIG_FILE_SIZE"; then
+            log_error "Config file too large, refusing to load"
+            return 1
+        fi
+
+        # Security: Check config file permissions (should not be world-writable)
+        if [ -w "$config_file" ] && [ "$(stat -c%a "$config_file" 2>/dev/null | cut -c3)" -gt 4 ]; then
+            log_warn "Config file has overly permissive permissions: $config_file"
+        fi
+
+        # SECURITY: Never source config files directly - only parse key=value pairs
+        # This prevents arbitrary code execution vulnerabilities
+
+        # Parse configuration variables safely
+        while IFS='=' read -r key value; do
+            # Skip comments and empty lines
+            case "$key" in
+                ''|'#'*) continue ;;
+            esac
+
+            # Remove leading/trailing whitespace from key
+            key=$(printf '%s' "$key" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+
+            # Remove leading/trailing whitespace and quotes from value
+            value=$(printf '%s' "$value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//; s/^'\''//; s/'\''$//')
+
+            # Validate key format (alphanumeric and underscore only)
+            case "$key" in
+                *[!A-Za-z0-9_]*)
+                    log_warn "Invalid config key format: $key"
+                    continue
+                    ;;
+            esac
+
+            # Security: Validate each value before assignment
+            case "$key" in
+                INPUT_DIR|OUTPUT_DIR)
+                    if sanitized_value=$(sanitize_input "$value" "$MAX_PATH_LENGTH" "path" 2>/dev/null); then
+                        case "$key" in
+                            INPUT_DIR) DEFAULT_INPUT_DIR="$sanitized_value" ;;
+                            OUTPUT_DIR) DEFAULT_OUTPUT_DIR="$sanitized_value" ;;
+                        esac
+                    else
+                        log_warn "Invalid $key in config: $value"
+                    fi
+                    ;;
+                FROM_EXT|TO_EXT)
+                    if sanitized_value=$(sanitize_input "$value" 32 "extension" 2>/dev/null); then
+                        case "$key" in
+                            FROM_EXT) DEFAULT_FROM_EXT="$sanitized_value" ;;
+                            TO_EXT) DEFAULT_TO_EXT="$sanitized_value" ;;
+                        esac
+                    else
+                        log_warn "Invalid $key in config: $value"
+                    fi
+                    ;;
+                PARALLEL_JOBS)
+                    if sanitized_value=$(sanitize_input "$value" 8 "number" 2>/dev/null); then
+                        if [ "$sanitized_value" -le "$MAX_PARALLEL_JOBS" ] && [ "$sanitized_value" -gt 0 ]; then
+                            DEFAULT_PARALLEL_JOBS="$sanitized_value"
+                        else
+                            log_warn "PARALLEL_JOBS out of range (1-$MAX_PARALLEL_JOBS): $value"
+                        fi
+                    else
+                        log_warn "Invalid PARALLEL_JOBS in config: $value"
+                    fi
+                    ;;
+                OVERWRITE|SELECT_BEST|SHOW_STREAMS|AUTO_FORMAT|PRESERVE_METADATA|PRESERVE_CHAPTERS|VERIFY_OUTPUT)
+                    case "$value" in
+                        0|1|true|false|yes|no)
+                            case "$value" in
+                                1|true|yes) normalized_value=1 ;;
+                                *) normalized_value=0 ;;
+                            esac
+                            case "$key" in
+                                OVERWRITE) DEFAULT_OVERWRITE="$normalized_value" ;;
+                                SELECT_BEST) DEFAULT_SELECT_BEST="$normalized_value" ;;
+                                SHOW_STREAMS) DEFAULT_SHOW_STREAMS="$normalized_value" ;;
+                                AUTO_FORMAT) DEFAULT_AUTO_FORMAT="$normalized_value" ;;
+                                PRESERVE_METADATA) DEFAULT_PRESERVE_METADATA="$normalized_value" ;;
+                                PRESERVE_CHAPTERS) DEFAULT_PRESERVE_CHAPTERS="$normalized_value" ;;
+                                VERIFY_OUTPUT) DEFAULT_VERIFY_OUTPUT="$normalized_value" ;;
+                            esac
+                            ;;
+                        *)
+                            log_warn "Invalid boolean value for $key: $value"
+                            ;;
+                    esac
+                    ;;
+                VIDEO_STREAMS|AUDIO_STREAMS|SUBTITLE_STREAMS|TEMPLATE|PATTERN|FILE_LIST)
+                    if sanitized_value=$(sanitize_input "$value" 1024 "general" 2>/dev/null); then
+                        case "$key" in
+                            VIDEO_STREAMS) DEFAULT_VIDEO_STREAMS="$sanitized_value" ;;
+                            AUDIO_STREAMS) DEFAULT_AUDIO_STREAMS="$sanitized_value" ;;
+                            SUBTITLE_STREAMS) DEFAULT_SUBTITLE_STREAMS="$sanitized_value" ;;
+                            TEMPLATE) DEFAULT_TEMPLATE="$sanitized_value" ;;
+                            PATTERN) DEFAULT_PATTERN="$sanitized_value" ;;
+                            FILE_LIST) DEFAULT_FILE_LIST="$sanitized_value" ;;
+                        esac
+                    else
+                        log_warn "Invalid $key in config: $value"
+                    fi
+                    ;;
+                *)
+                    log_warn "Unknown config key: $key"
+                    ;;
+            esac
+        done < "$config_file"
+
+        CONFIG_LOADED=1
+    fi
+
+    # Set defaults for unspecified values - use secure defaults
+    calculated_jobs=$(nproc 2>/dev/null || echo 4)
+    # Cap default jobs to half of MAX_PARALLEL_JOBS for safety
+    if [ "$calculated_jobs" -gt $((MAX_PARALLEL_JOBS / 2)) ]; then
+        calculated_jobs=$((MAX_PARALLEL_JOBS / 2))
+    fi
+    DEFAULT_PARALLEL_JOBS="${DEFAULT_PARALLEL_JOBS:-$calculated_jobs}"
+    DEFAULT_FROM_EXT="${DEFAULT_FROM_EXT:-.m2ts}"
+    DEFAULT_TO_EXT="${DEFAULT_TO_EXT:-.mkv}"
+
+    return 0
+}
+
+save_config_example() {
+    config_dir="$(get_config_dir)"
+    config_file="$config_dir/config.example"
+
+    if ! mkdir -p "$config_dir"; then
+        log_error "Failed to create config directory: $config_dir"
+        return $EXIT_CONFIG
+    fi
+
+    cat > "$config_file" << 'EOF'
+# remux configuration file
+# Copy to config (without .example) and modify as needed
+
+# Default input directory
+#INPUT_DIR="/path/to/videos"
+
+# Default output directory (if empty, uses INPUT_DIR/out)
+#OUTPUT_DIR="/path/to/output"
+
+# Default input file extension
+FROM_EXT=".m2ts"
+
+# Default output file extension
+TO_EXT=".mkv"
+
+# Number of parallel processing jobs
+PARALLEL_JOBS=4
+
+# Overwrite existing files (0=no, 1=yes)
+OVERWRITE=0
+
+# Select only best streams (0=all streams, 1=best only)
+SELECT_BEST=0
+
+# === ADVANCED OPTIONS ===
+
+# Show stream information before processing (0=no, 1=yes)
+SHOW_STREAMS=0
+
+# Auto-detect optimal output format (0=no, 1=yes)
+AUTO_FORMAT=0
+
+# Preserve metadata and attachments (0=no, 1=yes)
+PRESERVE_METADATA=1
+
+# Preserve chapter information (0=no, 1=yes)
+PRESERVE_CHAPTERS=1
+
+# Verify output file integrity (0=no, 1=yes)
+VERIFY_OUTPUT=0
+
+# Stream selection (best/all/none/specific indices/language codes)
+VIDEO_STREAMS="best"
+AUDIO_STREAMS="best"
+SUBTITLE_STREAMS="none"
+
+# Default template for stream mapping
+# Options: bluray-universal, movie-collection, tv-series, archive-quality, streaming-optimized, mobile-device
+#TEMPLATE=""
+
+# Default pattern for file matching
+#PATTERN="*.m2ts"
+
+# Default file list for batch processing
+#FILE_LIST="/path/to/file-list.txt"
+
+# === SECURITY NOTES ===
+# This script implements comprehensive security hardening:
+# - Input sanitization and validation
+# - Command injection prevention
+# - Path traversal protection
+# - Secure temporary file handling
+# - Resource exhaustion protection (max jobs: 64)
+# - Privilege escalation checks
+# - Network path rejection for security
+# - Configuration file validation (no code execution)
+# Security can be disabled by setting SECURITY_CHECKS_ENABLED=0 (not recommended)
+EOF
+
+    log_info "Example configuration saved to: $config_file"
+    log_info "Copy to $(get_config_file) and modify as needed"
+
+    return 0
+}
+
+# Resume capability functions
+# Initialize state directory
+init_state_dir() {
+    XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+    STATE_DIR="$XDG_STATE_HOME/remux"
+
+    if ! mkdir -p "$STATE_DIR" 2>/dev/null; then
+        log_error "Cannot create state directory: $STATE_DIR"
+        return 1
+    fi
+
+    # Validate state directory is writable
+    test_file="$STATE_DIR/.write_test.$$"
+    if ! touch "$test_file" 2>/dev/null; then
+        log_error "State directory not writable: $STATE_DIR"
+        return 1
+    fi
+    rm -f "$test_file" 2>/dev/null || true
+
+    log_debug "State directory initialized: $STATE_DIR"
+    return 0
+}
+
+# Clean up state locks on exit
+cleanup_state_locks() {
+    if [ -d "$STATE_DIR" ]; then
+        # Remove any locks held by this process
+        for lock_file in "$STATE_DIR"/*.lock; do
+            [ -f "$lock_file" ] || continue
+            # Check if this process owns the lock
+            if [ -r "$lock_file" ] && grep -q "^$$:" "$lock_file" 2>/dev/null; then
+                log_debug "Removing lock held by this process: $lock_file"
+                rm -f "$lock_file" 2>/dev/null || true
+            fi
+        done
+    fi
+
+    # Clean up any temporary state files from this process
+    if [ -d "$STATE_DIR" ]; then
+        find "$STATE_DIR" -name "*.tmp.$$" -delete 2>/dev/null || true
+        find "$STATE_DIR" -name "*.append.$$" -delete 2>/dev/null || true
+        find "$STATE_DIR" -name "*.rebuild.$$" -delete 2>/dev/null || true
+    fi
+
+    # Close file descriptors safely
+    for fd in 3 4 5 6 7 8 9; do
+        eval "exec $fd<&-" 2>/dev/null || true
+        eval "exec $fd>&-" 2>/dev/null || true
+    done
+}
+
+# File locking utilities for atomic operations
+acquire_file_lock() {
+    lock_file="$1"
+    timeout="${2:-10}"
+
+    # Security: Validate lock file path
+    case "$lock_file" in
+        */../*|*/./*|../*|*/..|./*|*..*)
+            log_error "Invalid lock file path: $lock_file"
+            return 1
+            ;;
+        /tmp/*|"${TMPDIR:-/tmp}"/*|/var/tmp/*|"$STATE_DIR"/*)
+            ;; # Allow only safe directories
+        *)
+            log_error "Lock file must be in temporary or state directory: $lock_file"
+            return 1
+            ;;
+    esac
+
+    # Security: Check if lock file is a regular file or doesn't exist
+    if [ -e "$lock_file" ] && [ ! -f "$lock_file" ]; then
+        log_error "Lock file exists but is not a regular file: $lock_file"
+        return 1
+    fi
+
+    count=0
+    while [ $count -lt $timeout ]; do
+        # Use exclusive creation to prevent race conditions
+        if (
+            set -C  # noclobber option
+            umask "$SECURE_UMASK"
+            echo "$$:$(date +%s):$(id -un):$(hostname)" > "$lock_file"
+        ) 2>/dev/null; then
+            log_debug "Acquired lock: $lock_file"
+            return 0
+        fi
+
+        # Check if lock is stale (older than 1 hour)
+        if [ -f "$lock_file" ]; then
+            lock_age=$(( $(date +%s) - $(stat -c%Y "$lock_file" 2>/dev/null || echo 0) ))
+            if [ "$lock_age" -gt 3600 ]; then
+                log_warn "Removing stale lock file (age: ${lock_age}s): $lock_file"
+                rm -f "$lock_file" 2>/dev/null || true
+                continue
+            fi
+        fi
+
+        sleep 1
+        count=$((count + 1))
+    done
+
+    log_error "Failed to acquire lock after ${timeout}s: $lock_file"
+    return 1
+}
+
+release_file_lock() {
+    lock_file="$1"
+
+    # Security: Validate lock file path
+    case "$lock_file" in
+        */../*|*/./*|../*|*/..|./*|*..*)
+            log_error "Invalid lock file path for release: $lock_file"
+            return 1
+            ;;
+    esac
+
+    if [ -f "$lock_file" ]; then
+        # Verify we own the lock before releasing
+        lock_content=$(cat "$lock_file" 2>/dev/null || echo "")
+        lock_pid=$(echo "$lock_content" | cut -d: -f1 2>/dev/null || echo "")
+        lock_user=$(echo "$lock_content" | cut -d: -f3 2>/dev/null || echo "")
+        current_user=$(id -un 2>/dev/null || echo "")
+
+        if [ "$lock_pid" = "$$" ] && [ "$lock_user" = "$current_user" ]; then
+            rm -f "$lock_file" 2>/dev/null || true
+            log_debug "Released lock: $lock_file"
+        else
+            log_warn "Cannot release lock owned by different process/user: $lock_file (pid:$lock_pid user:$lock_user current:$$:$current_user)"
+            return 1
+        fi
+    else
+        log_debug "Lock file does not exist: $lock_file"
+    fi
+    return 0
+}
+
+# Generate unique job ID based on parameters and timestamp
+generate_job_id() {
+    input_dir="$1"
+    from_ext="$2"
+    to_ext="$3"
+
+    # Create deterministic hash from parameters
+    param_string="$input_dir:$from_ext:$to_ext"
+    if command -v sha256sum >/dev/null 2>&1; then
+        hash_part=$(printf '%s' "$param_string" | sha256sum | cut -c1-16)
+    elif command -v shasum >/dev/null 2>&1; then
+        hash_part=$(printf '%s' "$param_string" | shasum -a 256 | cut -c1-16)
+    else
+        # Fallback: use simpler hash
+        hash_part=$(printf '%s' "$param_string" | od -A n -t x1 | tr -d ' \n' | cut -c1-16)
+    fi
+
+    # Add timestamp for uniqueness
+    timestamp=$(date +%Y%m%d_%H%M%S)
+
+    printf "remux_%s_%s" "$timestamp" "$hash_part"
+}
+
+# Check version compatibility
+is_version_compatible() {
+    file_version="$1"
+
+    # Extract major and minor version numbers
+    file_major=$(printf '%s' "$file_version" | cut -d. -f1)
+    file_minor=$(printf '%s' "$file_version" | cut -d. -f2)
+    min_major=$(printf '%s' "$STATE_FILE_MIN_VERSION" | cut -d. -f1)
+    min_minor=$(printf '%s' "$STATE_FILE_MIN_VERSION" | cut -d. -f2)
+
+    # Version compatibility check
+    if [ "$file_major" -lt "$min_major" ]; then
+        return 1
+    elif [ "$file_major" -eq "$min_major" ] && [ "$file_minor" -lt "$min_minor" ]; then
+        return 1
+    fi
+
+    return 0
+}
+
+# Create state file for a new job
+create_state_file() {
+    job_id="$1"
+    input_dir="$2"
+    output_dir="$3"
+    from_ext="$4"
+    to_ext="$5"
+    overwrite="$6"
+    parallel_jobs="$7"
+
+    state_file="$STATE_DIR/$job_id.state"
+    temp_file="$state_file.tmp.$$"
+
+    # Get current machine info
+    current_hostname=$(hostname 2>/dev/null || echo "unknown")
+    current_user=$(id -un 2>/dev/null || echo "unknown")
+    current_time=$(date -Iseconds)
+
+    # Create state file with comprehensive metadata
+    cat > "$temp_file" << EOF
+# Remux job state file
+# Version: $STATE_FILE_VERSION
+# Job ID: $job_id
+# Created: $current_time
+
+[job]
+id=$job_id
+input_dir=$input_dir
+output_dir=$output_dir
+from_ext=$from_ext
+to_ext=$to_ext
+overwrite=$overwrite
+parallel_jobs=$parallel_jobs
+status=running
+started=$current_time
+last_updated=$current_time
+hostname=$current_hostname
+user=$current_user
+
+[progress]
+total_files=0
+completed_files=0
+failed_files=0
+
+[completed]
+# Format: relative_path_from_input_dir
+
+[failed]
+# Format: relative_path_from_input_dir:reason
+
+EOF
+
+    # Atomic creation
+    if mv "$temp_file" "$state_file" 2>/dev/null; then
+        log_debug "Created state file: $state_file"
+        return 0
+    else
+        rm -f "$temp_file" 2>/dev/null || true
+        log_error "Failed to create state file: $state_file"
+        return 1
+    fi
+}
+
+# Validate state file integrity and format
+validate_state_file() {
+    job_id="$1"
+    state_file="$STATE_DIR/$job_id.state"
+
+    if [ ! -f "$state_file" ]; then
+        log_debug "State file does not exist: $state_file"
+        return 1
+    fi
+
+    # Check file size limits
+    if [ -s "$state_file" ]; then
+        file_size=$(wc -c < "$state_file" 2>/dev/null || echo "0")
+        if [ "$file_size" -gt "$MAX_STATE_FILE_SIZE" ]; then
+            log_error "State file too large (${file_size} > ${MAX_STATE_FILE_SIZE}): $state_file"
+            return 1
+        fi
+    else
+        log_error "State file is empty: $state_file"
+        return 1
+    fi
+
+    # Check for basic corruption - must be valid text
+    if command -v file >/dev/null 2>&1; then
+        if ! file "$state_file" 2>/dev/null | grep -q "text"; then
+            log_error "State file appears corrupted (not text): $state_file"
+            return 1
+        fi
+    else
+        # Fallback: check if file contains printable characters
+        if ! head -1 "$state_file" 2>/dev/null | grep -q "^#"; then
+            log_error "State file appears corrupted (no header): $state_file"
+            return 1
+        fi
+    fi
+
+    # Validate file structure - check for required sections
+    required_sections="job progress completed"
+    for section in $required_sections; do
+        if ! grep -q "^\[$section\]$" "$state_file" 2>/dev/null; then
+            log_error "State file missing required section [$section]: $state_file"
+            return 1
+        fi
+    done
+
+    # Check version compatibility
+    version_line=$(head -2 "$state_file" | grep "# Version:" || true)
+    if [ -n "$version_line" ]; then
+        file_version=$(printf '%s' "$version_line" | sed 's/.*Version: *//')
+        if ! is_version_compatible "$file_version"; then
+            log_error "Incompatible state file version: $file_version (minimum: $STATE_FILE_MIN_VERSION)"
+            return 1
+        fi
+    else
+        log_warn "State file missing version info, assuming compatible: $state_file"
+    fi
+
+    # Validate required job fields exist
+    required_job_fields="id input_dir output_dir from_ext to_ext status started"
+    for field in $required_job_fields; do
+        if ! awk -v field="$field" '/^\[job\]$/{in_job=1; next} /^\[/{in_job=0} in_job && $0 ~ "^" field "=" {found=1} END{exit !found}' "$state_file" 2>/dev/null; then
+            log_error "State file missing required job field: $field"
+            return 1
+        fi
+    done
+
+    # Check for file consistency - no duplicate sections
+    section_count=$(grep -c "^\[.*\]$" "$state_file" 2>/dev/null || echo "0")
+    unique_sections=$(grep "^\[.*\]$" "$state_file" 2>/dev/null | sort -u | wc -l || echo "0")
+    if [ "$section_count" != "$unique_sections" ]; then
+        log_error "State file has duplicate sections: $state_file"
+        return 1
+    fi
+
+    log_debug "State file validation passed: $state_file"
+    return 0
+}
+
+# Check if machine/hostname has changed (cross-machine detection)
+check_machine_consistency() {
+    job_id="$1"
+
+    # Get stored machine info if available
+    stored_hostname=$(read_state_value "$job_id" "job" "hostname" 2>/dev/null || echo "")
+    current_hostname=$(hostname 2>/dev/null || echo "unknown")
+
+    if [ -n "$stored_hostname" ] && [ "$stored_hostname" != "$current_hostname" ]; then
+        log_debug "Machine mismatch: stored=$stored_hostname, current=$current_hostname"
+        return 1
+    fi
+
+    return 0
+}
+
+# Read value from state file with validation
+read_state_value() {
+    job_id="$1"
+    section="$2"
+    key="$3"
+    state_file="$STATE_DIR/$job_id.state"
+
+    # Validate state file first
+    if ! validate_state_file "$job_id"; then
+        return 1
+    fi
+
+    # Parse INI-style state file
+    awk -v section="$section" -v key="$key" '
+        /^\[.*\]$/ { current_section = substr($0, 2, length($0)-2) }
+        current_section == section && /^[^#]/ {
+            if (match($0, "^" key "=")) {
+                value = substr($0, RSTART + length(key) + 1)
+                print value
+                exit 0
+            }
+        }
+    ' "$state_file"
+}
+
+# Backup state file before modifications
+backup_state_file() {
+    job_id="$1"
+    state_file="$STATE_DIR/$job_id.state"
+
+    if [ ! -f "$state_file" ]; then
+        return 1
+    fi
+
+    # Create backup with timestamp
+    backup_file="$state_file.backup.$(date +%s)"
+    if cp "$state_file" "$backup_file" 2>/dev/null; then
+        log_debug "Created state backup: $backup_file"
+        # Clean old backups, keep only recent ones
+        cleanup_old_backups "$job_id"
+        return 0
+    else
+        log_warn "Failed to create state backup: $backup_file"
+        return 1
+    fi
+}
+
+# Clean up old backup files
+cleanup_old_backups() {
+    job_id="$1"
+
+    # Find all backup files for this job and keep only the newest ones
+    backup_count=$(ls -1 "$STATE_DIR"/$job_id.state.backup.* 2>/dev/null | wc -l)
+    if [ "$backup_count" -gt "$STATE_BACKUP_RETENTION" ]; then
+        # Remove oldest backup files
+        ls -1t "$STATE_DIR"/$job_id.state.backup.* 2>/dev/null |
+            tail -n +$((STATE_BACKUP_RETENTION + 1)) |
+            while IFS= read -r old_backup; do
+                rm -f "$old_backup" 2>/dev/null || true
+                log_debug "Removed old backup: $old_backup"
+            done
+    fi
+}
+
+# Atomic update with backup and validation
+update_state_value() {
+    job_id="$1"
+    section="$2"
+    key="$3"
+    value="$4"
+    state_file="$STATE_DIR/$job_id.state"
+    temp_file="$state_file.tmp.$$"
+    lock_file="$state_file.lock"
+
+    # Validate state file exists and is valid
+    if ! validate_state_file "$job_id"; then
+        log_error "Cannot update invalid state file: $state_file"
+        return 1
+    fi
+
+    # Acquire lock to prevent race conditions
+    if ! acquire_file_lock "$lock_file" 5; then
+        log_error "Failed to acquire lock for state update: $lock_file"
+        return 1
+    fi
+
+    # Optimized backup strategy - only backup periodically
+    STATE_UPDATE_COUNTER=$((STATE_UPDATE_COUNTER + 1))
+    if [ $((STATE_UPDATE_COUNTER % STATE_BACKUP_FREQUENCY)) -eq 0 ]; then
+        backup_state_file "$job_id" || log_warn "Backup failed but continuing"
+        log_debug "Created backup for state file (update #$STATE_UPDATE_COUNTER)"
+    fi
+
+    # Add timestamp for tracking last modification
+    current_time=$(date -Iseconds)
+
+    # Update state file with atomic operation
+    awk -v section="$section" -v key="$key" -v value="$value" -v timestamp="$current_time" '
+        BEGIN { in_section=0; found=0 }
+        /^\[.*\]$/ {
+            current_section = substr($0, 2, length($0)-2)
+            in_section = (current_section == section)
+            print $0
+            next
+        }
+        in_section && /^[^#]/ && match($0, "^" key "=") {
+            print key "=" value
+            found = 1
+            next
+        }
+        in_section && /^[^#]/ && match($0, "^last_updated=") && section == "job" {
+            print "last_updated=" timestamp
+            next
+        }
+        { print $0 }
+        END {
+            if (!found && in_section) {
+                print key "=" value
+                if (section == "job") {
+                    print "last_updated=" timestamp
+                }
+            }
+        }
+    ' "$state_file" > "$temp_file"
+
+    # Validate the updated file
+    if [ -s "$temp_file" ]; then
+        # Verify temp file is valid by checking structure
+        if grep -q "^\[job\]$" "$temp_file" && grep -q "^\[progress\]$" "$temp_file"; then
+            if mv "$temp_file" "$state_file" 2>/dev/null; then
+                log_debug "Updated $section.$key=$value in $job_id"
+                release_file_lock "$lock_file"
+                return 0
+            else
+                log_error "Failed to move updated state file"
+            fi
+        else
+            log_error "Updated state file failed validation"
+        fi
+    else
+        log_error "Updated state file is empty"
+    fi
+
+    # Cleanup on failure
+    rm -f "$temp_file" 2>/dev/null || true
+    release_file_lock "$lock_file"
+    log_error "Failed to update state file: $state_file"
+    return 1
+}
+
+# Handle disk full scenarios during state updates
+handle_disk_full() {
+    state_file="$1"
+    temp_file="$2"
+
+    # Check available space in state directory
+    state_dir_parent=$(dirname "$STATE_DIR")
+    available_space=$(df "$state_dir_parent" 2>/dev/null | awk 'NR==2 {print $4}' || echo "0")
+
+    # If less than 1MB available, try cleanup
+    if [ "$available_space" -lt 1024 ]; then
+        log_warn "Low disk space in state directory: ${available_space}KB available"
+
+        # Clean up old backup files aggressively
+        find "$STATE_DIR" -name "*.backup.*" -mtime +1 -delete 2>/dev/null || true
+
+        # Remove temporary files
+        find "$STATE_DIR" -name "*.tmp.*" -mtime +0 -delete 2>/dev/null || true
+
+        # Check space again
+        available_space=$(df "$state_dir_parent" 2>/dev/null | awk 'NR==2 {print $4}' || echo "0")
+        if [ "$available_space" -lt 512 ]; then
+            log_error "Insufficient disk space for state file updates: ${available_space}KB"
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+# Mark file as completed in state file with recovery
+mark_file_completed() {
+    job_id="$1"
+    relative_path="$2"
+    state_file="$STATE_DIR/$job_id.state"
+    lock_file="$state_file.lock"
+
+    # Validate state file first
+    if ! validate_state_file "$job_id" 2>/dev/null; then
+        log_warn "State file validation failed, attempting recovery"
+        if ! recover_state_file "$job_id"; then
+            log_error "Cannot mark file completed: state file recovery failed"
+            return 1
+        fi
+    fi
+
+    # Check disk space
+    if ! handle_disk_full "$state_file" ""; then
+        log_error "Cannot mark file completed: disk full"
+        return 1
+    fi
+
+    # Acquire lock to prevent race conditions
+    if ! acquire_file_lock "$lock_file" 10; then
+        log_error "Failed to acquire lock for completion tracking: $lock_file"
+        return 1
+    fi
+
+    # Create backup before modification
+    backup_state_file "$job_id" 2>/dev/null || log_debug "Backup failed but continuing"
+
+    # Append to completed section atomically
+    temp_append="$state_file.append.$$"
+    if printf '%s\n' "$relative_path" > "$temp_append" 2>/dev/null; then
+        if cat "$temp_append" >> "$state_file" 2>/dev/null; then
+            rm -f "$temp_append" 2>/dev/null || true
+
+            # Update completed count with error handling
+            completed_count=$(awk '/^\[completed\]$/{in_completed=1; next} /^\[/{in_completed=0} in_completed && /^[^#]/ && NF>0 {count++} END{print count+0}' "$state_file" 2>/dev/null || echo "0")
+
+            if update_state_value "$job_id" "progress" "completed_files" "$completed_count" 2>/dev/null; then
+                log_debug "Marked completed: $relative_path"
+                release_file_lock "$lock_file"
+                return 0
+            else
+                log_warn "Failed to update completed count, but file was marked completed"
+                release_file_lock "$lock_file"
+                return 0
+            fi
+        else
+            rm -f "$temp_append" 2>/dev/null || true
+            log_error "Failed to append to state file"
+        fi
+    else
+        log_error "Failed to create temp append file"
+    fi
+
+    # Cleanup on failure
+    release_file_lock "$lock_file"
+    return 1
+}
+
+# Check if file is already completed with validation
+is_file_completed() {
+    job_id="$1"
+    relative_path="$2"
+
+    # Validate state file first
+    if ! validate_state_file "$job_id" 2>/dev/null; then
+        return 1
+    fi
+
+    state_file="$STATE_DIR/$job_id.state"
+
+    # Check if file is in completed section
+    awk '/^\[completed\]$/{in_completed=1; next} /^\[/{in_completed=0} in_completed && $0 == "'"$relative_path"'" {found=1; exit} END{exit !found}' "$state_file"
+}
+
+# Mark file as failed in state file
+mark_file_failed() {
+    job_id="$1"
+    relative_path="$2"
+    reason="${3:-unknown_error}"
+    state_file="$STATE_DIR/$job_id.state"
+    lock_file="$state_file.lock"
+
+    # Validate state file first
+    if ! validate_state_file "$job_id" 2>/dev/null; then
+        log_warn "State file validation failed, attempting recovery"
+        if ! recover_state_file "$job_id"; then
+            log_error "Cannot mark file failed: state file recovery failed"
+            return 1
+        fi
+    fi
+
+    # Acquire lock to prevent race conditions
+    if ! acquire_file_lock "$lock_file" 10; then
+        log_error "Failed to acquire lock for failure tracking: $lock_file"
+        return 1
+    fi
+
+    # Create backup before modification
+    backup_state_file "$job_id" 2>/dev/null || log_debug "Backup failed but continuing"
+
+    # Append to failed section atomically
+    temp_append="$state_file.append.$$"
+    if printf '%s:%s\n' "$relative_path" "$reason" > "$temp_append" 2>/dev/null; then
+        # Find the [failed] section and append
+        if awk '/^\[failed\]$/{found=1} found && /^\[/{exit} found{print} END{if(found) exit 0; else exit 1}' "$state_file" >/dev/null 2>&1; then
+            cat "$temp_append" >> "$state_file" 2>/dev/null
+        fi
+        rm -f "$temp_append" 2>/dev/null || true
+
+        # Update failed count
+        failed_count=$(awk '/^\[failed\]$/{in_failed=1; next} /^\[/{in_failed=0} in_failed && /^[^#]/ && NF>0 {count++} END{print count+0}' "$state_file" 2>/dev/null || echo "0")
+
+        update_state_value "$job_id" "progress" "failed_files" "$failed_count" 2>/dev/null || true
+        log_debug "Marked failed: $relative_path ($reason)"
+        release_file_lock "$lock_file"
+        return 0
+    else
+        log_error "Failed to create temp append file for failed tracking"
+    fi
+
+    # Cleanup on failure
+    release_file_lock "$lock_file"
+    return 1
+}
+
+# Update progress statistics
+update_progress_stats() {
+    job_id="$1"
+    total_files="$2"
+
+    # Update total files count
+    if ! update_state_value "$job_id" "progress" "total_files" "$total_files"; then
+        log_warn "Failed to update total files count"
+        return 1
+    fi
+
+    # Calculate and update percentages if needed
+    completed=$(read_state_value "$job_id" "progress" "completed_files" 2>/dev/null || echo "0")
+    if [ "$total_files" -gt 0 ]; then
+        percentage=$((completed * 100 / total_files))
+        update_state_value "$job_id" "progress" "percentage" "$percentage" 2>/dev/null || true
+    fi
+
+    return 0
+}
+
+# Detect and clean up stale jobs
+detect_stale_jobs() {
+    if [ ! -d "$STATE_DIR" ]; then
+        return 0
+    fi
+
+    current_time=$(date +%s)
+    stale_jobs=""
+
+    for state_file in "$STATE_DIR"/*.state; do
+        [ -f "$state_file" ] || continue
+        job_id=$(basename "$state_file" .state)
+
+        # Skip if state file is invalid
+        if ! validate_state_file "$job_id" 2>/dev/null; then
+            log_debug "Found corrupted state file: $state_file"
+            stale_jobs="$stale_jobs $job_id:corrupted"
+            continue
+        fi
+
+        # Check job status
+        status=$(read_state_value "$job_id" "job" "status" 2>/dev/null || echo "unknown")
+        last_updated=$(read_state_value "$job_id" "job" "last_updated" 2>/dev/null || echo "")
+        started=$(read_state_value "$job_id" "job" "started" 2>/dev/null || echo "")
+
+        # Use started time if last_updated is not available
+        if [ -z "$last_updated" ]; then
+            last_updated="$started"
+        fi
+
+        if [ -n "$last_updated" ]; then
+            # Convert ISO timestamp to epoch (basic parsing)
+            if command -v date >/dev/null 2>&1; then
+                last_updated_epoch=$(date -d "$last_updated" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "${last_updated%+*}" +%s 2>/dev/null || echo "$current_time")
+            else
+                last_updated_epoch="$current_time"
+            fi
+
+            time_diff=$((current_time - last_updated_epoch))
+
+            # Check if job is stale
+            if [ "$status" = "running" ] && [ "$time_diff" -gt "$STALE_JOB_THRESHOLD" ]; then
+                log_debug "Found stale job: $job_id (idle for ${time_diff}s)"
+                stale_jobs="$stale_jobs $job_id:stale"
+            fi
+        else
+            log_debug "Found job with no timestamp: $job_id"
+            stale_jobs="$stale_jobs $job_id:no_timestamp"
+        fi
+
+        # Check if input/output directories still exist
+        input_dir=$(read_state_value "$job_id" "job" "input_dir" 2>/dev/null || echo "")
+        output_dir=$(read_state_value "$job_id" "job" "output_dir" 2>/dev/null || echo "")
+
+        if [ -n "$input_dir" ] && [ ! -d "$input_dir" ]; then
+            log_debug "Job input directory no longer exists: $job_id -> $input_dir"
+            stale_jobs="$stale_jobs $job_id:missing_input"
+        fi
+
+        if [ -n "$output_dir" ]; then
+            output_parent=$(dirname "$output_dir")
+            if [ ! -d "$output_parent" ]; then
+                log_debug "Job output parent directory no longer exists: $job_id -> $output_parent"
+                stale_jobs="$stale_jobs $job_id:missing_output_parent"
+            fi
+        fi
+    done
+
+    DETECTED_STALE_JOBS="$stale_jobs"
+    return 0
+}
+
+# Clean up stale and orphaned jobs
+cleanup_stale_jobs() {
+    force_cleanup="${1:-0}"
+
+    detect_stale_jobs
+
+    if [ -z "$DETECTED_STALE_JOBS" ]; then
+        log_info "No stale jobs found"
+        return 0
+    fi
+
+    cleaned_count=0
+    for job_entry in $DETECTED_STALE_JOBS; do
+        job_id=$(printf '%s' "$job_entry" | cut -d: -f1)
+        reason=$(printf '%s' "$job_entry" | cut -d: -f2)
+        state_file="$STATE_DIR/$job_id.state"
+
+        case "$reason" in
+            corrupted|no_timestamp|missing_input|missing_output_parent)
+                if [ "$force_cleanup" = 1 ]; then
+                    log_info "Cleaning up problematic job: $job_id ($reason)"
+                    rm -f "$state_file" 2>/dev/null || true
+                    # Clean up associated backup files
+                    rm -f "$STATE_DIR"/$job_id.state.backup.* 2>/dev/null || true
+                    cleaned_count=$((cleaned_count + 1))
+                else
+                    log_warn "Found problematic job: $job_id ($reason) - use --cleanup-stale to remove"
+                fi
+                ;;
+            stale)
+                if [ "$force_cleanup" = 1 ]; then
+                    # Mark stale running jobs as failed instead of deleting
+                    log_info "Marking stale job as failed: $job_id"
+                    if update_state_value "$job_id" "job" "status" "failed" 2>/dev/null; then
+                        update_state_value "$job_id" "job" "failed_reason" "stale_timeout" 2>/dev/null || true
+                        cleaned_count=$((cleaned_count + 1))
+                    else
+                        log_warn "Failed to mark stale job as failed: $job_id"
+                    fi
+                else
+                    log_warn "Found stale job: $job_id - use --cleanup-stale to mark as failed"
+                fi
+                ;;
+        esac
+    done
+
+    if [ "$force_cleanup" = 1 ] && [ "$cleaned_count" -gt 0 ]; then
+        log_info "Cleaned up $cleaned_count stale/problematic job(s)"
+    fi
+
+    return 0
+}
+
+# Attempt to recover corrupted state file
+recover_state_file() {
+    job_id="$1"
+    state_file="$STATE_DIR/$job_id.state"
+
+    log_info "Attempting to recover corrupted state file: $job_id"
+
+    # Try to find the most recent valid backup
+    latest_backup=""
+    for backup_file in "$STATE_DIR"/$job_id.state.backup.*; do
+        [ -f "$backup_file" ] || continue
+
+        # Extract job ID and validate backup
+        backup_job_id=$(basename "$backup_file" | cut -d. -f1-2 | tr '.' '_')
+        if validate_state_file "${backup_job_id}" 2>/dev/null; then
+            if [ -z "$latest_backup" ] || [ "$backup_file" -nt "$latest_backup" ]; then
+                latest_backup="$backup_file"
+            fi
+        fi
+    done
+
+    if [ -n "$latest_backup" ]; then
+        log_info "Restoring from backup: $latest_backup"
+        if cp "$latest_backup" "$state_file" 2>/dev/null; then
+            log_info "Successfully restored state file from backup"
+            return 0
+        else
+            log_error "Failed to restore from backup"
+        fi
+    fi
+
+    # Try to rebuild minimal state from available information
+    log_info "Attempting to rebuild minimal state file"
+    if rebuild_minimal_state "$job_id"; then
+        log_info "Successfully rebuilt minimal state file"
+        return 0
+    fi
+
+    log_error "Failed to recover state file: $job_id"
+    return 1
+}
+
+# Rebuild minimal state file from partial data
+rebuild_minimal_state() {
+    job_id="$1"
+    state_file="$STATE_DIR/$job_id.state"
+    temp_file="$state_file.rebuild.$$"
+
+    # Try to extract any recoverable data from corrupted file
+    input_dir=""
+    output_dir=""
+    from_ext=""
+    to_ext=""
+
+    if [ -f "$state_file" ]; then
+        # Attempt to extract basic parameters with error handling
+        input_dir=$(grep "^input_dir=" "$state_file" 2>/dev/null | head -1 | cut -d= -f2- || echo "")
+        output_dir=$(grep "^output_dir=" "$state_file" 2>/dev/null | head -1 | cut -d= -f2- || echo "")
+        from_ext=$(grep "^from_ext=" "$state_file" 2>/dev/null | head -1 | cut -d= -f2- || echo "")
+        to_ext=$(grep "^to_ext=" "$state_file" 2>/dev/null | head -1 | cut -d= -f2- || echo "")
+    fi
+
+    # Validate extracted data
+    if [ -z "$input_dir" ] || [ -z "$output_dir" ] || [ -z "$from_ext" ] || [ -z "$to_ext" ]; then
+        log_error "Cannot rebuild state: insufficient recoverable data"
+        return 1
+    fi
+
+    # Create minimal state file
+    current_time=$(date -Iseconds)
+    current_hostname=$(hostname 2>/dev/null || echo "unknown")
+    current_user=$(id -un 2>/dev/null || echo "unknown")
+
+    cat > "$temp_file" << EOF
+# Remux job state file (RECOVERED)
+# Version: $STATE_FILE_VERSION
+# Job ID: $job_id
+# Recovered: $current_time
+
+[job]
+id=$job_id
+input_dir=$input_dir
+output_dir=$output_dir
+from_ext=$from_ext
+to_ext=$to_ext
+overwrite=0
+parallel_jobs=1
+status=failed
+started=$current_time
+last_updated=$current_time
+hostname=$current_hostname
+user=$current_user
+failed_reason=corrupted_state_recovered
+
+[progress]
+total_files=0
+completed_files=0
+failed_files=0
+
+[completed]
+# Format: relative_path_from_input_dir
+
+[failed]
+# Format: relative_path_from_input_dir:reason
+
+EOF
+
+    if mv "$temp_file" "$state_file" 2>/dev/null; then
+        log_info "Created minimal state file for job: $job_id"
+        return 0
+    else
+        rm -f "$temp_file" 2>/dev/null || true
+        return 1
+    fi
+}
+
+# Dependency checking with version validation
+check_dependencies() {
+    missing_deps=""
+    version_warnings=""
+
+    # Check core required tools
+    for tool in ffmpeg find; do
+        if ! command -v "$tool" >/dev/null 2>&1; then
+            missing_deps="$missing_deps $tool"
+        else
+            log_debug "Found $tool: $(command -v "$tool")"
+            # Version check for ffmpeg
+            if [ "$tool" = "ffmpeg" ]; then
+                ffmpeg_version=$(ffmpeg -version 2>/dev/null | head -1 | cut -d' ' -f3)
+                log_debug "FFmpeg version: $ffmpeg_version"
+                # Check for minimum version (3.0+)
+                case "$ffmpeg_version" in
+                    [0-2].*|'')
+                        version_warnings="$version_warnings ffmpeg(old:$ffmpeg_version)"
+                        ;;
+                esac
+            fi
+        fi
+    done
+
+    # Check for parallel (GNU parallel)
+    if ! command -v parallel >/dev/null 2>&1; then
+        missing_deps="$missing_deps parallel"
+    else
+        log_debug "Found parallel: $(command -v parallel)"
+        # Verify it's GNU parallel
+        if ! parallel --version 2>/dev/null | grep -q "GNU parallel"; then
+            version_warnings="$version_warnings parallel(not-gnu)"
+        fi
+    fi
+
+    # Check for optional but recommended tools
+    for tool in realpath mktemp; do
+        if ! command -v "$tool" >/dev/null 2>&1; then
+            log_debug "Optional tool not found: $tool (will use fallback)"
+        else
+            log_debug "Found optional tool $tool: $(command -v "$tool")"
+        fi
+    done
+
+    # Report missing dependencies
+    if [ -n "$missing_deps" ]; then
+        log_error "Missing required dependencies:$missing_deps"
+        log_error "Install with package manager:"
+        log_error "  Debian/Ubuntu: sudo apt install$missing_deps"
+        log_error "  RHEL/CentOS: sudo yum install$missing_deps"
+        log_error "  Arch Linux: sudo pacman -S$missing_deps"
+        log_error "  macOS: brew install$missing_deps"
+        return $EXIT_DEPENDENCY
+    fi
+
+    # Report version warnings
+    if [ -n "$version_warnings" ]; then
+        log_warn "Version compatibility warnings:$version_warnings"
+        log_warn "Consider upgrading for optimal performance and compatibility"
+    fi
+
+    log_debug "All dependencies satisfied"
+    return 0
+}
+
+# Enhanced file counting with size calculation
+# Optimized file counting for large directories
+count_files() {
+    local input_dir="$1"
+    local from_ext="$2"
+
+    # Use faster find with -printf instead of piping to wc
+    find "$input_dir" -type f -name "*$from_ext" -printf '.' 2>/dev/null | wc -c
+}
+
+# Count files and calculate total size (optimized for large directories)
+count_files_and_size() {
+    local input_dir="$1"
+    local from_ext="$2"
+    local file_count=0
+    local total_size=0
+    local batch_size=100
+    local files_batch=""
+    local batch_count=0
+
+    # Use a more efficient approach by batching stat calls
+    while IFS= read -r -d '' file; do
+        files_batch="$files_batch $file"
+        batch_count=$((batch_count + 1))
+
+        # Process files in batches to reduce overhead
+        if [ $batch_count -ge $batch_size ]; then
+            # Process current batch
+            eval "stat -c%s $files_batch 2>/dev/null" | {
+                while read -r size; do
+                    [ -n "$size" ] && [ "$size" -gt 0 ] && {
+                        file_count=$((file_count + 1))
+                        total_size=$((total_size + size))
+                    }
+                done
+                # Output intermediate results for very large directories
+                [ $file_count -gt 1000 ] && printf "Processed %d files...\r" "$file_count" >&2
+            }
+            files_batch=""
+            batch_count=0
+        fi
+    done < <(find "$input_dir" -type f -name "*$from_ext" -print0 2>/dev/null)
+
+    # Process remaining files in the last batch
+    if [ $batch_count -gt 0 ]; then
+        eval "stat -c%s $files_batch 2>/dev/null" | {
+            while read -r size; do
+                [ -n "$size" ] && [ "$size" -gt 0 ] && {
+                    file_count=$((file_count + 1))
+                    total_size=$((total_size + size))
+                }
+            done
+        }
+    fi
+
+    printf "%d %d" "$file_count" "$total_size"
+}
+
+# Check available disk space
+check_disk_space() {
+    input_dir="$1"
+    output_dir="$2"
+    from_ext="$3"
+
+    log_debug "Checking disk space requirements"
+
+    # Calculate total size of input files
+    if command -v du >/dev/null 2>&1; then
+        total_input_size=$(find "$input_dir" -type f -name "*$from_ext" -exec du -bc {} + 2>/dev/null | \
+                          tail -1 | cut -f1 2>/dev/null || echo 0)
+    else
+        # Fallback: estimate based on file count (assume 1GB per file)
+        file_count=$(count_files "$input_dir" "$from_ext")
+        total_input_size=$((file_count * 1073741824))  # 1GB in bytes
+        log_debug "Using estimated input size (no du command): ${total_input_size} bytes"
+    fi
+
+    # Get available space in output directory
+    if command -v df >/dev/null 2>&1; then
+        available_space=$(df -B1 "$output_dir" 2>/dev/null | awk 'NR==2 {print $4}' || echo 0)
+    else
+        log_warn "Cannot check available disk space (no df command)"
+        return 0
+    fi
+
+    # Convert to human readable
+    input_size_mb=$((total_input_size / 1048576))
+    available_space_mb=$((available_space / 1048576))
+
+    log_debug "Input files total size: ${input_size_mb}MB"
+    log_debug "Available space: ${available_space_mb}MB"
+
+    # Remuxing typically produces files of similar size (no re-encoding)
+    # Add 10% buffer for safety
+    required_space=$((total_input_size + total_input_size / 10))
+    required_space_mb=$((required_space / 1048576))
+
+    if [ "$required_space" -gt "$available_space" ]; then
+        log_error "Insufficient disk space for remuxing operation"
+        log_error "Required space (with 10% buffer): ${required_space_mb}MB"
+        log_error "Available space: ${available_space_mb}MB"
+        log_error "Shortfall: $((required_space_mb - available_space_mb))MB"
+        log_error "Suggestion: Free up disk space or use a different output directory"
+        return 1
+    fi
+
+    # Warn if space is tight (less than 20% buffer)
+    buffer_space=$((total_input_size / 5))  # 20% buffer
+    if [ "$available_space" -lt "$((total_input_size + buffer_space))" ]; then
+        log_warn "Disk space is limited"
+        log_warn "Available: ${available_space_mb}MB, Estimated needed: ${input_size_mb}MB"
+        log_warn "Consider monitoring disk usage during operation"
+    fi
+
+    log_debug "Disk space check passed"
+    return 0
+}
+
+# Enhanced remuxing with advanced features and progress tracking
+remux_file_advanced() {
+    input_file="$1"
+    input_dir="$2"
+    output_dir="$3"
+    from_ext="$4"
+    to_ext="$5"
+    select_best="$6"
+    overwrite="$7"
+
+    # Advanced parameters
+    show_streams="${8:-0}"
+    auto_format="${9:-0}"
+    preserve_metadata="${10:-1}"
+    preserve_chapters="${11:-1}"
+    verify_output="${12:-0}"
+    quick_verify="${13:-0}"
+    video_streams="${14:-best}"
+    audio_streams="${15:-best}"
+    subtitle_streams="${16:-none}"
+    template="${17:-}"
+
+    # Get file size for progress tracking
+    local file_size=0
+    if [ -f "$input_file" ]; then
+        file_size=$(stat -c%s "$input_file" 2>/dev/null || du -b "$input_file" 2>/dev/null | cut -f1 || echo "0")
+    fi
+
+    # Notify progress tracking of file start
+    notify_file_started "$input_file" "$file_size"
+
+    # Show stream information if requested
+    if [ "$show_streams" = "1" ]; then
+        log_info "=== Stream Information ==="
+        show_stream_info "$input_file" "$VERBOSE"
+        echo
+    fi
+
+    # Apply template if specified
+    if [ -n "$template" ]; then
+        template_config=$(create_mapping_template "$template")
+        if [ $? -eq 0 ]; then
+            # Parse template config: video audio subtitle metadata chapters
+            set -- $template_config
+            video_streams="$1"
+            audio_streams="$2"
+            subtitle_streams="$3"
+            preserve_metadata="$4"
+            preserve_chapters="$5"
+            log_debug "Applied template '$template': video=$video_streams, audio=$audio_streams, subtitle=$subtitle_streams"
+        fi
+    fi
+
+    # Auto-detect output format if requested
+    if [ "$auto_format" = "1" ]; then
+        detected_ext=$(detect_optimal_format "$input_file" "$from_ext")
+        if [ -n "$detected_ext" ]; then
+            log_info "Auto-detected optimal format: $detected_ext"
+            to_ext="$detected_ext"
+        fi
+    fi
+
+    # Calculate relative path and target file
+    case "$input_file" in
+        "$input_dir"/*)
+            relative_path="${input_file#"$input_dir"/}"
+            ;;
+        *)
+            log_error "Input file not within input directory: $input_file"
+            notify_file_failed "$input_file" "$file_size" "path_error"
+            return 1
+            ;;
+    esac
+
+    # Remove input extension and add output extension
+    target_basename="${relative_path%"$from_ext"}"
+    target_file="$output_dir/$target_basename$to_ext"
+    target_dir="$(dirname "$target_file")"
+
+    # Create target directory
+    if ! mkdir -p "$target_dir"; then
+        log_error "Failed to create target directory: $target_dir"
+        notify_file_failed "$input_file" "$file_size" "mkdir_failed"
+        return 1
+    fi
+
+    # Check if target file exists
+    if [ -f "$target_file" ] && [ "$overwrite" != 1 ]; then
+        log_info "Skipping existing file: $target_file"
+        # Still count as processed for progress tracking
+        notify_file_completed "$input_file" "$file_size"
+        return 0
+    fi
+
+    log_info "Remuxing: $input_file -> $target_file"
+
+    # Get advanced stream mapping
+    local ffmpeg_args
+    if [ "$select_best" = 1 ] && [ -z "$template" ]; then
+        # Legacy mode: Select best streams
+        ffmpeg_args="-map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy"
+    else
+        # Advanced mode: Use stream mapping function
+        ffmpeg_args=$(get_stream_mapping "$input_file" "$video_streams" "$audio_streams" "$subtitle_streams" "$preserve_metadata" "$preserve_chapters")
+        if [ $? -ne 0 ]; then
+            log_error "Failed to generate stream mapping for: $(basename "$input_file")"
+            notify_file_failed "$input_file" "$file_size" "mapping_failed"
+            return 1
+        fi
+    fi
+
+    # Create atomic temporary output file
+    if command -v mktemp >/dev/null 2>&1; then
+        temp_file=$(mktemp --tmpdir "remux_$(basename "$target_file").XXXXXX.tmp") || {
+            log_error "Failed to create secure temporary file"
+            notify_file_failed "$input_file" "$file_size" "temp_file_failed"
+            return 1
+        }
+    else
+        # Fallback for systems without mktemp
+        temp_file="$target_file.tmp.$$"
+    fi
+
+    log_debug "Using temporary file: $temp_file"
+    log_debug "FFmpeg args: $ffmpeg_args"
+
+    # Ensure cleanup of temp file on any exit
+    cleanup_temp_file() {
+        if [ -f "$temp_file" ]; then
+            log_debug "Cleaning up temporary file: $temp_file"
+            rm -f "$temp_file" 2>/dev/null || true
+        fi
+    }
+
+    # Execute ffmpeg with atomic operation
+    local ffmpeg_cmd="ffmpeg -hide_banner -loglevel error -stats -i"
+    log_debug "Executing: $ffmpeg_cmd \"$input_file\" $ffmpeg_args \"$temp_file\""
+
+    if $ffmpeg_cmd "$input_file" $ffmpeg_args "$temp_file" < /dev/null 2>/dev/null; then
+        # Verify the output file was created and is not empty
+        if [ ! -f "$temp_file" ]; then
+            log_error "FFmpeg completed but output file was not created: $temp_file"
+            cleanup_temp_file
+            notify_file_failed "$input_file" "$file_size" "no_output"
+            return 1
+        fi
+
+        if [ ! -s "$temp_file" ]; then
+            log_error "FFmpeg created empty output file: $temp_file"
+            cleanup_temp_file
+            notify_file_failed "$input_file" "$file_size" "empty_output"
+            return 1
+        fi
+
+        # Verify output if requested
+        if [ "$verify_output" = "1" ]; then
+            log_debug "Verifying output file integrity..."
+            if ! verify_remux_integrity "$input_file" "$temp_file" "$quick_verify"; then
+                log_error "Output verification failed for: $(basename "$input_file")"
+                cleanup_temp_file
+                notify_file_failed "$input_file" "$file_size" "verification_failed"
+                return 1
+            fi
+            log_debug "Verification passed"
+        fi
+
+        # Atomic move to final location
+        if mv "$temp_file" "$target_file" 2>/dev/null; then
+            log_info "Successfully remuxed: $(basename "$input_file")"
+            log_debug "Output: $target_file"
+
+            # Notify progress tracking of successful completion
+            notify_file_completed "$input_file" "$file_size"
+            return 0
+        else
+            log_error "Failed to move temporary file to final location"
+            log_error "Source: $temp_file"
+            log_error "Target: $target_file"
+            cleanup_temp_file
+            notify_file_failed "$input_file" "$file_size" "move_failed"
+            return 1
+        fi
+    else
+        ffmpeg_exit_code=$?
+        local error_reason="ffmpeg_exit_$ffmpeg_exit_code"
+        log_error "FFmpeg failed for: $(basename "$input_file") (exit code: $ffmpeg_exit_code)"
+        case $ffmpeg_exit_code in
+            1)
+                log_error "Suggestion: Check input file format compatibility"
+                error_reason="format_incompatible"
+                ;;
+            2)
+                log_error "Suggestion: Verify file permissions and disk space"
+                error_reason="permissions_or_space"
+                ;;
+            *)
+                log_error "Suggestion: Run with --verbose for detailed output"
+                ;;
+        esac
+
+        cleanup_temp_file
+        notify_file_failed "$input_file" "$file_size" "$error_reason"
+        return 1
+    fi
+}
+
+# Enhanced remuxing with progress tracking
+remux_file() {
+    input_file="$1"
+    input_dir="$2"
+    output_dir="$3"
+    from_ext="$4"
+    to_ext="$5"
+    select_best="$6"
+    overwrite="$7"
+
+    # Get file size for progress tracking
+    local file_size=0
+    if [ -f "$input_file" ]; then
+        file_size=$(stat -c%s "$input_file" 2>/dev/null || du -b "$input_file" 2>/dev/null | cut -f1 || echo "0")
+    fi
+
+    # Notify progress tracking of file start
+    notify_file_started "$input_file" "$file_size"
+
+    # Calculate relative path and target file
+    case "$input_file" in
+        "$input_dir"/*)
+            relative_path="${input_file#"$input_dir"/}"
+            ;;
+        *)
+            log_error "Input file not within input directory: $input_file"
+            return 1
+            ;;
+    esac
+
+    # Remove input extension and add output extension
+    target_basename="${relative_path%"$from_ext"}"
+    target_file="$output_dir/$target_basename$to_ext"
+    target_dir="$(dirname "$target_file")"
+
+    # Create target directory
+    if ! mkdir -p "$target_dir"; then
+        log_error "Failed to create target directory: $target_dir"
+        return 1
+    fi
+
+    # Check if target file exists
+    if [ -f "$target_file" ] && [ "$overwrite" != 1 ]; then
+        log_info "Skipping existing file: $target_file"
+        # Still count as processed for progress tracking
+        notify_file_completed "$input_file" "$file_size"
+        return 0
+    fi
+
+    log_info "Remuxing: $input_file -> $target_file"
+
+    # Build ffmpeg command securely - use arrays to prevent injection
+    ffmpeg_cmd="ffmpeg"
+    ffmpeg_base_args="-hide_banner -loglevel error -stats"
+
+    # Create atomic temporary output file using secure function
+    if ! temp_file=$(secure_temp_file "remux_$(basename "$target_file")" ".tmp"); then
+        log_error "Failed to create secure temporary file"
+        return 1
+    fi
+
+    log_debug "Using temporary file: $temp_file"
+
+    # Ensure cleanup of temp file on any exit
+    cleanup_temp_file() {
+        if [ -f "$temp_file" ]; then
+            log_debug "Cleaning up temporary file: $temp_file"
+            rm -f "$temp_file" 2>/dev/null || true
+        fi
+    }
+
+    # Security: Validate input file before processing
+    if ! validate_file_size "$input_file"; then
+        log_error "Input file too large: $input_file"
+        cleanup_temp_file
+        return 1
+    fi
+
+    # Security: Escape file paths to prevent injection
+    escaped_input=$(escape_ffmpeg_arg "$input_file")
+    escaped_output=$(escape_ffmpeg_arg "$temp_file")
+
+    # Execute ffmpeg with atomic operation - use explicit argument separation
+    if [ "$select_best" = 1 ]; then
+        # Select best streams: video, audio, subtitle
+        log_debug "Executing: $ffmpeg_cmd $ffmpeg_base_args -i '$escaped_input' -map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy '$escaped_output'"
+        ffmpeg_success=0
+        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy "$temp_file" < /dev/null 2>/dev/null; then
+            ffmpeg_success=1
+        fi
+    else
+        # Copy all streams
+        log_debug "Executing: $ffmpeg_cmd $ffmpeg_base_args -i '$escaped_input' -map 0 -c copy '$escaped_output'"
+        ffmpeg_success=0
+        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0 -c copy "$temp_file" < /dev/null 2>/dev/null; then
+            ffmpeg_success=1
+        fi
+    fi
+
+    if [ "$ffmpeg_success" = 1 ]; then
+        # Verify the output file was created and is not empty
+        if [ ! -f "$temp_file" ]; then
+            log_error "FFmpeg completed but output file was not created: $temp_file"
+            cleanup_temp_file
+            return 1
+        fi
+
+        if [ ! -s "$temp_file" ]; then
+            log_error "FFmpeg created empty output file: $temp_file"
+            cleanup_temp_file
+            return 1
+        fi
+
+        # Atomic move to final location
+        if mv "$temp_file" "$target_file" 2>/dev/null; then
+            log_info "Successfully remuxed: $(basename "$input_file")"
+            log_debug "Output: $target_file"
+
+            # Notify progress tracking of successful completion
+            notify_file_completed "$input_file" "$file_size"
+            return 0
+        else
+            log_error "Failed to move temporary file to final location"
+            log_error "Source: $temp_file"
+            log_error "Target: $target_file"
+            cleanup_temp_file
+            return 1
+        fi
+    else
+        ffmpeg_exit_code=$?
+        local error_reason="ffmpeg_exit_$ffmpeg_exit_code"
+        log_error "FFmpeg failed for: $(basename "$input_file") (exit code: $ffmpeg_exit_code)"
+        case $ffmpeg_exit_code in
+            1)
+                log_error "Suggestion: Check input file format compatibility"
+                error_reason="format_incompatible"
+                ;;
+            2)
+                log_error "Suggestion: Verify file permissions and disk space"
+                error_reason="permissions_or_space"
+                ;;
+            *)
+                log_error "Suggestion: Run with --verbose for detailed output"
+                ;;
+        esac
+
+        # Notify progress tracking of failure
+        notify_file_failed "$input_file" "$file_size" "$error_reason"
+        cleanup_temp_file
+        return 1
+    fi
+}
+
+# Resume-aware remux file function
+remux_file_with_resume() {
+    input_file="$1"
+    input_dir="$2"
+    output_dir="$3"
+    from_ext="$4"
+    to_ext="$5"
+    select_best="$6"
+    overwrite="$7"
+    job_id="$8"
+
+    # Calculate relative path for resume tracking
+    case "$input_file" in
+        "$input_dir"/*)
+            relative_path="${input_file#"$input_dir"/}"
+            ;;
+        *)
+            log_error "Input file not within input directory: $input_file"
+            return 1
+            ;;
+    esac
+
+    # Check if file was already completed (resume functionality)
+    if [ -n "$job_id" ] && is_file_completed "$job_id" "$relative_path" 2>/dev/null; then
+        log_info "Skipping already completed file: $relative_path"
+        return 0
+    fi
+
+    # Call original remux function
+    if remux_file "$input_file" "$input_dir" "$output_dir" "$from_ext" "$to_ext" "$select_best" "$overwrite"; then
+        # Mark file as completed for resume tracking
+        if [ -n "$job_id" ]; then
+            if ! mark_file_completed "$job_id" "$relative_path"; then
+                log_warn "Failed to mark file as completed: $relative_path"
+            fi
+        fi
+        return 0
+    else
+        # Mark file as failed for resume tracking
+        if [ -n "$job_id" ]; then
+            if ! mark_file_failed "$job_id" "$relative_path" "ffmpeg_error"; then
+                log_warn "Failed to mark file as failed: $relative_path"
+            fi
+        fi
+        return 1
+    fi
+}
+
+# Resume capability job management functions
+# Check if there's a resumable job with comprehensive validation
+is_resumable_job() {
+    input_dir="$1"
+    from_ext="$2"
+    to_ext="$3"
+
+    # Look for existing state files
+    if [ ! -d "$STATE_DIR" ]; then
+        return 1
+    fi
+
+    # Clean up stale jobs first (without force)
+    cleanup_stale_jobs 0 >/dev/null 2>&1 || true
+
+    # Find state files matching job parameters
+    for state_file in "$STATE_DIR"/*.state; do
+        if [ ! -f "$state_file" ]; then
+            continue
+        fi
+
+        job_id=$(basename "$state_file" .state)
+
+        # Validate state file integrity
+        if ! validate_state_file "$job_id" 2>/dev/null; then
+            log_debug "Skipping invalid state file: $state_file"
+            continue
+        fi
+
+        # Check machine consistency
+        if ! check_machine_consistency "$job_id" 2>/dev/null; then
+            log_debug "Skipping job from different machine: $job_id"
+            continue
+        fi
+
+        # Check if parameters match
+        stored_input=$(read_state_value "$job_id" "job" "input_dir" 2>/dev/null || echo "")
+        stored_from=$(read_state_value "$job_id" "job" "from_ext" 2>/dev/null || echo "")
+        stored_to=$(read_state_value "$job_id" "job" "to_ext" 2>/dev/null || echo "")
+        stored_status=$(read_state_value "$job_id" "job" "status" 2>/dev/null || echo "")
+
+        # Validate directories still exist and are accessible
+        if [ -n "$stored_input" ] && [ ! -d "$stored_input" ]; then
+            log_debug "Skipping job with missing input directory: $job_id -> $stored_input"
+            continue
+        fi
+
+        if [ -n "$stored_input" ] && [ ! -r "$stored_input" ]; then
+            log_debug "Skipping job with unreadable input directory: $job_id -> $stored_input"
+            continue
+        fi
+
+        # Match parameters with normalization
+        if [ "$(realpath "$stored_input" 2>/dev/null || echo "$stored_input")" = "$(realpath "$input_dir" 2>/dev/null || echo "$input_dir")" ] && \
+           [ "$stored_from" = "$from_ext" ] && \
+           [ "$stored_to" = "$to_ext" ] && \
+           [ "$stored_status" = "running" ]; then
+            printf '%s' "$job_id"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# List all jobs with enhanced status information
+list_jobs() {
+    if [ ! -d "$STATE_DIR" ]; then
+        log_info "No jobs found (state directory does not exist)"
+        return 0
+    fi
+
+    # Clean up stale jobs first for accurate reporting
+    cleanup_stale_jobs 0 >/dev/null 2>&1 || true
+
+    printf "%-20s %-10s %-40s %-15s %-10s\n" "Job ID" "Status" "Input Directory" "Conversion" "Progress"
+    printf "%-20s %-10s %-40s %-15s %-10s\n" "--------------------" "----------" "----------------------------------------" "---------------" "----------"
+
+    job_count=0
+    for state_file in "$STATE_DIR"/*.state; do
+        if [ ! -f "$state_file" ]; then
+            continue
+        fi
+
+        job_id=$(basename "$state_file" .state)
+
+        # Skip invalid state files
+        if ! validate_state_file "$job_id" 2>/dev/null; then
+            continue
+        fi
+
+        # Read job information
+        status=$(read_state_value "$job_id" "job" "status" 2>/dev/null || echo "unknown")
+        input_dir=$(read_state_value "$job_id" "job" "input_dir" 2>/dev/null || echo "")
+        from_ext=$(read_state_value "$job_id" "job" "from_ext" 2>/dev/null || echo "")
+        to_ext=$(read_state_value "$job_id" "job" "to_ext" 2>/dev/null || echo "")
+        total_files=$(read_state_value "$job_id" "progress" "total_files" 2>/dev/null || echo "0")
+        completed_files=$(read_state_value "$job_id" "progress" "completed_files" 2>/dev/null || echo "0")
+
+        # Calculate progress percentage
+        if [ "$total_files" -gt 0 ]; then
+            progress_pct=$((completed_files * 100 / total_files))
+            progress="${completed_files}/${total_files} (${progress_pct}%)"
+        else
+            progress="${completed_files}/?"
+        fi
+
+        # Truncate long paths for display
+        display_input=$(printf '%.35s' "$input_dir")
+        if [ ${#input_dir} -gt 35 ]; then
+            display_input="${display_input}..."
+        fi
+
+        conversion="$from_ext→$to_ext"
+
+        printf "%-20s %-10s %-40s %-15s %-10s\n" "$job_id" "$status" "$display_input" "$conversion" "$progress"
+        job_count=$((job_count + 1))
+    done
+
+    if [ "$job_count" -eq 0 ]; then
+        log_info "No jobs found"
+    else
+        log_info "Found $job_count job(s)"
+    fi
+
+    return 0
+}
+
+# Start new job and return job ID
+start_new_job() {
+    input_dir="$1"
+    output_dir="$2"
+    from_ext="$3"
+    to_ext="$4"
+    overwrite="$5"
+    parallel_jobs="$6"
+
+    job_id=$(generate_job_id "$input_dir" "$from_ext" "$to_ext")
+
+    if ! create_state_file "$job_id" "$input_dir" "$output_dir" "$from_ext" "$to_ext" "$overwrite" "$parallel_jobs"; then
+        return 1
+    fi
+
+    CURRENT_JOB_ID="$job_id"
+    printf '%s' "$job_id"
+    return 0
+}
+
+# Verify resume safety
+verify_resume_safety() {
+    job_id="$1"
+
+    # Validate state file
+    if ! validate_state_file "$job_id"; then
+        log_error "Cannot resume: state file is corrupted"
+        return 1
+    fi
+
+    # Check machine consistency
+    if ! check_machine_consistency "$job_id"; then
+        log_error "Cannot resume: job created on different machine"
+        return 1
+    fi
+
+    # Verify directories still exist
+    input_dir=$(read_state_value "$job_id" "job" "input_dir" 2>/dev/null || echo "")
+    output_dir=$(read_state_value "$job_id" "job" "output_dir" 2>/dev/null || echo "")
+
+    if [ -z "$input_dir" ] || [ ! -d "$input_dir" ]; then
+        log_error "Cannot resume: input directory no longer exists or accessible: $input_dir"
+        return 1
+    fi
+
+    if [ -n "$output_dir" ] && [ ! -d "$(dirname "$output_dir")" ]; then
+        log_error "Cannot resume: output parent directory no longer exists: $(dirname "$output_dir")"
+        return 1
+    fi
+
+    # Verify completed files count matches actual completed entries
+    completed_files=$(read_state_value "$job_id" "progress" "completed_files" 2>/dev/null || echo "0")
+    actual_completed=$(awk '/^\[completed\]$/{in_completed=1; next} /^\[/{in_completed=0} in_completed && /^[^#]/ && NF>0 {count++} END{print count+0}' "$STATE_DIR/$job_id.state" 2>/dev/null || echo "0")
+
+    if [ "$completed_files" != "$actual_completed" ]; then
+        log_warn "Completed file count mismatch: stored=$completed_files, actual=$actual_completed"
+        log_info "Attempting to fix count discrepancy..."
+        update_state_value "$job_id" "progress" "completed_files" "$actual_completed" 2>/dev/null || true
+    fi
+
+    return 0
+}
+
+# Check for conflicting jobs
+check_job_conflicts() {
+    input_dir="$1"
+    output_dir="$2"
+    current_job_id="${3:-}"
+
+    if [ ! -d "$STATE_DIR" ]; then
+        return 0
+    fi
+
+    # Look for other running jobs that might conflict
+    for state_file in "$STATE_DIR"/*.state; do
+        [ -f "$state_file" ] || continue
+        job_id=$(basename "$state_file" .state)
+
+        # Skip current job
+        if [ "$job_id" = "$current_job_id" ]; then
+            continue
+        fi
+
+        # Skip invalid state files
+        if ! validate_state_file "$job_id" 2>/dev/null; then
+            continue
+        fi
+
+        # Check if job is running
+        status=$(read_state_value "$job_id" "job" "status" 2>/dev/null || echo "")
+        if [ "$status" != "running" ]; then
+            continue
+        fi
+
+        # Check for directory conflicts
+        other_input=$(read_state_value "$job_id" "job" "input_dir" 2>/dev/null || echo "")
+        other_output=$(read_state_value "$job_id" "job" "output_dir" 2>/dev/null || echo "")
+
+        if [ "$(realpath "$other_input" 2>/dev/null || echo "$other_input")" = "$(realpath "$input_dir" 2>/dev/null || echo "$input_dir")" ] ||
+           [ "$(realpath "$other_output" 2>/dev/null || echo "$other_output")" = "$(realpath "$output_dir" 2>/dev/null || echo "$output_dir")" ]; then
+            log_warn "Conflicting job detected: $job_id"
+            log_warn "This job uses the same input or output directory"
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+# Advanced video processing functions
+
+# Display detailed stream information for a video file
+show_stream_info() {
+    input_file="$1"
+    verbose="${2:-0}"
+
+    if [ ! -f "$input_file" ]; then
+        log_error "File not found: $input_file"
+        return 1
+    fi
+
+    log_info "Analyzing streams for: $(basename "$input_file")"
+
+    # Use ffprobe to get detailed stream information
+    if ! command -v ffprobe >/dev/null 2>&1; then
+        log_error "ffprobe not found - required for stream analysis"
+        return 1
+    fi
+
+    # Get basic file information
+    local duration codec_info format_info
+    duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$input_file" 2>/dev/null)
+    format_info=$(ffprobe -v quiet -show_entries format=format_name,size -of csv=p=0 "$input_file" 2>/dev/null)
+
+    echo "File: $(basename "$input_file")"
+    if [ -n "$duration" ] && [ "$duration" != "N/A" ]; then
+        echo "Duration: $(format_duration "$duration")"
+    fi
+    if [ -n "$format_info" ]; then
+        echo "Format: $format_info"
+    fi
+    echo
+
+    # Get stream information
+    local stream_info
+    stream_info=$(ffprobe -v quiet -show_streams -of csv=p=0 \
+        -show_entries stream=index,codec_type,codec_name,width,height,r_frame_rate,bit_rate,channels,sample_rate,language,tags:disposition \
+        "$input_file" 2>/dev/null)
+
+    if [ -z "$stream_info" ]; then
+        log_warn "No stream information available"
+        return 1
+    fi
+
+    # Parse and display streams by type
+    local video_count=0 audio_count=0 subtitle_count=0
+
+    echo "$stream_info" | while IFS=',' read -r index codec_type codec_name width height framerate bitrate channels samplerate language remaining; do
+        case "$codec_type" in
+            video)
+                video_count=$((video_count + 1))
+                printf "Video #%d: %s" "$index" "$codec_name"
+                [ -n "$width" ] && [ -n "$height" ] && printf " %dx%d" "$width" "$height"
+                [ -n "$framerate" ] && printf " %.2ffps" "$(echo "$framerate" | cut -d'/' -f1)"
+                [ -n "$bitrate" ] && [ "$bitrate" != "N/A" ] && printf " %s" "$(format_bytes "$bitrate")/s"
+                echo
+                ;;
+            audio)
+                audio_count=$((audio_count + 1))
+                printf "Audio #%d: %s" "$index" "$codec_name"
+                [ -n "$channels" ] && printf " %dch" "$channels"
+                [ -n "$samplerate" ] && printf " %dHz" "$samplerate"
+                [ -n "$bitrate" ] && [ "$bitrate" != "N/A" ] && printf " %s" "$(format_bytes "$bitrate")/s"
+                [ -n "$language" ] && [ "$language" != "und" ] && printf " [%s]" "$language"
+                echo
+                ;;
+            subtitle)
+                subtitle_count=$((subtitle_count + 1))
+                printf "Subtitle #%d: %s" "$index" "$codec_name"
+                [ -n "$language" ] && [ "$language" != "und" ] && printf " [%s]" "$language"
+                echo
+                ;;
+        esac
+    done
+
+    # Show chapters if present
+    local chapter_info
+    chapter_info=$(ffprobe -v quiet -show_chapters -of csv=p=0 \
+        -show_entries chapter=start_time,end_time,tags "$input_file" 2>/dev/null)
+
+    if [ -n "$chapter_info" ]; then
+        echo
+        echo "Chapters:"
+        local chapter_num=1
+        echo "$chapter_info" | while IFS=',' read -r start_time end_time tags; do
+            printf "  Chapter %d: %s - %s" "$chapter_num" \
+                "$(format_duration "$start_time")" "$(format_duration "$end_time")"
+            [ -n "$tags" ] && printf " (%s)" "$tags"
+            echo
+            chapter_num=$((chapter_num + 1))
+        done
+    fi
+
+    return 0
+}
+
+# Get stream mapping for specific requirements
+get_stream_mapping() {
+    input_file="$1"
+    video_streams="$2"    # comma-separated list or "best" or "all"
+    audio_streams="$3"    # comma-separated list or "best" or "all" or language codes
+    subtitle_streams="$4" # comma-separated list or "best" or "all" or language codes
+    preserve_metadata="${5:-1}"  # 1=preserve, 0=strip
+    preserve_chapters="${6:-1}"  # 1=preserve, 0=strip
+
+    if [ ! -f "$input_file" ]; then
+        log_error "File not found: $input_file"
+        return 1
+    fi
+
+    local mapping_args=""
+    local codec_args="-c copy"
+
+    # Video stream mapping
+    case "$video_streams" in
+        "all")
+            mapping_args="$mapping_args -map 0:v"
+            ;;
+        "best"|"")
+            mapping_args="$mapping_args -map 0:v:0"
+            ;;
+        "none")
+            # No video streams
+            ;;
+        *)
+            # Specific stream indices
+            for stream in $(echo "$video_streams" | tr ',' ' '); do
+                mapping_args="$mapping_args -map 0:v:$stream"
+            done
+            ;;
+    esac
+
+    # Audio stream mapping
+    case "$audio_streams" in
+        "all")
+            mapping_args="$mapping_args -map 0:a"
+            ;;
+        "best"|"")
+            mapping_args="$mapping_args -map 0:a:0"
+            ;;
+        "none")
+            # No audio streams
+            ;;
+        *)
+            # Check if it's language codes or stream indices
+            if echo "$audio_streams" | grep -q '^[0-9,]*$'; then
+                # Stream indices
+                for stream in $(echo "$audio_streams" | tr ',' ' '); do
+                    mapping_args="$mapping_args -map 0:a:$stream"
+                done
+            else
+                # Language codes
+                for lang in $(echo "$audio_streams" | tr ',' ' '); do
+                    mapping_args="$mapping_args -map 0:m:language:$lang"
+                done
+            fi
+            ;;
+    esac
+
+    # Subtitle stream mapping
+    case "$subtitle_streams" in
+        "all")
+            mapping_args="$mapping_args -map 0:s?"
+            ;;
+        "best")
+            mapping_args="$mapping_args -map 0:s:0?"
+            ;;
+        "none"|"")
+            # No subtitle streams
+            ;;
+        *)
+            # Check if it's language codes or stream indices
+            if echo "$subtitle_streams" | grep -q '^[0-9,]*$'; then
+                # Stream indices
+                for stream in $(echo "$subtitle_streams" | tr ',' ' '); do
+                    mapping_args="$mapping_args -map 0:s:$stream?"
+                done
+            else
+                # Language codes
+                for lang in $(echo "$subtitle_streams" | tr ',' ' '); do
+                    mapping_args="$mapping_args -map 0:m:language:$lang?"
+                done
+            fi
+            ;;
+    esac
+
+    # Metadata preservation
+    if [ "$preserve_metadata" = "1" ]; then
+        mapping_args="$mapping_args -map_metadata 0"
+    else
+        mapping_args="$mapping_args -map_metadata -1"
+    fi
+
+    # Chapter preservation
+    if [ "$preserve_chapters" = "1" ]; then
+        mapping_args="$mapping_args -map_chapters 0"
+    else
+        mapping_args="$mapping_args -map_chapters -1"
+    fi
+
+    echo "$mapping_args $codec_args"
+    return 0
+}
+
+# Auto-detect optimal output format based on content
+detect_optimal_format() {
+    input_file="$1"
+    input_ext="$2"
+
+    if [ ! -f "$input_file" ]; then
+        log_error "File not found: $input_file"
+        return 1
+    fi
+
+    # Get stream information
+    local has_video has_audio has_subtitles has_chapters has_attachments
+    has_video=$(ffprobe -v quiet -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$input_file" 2>/dev/null)
+    has_audio=$(ffprobe -v quiet -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$input_file" 2>/dev/null)
+    has_subtitles=$(ffprobe -v quiet -select_streams s:0 -show_entries stream=codec_name -of csv=p=0 "$input_file" 2>/dev/null)
+    has_chapters=$(ffprobe -v quiet -show_chapters -of csv=p=0 "$input_file" 2>/dev/null)
+
+    # Get video codec for compatibility decisions
+    local video_codec
+    video_codec=$(echo "$has_video" | head -1)
+
+    # Decision matrix for optimal format
+    if [ -n "$has_video" ] && [ -n "$has_audio" ]; then
+        if [ -n "$has_subtitles" ] || [ -n "$has_chapters" ]; then
+            # Complex content with subtitles/chapters - prefer MKV
+            echo ".mkv"
+        else
+            case "$video_codec" in
+                *h264*|*avc*|*h265*|*hevc*)
+                    # Modern codecs - MP4 for compatibility
+                    echo ".mp4"
+                    ;;
+                *)
+                    # Other codecs - MKV for broader support
+                    echo ".mkv"
+                    ;;
+            esac
+        fi
+    elif [ -n "$has_video" ] && [ -z "$has_audio" ]; then
+        # Video only - prefer MP4
+        echo ".mp4"
+    elif [ -z "$has_video" ] && [ -n "$has_audio" ]; then
+        # Audio only - prefer M4A or MKA
+        case "$input_ext" in
+            *.flac|*.wav) echo ".mka" ;;
+            *) echo ".m4a" ;;
+        esac
+    else
+        # Fallback to MKV for unknown content
+        echo ".mkv"
+    fi
+}
+
+# Verify remuxed file integrity
+verify_remux_integrity() {
+    input_file="$1"
+    output_file="$2"
+    quick_check="${3:-0}"  # 1=quick check, 0=thorough check
+
+    if [ ! -f "$input_file" ] || [ ! -f "$output_file" ]; then
+        log_error "Input or output file not found for verification"
+        return 1
+    fi
+
+    log_debug "Verifying remux integrity: $(basename "$output_file")"
+
+    # Quick check - compare duration and basic stream counts
+    if [ "$quick_check" = "1" ]; then
+        local input_duration output_duration
+        input_duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$input_file" 2>/dev/null)
+        output_duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$output_file" 2>/dev/null)
+
+        if [ -n "$input_duration" ] && [ -n "$output_duration" ]; then
+            # Allow 1 second difference for rounding
+            local duration_diff
+            duration_diff=$(echo "$input_duration $output_duration" | awk '{print ($1 - $2); if ($1 - $2 < 0) print ($2 - $1)}' | head -1)
+            if [ "$(echo "$duration_diff > 1" | bc 2>/dev/null || echo 0)" = "1" ]; then
+                log_error "Duration mismatch detected (diff: ${duration_diff}s)"
+                return 1
+            fi
+        fi
+
+        log_debug "Quick verification passed"
+        return 0
+    fi
+
+    # Thorough check - verify file can be read completely
+    if ! ffmpeg -v error -i "$output_file" -f null - >/dev/null 2>&1; then
+        log_error "Output file verification failed - file may be corrupted"
+        return 1
+    fi
+
+    log_debug "Thorough verification passed"
+    return 0
+}
+
+# Create stream mapping templates for common scenarios
+create_mapping_template() {
+    template_name="$1"
+
+    case "$template_name" in
+        "bluray-universal")
+            # Blu-ray to universal: best video + best audio + english subs
+            echo "best best eng 1 1"
+            ;;
+        "movie-collection")
+            # Movie collection: best video + multiple audio tracks + all subs
+            echo "best all all 1 1"
+            ;;
+        "tv-series")
+            # TV series: best video + best audio + subtitles + chapters
+            echo "best best all 1 1"
+            ;;
+        "archive-quality")
+            # Archive quality: all streams + metadata + chapters
+            echo "all all all 1 1"
+            ;;
+        "streaming-optimized")
+            # Streaming: best video + best audio + no subs/chapters
+            echo "best best none 0 0"
+            ;;
+        "mobile-device")
+            # Mobile device: best video + best audio + forced subs only
+            echo "best best none 1 0"
+            ;;
+        *)
+            log_error "Unknown template: $template_name"
+            log_info "Available templates: bluray-universal, movie-collection, tv-series, archive-quality, streaming-optimized, mobile-device"
+            return 1
+            ;;
+    esac
+}
+
+# Process files by pattern or list
+process_by_pattern() {
+    input_dir="$1"
+    pattern="$2"
+    output_dir="$3"
+    processing_mode="$4"  # "pattern" or "list"
+
+    if [ "$processing_mode" = "list" ]; then
+        # Process files from a list file
+        if [ ! -f "$pattern" ]; then
+            log_error "File list not found: $pattern"
+            return 1
+        fi
+
+        while IFS= read -r file_path; do
+            # Skip empty lines and comments
+            case "$file_path" in
+                ''|'#'*) continue ;;
+            esac
+
+            if [ -f "$file_path" ]; then
+                log_info "Adding from list: $file_path"
+                # Add to processing queue (this would integrate with existing batch processing)
+                echo "$file_path"
+            else
+                log_warn "File from list not found: $file_path"
+            fi
+        done < "$pattern"
+    else
+        # Process files by glob pattern
+        find "$input_dir" -type f -name "$pattern" | while read -r file_path; do
+            log_info "Found by pattern: $file_path"
+            echo "$file_path"
+        done
+    fi
+}
+
+# Export functions and variables for parallel processing
+export -f remux_file remux_file_advanced remux_file_with_resume mark_file_completed mark_file_failed is_file_completed
+export -f validate_state_file read_state_value update_state_value backup_state_file acquire_file_lock release_file_lock handle_disk_full
+export -f cleanup_old_backups recover_state_file rebuild_minimal_state is_version_compatible
+export -f log_info log_error log_warn log_debug log_fatal
+export -f show_stream_info get_stream_mapping detect_optimal_format verify_remux_integrity create_mapping_template process_by_pattern
+export -f notify_file_started notify_file_completed notify_file_failed update_progress
+export -f format_bytes format_speed format_duration
+export STATE_DIR STATE_FILE_VERSION STATE_BACKUP_RETENTION MAX_STATE_FILE_SIZE
+export PROGRESS_ENABLED PROGRESS_FILE TOTAL_FILES TOTAL_SIZE_BYTES PROCESSED_FILES PROCESSED_SIZE_BYTES FAILED_FILES
+export START_TIME PROGRESS_UPDATE_INTERVAL LAST_PROGRESS_UPDATE
+
+# Help and version functions
+show_version() {
+    printf "%s version %s\n" "$PROGNAME" "$VERSION"
+}
+
+usage() {
+    cat << EOF
+Usage: $PROGNAME [OPTIONS] --input-dir DIR [--from EXT] [--to EXT]
+
+DESCRIPTION:
+    Video container remuxing utility with parallel processing.
+    Converts video files between container formats without re-encoding,
+    preserving original quality while changing the container format.
+
+REQUIRED OPTIONS:
+    -i, --input-dir DIR      Input directory containing video files to remux
+
+OPTIONAL OPTIONS:
+    -o, --output-dir DIR     Output directory (default: INPUT_DIR/out)
+    --from EXT               Input file extension (default: .m2ts)
+    --to EXT                 Output file extension (default: .mkv)
+    -j, --jobs N             Parallel job count (default: auto-detected CPU cores)
+    --select-best            Select only best video/audio/subtitle streams
+    --overwrite              Overwrite existing output files without prompting
+    --resume                 Resume interrupted remuxing job
+    --list-jobs              List all remuxing jobs and exit
+    --no-resume              Start new job even if resumable job exists
+    --cleanup-stale          Clean up stale and problematic jobs
+    --save-config-example    Generate example configuration file and exit
+    --no-progress            Disable real-time progress tracking and monitoring
+
+ADVANCED OPTIONS:
+    --show-streams           Display detailed stream information before processing
+    --auto-format            Auto-detect optimal output format based on content
+    --preserve-metadata      Preserve all metadata and attachments (default: yes)
+    --no-preserve-metadata   Strip metadata and attachments
+    --preserve-chapters      Preserve chapter information (default: yes)
+    --no-preserve-chapters   Remove chapter information
+    --verify                 Verify output file integrity after remuxing
+    --quick-verify           Quick verification (duration check only)
+    --video-streams SPEC     Video stream selection (best/all/none/0,1,2...)
+    --audio-streams SPEC     Audio stream selection (best/all/none/eng,jpn/0,1,2...)
+    --subtitle-streams SPEC  Subtitle stream selection (best/all/none/eng,jpn/0,1,2...)
+    --template NAME          Use predefined stream mapping template
+    --pattern GLOB           Process files matching glob pattern
+    --file-list PATH         Process files listed in text file
+
+    -v, --verbose            Enable verbose output with detailed debugging info
+    -h, --help               Display this help message and exit
+    -V, --version            Show version information and exit
+
+SUPPORTED CONTAINER FORMATS:
+    Input/Output: .mkv .mp4 .avi .mov .m2ts .ts .mts .webm .mxf .asf .wmv
+
+    Recommended combinations:
+    • Blu-ray to universal: .m2ts → .mkv (best compatibility)
+    • Legacy to modern: .avi → .mp4 (wide device support)
+    • Professional to standard: .mxf → .mkv (preserves metadata)
+
+EXAMPLES:
+    Convert Blu-ray files to Matroska (most common use case):
+        $PROGNAME -i /media/bluray
+
+    Batch convert AVI files to MP4 with custom output location:
+        $PROGNAME -i ~/old_videos --from .avi --to .mp4 -o ~/converted
+
+    Parallel conversion with verbose monitoring:
+        $PROGNAME -i /videos -j 12 --select-best --verbose --overwrite
+
+    Test run with single-threaded processing:
+        $PROGNAME -i ~/test_folder -j 1 --verbose
+
+    Resume interrupted remuxing:
+        $PROGNAME --resume -i /media/bluray
+
+    List all remuxing jobs:
+        $PROGNAME --list-jobs
+
+    Start fresh even if resumable job exists:
+        $PROGNAME --no-resume -i /media/bluray
+
+ADVANCED EXAMPLES:
+    Show stream information before processing:
+        $PROGNAME -i /media/bluray --show-streams
+
+    Auto-detect optimal format with verification:
+        $PROGNAME -i ~/videos --auto-format --verify
+
+    Multi-language setup with specific streams:
+        $PROGNAME -i /anime --audio-streams eng,jpn --subtitle-streams eng,jpn
+
+    Archive-quality remux with all streams and metadata:
+        $PROGNAME -i /collection --template archive-quality
+
+    Process specific file pattern:
+        $PROGNAME -i /videos --pattern "*.m2ts" --template bluray-universal
+
+    Batch process files from list:
+        $PROGNAME --file-list ~/my-videos.txt --auto-format
+
+RESUME FUNCTIONALITY:
+    Jobs are automatically tracked in: \$XDG_STATE_HOME/remux/ (\${XDG_STATE_HOME:-\$HOME/.local/state})
+    Starting remuxing with the same parameters as an interrupted job triggers
+    notification and suggestion to use --resume to continue.
+    Use --list-jobs to see all tracked remuxing jobs with status.
+    Use --resume to continue an interrupted remuxing operation.
+    Use --no-resume to start fresh even if a resumable job exists.
+    Use --cleanup-stale to remove stale, corrupted, or problematic jobs.
+    The script automatically detects and handles:
+    - Corrupted state files with automatic recovery
+    - Jobs from different machines or users
+    - Stale jobs that have been idle for >24 hours
+
+STREAM MAPPING TEMPLATES:
+    bluray-universal     Best video + best audio + English subtitles
+    movie-collection     Best video + all audio tracks + all subtitles
+    tv-series           Best video + best audio + all subtitles + chapters
+    archive-quality     All streams + metadata + chapters + attachments
+    streaming-optimized Best video + best audio (no subtitles/chapters)
+    mobile-device       Best video + best audio + forced subtitles only
+
+STREAM SELECTION SYNTAX:
+    Video/Audio/Subtitle streams can be specified as:
+    • best          - Select highest quality stream of each type
+    • all           - Include all streams of the specified type
+    • none          - Exclude all streams of the specified type
+    • 0,1,2         - Select specific stream indices (comma-separated)
+    • eng,jpn,ger   - Select streams by language code (audio/subtitle only)
+
+CONFIGURATION:
+    System config: \$XDG_CONFIG_HOME/remux/config (\${XDG_CONFIG_HOME:-\$HOME/.config})
+    Generate example: $PROGNAME --save-config-example
+
+    Configuration allows setting default directories, extensions, job counts, and advanced options.
+
+PERFORMANCE NOTES:
+    • Remuxing is I/O intensive - fast storage improves performance
+    • Parallel jobs = CPU cores works well for most systems
+    • Network storage may benefit from fewer parallel jobs
+    • SSD storage can handle higher job counts than HDD
+
+SAFETY FEATURES:
+    • Atomic file operations prevent corrupted outputs
+    • Input validation prevents dangerous path traversals
+    • Disk space checking prevents out-of-space failures
+    • Graceful shutdown preserves partial work on interrupt
+    • Existing files protected unless --overwrite specified
+
+TROUBLESHOOTING:
+    • Use --verbose for detailed operation logging
+    • Check input files with 'ffmpeg -i filename' for compatibility
+    • Verify disk space and permissions before large operations
+    • Some container conversions may not preserve all streams
+
+SIGNALS:
+    SIGINT (Ctrl+C), SIGTERM, SIGQUIT: Graceful shutdown with cleanup
+
+For more information and updates, visit: https://github.com/b-vitamins/dotfiles
+
+EOF
+}
+
+# Argument parsing
+parse_arguments() {
+    INPUT_DIR=""
+    OUTPUT_DIR=""
+    FROM_EXT=""
+    TO_EXT=""
+    PARALLEL_JOBS=""
+    OVERWRITE=""
+    SELECT_BEST=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -i|--input-dir)
+                if [ -z "$2" ]; then
+                    log_error "Option $1 requires an argument"
+                    return $EXIT_USAGE
+                fi
+                if ! INPUT_DIR=$(sanitize_input "$2" "$MAX_PATH_LENGTH" "path"); then
+                    log_error "Invalid input directory: $2"
+                    return $EXIT_USAGE
+                fi
+                shift 2
+                ;;
+            -o|--output-dir)
+                if [ -z "$2" ]; then
+                    log_error "Option $1 requires an argument"
+                    return $EXIT_USAGE
+                fi
+                if ! OUTPUT_DIR=$(sanitize_input "$2" "$MAX_PATH_LENGTH" "path"); then
+                    log_error "Invalid output directory: $2"
+                    return $EXIT_USAGE
+                fi
+                shift 2
+                ;;
+            --from)
+                if [ -z "$2" ]; then
+                    log_error "Option $1 requires an argument"
+                    return $EXIT_USAGE
+                fi
+                if ! FROM_EXT=$(sanitize_input "$2" 32 "extension"); then
+                    log_error "Invalid from extension: $2"
+                    return $EXIT_USAGE
+                fi
+                shift 2
+                ;;
+            --to)
+                if [ -z "$2" ]; then
+                    log_error "Option $1 requires an argument"
+                    return $EXIT_USAGE
+                fi
+                if ! TO_EXT=$(sanitize_input "$2" 32 "extension"); then
+                    log_error "Invalid to extension: $2"
+                    return $EXIT_USAGE
+                fi
+                shift 2
+                ;;
+            -j|--jobs)
+                if [ -z "$2" ]; then
+                    log_error "Option $1 requires an argument"
+                    return $EXIT_USAGE
+                fi
+                if ! PARALLEL_JOBS=$(sanitize_input "$2" 8 "number"); then
+                    log_error "Invalid number of jobs: $2"
+                    return $EXIT_USAGE
+                fi
+                if [ "$PARALLEL_JOBS" -le 0 ] || [ "$PARALLEL_JOBS" -gt "$MAX_PARALLEL_JOBS" ]; then
+                    log_error "Number of jobs must be between 1 and $MAX_PARALLEL_JOBS"
+                    return $EXIT_USAGE
+                fi
+                shift 2
+                ;;
+            --select-best)
+                SELECT_BEST=1
+                shift
+                ;;
+            --overwrite)
+                OVERWRITE=1
+                shift
+                ;;
+            --resume)
+                RESUME_MODE=1
+                shift
+                ;;
+            --list-jobs)
+                LIST_JOBS_MODE=1
+                shift
+                ;;
+            --no-resume)
+                NO_RESUME=1
+                shift
+                ;;
+            --cleanup-stale)
+                CLEANUP_STALE_MODE=1
+                shift
+                ;;
+            --no-progress)
+                PROGRESS_ENABLED=0
+                shift
+                ;;
+            --save-config-example)
+                save_config_example
+                exit $EXIT_SUCCESS
+                ;;
+            --show-streams)
+                SHOW_STREAMS=1
+                shift
+                ;;
+            --auto-format)
+                AUTO_FORMAT=1
+                shift
+                ;;
+            --preserve-metadata)
+                PRESERVE_METADATA=1
+                shift
+                ;;
+            --no-preserve-metadata)
+                PRESERVE_METADATA=0
+                shift
+                ;;
+            --preserve-chapters)
+                PRESERVE_CHAPTERS=1
+                shift
+                ;;
+            --no-preserve-chapters)
+                PRESERVE_CHAPTERS=0
+                shift
+                ;;
+            --verify)
+                VERIFY_OUTPUT=1
+                shift
+                ;;
+            --quick-verify)
+                VERIFY_OUTPUT=1
+                QUICK_VERIFY=1
+                shift
+                ;;
+            --video-streams)
+                if [ -z "$2" ]; then
+                    log_error "--video-streams requires an argument"
+                    return $EXIT_USAGE
+                fi
+                VIDEO_STREAMS="$2"
+                shift 2
+                ;;
+            --audio-streams)
+                if [ -z "$2" ]; then
+                    log_error "--audio-streams requires an argument"
+                    return $EXIT_USAGE
+                fi
+                AUDIO_STREAMS="$2"
+                shift 2
+                ;;
+            --subtitle-streams)
+                if [ -z "$2" ]; then
+                    log_error "--subtitle-streams requires an argument"
+                    return $EXIT_USAGE
+                fi
+                SUBTITLE_STREAMS="$2"
+                shift 2
+                ;;
+            --template)
+                if [ -z "$2" ]; then
+                    log_error "--template requires an argument"
+                    return $EXIT_USAGE
+                fi
+                TEMPLATE="$2"
+                shift 2
+                ;;
+            --pattern)
+                if [ -z "$2" ]; then
+                    log_error "--pattern requires an argument"
+                    return $EXIT_USAGE
+                fi
+                PATTERN="$2"
+                shift 2
+                ;;
+            --file-list)
+                if [ -z "$2" ]; then
+                    log_error "--file-list requires an argument"
+                    return $EXIT_USAGE
+                fi
+                FILE_LIST="$2"
+                shift 2
+                ;;
+            -v|--verbose)
+                VERBOSE=1
+                log_debug "Verbose mode enabled"
+                shift
+                ;;
+            -h|--help)
+                usage
+                exit $EXIT_SUCCESS
+                ;;
+            -V|--version)
+                show_version
+                exit $EXIT_SUCCESS
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                log_error "Use --help for usage information"
+                return $EXIT_USAGE
+                ;;
+            *)
+                log_error "Unexpected argument: $1"
+                log_error "Use --help for usage information"
+                return $EXIT_USAGE
+                ;;
+        esac
+    done
+
+    return $EXIT_SUCCESS
+}
+
+# Main function
+main() {
+    # Security: Check for privilege escalation attempts
+    if [ "$SECURITY_CHECKS_ENABLED" = 1 ]; then
+        if ! check_privilege_escalation; then
+            log_fatal "Security check failed - refusing to continue"
+            exit $EXIT_SECURITY
+        fi
+    fi
+
+    # Security: Set secure umask for file creation
+    umask "$SECURE_UMASK"
+
+    # Load configuration
+    if ! load_config; then
+        log_error "Failed to load configuration"
+        return $EXIT_CONFIG
+    fi
+
+    # Parse command line arguments
+    if ! parse_arguments "$@"; then
+        return $?
+    fi
+
+    # Initialize state directory for resume capability
+    if ! init_state_dir; then
+        log_error "Failed to initialize state directory"
+        return $EXIT_CONFIG
+    fi
+
+    # Handle cleanup-stale mode early
+    if [ "$CLEANUP_STALE_MODE" = 1 ]; then
+        cleanup_stale_jobs 1
+        return $EXIT_SUCCESS
+    fi
+
+    # Handle list-jobs mode early
+    if [ "$LIST_JOBS_MODE" = 1 ]; then
+        list_jobs
+        return $EXIT_SUCCESS
+    fi
+
+    # Perform automatic stale job detection and reporting
+    detect_stale_jobs 2>/dev/null || true
+    if [ -n "$DETECTED_STALE_JOBS" ]; then
+        stale_count=$(printf '%s' "$DETECTED_STALE_JOBS" | wc -w)
+        log_info "Found $stale_count stale/problematic job(s)"
+        log_info "Use 'remux --cleanup-stale' to clean them up"
+    fi
+
+    # Apply defaults from configuration
+    INPUT_DIR="${INPUT_DIR:-$DEFAULT_INPUT_DIR}"
+    OUTPUT_DIR="${OUTPUT_DIR:-$DEFAULT_OUTPUT_DIR}"
+    FROM_EXT="${FROM_EXT:-$DEFAULT_FROM_EXT}"
+    TO_EXT="${TO_EXT:-$DEFAULT_TO_EXT}"
+    PARALLEL_JOBS="${PARALLEL_JOBS:-$DEFAULT_PARALLEL_JOBS}"
+    OVERWRITE="${OVERWRITE:-$DEFAULT_OVERWRITE}"
+    SELECT_BEST="${SELECT_BEST:-$DEFAULT_SELECT_BEST}"
+
+    # Apply advanced defaults
+    SHOW_STREAMS="${SHOW_STREAMS:-$DEFAULT_SHOW_STREAMS}"
+    AUTO_FORMAT="${AUTO_FORMAT:-$DEFAULT_AUTO_FORMAT}"
+    PRESERVE_METADATA="${PRESERVE_METADATA:-$DEFAULT_PRESERVE_METADATA}"
+    PRESERVE_CHAPTERS="${PRESERVE_CHAPTERS:-$DEFAULT_PRESERVE_CHAPTERS}"
+    VERIFY_OUTPUT="${VERIFY_OUTPUT:-$DEFAULT_VERIFY_OUTPUT}"
+    QUICK_VERIFY="${QUICK_VERIFY:-0}"
+    AUDIO_STREAMS="${AUDIO_STREAMS:-$DEFAULT_AUDIO_STREAMS}"
+    VIDEO_STREAMS="${VIDEO_STREAMS:-$DEFAULT_VIDEO_STREAMS}"
+    SUBTITLE_STREAMS="${SUBTITLE_STREAMS:-$DEFAULT_SUBTITLE_STREAMS}"
+    TEMPLATE="${TEMPLATE:-$DEFAULT_TEMPLATE}"
+    PATTERN="${PATTERN:-$DEFAULT_PATTERN}"
+    FILE_LIST="${FILE_LIST:-$DEFAULT_FILE_LIST}"
+
+    # Validate required arguments
+    if [ -z "$INPUT_DIR" ]; then
+        log_error "Input directory is required"
+        log_error "Use --help for usage information"
+        return $EXIT_USAGE
+    fi
+
+    # Set default output directory if not specified
+    if [ -z "$OUTPUT_DIR" ]; then
+        OUTPUT_DIR="$INPUT_DIR/out"
+    fi
+
+    # Validate and normalize extensions
+    FROM_EXT=$(validate_extension "$FROM_EXT" "input") || return $EXIT_USAGE
+    TO_EXT=$(validate_extension "$TO_EXT" "output") || return $EXIT_USAGE
+
+    # Validate conversion combination
+    if ! validate_conversion "$FROM_EXT" "$TO_EXT"; then
+        return $EXIT_USAGE
+    fi
+
+    # Validate parallel jobs
+    if ! validate_parallel_jobs "$PARALLEL_JOBS"; then
+        return $EXIT_USAGE
+    fi
+
+    # Validate paths
+    if ! validate_path "$INPUT_DIR" "input"; then
+        return $EXIT_USAGE
+    fi
+
+    # Check dependencies
+    if ! check_dependencies; then
+        return $?
+    fi
+
+    # Create output directory
+    if ! mkdir -p "$OUTPUT_DIR"; then
+        log_error "Failed to create output directory: $OUTPUT_DIR"
+        return $EXIT_OPERATION
+    fi
+
+    if ! validate_path "$OUTPUT_DIR" "output"; then
+        return $EXIT_USAGE
+    fi
+
+    # Count input files and calculate total size
+    log_info "Analyzing input files..."
+    file_stats=$(count_files_and_size "$INPUT_DIR" "$FROM_EXT")
+    file_count=$(echo "$file_stats" | cut -d' ' -f1)
+    total_size=$(echo "$file_stats" | cut -d' ' -f2)
+
+    if [ "$file_count" -eq 0 ]; then
+        log_warn "No files found with extension $FROM_EXT in $INPUT_DIR"
+        return $EXIT_SUCCESS
+    fi
+
+    # Initialize global progress tracking variables
+    TOTAL_FILES="$file_count"
+    TOTAL_SIZE_BYTES="$total_size"
+    PROCESSED_FILES=0
+    PROCESSED_SIZE_BYTES=0
+    FAILED_FILES=0
+
+    # Check disk space before starting
+    if ! check_disk_space "$INPUT_DIR" "$OUTPUT_DIR" "$FROM_EXT"; then
+        log_error "Pre-flight disk space check failed"
+        return $EXIT_OPERATION
+    fi
+
+    # Handle resume functionality
+    resumable_job_id=""
+    if [ "$NO_RESUME" != 1 ]; then
+        resumable_job_id=$(is_resumable_job "$INPUT_DIR" "$FROM_EXT" "$TO_EXT" 2>/dev/null || echo "")
+    fi
+
+    if [ "$RESUME_MODE" = 1 ]; then
+        if [ -n "$resumable_job_id" ]; then
+            # Resume mode explicitly requested and job found
+            if ! verify_resume_safety "$resumable_job_id"; then
+                log_error "Job cannot be safely resumed"
+                log_info "Use --cleanup-stale to clean up problematic jobs"
+                return $EXIT_OPERATION
+            fi
+
+            CURRENT_JOB_ID="$resumable_job_id"
+            log_info "Resuming job: $CURRENT_JOB_ID"
+        else
+            log_error "No resumable job found for current parameters"
+            return $EXIT_USAGE
+        fi
+    elif [ -n "$resumable_job_id" ] && [ "$NO_RESUME" != 1 ]; then
+        # Resumable job found but not explicitly requested
+        log_info "Found resumable job: $resumable_job_id"
+        log_info "Use --resume to continue or --no-resume to start fresh"
+
+        # Check for conflicts
+        if [ "$RESUME_MODE" != 1 ] && [ "$NO_RESUME" != 1 ]; then
+            if ! check_job_conflicts "$INPUT_DIR" "$OUTPUT_DIR" "$resumable_job_id"; then
+                log_error "Resume conflict detected"
+                return $EXIT_OPERATION
+            fi
+
+            # Verify job can be resumed safely
+            if ! verify_resume_safety "$resumable_job_id"; then
+                log_error "Job cannot be safely resumed"
+                log_info "Use --cleanup-stale to clean up problematic jobs"
+                return $EXIT_OPERATION
+            fi
+        else
+            log_error "No resumable job found for current parameters"
+            return $EXIT_USAGE
+        fi
+
+        return $EXIT_SUCCESS
+    else
+        # No resumable job or --no-resume specified, start new job
+        if ! check_job_conflicts "$INPUT_DIR" "$OUTPUT_DIR"; then
+            log_error "Cannot start new job due to conflicts"
+            return $EXIT_OPERATION
+        fi
+
+        job_id=$(start_new_job "$INPUT_DIR" "$OUTPUT_DIR" "$FROM_EXT" "$TO_EXT" "$OVERWRITE" "$PARALLEL_JOBS")
+        if [ -z "$job_id" ]; then
+            log_error "Failed to start new job"
+            return $EXIT_OPERATION
+        fi
+
+        CURRENT_JOB_ID="$job_id"
+        log_info "Started new job: $CURRENT_JOB_ID"
+    fi
+
+    # Update progress statistics
+    if ! update_progress_stats "$CURRENT_JOB_ID" "$file_count"; then
+        log_warn "Failed to update initial progress statistics"
+    fi
+
+    # Initialize progress tracking
+    if ! init_progress_tracking "$CURRENT_JOB_ID"; then
+        log_warn "Progress tracking disabled due to initialization failure"
+    fi
+
+    log_info "Found $file_count files to process ($(format_bytes $total_size) total)"
+    log_info "Input directory: $INPUT_DIR"
+    log_info "Output directory: $OUTPUT_DIR"
+    log_info "Conversion: $FROM_EXT -> $TO_EXT"
+    log_info "Parallel jobs: $PARALLEL_JOBS"
+    log_info "Select best streams: $([ "$SELECT_BEST" = 1 ] && echo "yes" || echo "no")"
+    log_info "Overwrite existing: $([ "$OVERWRITE" = 1 ] && echo "yes" || echo "no")"
+
+    # Show advanced configuration if in use
+    if [ "$SHOW_STREAMS" = 1 ] || [ "$AUTO_FORMAT" = 1 ] || [ -n "$TEMPLATE" ] || [ "$VERIFY_OUTPUT" = 1 ]; then
+        log_info ""
+        log_info "Advanced features enabled:"
+        [ "$SHOW_STREAMS" = 1 ] && log_info "  • Stream information display"
+        [ "$AUTO_FORMAT" = 1 ] && log_info "  • Auto-format detection"
+        [ -n "$TEMPLATE" ] && log_info "  • Template: $TEMPLATE"
+        [ "$VERIFY_OUTPUT" = 1 ] && log_info "  • Output verification $([ "$QUICK_VERIFY" = 1 ] && echo "(quick)" || echo "(thorough)")"
+        [ "$PRESERVE_METADATA" = 0 ] && log_info "  • Metadata stripping enabled"
+        [ "$PRESERVE_CHAPTERS" = 0 ] && log_info "  • Chapter removal enabled"
+        if [ "$VIDEO_STREAMS" != "best" ] || [ "$AUDIO_STREAMS" != "best" ] || [ "$SUBTITLE_STREAMS" != "none" ]; then
+            log_info "  • Custom stream selection: V:$VIDEO_STREAMS A:$AUDIO_STREAMS S:$SUBTITLE_STREAMS"
+        fi
+    fi
+    log_info ""
+
+    # Start progress monitoring
+    if [ "$PROGRESS_ENABLED" = 1 ]; then
+        start_progress_monitor
+        log_info "Real-time progress tracking enabled"
+    fi
+
+    # Process files in parallel with resume support
+    JOBS_RUNNING=1
+
+    # Export progress tracking variables for parallel jobs
+    export PROGRESS_ENABLED PROGRESS_FILE TOTAL_FILES TOTAL_SIZE_BYTES
+    export -f notify_file_started notify_file_completed notify_file_failed
+    export -f format_bytes format_speed format_duration update_progress
+
+    # Export advanced feature variables
+    export SHOW_STREAMS AUTO_FORMAT PRESERVE_METADATA PRESERVE_CHAPTERS VERIFY_OUTPUT QUICK_VERIFY
+    export VIDEO_STREAMS AUDIO_STREAMS SUBTITLE_STREAMS TEMPLATE
+
+    # Optimized function selection and parameter preparation
+    local file_discovery_cmd
+    local processing_function
+    local use_advanced_mode=0
+
+    # Pre-calculate advanced mode requirement to avoid repeated checks
+    if [ "$SHOW_STREAMS" = 1 ] || [ "$AUTO_FORMAT" = 1 ] || [ -n "$TEMPLATE" ] || [ "$VERIFY_OUTPUT" = 1 ] || \
+       [ "$PRESERVE_METADATA" = 0 ] || [ "$PRESERVE_CHAPTERS" = 0 ] || \
+       [ "$VIDEO_STREAMS" != "best" ] || [ "$AUDIO_STREAMS" != "best" ] || [ "$SUBTITLE_STREAMS" != "none" ]; then
+        use_advanced_mode=1
+    fi
+
+    # Optimize file discovery method selection
+    if [ -n "$FILE_LIST" ]; then
+        # Process files from list
+        log_info "Processing files from list: $FILE_LIST"
+        if [ ! -f "$FILE_LIST" ]; then
+            log_error "File list not found: $FILE_LIST"
+            return $EXIT_NOINPUT
+        fi
+        file_discovery_cmd="process_by_pattern \"$INPUT_DIR\" \"$FILE_LIST\" \"$OUTPUT_DIR\" list"
+    elif [ -n "$PATTERN" ]; then
+        # Process files matching pattern
+        log_info "Processing files matching pattern: $PATTERN"
+        file_discovery_cmd="process_by_pattern \"$INPUT_DIR\" \"$PATTERN\" \"$OUTPUT_DIR\" pattern"
+    else
+        # Standard file discovery by extension - optimized for performance
+        file_discovery_cmd="find \"$INPUT_DIR\" -type f -name \"*$FROM_EXT\" -print0"
+    fi
+
+    # Choose processing function based on pre-calculated mode
+    if [ "$use_advanced_mode" = 1 ]; then
+        # Use advanced function with optimized wrapper
+        export -f remux_file_advanced_wrapper
+
+        # Optimized wrapper function with cached parameters
+        remux_file_advanced_wrapper() {
+            remux_file_advanced "$1" "$2" "$3" "$4" "$5" "$6" "$7" \
+                "$SHOW_STREAMS" "$AUTO_FORMAT" "$PRESERVE_METADATA" "$PRESERVE_CHAPTERS" \
+                "$VERIFY_OUTPUT" "$QUICK_VERIFY" "$VIDEO_STREAMS" "$AUDIO_STREAMS" "$SUBTITLE_STREAMS" "$TEMPLATE"
+        }
+        processing_function="remux_file_advanced_wrapper"
+    else
+        # Use standard function for backward compatibility
+        processing_function="remux_file_with_resume"
+    fi
+
+    # Execute file processing based on discovery method
+    if [ -n "$FILE_LIST" ] || [ -n "$PATTERN" ]; then
+        # Custom file discovery
+        eval "$file_discovery_cmd" | while IFS= read -r file_path; do
+            echo "$file_path"
+        done | parallel --will-cite -j "$PARALLEL_JOBS" \
+            "$processing_function" {} "$INPUT_DIR" "$OUTPUT_DIR" "$FROM_EXT" "$TO_EXT" "$SELECT_BEST" "$OVERWRITE" "$CURRENT_JOB_ID"
+    else
+        # Standard file discovery
+        eval "$file_discovery_cmd" | \
+            parallel --will-cite -0 -j "$PARALLEL_JOBS" \
+                "$processing_function" {} "$INPUT_DIR" "$OUTPUT_DIR" "$FROM_EXT" "$TO_EXT" "$SELECT_BEST" "$OVERWRITE" "$CURRENT_JOB_ID"
+    fi
+
+    remux_exit_code=$?
+    JOBS_RUNNING=0
+
+    # Stop progress monitoring
+    if [ "$PROGRESS_ENABLED" = 1 ]; then
+        stop_progress_monitor
+    fi
+
+    # Mark job as completed with final validation
+    if [ -n "$CURRENT_JOB_ID" ]; then
+        final_completed_count=$(awk '/^\[completed\]$/{in_completed=1; next} /^\[/{in_completed=0} in_completed && /^[^#]/ && NF>0 {count++} END{print count+0}' "$STATE_DIR/$CURRENT_JOB_ID.state" 2>/dev/null || echo "0")
+        update_state_value "$CURRENT_JOB_ID" "progress" "completed_files" "$final_completed_count"
+
+        if [ $remux_exit_code -eq 0 ]; then
+            update_state_value "$CURRENT_JOB_ID" "job" "status" "completed"
+            update_state_value "$CURRENT_JOB_ID" "job" "finished" "$(date -Iseconds)"
+        else
+            update_state_value "$CURRENT_JOB_ID" "job" "status" "failed"
+            update_state_value "$CURRENT_JOB_ID" "job" "failed_reason" "some_files_failed"
+        fi
+    fi
+
+    # Display comprehensive summary
+    show_summary_stats "$CURRENT_JOB_ID"
+
+    if [ $remux_exit_code -eq 0 ]; then
+        log_info ""
+        log_info "Remuxing completed successfully"
+        if [ -n "$CURRENT_JOB_ID" ]; then
+            log_info "Job completed: $CURRENT_JOB_ID"
+        fi
+    else
+        log_error "Some remuxing operations failed"
+        if [ -n "$CURRENT_JOB_ID" ]; then
+            log_error "Job marked as failed: $CURRENT_JOB_ID"
+            log_info "Use --list-jobs to see detailed status"
+        fi
+        return $EXIT_OPERATION
+    fi
+
+    return $EXIT_SUCCESS
+}
+
+# Enhanced cleanup on exit
+cleanup_on_exit() {
+    # Stop progress monitoring
+    if [ "$PROGRESS_ENABLED" = 1 ]; then
+        stop_progress_monitor 2>/dev/null || true
+    fi
+
+    # Clean up temp files
+    cleanup_temp_files
+}
+
+trap 'cleanup_on_exit' EXIT
+
+# Run main function with all arguments
+main "$@"
+exit $?
