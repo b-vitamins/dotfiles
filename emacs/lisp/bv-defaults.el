@@ -161,6 +161,9 @@ and MSG is the process message."
 ;; Disable cursor blinking
 (blink-cursor-mode -1)
 
+;; Enable line highlighting
+(global-hl-line-mode 1)
+
 ;; Recent files tracking
 (require 'recentf)
 (setq recentf-max-menu-items 25
