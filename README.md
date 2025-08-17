@@ -1,8 +1,8 @@
 # dotfiles
 
-> Screaming silence hides  
-> Bespeckled infinite worlds  
-> Chaos tamed, reborn  
+> Screaming silence hides
+> Bespeckled infinite worlds
+> Chaos tamed, reborn
 
 A comprehensive GNU/Linux environment using Guix System, modern tools, and Emacs at its core.
 
@@ -28,7 +28,7 @@ e              # List files (eza with icons)
 b <file>       # View file (bat with syntax)
 rg <pattern>   # Search content (ripgrep)
 
-# Git essentials  
+# Git essentials
 gs             # Status
 gd             # Diff
 ga             # Add
@@ -46,6 +46,17 @@ mk             # make -j (parallel build)
 venv myenv     # Create Python virtualenv
 activate       # Source venv/bin/activate
 ```
+
+## Command-Line Utilities
+
+### Audio/Video Processing
+- [`transcode`](docs/bin/transcode.md) - Convert between audio formats with resume capability
+- [`remux`](docs/bin/remux.md) - Remux video containers without re-encoding
+
+### Research Tools
+- [`harvester`](docs/bin/harvester.md) - Download and organize ArXiv papers
+
+See [documentation](docs/) for detailed guides.
 
 ## Key Features
 
@@ -74,10 +85,10 @@ dotfiles/
 
 ## Documentation
 
-- [Emacs Configuration](emacs/README.md) - Modular Emacs setup with 40+ custom modules
-- [Guix System](guix/README.md) - Machine configurations and custom services
-- [Shell Environment](zsh/README.md) - Zsh configuration and productivity tools
-- [Development Setup](docs/development.md) - Language servers, tools, workflows
+- [Command-Line Utilities](docs/bin/) - Audio/video tools and research utilities
+- [Emacs Configuration](docs/emacs/) - Modular Emacs setup with 40+ custom modules
+- [Guix System](docs/guix/) - Machine configurations and custom services
+- [Shell Environment](docs/shell/zsh.md) - Zsh configuration and productivity tools
 
 ## Common Tasks
 
@@ -138,4 +149,4 @@ GPL-3.0 - Free as in freedom.
 
 ---
 
-*Built with Guix System*  
+*Built with Guix System*
