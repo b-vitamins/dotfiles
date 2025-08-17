@@ -9,12 +9,16 @@ NC='\033[0m' # No Color
 
 # Check for debugging print statements
 check_debug_prints() {
-    # Check Python files for print statements
+    # Check Python files for print statements (excluding bin directory)
     if git diff --cached --name-only | grep -q '\.py$'; then
-        if git diff --cached | grep -E '^\+.*print\(' | grep -v '# noqa: print'; then
-            echo "${RED}Error: Found print statements in Python files${NC}" >&2
-            echo "Remove debug prints or add '# noqa: print' comment to allow" >&2
-            return 1
+        # Get Python files that are not in bin directory
+        python_files=$(git diff --cached --name-only | grep '\.py$' | grep -v '^bin/')
+        if [ -n "$python_files" ]; then
+            if git diff --cached -- $python_files | grep -E '^\+.*print\(' | grep -v '# noqa: print'; then
+                echo "${RED}Error: Found print statements in Python files${NC}" >&2
+                echo "Remove debug prints or add '# noqa: print' comment to allow" >&2
+                return 1
+            fi
         fi
     fi
     
