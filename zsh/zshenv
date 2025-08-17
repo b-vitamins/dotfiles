@@ -5,3 +5,6 @@ export HISTSIZE="50000"
 export HISTFILE="$XDG_CONFIG_HOME/zsh/.zhistory"
 export SAVEHIST="50000"
 export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket 2>/dev/null)"
+
+# Ensure ~/.local/bin is in PATH (XDG compliant location for user executables)
+[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"

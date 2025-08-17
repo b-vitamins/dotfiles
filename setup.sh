@@ -260,6 +260,11 @@ define_links() {
         if [[ -d "$DOTFILES_DIR/qBittorrent" ]]; then
             COPIES["$DOTFILES_DIR/qBittorrent"]="$HOME/.config/qBittorrent"
         fi
+
+        # Setup executables in ~/.local/bin (XDG compliant location)
+        if [[ -d "$DOTFILES_DIR/bin" ]]; then
+            setup_user_bin
+        fi
     fi
 
     # Guix configuration (always included unless machine not found)
@@ -274,6 +279,67 @@ define_links() {
                 [[ -f "$machine" ]] && echo "  - $(basename "$machine" .scm)"
             done
         fi
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# User bin setup
+# -----------------------------------------------------------------------------
+
+setup_user_bin() {
+    local user_bin_dir="$HOME/.local/bin"
+    local dotfiles_bin_dir="$DOTFILES_DIR/bin"
+
+    debug "Setting up user bin directory..."
+
+    # Create ~/.local/bin if it doesn't exist
+    if [[ ! -d "$user_bin_dir" ]]; then
+        debug "Creating user bin directory: $user_bin_dir"
+        if [[ "$DRY_RUN" == false ]]; then
+            mkdir -p "$user_bin_dir"
+        fi
+    fi
+
+    # Find all files in bin directory (executable or not, we trust what's in bin/)
+    local bin_count=0
+    while IFS= read -r -d '' bin_file; do
+        local bin_name="$(basename "$bin_file")"
+        # Remove extension for cleaner command names
+        local link_name="${bin_name%.*}"
+        local target_link="$user_bin_dir/$link_name"
+
+        # Create symlink for the executable
+        if [[ -L "$target_link" ]] && [[ "$(readlink -f "$target_link")" == "$(readlink -f "$bin_file")" ]]; then
+            debug "Executable link already correct: $link_name"
+        else
+            if [[ -e "$target_link" ]]; then
+                if [[ "$FORCE" == true ]]; then
+                    log WARNING "Overwriting existing executable: $link_name"
+                    if [[ "$DRY_RUN" == false ]]; then
+                        rm -f "$target_link"
+                    fi
+                else
+                    debug "Executable already exists, skipping: $link_name"
+                    continue
+                fi
+            fi
+
+            if [[ "$DRY_RUN" == true ]]; then
+                echo "  Would link executable: $bin_name -> $link_name"
+            else
+                ln -sf "$bin_file" "$target_link"
+                # Ensure it's executable
+                chmod +x "$bin_file"
+                log SUCCESS "Linked executable: $link_name"
+            fi
+            bin_count=$((bin_count + 1))
+        fi
+    done < <(find "$dotfiles_bin_dir" -type f -print0 2>/dev/null)
+
+    if [[ $bin_count -gt 0 ]]; then
+        log INFO "Linked $bin_count executables to $user_bin_dir"
+    else
+        debug "No new executables to link"
     fi
 }
 
