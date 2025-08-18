@@ -1,5 +1,32 @@
 # User Preferences - Ayan Das
 
+## Specialized Agents
+
+### Agent Usage Instructions
+Proactively use specialized agents for focused tasks. Each agent handles ONE specific task well within its context window.
+
+#### Quick Agent Selection
+- **Python issues**: Start with `python-import-resolver` for imports, `python-ruff-fixer` for linting, `python-pyright-resolver` for types
+- **Rust maintenance**: Use `cargo-dependency-updater` for deps, `rust-clippy-fixer` for idioms
+- **LaTeX problems**: Begin with `latex-compiler-fixer`, then specialized agents for math/tables/figures
+- **Before commits**: Always run `security-secret-scanner` then `git-commit-formatter`
+- **Code cleanup**: Chain `import-cleaner` → language-specific linter → `test-coverage-analyzer`
+
+#### Key Patterns
+1. **Dependency updates**: `dependency-patch-updater` (safe) before attempting breaking changes
+2. **Refactoring**: `function-renamer` for single functions, `pattern-replacer` for systematic changes
+3. **Python setup**: `guix-manifest-updater` → `python-import-resolver` → verify with `manifest-dependency-checker`
+4. **Testing gaps**: `test-coverage-analyzer` to identify, then write tests manually
+5. **Bibliography**: `bibtex-citation-checker` for consistency, enrichers for improvement
+
+#### Agent Principles
+- Analysis agents (`*-analyzer`, `*-checker`, `*-finder`) never modify files
+- All Python agents use `guix shell -m manifest.scm` exclusively
+- One task per agent invocation for best results
+- Chain agents for complex workflows
+
+See `docs/claude/agents.md` for full reference.
+
 ## System Environment
 
 ### Hardware & OS
