@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Audio format transcoding utility with parallel processing support
 # Supports batch conversion between multiple audio formats with optimized encoding
@@ -12,13 +12,7 @@ SCRIPT_PID=$$
 # Error codes (following sysexits.h conventions)
 EXIT_SUCCESS=0
 EXIT_USAGE=64
-EXIT_DATAERR=65
-EXIT_NOINPUT=66
-EXIT_UNAVAILABLE=69
 EXIT_SOFTWARE=70
-EXIT_CANTCREAT=73
-EXIT_IOERR=74
-EXIT_TEMPFAIL=75
 EXIT_CONFIG=78
 EXIT_SIGNAL=130
 EXIT_DEPENDENCY=69
@@ -27,7 +21,6 @@ EXIT_OPERATION=70
 # Global state with atomic operations support
 CONFIG_LOADED=0
 JOBS_RUNNING=0
-MAX_JOBS_RUNNING=0
 TEMP_DIR=""
 CLEANUP_REQUIRED=0
 LOCKFILE_FD=""
@@ -44,9 +37,6 @@ CURRENT_JOB_ID=""
 # Default configuration
 DEFAULT_INPUT_DIR=""
 DEFAULT_OUTPUT_DIR=""
-DEFAULT_FROM_EXT=""
-DEFAULT_TO_EXT=""
-DEFAULT_QUALITY=""
 DEFAULT_PARALLEL_JOBS=""
 DEFAULT_OVERWRITE=0
 
@@ -88,7 +78,7 @@ handle_signal() {
         if update_state_value "$CURRENT_JOB_ID" "job" "status" "interrupted" 2>/dev/null; then
             update_state_value "$CURRENT_JOB_ID" "job" "interrupted_by" "$signal" 2>/dev/null || true
             update_state_value "$CURRENT_JOB_ID" "job" "interrupted_at" "$(date -Iseconds)" 2>/dev/null || true
-            printf "Job state saved: $CURRENT_JOB_ID\n" >&2
+            printf "Job state saved: %s\n" "$CURRENT_JOB_ID" >&2
         else
             printf "Warning: Failed to save job state\n" >&2
         fi
@@ -676,7 +666,7 @@ cleanup_stale_jobs() {
                     log_info "Cleaning up problematic job: $job_id ($reason)"
                     rm -f "$state_file" 2>/dev/null || true
                     # Clean up associated backup files
-                    rm -f "$STATE_DIR"/$job_id.state.backup.* 2>/dev/null || true
+                    rm -f "$STATE_DIR"/"$job_id".state.backup.* 2>/dev/null || true
                     cleaned_count=$((cleaned_count + 1))
                 else
                     log_warn "Found problematic job: $job_id ($reason) - use --cleanup-stale to remove"
@@ -937,13 +927,13 @@ cleanup_old_backups() {
     job_id="$1"
 
     # Find all backup files for this job and keep only the newest ones
-    for backup_file in "$STATE_DIR"/$job_id.state.backup.*; do
+    for backup_file in "$STATE_DIR"/"$job_id".state.backup.*; do
         [ -f "$backup_file" ] || continue
-        backup_count=$(ls -1 "$STATE_DIR"/$job_id.state.backup.* 2>/dev/null | wc -l)
+        backup_count=$(find "$STATE_DIR" -name "$job_id.state.backup.*" -type f 2>/dev/null | wc -l)
         if [ "$backup_count" -gt "$STATE_BACKUP_RETENTION" ]; then
             # Remove oldest backup files
-            ls -1t "$STATE_DIR"/$job_id.state.backup.* 2>/dev/null |
-                tail -n +$((STATE_BACKUP_RETENTION + 1)) |
+            find "$STATE_DIR" -name "$job_id.state.backup.*" -type f -printf '%T@ %p\n' 2>/dev/null |
+                sort -n | head -n -"$STATE_BACKUP_RETENTION" | cut -d' ' -f2- |
                 while IFS= read -r old_backup; do
                     rm -f "$old_backup" 2>/dev/null || true
                     log_debug "Removed old backup: $old_backup"
@@ -1047,7 +1037,7 @@ acquire_file_lock() {
     timeout="${2:-10}"
 
     attempts=0
-    while [ $attempts -lt $timeout ]; do
+    while [ "$attempts" -lt "$timeout" ]; do
         if (
             set -C
             echo $$ >"$lock_file"
@@ -1093,13 +1083,13 @@ recover_state_file() {
 
     # Try to find the most recent valid backup
     latest_backup=""
-    for backup_file in "$STATE_DIR"/$job_id.state.backup.*; do
+    for backup_file in "$STATE_DIR"/"$job_id".state.backup.*; do
         [ -f "$backup_file" ] || continue
 
         # Extract job ID and validate backup
         backup_job_id=$(basename "$backup_file" | cut -d. -f1-2 | tr '.' '_')
         if validate_state_file "${backup_job_id}" 2>/dev/null; then
-            if [ -z "$latest_backup" ] || [ "$backup_file" -nt "$latest_backup" ]; then
+            if [ -z "$latest_backup" ] || [ "$(stat -c %Y "$backup_file" 2>/dev/null || echo 0)" -gt "$(stat -c %Y "$latest_backup" 2>/dev/null || echo 0)" ]; then
                 latest_backup="$backup_file"
             fi
         fi
@@ -1874,7 +1864,7 @@ convert_single_file() {
     relative_path="${input_file#"$input_dir"/}"
     target_file="$output_dir/${relative_path%"$from_ext"}$to_ext"
     target_dir="$(dirname "$target_file")"
-    temp_file="$target_file.tmp.$$"
+    temp_file="${target_file%"$to_ext"}.tmp.$$${to_ext}"
 
     # Check if file is already completed (resume capability)
     if [ -n "${TRANSCODE_JOB_ID:-}" ] && is_file_completed "$TRANSCODE_JOB_ID" "$relative_path"; then
@@ -2574,7 +2564,7 @@ if [ "${0##*/}" = "transcode" ]; then
     umask 022
 
     # Set conservative IFS to prevent word splitting issues
-    IFS=' \t\n'
+    IFS=$' \t\n'
 
     # Validate we have a reasonable shell environment
     if [ -z "${HOME:-}" ]; then
