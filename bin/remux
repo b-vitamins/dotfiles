@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Video container remuxing utility with parallel processing support
 #
+# shellcheck disable=SC2317  # Functions are called dynamically
 
 # Script metadata
 VERSION="2.0.0"
@@ -138,6 +139,7 @@ sanitize_input() {
                     ;;
             esac
             # Check against allowed extensions
+            # shellcheck disable=SC2016  # Pattern literal is intentional
             case " $ALLOWED_EXTENSIONS " in
                 *" $input "*) ;; # Extension is allowed
                 *)
@@ -161,7 +163,7 @@ sanitize_input() {
                     log_error "Command substitution not allowed in patterns"
                     return 1
                     ;;
-                */../* | */../* | ../* | */..)
+                */../* | ../* | */..)
                     log_error "Path traversal not allowed in patterns"
                     return 1
                     ;;
@@ -373,7 +375,8 @@ update_progress() {
     [ "$PROGRESS_ENABLED" != 1 ] && return 0
     [ -z "$PROGRESS_FILE" ] && return 0
 
-    local current_time=$(date +%s)
+    local current_time
+    current_time=$(date +%s)
     local temp_file="${PROGRESS_FILE}.tmp.$$"
 
     # Rate limiting - only update every PROGRESS_UPDATE_INTERVAL seconds
@@ -384,7 +387,8 @@ update_progress() {
     LAST_PROGRESS_UPDATE=$current_time
 
     # Calculate rates and ETA
-    local elapsed=$((current_time - START_TIME))
+    local elapsed
+    elapsed=$((current_time - START_TIME))
     local files_per_minute=0
     local bytes_per_second=0
     local eta_seconds=0
@@ -394,7 +398,8 @@ update_progress() {
         bytes_per_second=$((PROCESSED_SIZE_BYTES / elapsed))
 
         if [ "$files_per_minute" -gt 0 ] && [ "$TOTAL_FILES" -gt "$PROCESSED_FILES" ]; then
-            local remaining_files=$((TOTAL_FILES - PROCESSED_FILES))
+            local remaining_files
+            remaining_files=$((TOTAL_FILES - PROCESSED_FILES))
             eta_seconds=$((remaining_files * 60 / files_per_minute))
         fi
     fi
@@ -457,14 +462,18 @@ show_progress() {
     fi
 
     # Format file sizes
-    local processed_size_fmt=$(format_bytes "${processed_size_bytes:-0}")
-    local total_size_fmt=$(format_bytes "${total_size_bytes:-0}")
+    local processed_size_fmt
+    processed_size_fmt=$(format_bytes "${processed_size_bytes:-0}")
+    local total_size_fmt
+    total_size_fmt=$(format_bytes "${total_size_bytes:-0}")
 
     # Format speed
-    local speed_fmt=$(format_speed "${bytes_per_second:-0}")
+    local speed_fmt
+    speed_fmt=$(format_speed "${bytes_per_second:-0}")
 
     # Format ETA
-    local eta_fmt=$(format_duration "${eta_seconds:-0}")
+    local eta_fmt
+    eta_fmt=$(format_duration "${eta_seconds:-0}")
 
     # Format current file (truncate if too long)
     local current_file_display=""
@@ -516,12 +525,16 @@ format_duration() {
     if [ "$seconds" -lt 60 ]; then
         printf "%ds" "$seconds"
     elif [ "$seconds" -lt 3600 ]; then
-        local minutes=$((seconds / 60))
-        local remaining_seconds=$((seconds % 60))
+        local minutes
+        minutes=$((seconds / 60))
+        local remaining_seconds
+        remaining_seconds=$((seconds % 60))
         printf "%dm%ds" "$minutes" "$remaining_seconds"
     else
-        local hours=$((seconds / 3600))
-        local remaining_minutes=$(((seconds % 3600) / 60))
+        local hours
+        hours=$((seconds / 3600))
+        local remaining_minutes
+        remaining_minutes=$(((seconds % 3600) / 60))
         printf "%dh%dm" "$hours" "$remaining_minutes"
     fi
 }
@@ -595,8 +608,15 @@ notify_file_completed() {
     local lock_file="${PROGRESS_FILE}.lock"
     if acquire_file_lock "$lock_file" 2; then
         # Read current values from progress file to handle parallel updates
-        local current_processed=$(grep "^processed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
-        local current_size=$(grep "^processed_size_bytes=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+        local current_processed
+        current_processed=$(grep "^processed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+        local current_size
+        current_size=$(grep "^processed_size_bytes=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+
+        # Ensure variables are numeric to prevent arithmetic errors
+        current_processed=${current_processed:-0}
+        current_size=${current_size:-0}
+        file_size=${file_size:-0}
 
         PROCESSED_FILES=$((current_processed + 1))
         PROCESSED_SIZE_BYTES=$((current_size + file_size))
@@ -618,9 +638,18 @@ notify_file_failed() {
     local lock_file="${PROGRESS_FILE}.lock"
     if acquire_file_lock "$lock_file" 2; then
         # Read current values from progress file to handle parallel updates
-        local current_processed=$(grep "^processed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
-        local current_failed=$(grep "^failed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
-        local current_size=$(grep "^processed_size_bytes=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+        local current_processed
+        current_processed=$(grep "^processed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+        local current_failed
+        current_failed=$(grep "^failed_files=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+        local current_size
+        current_size=$(grep "^processed_size_bytes=" "$PROGRESS_FILE" 2>/dev/null | cut -d= -f2 || echo "0")
+
+        # Ensure variables are numeric to prevent arithmetic errors
+        current_processed=${current_processed:-0}
+        current_failed=${current_failed:-0}
+        current_size=${current_size:-0}
+        file_size=${file_size:-0}
 
         PROCESSED_FILES=$((current_processed + 1))
         FAILED_FILES=$((current_failed + 1))
@@ -634,8 +663,10 @@ notify_file_failed() {
 # Display comprehensive summary statistics
 show_summary_stats() {
     local job_id="$1"
-    local end_time=$(date +%s)
-    local total_duration=$((end_time - START_TIME))
+    local end_time
+    end_time=$(date +%s)
+    local total_duration
+    total_duration=$((end_time - START_TIME))
 
     printf "\n"
     log_info "=== REMUX OPERATION SUMMARY ==="
@@ -647,8 +678,10 @@ show_summary_stats() {
     log_info "Duration: $(format_duration $total_duration)"
 
     if [ "$total_duration" -gt 0 ]; then
-        local avg_files_per_minute=$((PROCESSED_FILES * 60 / total_duration))
-        local avg_speed=$((PROCESSED_SIZE_BYTES / total_duration))
+        local avg_files_per_minute
+        avg_files_per_minute=$((PROCESSED_FILES * 60 / total_duration))
+        local avg_speed
+        avg_speed=$((PROCESSED_SIZE_BYTES / total_duration))
         log_info "Average speed: $avg_files_per_minute files/min, $(format_speed $avg_speed)"
     fi
 
@@ -2173,48 +2206,33 @@ count_files() {
 count_files_and_size() {
     local input_dir="$1"
     local from_ext="$2"
-    local file_count=0
-    local total_size=0
-    local batch_size=100
-    local files_batch=""
-    local batch_count=0
+    local temp_file
+    temp_file=$(mktemp) || {
+        log_error "Failed to create temporary file"
+        printf "0 0"
+        return 1
+    }
 
-    # Use a more efficient approach by batching stat calls
-    find "$input_dir" -type f -name "*$from_ext" -print0 2>/dev/null |
-        while IFS= read -r -d '' file; do
-            files_batch="$files_batch $file"
-            batch_count=$((batch_count + 1))
+    # Use find with -exec to avoid pipe subshell issues
+    find "$input_dir" -type f -name "*$from_ext" -exec stat -c%s {} \; 2>/dev/null >"$temp_file"
 
-            # Process files in batches to reduce overhead
-            if [ $batch_count -ge $batch_size ]; then
-                # Process current batch
-                eval "stat -c%s $files_batch 2>/dev/null" | {
-                    while read -r size; do
-                        [ -n "$size" ] && [ "$size" -gt 0 ] && {
-                            file_count=$((file_count + 1))
-                            total_size=$((total_size + size))
-                        }
-                    done
-                    # Output intermediate results for very large directories
-                    [ $file_count -gt 1000 ] && printf "Processed %d files...\r" "$file_count" >&2
-                }
-                files_batch=""
-                batch_count=0
-            fi
-        done
-
-    # Process remaining files in the last batch
-    if [ $batch_count -gt 0 ]; then
-        eval "stat -c%s $files_batch 2>/dev/null" | {
-            while read -r size; do
-                [ -n "$size" ] && [ "$size" -gt 0 ] && {
-                    file_count=$((file_count + 1))
-                    total_size=$((total_size + size))
-                }
-            done
-        }
+    if [ ! -s "$temp_file" ]; then
+        rm -f "$temp_file"
+        printf "0 0"
+        return 0
     fi
 
+    # Count files and sum sizes
+    local file_count=0
+    local total_size=0
+    while read -r size; do
+        [ -n "$size" ] && [ "$size" -gt 0 ] && {
+            file_count=$((file_count + 1))
+            total_size=$((total_size + size))
+        }
+    done <"$temp_file"
+
+    rm -f "$temp_file"
     printf "%d %d" "$file_count" "$total_size"
 }
 
@@ -2390,8 +2408,14 @@ remux_file_advanced() {
     fi
 
     # Create atomic temporary output file
+    # Extract the base name and extension from target file
+    local target_basename=$(basename "$target_file")
+    local target_name="${target_basename%.*}"
+    local target_ext="${target_basename##*.}"
+
     if command -v mktemp >/dev/null 2>&1; then
-        temp_file=$(mktemp --tmpdir "remux_$(basename "$target_file").XXXXXX.tmp") || {
+        # Create temp file with proper extension so FFmpeg can detect format
+        temp_file=$(mktemp --tmpdir "remux_${target_name}.XXXXXX.${target_ext}") || {
             log_error "Failed to create secure temporary file"
             notify_file_failed "$input_file" "$file_size" "temp_file_failed"
             return 1
@@ -2427,6 +2451,15 @@ remux_file_advanced() {
 
         if [ ! -s "$temp_file" ]; then
             log_error "FFmpeg created empty output file: $temp_file"
+
+            # Display any error output even though FFmpeg returned success
+            if [ -f "$error_file" ] && [ -s "$error_file" ]; then
+                log_error "FFmpeg error/warning output:"
+                while IFS= read -r line; do
+                    log_error "  $line"
+                done <"$error_file"
+            fi
+
             cleanup_temp_file
             notify_file_failed "$input_file" "$file_size" "empty_output"
             return 1
@@ -2451,6 +2484,7 @@ remux_file_advanced() {
 
             # Notify progress tracking of successful completion
             notify_file_completed "$input_file" "$file_size"
+            cleanup_error_file
             return 0
         else
             log_error "Failed to move temporary file to final location"
@@ -2537,12 +2571,23 @@ remux_file() {
 
     # Build ffmpeg command securely - use arrays to prevent injection
     ffmpeg_cmd="ffmpeg"
-    ffmpeg_base_args="-hide_banner -loglevel error -stats"
+    ffmpeg_base_args="-hide_banner -loglevel error -stats -y"
 
-    # Create atomic temporary output file using secure function
-    if ! temp_file=$(secure_temp_file "remux_$(basename "$target_file")" ".tmp"); then
-        log_error "Failed to create secure temporary file"
-        return 1
+    # Create atomic temporary output file
+    # Extract the base name and extension from target file
+    local target_basename=$(basename "$target_file")
+    local target_name="${target_basename%.*}"
+    local target_ext="${target_basename##*.}"
+
+    if command -v mktemp >/dev/null 2>&1; then
+        # Create temp file with proper extension so FFmpeg can detect format
+        temp_file=$(mktemp --tmpdir "remux_${target_name}.XXXXXX.${target_ext}") || {
+            log_error "Failed to create secure temporary file"
+            return 1
+        }
+    else
+        # Fallback for systems without mktemp
+        temp_file="$target_file.tmp.$$"
     fi
 
     log_debug "Using temporary file: $temp_file"
@@ -2567,18 +2612,32 @@ remux_file() {
     escaped_output=$(escape_ffmpeg_arg "$temp_file")
 
     # Execute ffmpeg with atomic operation - use explicit argument separation
+    # Create temporary file for capturing stderr
+    local error_file=$(mktemp --tmpdir "remux_error_XXXXXX.tmp") || {
+        log_error "Failed to create error capture file"
+        cleanup_temp_file
+        return 1
+    }
+
+    # Ensure cleanup of error file too
+    cleanup_error_file() {
+        if [ -f "$error_file" ]; then
+            rm -f "$error_file" 2>/dev/null || true
+        fi
+    }
+
     if [ "$select_best" = 1 ]; then
         # Select best streams: video, audio, subtitle
         log_debug "Executing: $ffmpeg_cmd $ffmpeg_base_args -i '$escaped_input' -map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy '$escaped_output'"
         ffmpeg_success=0
-        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy "$temp_file" </dev/null 2>/dev/null; then
+        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy "$temp_file" </dev/null 2>"$error_file"; then
             ffmpeg_success=1
         fi
     else
         # Copy all streams
         log_debug "Executing: $ffmpeg_cmd $ffmpeg_base_args -i '$escaped_input' -map 0 -c copy '$escaped_output'"
         ffmpeg_success=0
-        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0 -c copy "$temp_file" </dev/null 2>/dev/null; then
+        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0 -c copy "$temp_file" </dev/null 2>"$error_file"; then
             ffmpeg_success=1
         fi
     fi
@@ -2588,12 +2647,23 @@ remux_file() {
         if [ ! -f "$temp_file" ]; then
             log_error "FFmpeg completed but output file was not created: $temp_file"
             cleanup_temp_file
+            cleanup_error_file
             return 1
         fi
 
         if [ ! -s "$temp_file" ]; then
             log_error "FFmpeg created empty output file: $temp_file"
+
+            # Display any error output even though FFmpeg returned success
+            if [ -f "$error_file" ] && [ -s "$error_file" ]; then
+                log_error "FFmpeg error/warning output:"
+                while IFS= read -r line; do
+                    log_error "  $line"
+                done <"$error_file"
+            fi
+
             cleanup_temp_file
+            cleanup_error_file
             return 1
         fi
 
@@ -2604,18 +2674,28 @@ remux_file() {
 
             # Notify progress tracking of successful completion
             notify_file_completed "$input_file" "$file_size"
+            cleanup_error_file
             return 0
         else
             log_error "Failed to move temporary file to final location"
             log_error "Source: $temp_file"
             log_error "Target: $target_file"
             cleanup_temp_file
+            cleanup_error_file
             return 1
         fi
     else
         ffmpeg_exit_code=$?
         local error_reason="ffmpeg_exit_$ffmpeg_exit_code"
         log_error "FFmpeg failed for: $(basename "$input_file") (exit code: $ffmpeg_exit_code)"
+        # Display the actual FFmpeg error
+        if [ -f "$error_file" ] && [ -s "$error_file" ]; then
+            log_error "FFmpeg error output:"
+            while IFS= read -r line; do
+                log_error "  $line"
+            done <"$error_file"
+        fi
+
         case $ffmpeg_exit_code in
             1)
                 log_error "Suggestion: Check input file format compatibility"
@@ -2633,6 +2713,7 @@ remux_file() {
         # Notify progress tracking of failure
         notify_file_failed "$input_file" "$file_size" "$error_reason"
         cleanup_temp_file
+        cleanup_error_file
         return 1
     fi
 }
@@ -3305,9 +3386,11 @@ export -f log_info log_error log_warn log_debug log_fatal
 export -f show_stream_info get_stream_mapping detect_optimal_format verify_remux_integrity create_mapping_template process_by_pattern
 export -f notify_file_started notify_file_completed notify_file_failed update_progress
 export -f format_bytes format_speed format_duration
+export -f validate_file_size escape_ffmpeg_arg
 export STATE_DIR STATE_FILE_VERSION STATE_BACKUP_RETENTION MAX_STATE_FILE_SIZE
 export PROGRESS_ENABLED PROGRESS_FILE TOTAL_FILES TOTAL_SIZE_BYTES PROCESSED_FILES PROCESSED_SIZE_BYTES FAILED_FILES
 export START_TIME PROGRESS_UPDATE_INTERVAL LAST_PROGRESS_UPDATE
+export MAX_FILE_SIZE_BYTES JOBS_RUNNING JOB_PIDS
 
 # Help and version functions
 show_version() {
@@ -3940,6 +4023,7 @@ main() {
     export PROGRESS_ENABLED PROGRESS_FILE TOTAL_FILES TOTAL_SIZE_BYTES
     export -f notify_file_started notify_file_completed notify_file_failed
     export -f format_bytes format_speed format_duration update_progress
+    export MAX_FILE_SIZE_BYTES JOBS_RUNNING JOB_PIDS
 
     # Export advanced feature variables
     export SHOW_STREAMS AUTO_FORMAT PRESERVE_METADATA PRESERVE_CHAPTERS VERIFY_OUTPUT QUICK_VERIFY
@@ -3983,8 +4067,8 @@ main() {
         # Optimized wrapper function with cached parameters
         remux_file_advanced_wrapper() {
             remux_file_advanced "$1" "$2" "$3" "$4" "$5" "$6" "$7" \
-                "$SHOW_STREAMS" "$AUTO_FORMAT" "$PRESERVE_METADATA" "$PRESERVE_CHAPTERS" \
-                "$VERIFY_OUTPUT" "$QUICK_VERIFY" "$VIDEO_STREAMS" "$AUDIO_STREAMS" "$SUBTITLE_STREAMS" "$TEMPLATE"
+                "${SHOW_STREAMS:-0}" "${AUTO_FORMAT:-0}" "${PRESERVE_METADATA:-1}" "${PRESERVE_CHAPTERS:-1}" \
+                "${VERIFY_OUTPUT:-0}" "${QUICK_VERIFY:-0}" "${VIDEO_STREAMS:-best}" "${AUDIO_STREAMS:-best}" "${SUBTITLE_STREAMS:-none}" "${TEMPLATE:-}"
         }
         processing_function="remux_file_advanced_wrapper"
     else
