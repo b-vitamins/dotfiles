@@ -54,8 +54,8 @@ DEFAULT_OVERWRITE=0
 STATE_FILE_VERSION="1.1"
 STATE_FILE_MIN_VERSION="1.0"
 STATE_BACKUP_RETENTION=5
-STALE_JOB_THRESHOLD=86400  # 24 hours in seconds
-MAX_STATE_FILE_SIZE=1048576  # 1MB limit
+STALE_JOB_THRESHOLD=86400   # 24 hours in seconds
+MAX_STATE_FILE_SIZE=1048576 # 1MB limit
 
 # Signal handling with graceful shutdown
 trap 'handle_signal INT' INT
@@ -133,7 +133,7 @@ cleanup_temp_files() {
     if [ "$CLEANUP_REQUIRED" = 1 ] && [ -n "$TEMP_DIR" ]; then
         # Verify temp directory is actually temporary before removal
         case "$TEMP_DIR" in
-            /tmp/*|"${TMPDIR:-/tmp}"/*|/var/tmp/*)
+            /tmp/* | "${TMPDIR:-/tmp}"/* | /var/tmp/*)
                 if [ -d "$TEMP_DIR" ]; then
                     # Secure cleanup - remove contents first, then directory
                     find "$TEMP_DIR" -mindepth 1 -delete 2>/dev/null || {
@@ -215,7 +215,7 @@ validate_path() {
         esac
         # Manual normalization - remove . and .. components safely
         path=$(printf '%s' "$path" | sed 's|/\./|/|g; s|//\+|/|g')
-        while case "$path" in */../*) true;; *) false;; esac; do
+        while case "$path" in */../*) true ;; *) false ;; esac do
             path=$(printf '%s' "$path" | sed 's|/[^/]\+/\.\./|/|')
         done
         path=$(printf '%s' "$path" | sed 's|/\.\.$||; s|^\.\./||')
@@ -223,7 +223,7 @@ validate_path() {
 
     # Security validation - prevent directory traversal
     case "$path" in
-        */../*|*/./*|../*|*/..|./*|*..*|*[[:cntrl:]]*)
+        */../* | */./* | ../* | */.. | ./* | *..* | *[[:cntrl:]]*)
             log_error "Path contains unsafe characters or traversal: $1 -> $path"
             return 1
             ;;
@@ -277,8 +277,7 @@ validate_path() {
         temp)
             # For temp directories, validate location
             case "$path" in
-                /tmp/*|"${TMPDIR:-/tmp}"/*|/var/tmp/*)
-                    ;; # Valid temp location
+                /tmp/* | "${TMPDIR:-/tmp}"/* | /var/tmp/*) ;; # Valid temp location
                 *)
                     log_error "Temp directory not in expected location: $path"
                     return 1
@@ -306,11 +305,11 @@ validate_extension() {
 
     # Validate extension format first
     case "$ext" in
-        *[[:space:]]*|*[[:cntrl:]]*)
+        *[[:space:]]* | *[[:cntrl:]]*)
             log_error "File extension contains invalid characters: $ext"
             return 1
             ;;
-        */*|*\\*)
+        */* | *\\*)
             log_error "File extension contains path separators: $ext"
             return 1
             ;;
@@ -318,8 +317,7 @@ validate_extension() {
 
     # Normalize extension - ensure it starts with dot
     case "$ext" in
-        .*)
-            ;;
+        .*) ;;
         *)
             ext=".$ext"
             ;;
@@ -330,7 +328,7 @@ validate_extension() {
 
     # Validate against supported extensions
     case "$ext" in
-        .flac|.wav|.ape|.mp3|.ogg|.m4a)
+        .flac | .wav | .ape | .mp3 | .ogg | .m4a)
             printf '%s' "$ext"
             return 0
             ;;
@@ -347,7 +345,7 @@ validate_conversion() {
     to_ext="$2"
 
     case "${from_ext}:${to_ext}" in
-        .flac:.mp3|.ape:.mp3|.wav:.flac|.ape:.flac|.flac:.ogg|.ape:.ogg|.flac:.m4a|.ape:.m4a)
+        .flac:.mp3 | .ape:.mp3 | .wav:.flac | .ape:.flac | .flac:.ogg | .ape:.ogg | .flac:.m4a | .ape:.m4a)
             return 0
             ;;
         *)
@@ -378,10 +376,10 @@ validate_quality() {
         .mp3)
             # MP3: support VBR (V0-V9) or bitrate (e.g., 192k, 320k)
             case "$quality" in
-                V[0-9]|v[0-9])
+                V[0-9] | v[0-9])
                     return 0
                     ;;
-                [0-9]*k|[0-9]*K)
+                [0-9]*k | [0-9]*K)
                     return 0
                     ;;
                 *)
@@ -407,7 +405,7 @@ validate_quality() {
         .ogg)
             # Opus: bitrate (e.g., 160k, 256k)
             case "$quality" in
-                [0-9]*k|[0-9]*K)
+                [0-9]*k | [0-9]*K)
                     return 0
                     ;;
                 *)
@@ -420,7 +418,7 @@ validate_quality() {
         .m4a)
             # AAC: bitrate (e.g., 256k, 320k)
             case "$quality" in
-                [0-9]*k|[0-9]*K)
+                [0-9]*k | [0-9]*K)
                     return 0
                     ;;
                 *)
@@ -454,7 +452,7 @@ check_dependencies() {
                 log_debug "FFmpeg version: $ffmpeg_version"
                 # Check for minimum version (3.0+)
                 case "$ffmpeg_version" in
-                    [0-2].*|'')
+                    [0-2].* | '')
                         version_warnings="$version_warnings ffmpeg(old:$ffmpeg_version)"
                         ;;
                 esac
@@ -673,7 +671,7 @@ cleanup_stale_jobs() {
         state_file="$STATE_DIR/$job_id.state"
 
         case "$reason" in
-            corrupted|no_timestamp|missing_input|missing_output_parent)
+            corrupted | no_timestamp | missing_input | missing_output_parent)
                 if [ "$force_cleanup" = 1 ]; then
                     log_info "Cleaning up problematic job: $job_id ($reason)"
                     rm -f "$state_file" 2>/dev/null || true
@@ -744,7 +742,7 @@ create_state_file() {
     current_time=$(date -Iseconds)
 
     # Create state file with comprehensive metadata
-    cat > "$temp_file" << EOF
+    cat >"$temp_file" <<EOF
 # Transcode job state file
 # Version: $STATE_FILE_VERSION
 # Job ID: $job_id
@@ -799,7 +797,7 @@ validate_state_file() {
 
     # Check file size limits
     if [ -s "$state_file" ]; then
-        file_size=$(wc -c < "$state_file" 2>/dev/null || echo "0")
+        file_size=$(wc -c <"$state_file" 2>/dev/null || echo "0")
         if [ "$file_size" -gt "$MAX_STATE_FILE_SIZE" ]; then
             log_error "State file too large (${file_size} > ${MAX_STATE_FILE_SIZE}): $state_file"
             return 1
@@ -1016,7 +1014,7 @@ update_state_value() {
                 print "last_updated=" timestamp
             }
         }
-    ' "$state_file" > "$temp_file"
+    ' "$state_file" >"$temp_file"
 
     # Validate the updated file
     if [ -s "$temp_file" ]; then
@@ -1050,7 +1048,10 @@ acquire_file_lock() {
 
     attempts=0
     while [ $attempts -lt $timeout ]; do
-        if (set -C; echo $$ > "$lock_file") 2>/dev/null; then
+        if (
+            set -C
+            echo $$ >"$lock_file"
+        ) 2>/dev/null; then
             log_debug "Acquired lock: $lock_file"
             return 0
         fi
@@ -1167,7 +1168,7 @@ rebuild_minimal_state() {
     current_hostname=$(hostname 2>/dev/null || echo "unknown")
     current_user=$(id -un 2>/dev/null || echo "unknown")
 
-    cat > "$temp_file" << EOF
+    cat >"$temp_file" <<EOF
 # Transcode job state file (RECOVERED)
 # Version: $STATE_FILE_VERSION
 # Job ID: $job_id
@@ -1272,8 +1273,8 @@ mark_file_completed() {
 
     # Append to completed section atomically
     temp_append="$state_file.append.$$"
-    if printf '%s\n' "$relative_path" > "$temp_append" 2>/dev/null; then
-        if cat "$temp_append" >> "$state_file" 2>/dev/null; then
+    if printf '%s\n' "$relative_path" >"$temp_append" 2>/dev/null; then
+        if cat "$temp_append" >>"$state_file" 2>/dev/null; then
             rm -f "$temp_append" 2>/dev/null || true
 
             # Update completed count with error handling
@@ -1389,10 +1390,10 @@ is_resumable_job() {
         fi
 
         if [ "$stored_input" = "$input_dir" ] &&
-           [ "$stored_from" = "$from_ext" ] &&
-           [ "$stored_to" = "$to_ext" ] &&
-           [ "$stored_quality" = "$quality" ] &&
-           [ "$stored_status" = "running" ]; then
+            [ "$stored_from" = "$from_ext" ] &&
+            [ "$stored_to" = "$to_ext" ] &&
+            [ "$stored_quality" = "$quality" ] &&
+            [ "$stored_status" = "running" ]; then
 
             # Additional validation - check if job process is still running
             stored_pid=$(read_state_value "$job_id" "job" "pid" 2>/dev/null || echo "")
@@ -1525,13 +1526,13 @@ verify_resume_safety() {
     if [ "$status" = "interrupted" ]; then
         interrupted_by=$(read_state_value "$job_id" "job" "interrupted_by" 2>/dev/null || echo "")
         case "$interrupted_by" in
-            INT|TERM|QUIT)
+            INT | TERM | QUIT)
                 log_debug "Job was cleanly interrupted by signal: $interrupted_by"
                 return 0
                 ;;
             *)
                 log_warn "Job interruption method unknown: $interrupted_by"
-                return 0  # Assume safe for now
+                return 0 # Assume safe for now
                 ;;
         esac
     fi
@@ -1713,7 +1714,7 @@ load_config() {
         while IFS='=' read -r key value; do
             # Skip comments and empty lines
             case "$key" in
-                ''|'#'*)
+                '' | '#'*)
                     continue
                     ;;
             esac
@@ -1723,7 +1724,7 @@ load_config() {
 
             # Validate value doesn't contain dangerous characters
             case "$value" in
-                *[[:cntrl:]]*|*\$*|*\`*|*\;*|*\&*|*\|*)
+                *[[:cntrl:]]* | *\$* | *\`* | *\;* | *\&* | *\|*)
                     log_warn "Config value contains unsafe characters, skipping: $key=$value"
                     continue
                     ;;
@@ -1738,7 +1739,7 @@ load_config() {
                     ;;
                 parallel_jobs)
                     case "$value" in
-                        ''|*[!0-9]*)
+                        '' | *[!0-9]*)
                             log_warn "Invalid parallel_jobs value in config: $value"
                             ;;
                         *)
@@ -1748,10 +1749,10 @@ load_config() {
                     ;;
                 overwrite)
                     case "$value" in
-                        true|yes|1)
+                        true | yes | 1)
                             DEFAULT_OVERWRITE=1
                             ;;
-                        false|no|0)
+                        false | no | 0)
                             DEFAULT_OVERWRITE=0
                             ;;
                         *)
@@ -1760,7 +1761,7 @@ load_config() {
                     esac
                     ;;
             esac
-        done < "$config_file"
+        done <"$config_file"
     fi
 
     CONFIG_LOADED=1
@@ -1777,7 +1778,7 @@ save_example_config() {
         return 1
     fi
 
-    cat > "$example_file" << 'EOF'
+    cat >"$example_file" <<'EOF'
 # Transcode configuration file
 # Copy this to 'config' in the same directory and modify as needed
 
@@ -1805,16 +1806,16 @@ get_default_quality() {
     to_ext="$2"
 
     case "${from_ext}:${to_ext}" in
-        .flac:.mp3|.ape:.mp3)
+        .flac:.mp3 | .ape:.mp3)
             printf "V0"
             ;;
-        .wav:.flac|.ape:.flac)
+        .wav:.flac | .ape:.flac)
             printf "8"
             ;;
-        .flac:.ogg|.ape:.ogg)
+        .flac:.ogg | .ape:.ogg)
             printf "160k"
             ;;
-        .flac:.m4a|.ape:.m4a)
+        .flac:.m4a | .ape:.m4a)
             printf "256k"
             ;;
         *)
@@ -1911,13 +1912,13 @@ convert_single_file() {
     case "$to_ext" in
         .mp3)
             case "$quality" in
-                V*|v*)
+                V* | v*)
                     # VBR encoding
                     vbr_level="${quality#[Vv]}"
                     log_debug "Converting to MP3 VBR $quality: $relative_path"
                     if ffmpeg -hide_banner -loglevel error -i "$input_file" \
-                             -c:a libmp3lame -q:a "$vbr_level" -map_metadata 0 \
-                             "$temp_file" < /dev/null 2>/dev/null; then
+                        -c:a libmp3lame -q:a "$vbr_level" -map_metadata 0 \
+                        "$temp_file" </dev/null 2>/dev/null; then
                         conversion_success=1
                     fi
                     ;;
@@ -1925,8 +1926,8 @@ convert_single_file() {
                     # CBR encoding
                     log_debug "Converting to MP3 CBR $quality: $relative_path"
                     if ffmpeg -hide_banner -loglevel error -i "$input_file" \
-                             -c:a libmp3lame -b:a "$quality" -map_metadata 0 \
-                             "$temp_file" < /dev/null 2>/dev/null; then
+                        -c:a libmp3lame -b:a "$quality" -map_metadata 0 \
+                        "$temp_file" </dev/null 2>/dev/null; then
                         conversion_success=1
                     fi
                     ;;
@@ -1943,8 +1944,8 @@ convert_single_file() {
                 # Use ffmpeg for other formats
                 log_debug "Converting to FLAC level $quality: $relative_path"
                 if ffmpeg -hide_banner -loglevel error -i "$input_file" \
-                         -c:a flac -compression_level "$quality" -map_metadata 0 \
-                         "$temp_file" < /dev/null 2>/dev/null; then
+                    -c:a flac -compression_level "$quality" -map_metadata 0 \
+                    "$temp_file" </dev/null 2>/dev/null; then
                     conversion_success=1
                 fi
             fi
@@ -1953,8 +1954,8 @@ convert_single_file() {
             # Opus in Ogg container
             log_debug "Converting to Opus $quality: $relative_path"
             if ffmpeg -hide_banner -loglevel error -i "$input_file" \
-                     -c:a libopus -b:a "$quality" -map_metadata 0 \
-                     "$temp_file" < /dev/null 2>/dev/null; then
+                -c:a libopus -b:a "$quality" -map_metadata 0 \
+                "$temp_file" </dev/null 2>/dev/null; then
                 conversion_success=1
             fi
             ;;
@@ -1962,8 +1963,8 @@ convert_single_file() {
             # AAC in MP4 container
             log_debug "Converting to AAC $quality: $relative_path"
             if ffmpeg -hide_banner -loglevel error -i "$input_file" \
-                     -c:a aac -b:a "$quality" -map_metadata 0 \
-                     "$temp_file" < /dev/null 2>/dev/null; then
+                -c:a aac -b:a "$quality" -map_metadata 0 \
+                "$temp_file" </dev/null 2>/dev/null; then
                 conversion_success=1
             fi
             ;;
@@ -2031,21 +2032,21 @@ process_files() {
     {
         find "$input_dir" -type f -name "*$lower_ext" 2>"$error_log" || true
         find "$input_dir" -type f -name "*$upper_ext" 2>>"$error_log" || true
-    } > "$file_list"
+    } >"$file_list"
 
     # Check for find errors
     if [ -s "$error_log" ]; then
         log_warn "Find encountered some errors:"
         while IFS= read -r error_line; do
             log_warn "  $error_line"
-        done < "$error_log"
+        done <"$error_log"
     fi
 
     # Count files and validate
     if [ ! -s "$file_list" ]; then
         total_files=0
     else
-        total_files=$(wc -l < "$file_list" 2>/dev/null || echo "0")
+        total_files=$(wc -l <"$file_list" 2>/dev/null || echo "0")
     fi
 
     if [ "$total_files" -eq 0 ]; then
@@ -2068,7 +2069,7 @@ process_files() {
             log_warn "File not readable, skipping: $file"
             invalid_files=$((invalid_files + 1))
         fi
-    done < "$file_list"
+    done <"$file_list"
 
     if [ "$invalid_files" -gt 0 ]; then
         log_warn "Skipping $invalid_files unreadable files"
@@ -2095,8 +2096,8 @@ process_files() {
         # Call main conversion function
         result=0
         convert_single_file "$1" "$TRANSCODE_INPUT_DIR" "$TRANSCODE_OUTPUT_DIR" \
-                           "$TRANSCODE_FROM_EXT" "$TRANSCODE_TO_EXT" \
-                           "$TRANSCODE_QUALITY" "$TRANSCODE_OVERWRITE" || result=$?
+            "$TRANSCODE_FROM_EXT" "$TRANSCODE_TO_EXT" \
+            "$TRANSCODE_QUALITY" "$TRANSCODE_OVERWRITE" || result=$?
 
         return $result
     }
@@ -2108,7 +2109,7 @@ process_files() {
         JOBS_RUNNING="$parallel_jobs"
 
         # Use parallel with progress indication
-        if ! parallel --will-cite -j "$parallel_jobs" convert_wrapper < "$file_list"; then
+        if ! parallel --will-cite -j "$parallel_jobs" convert_wrapper <"$file_list"; then
             log_error "Parallel processing failed"
             JOBS_RUNNING=0
             return 1
@@ -2122,7 +2123,7 @@ process_files() {
             convert_wrapper "$file"
             processed=$((processed + 1))
             printf "Progress: %d/%d files completed\r" "$processed" "$total_files"
-        done < "$file_list"
+        done <"$file_list"
         printf "\n"
     fi
 
@@ -2132,7 +2133,7 @@ process_files() {
 
 # Usage and help functions
 usage() {
-    cat << EOF
+    cat <<EOF
 Usage: $PROGNAME [OPTIONS] --input-dir DIR --from EXT --to EXT
 
 DESCRIPTION:
@@ -2252,7 +2253,7 @@ parse_arguments() {
 
     while [ $# -gt 0 ]; do
         case "$1" in
-            -i|--input-dir)
+            -i | --input-dir)
                 if [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
                     log_error "Option $1 requires an argument"
                     return $EXIT_USAGE
@@ -2260,7 +2261,7 @@ parse_arguments() {
                 INPUT_DIR="$2"
                 shift 2
                 ;;
-            -o|--output-dir)
+            -o | --output-dir)
                 if [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
                     log_error "Option $1 requires an argument"
                     return $EXIT_USAGE
@@ -2284,7 +2285,7 @@ parse_arguments() {
                 TO_EXT="$2"
                 shift 2
                 ;;
-            -q|--quality)
+            -q | --quality)
                 if [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
                     log_error "Option $1 requires an argument"
                     return $EXIT_USAGE
@@ -2292,13 +2293,13 @@ parse_arguments() {
                 QUALITY="$2"
                 shift 2
                 ;;
-            -j|--jobs)
+            -j | --jobs)
                 if [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
                     log_error "Option $1 requires an argument"
                     return $EXIT_USAGE
                 fi
                 case "$2" in
-                    ''|*[!0-9]*)
+                    '' | *[!0-9]*)
                         log_error "Invalid number of jobs: $2"
                         return $EXIT_USAGE
                         ;;
@@ -2335,7 +2336,7 @@ parse_arguments() {
                 CLEANUP_STALE_MODE=1
                 shift
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 VERBOSE=1
                 shift
                 ;;
@@ -2343,11 +2344,11 @@ parse_arguments() {
                 save_example_config
                 exit $EXIT_SUCCESS
                 ;;
-            -h|--help)
+            -h | --help)
                 usage
                 exit $EXIT_SUCCESS
                 ;;
-            -V|--version)
+            -V | --version)
                 show_version
                 exit $EXIT_SUCCESS
                 ;;
@@ -2545,7 +2546,7 @@ main() {
 
     # Process files
     if ! process_files "$INPUT_DIR" "$OUTPUT_DIR" "$FROM_EXT" "$TO_EXT" \
-                      "$QUALITY" "$OVERWRITE" "$PARALLEL_JOBS"; then
+        "$QUALITY" "$OVERWRITE" "$PARALLEL_JOBS"; then
         # Mark job as failed
         if [ -n "$CURRENT_JOB_ID" ]; then
             update_state_value "$CURRENT_JOB_ID" "job" "status" "failed"
