@@ -1,5 +1,23 @@
 # User Preferences - Ayan Das
 
+## IMPORTANT: Writing Style Requirements
+
+### Documentation and Communication
+- Technical, terse, no adjectives
+- No "we/you/our", use imperatives
+- No "robust/high-quality/production-ready/battle-tested/power-user/DWIM"
+- No marketing language or subjective descriptions
+- README: description→install→usage→license
+- Markdown only (not Org mode)
+- No unicode characters (ASCII only)
+
+### Examples
+BAD: "This robust library provides high-quality processing for power users"
+GOOD: "Image processing library"
+
+BAD: "DWIM behavior and battle-tested functionality"
+GOOD: "Interactive prompts with automatic defaults"
+
 ## Specialized Agents
 
 ### Agent Usage Instructions
@@ -69,20 +87,6 @@ See `docs/claude/agents.md` for full reference.
 
 ### Rust/JS
 - cargo/npm OK (project-local only)
-
-## Writing Style
-
-### Documentation
-- Technical, terse, no adjectives
-- No "we/you/our", use imperatives
-- No "robust/high-quality/production-ready"
-- README: description→install→usage→license
-- Markdown only (not Org mode)
-- No unicode characters (ASCII only)
-
-### Examples
-BAD: "This robust library provides high-quality processing"
-GOOD: "Image processing library"
 
 ## Daily Workflow
 
