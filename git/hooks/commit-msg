@@ -33,6 +33,11 @@ Subject line rules:
 commit_msg=$(cat "$1")
 first_line=$(echo "$commit_msg" | head -n1)
 
+# Skip validation for special Git commits (fixup, squash, amend)
+if echo "$first_line" | grep -qE '^(fixup!|squash!|amend!)'; then
+    exit 0
+fi
+
 # Check if commit message matches the pattern
 if ! echo "$first_line" | grep -qE "$commit_regex"; then
     echo "$error_msg" >&2
