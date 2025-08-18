@@ -260,6 +260,7 @@ machine-specific/
 # Claude/AI
 .claude/
 CLAUDE.md.backup*
+.setup_backups.tmp
 
 # Other
 .wget-hsts
