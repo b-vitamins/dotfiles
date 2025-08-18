@@ -26,8 +26,8 @@ EXIT_SECURITY=77
 MAX_PATH_LENGTH=4096
 MAX_FILENAME_LENGTH=255
 MAX_PARALLEL_JOBS=64
-MAX_CONFIG_FILE_SIZE=1048576  # 1MB
-MAX_FILE_SIZE_BYTES=107374182400  # 100GB
+MAX_CONFIG_FILE_SIZE=1048576     # 1MB
+MAX_FILE_SIZE_BYTES=107374182400 # 100GB
 ALLOWED_EXTENSIONS=".m2ts .mkv .mp4 .avi .mov .wmv .flv .webm .ogv .3gp .mxf"
 FORBIDDEN_PATHS="/etc /usr /var /boot /sys /proc /dev /run"
 SECURE_UMASK=077
@@ -51,7 +51,7 @@ PROCESSED_SIZE_BYTES=0
 TOTAL_FILES=0
 PROCESSED_FILES=0
 FAILED_FILES=0
-PROGRESS_UPDATE_INTERVAL=2  # Optimized for performance
+PROGRESS_UPDATE_INTERVAL=2 # Optimized for performance
 LAST_PROGRESS_UPDATE=0
 PROGRESS_FILE=""
 SHARED_PROGRESS_DIR=""
@@ -61,8 +61,8 @@ PROGRESS_MONITOR_PID=""
 STATE_FILE_VERSION="1.1"
 STATE_FILE_MIN_VERSION="1.0"
 STATE_BACKUP_RETENTION=5
-STALE_JOB_THRESHOLD=86400  # 24 hours in seconds
-MAX_STATE_FILE_SIZE=1048576  # 1MB limit
+STALE_JOB_THRESHOLD=86400   # 24 hours in seconds
+MAX_STATE_FILE_SIZE=1048576 # 1MB limit
 
 # Resume capability global variables
 RESUME_MODE=0
@@ -75,7 +75,7 @@ DETECTED_STALE_JOBS=""
 
 # State file optimization variables
 STATE_UPDATE_COUNTER=0
-STATE_BACKUP_FREQUENCY=10  # Backup every 10 updates instead of every update
+STATE_BACKUP_FREQUENCY=10 # Backup every 10 updates instead of every update
 STATE_CACHE_ENABLED=1
 
 # Default configuration
@@ -148,7 +148,7 @@ sanitize_input() {
             ;;
         "number")
             case "$input" in
-                ''|*[!0-9]*)
+                '' | *[!0-9]*)
                     log_error "Invalid number: $input"
                     return 1
                     ;;
@@ -157,11 +157,11 @@ sanitize_input() {
         "pattern")
             # Validate glob patterns - reject dangerous ones
             case "$input" in
-                *'$(('*|*'`'*|*'${'*)
+                *'$(('* | *'`'* | *'${'*)
                     log_error "Command substitution not allowed in patterns"
                     return 1
                     ;;
-                */../*|*/../*|../*|*/..)
+                */../* | */../* | ../* | */..)
                     log_error "Path traversal not allowed in patterns"
                     return 1
                     ;;
@@ -178,7 +178,7 @@ validate_file_size() {
     local max_size="${2:-$MAX_FILE_SIZE_BYTES}"
 
     if [ ! -f "$file" ]; then
-        return 0  # File doesn't exist, size check not applicable
+        return 0 # File doesn't exist, size check not applicable
     fi
 
     local file_size
@@ -306,7 +306,7 @@ cleanup_temp_files() {
     if [ "$CLEANUP_REQUIRED" = 1 ] && [ -n "$TEMP_DIR" ]; then
         # Verify temp directory is actually temporary before removal
         case "$TEMP_DIR" in
-            /tmp/*|"${TMPDIR:-/tmp}"/*|/var/tmp/*)
+            /tmp/* | "${TMPDIR:-/tmp}"/* | /var/tmp/*)
                 if [ -d "$TEMP_DIR" ]; then
                     log_debug "Cleaning up temporary directory: $TEMP_DIR"
                     # Secure cleanup - remove contents first, then directory
@@ -345,7 +345,7 @@ init_progress_tracking() {
     fi
 
     # Initialize progress file
-    cat > "$PROGRESS_FILE" << EOF
+    cat >"$PROGRESS_FILE" <<EOF
 # Progress tracking file
 # Version: 1.0
 # Job ID: $job_id
@@ -400,7 +400,7 @@ update_progress() {
     fi
 
     # Atomic update of progress file
-    cat > "$temp_file" << EOF
+    cat >"$temp_file" <<EOF
 # Progress tracking file
 # Version: 1.0
 # Updated: $(date -Iseconds)
@@ -448,7 +448,7 @@ show_progress() {
             eta_seconds) eta_seconds="$value" ;;
             current_file) current_file="$value" ;;
         esac
-    done < "$PROGRESS_FILE" 2>/dev/null
+    done <"$PROGRESS_FILE" 2>/dev/null
 
     # Calculate percentage
     local percentage=0
@@ -554,7 +554,7 @@ stop_progress_monitor() {
 
     # Final progress display
     show_progress
-    printf "\n"  # Move to next line after progress
+    printf "\n" # Move to next line after progress
 
     # Clean up progress files
     if [ -n "$PROGRESS_FILE" ] && [ -f "$PROGRESS_FILE" ]; then
@@ -705,7 +705,7 @@ validate_path() {
 
     # Security: Check for forbidden paths
     case " $FORBIDDEN_PATHS " in
-        *" $(printf '%s' "$path" | cut -d/ -f1-2) "*|*" $(printf '%s' "$path" | cut -d/ -f1-3) "*)
+        *" $(printf '%s' "$path" | cut -d/ -f1-2) "* | *" $(printf '%s' "$path" | cut -d/ -f1-3) "*)
             log_error "Access to system paths forbidden: $path"
             return 1
             ;;
@@ -713,7 +713,7 @@ validate_path() {
 
     # Security: Reject network paths if not explicitly enabled
     case "$path" in
-        //*|*://*|\\\\*)
+        //* | *://* | \\\\*)
             log_error "Network paths not supported for security reasons: $path"
             return 1
             ;;
@@ -738,7 +738,7 @@ validate_path() {
         esac
         # Manual normalization - remove . and .. components safely
         path=$(printf '%s' "$path" | sed 's|/\./|/|g; s|//\+|/|g')
-        while case "$path" in */../*) true;; *) false;; esac; do
+        while case "$path" in */../*) true ;; *) false ;; esac do
             path=$(printf '%s' "$path" | sed 's|/[^/]\+/\.\./|/|')
         done
         # Remove trailing /.. and /.
@@ -748,7 +748,7 @@ validate_path() {
 
     # Security check - prevent directory traversal
     case "$path" in
-        */../*|*/./*|../*|*/..|./*|*..*)
+        */../* | */./* | ../* | */.. | ./* | *..*)
             log_error "Path contains unsafe directory traversal: $path"
             log_error "Suggestion: Use absolute paths without .. or . components"
             return 1
@@ -828,8 +828,7 @@ validate_extension() {
 
     # Ensure extension starts with dot
     case "$ext" in
-        .*)
-            ;;
+        .*) ;;
         *)
             log_debug "Adding missing dot to extension: $ext"
             ext=".$ext"
@@ -838,7 +837,7 @@ validate_extension() {
 
     # Check for dangerous characters in extension
     case "$ext" in
-        *[[:space:]]*|*/*|*\\*|*\**|*\?*|*\$*|*\`*|*\;*|*\&*|*\|*|*\<*|*\>*)
+        *[[:space:]]* | */* | *\\* | *\** | *\?* | *\$* | *\`* | *\;* | *\&* | *\|* | *\<* | *\>*)
             log_error "Extension contains unsafe characters: $ext"
             log_error "Suggestion: Use only alphanumeric characters and dots"
             return 1
@@ -847,7 +846,7 @@ validate_extension() {
 
     # Validate against supported video container extensions
     case "$ext" in
-        .mkv|.mp4|.avi|.mov|.m2ts|.ts|.mts|.webm|.mxf|.asf|.wmv)
+        .mkv | .mp4 | .avi | .mov | .m2ts | .ts | .mts | .webm | .mxf | .asf | .wmv)
             log_debug "Extension validation successful: $ext"
             printf "%s" "$ext"
             return 0
@@ -885,14 +884,14 @@ validate_conversion() {
 
     # Warn about potentially problematic conversions
     case "$from_ext:$to_ext" in
-        .webm:.mp4|.webm:.avi)
+        .webm:.mp4 | .webm:.avi)
             log_warn "Converting WebM to $to_ext may not preserve all streams"
             log_warn "Suggestion: Consider using .mkv for better compatibility"
             ;;
         .mxf:*)
             log_warn "MXF files may contain professional codecs requiring special handling"
             ;;
-        *.asf|*.wmv:.*)
+        *.asf | *.wmv:.*)
             log_warn "Windows Media formats may have compatibility issues"
             ;;
     esac
@@ -948,7 +947,7 @@ validate_parallel_jobs() {
     fi
 
     # Estimate memory usage (rough calculation)
-    estimated_mem_per_job=1  # GB per job (conservative estimate)
+    estimated_mem_per_job=1 # GB per job (conservative estimate)
     estimated_total_mem=$((jobs * estimated_mem_per_job))
     if [ "$estimated_total_mem" -gt "$available_mem_gb" ]; then
         log_warn "High job count may exceed available memory"
@@ -994,7 +993,7 @@ load_config() {
         while IFS='=' read -r key value; do
             # Skip comments and empty lines
             case "$key" in
-                ''|'#'*) continue ;;
+                '' | '#'*) continue ;;
             esac
 
             # Remove leading/trailing whitespace from key
@@ -1013,7 +1012,7 @@ load_config() {
 
             # Security: Validate each value before assignment
             case "$key" in
-                INPUT_DIR|OUTPUT_DIR)
+                INPUT_DIR | OUTPUT_DIR)
                     if sanitized_value=$(sanitize_input "$value" "$MAX_PATH_LENGTH" "path" 2>/dev/null); then
                         case "$key" in
                             INPUT_DIR) DEFAULT_INPUT_DIR="$sanitized_value" ;;
@@ -1023,7 +1022,7 @@ load_config() {
                         log_warn "Invalid $key in config: $value"
                     fi
                     ;;
-                FROM_EXT|TO_EXT)
+                FROM_EXT | TO_EXT)
                     if sanitized_value=$(sanitize_input "$value" 32 "extension" 2>/dev/null); then
                         case "$key" in
                             FROM_EXT) DEFAULT_FROM_EXT="$sanitized_value" ;;
@@ -1044,11 +1043,11 @@ load_config() {
                         log_warn "Invalid PARALLEL_JOBS in config: $value"
                     fi
                     ;;
-                OVERWRITE|SELECT_BEST|SHOW_STREAMS|AUTO_FORMAT|PRESERVE_METADATA|PRESERVE_CHAPTERS|VERIFY_OUTPUT)
+                OVERWRITE | SELECT_BEST | SHOW_STREAMS | AUTO_FORMAT | PRESERVE_METADATA | PRESERVE_CHAPTERS | VERIFY_OUTPUT)
                     case "$value" in
-                        0|1|true|false|yes|no)
+                        0 | 1 | true | false | yes | no)
                             case "$value" in
-                                1|true|yes) normalized_value=1 ;;
+                                1 | true | yes) normalized_value=1 ;;
                                 *) normalized_value=0 ;;
                             esac
                             case "$key" in
@@ -1066,7 +1065,7 @@ load_config() {
                             ;;
                     esac
                     ;;
-                VIDEO_STREAMS|AUDIO_STREAMS|SUBTITLE_STREAMS|TEMPLATE|PATTERN|FILE_LIST)
+                VIDEO_STREAMS | AUDIO_STREAMS | SUBTITLE_STREAMS | TEMPLATE | PATTERN | FILE_LIST)
                     if sanitized_value=$(sanitize_input "$value" 1024 "general" 2>/dev/null); then
                         case "$key" in
                             VIDEO_STREAMS) DEFAULT_VIDEO_STREAMS="$sanitized_value" ;;
@@ -1084,7 +1083,7 @@ load_config() {
                     log_warn "Unknown config key: $key"
                     ;;
             esac
-        done < "$config_file"
+        done <"$config_file"
 
         CONFIG_LOADED=1
     fi
@@ -1111,7 +1110,7 @@ save_config_example() {
         return $EXIT_CONFIG
     fi
 
-    cat > "$config_file" << 'EOF'
+    cat >"$config_file" <<'EOF'
 # remux configuration file
 # Copy to config (without .example) and modify as needed
 
@@ -1245,12 +1244,11 @@ acquire_file_lock() {
 
     # Security: Validate lock file path
     case "$lock_file" in
-        */../*|*/./*|../*|*/..|./*|*..*)
+        */../* | */./* | ../* | */.. | ./* | *..*)
             log_error "Invalid lock file path: $lock_file"
             return 1
             ;;
-        /tmp/*|"${TMPDIR:-/tmp}"/*|/var/tmp/*|"$STATE_DIR"/*)
-            ;; # Allow only safe directories
+        /tmp/* | "${TMPDIR:-/tmp}"/* | /var/tmp/* | "$STATE_DIR"/*) ;; # Allow only safe directories
         *)
             log_error "Lock file must be in temporary or state directory: $lock_file"
             return 1
@@ -1267,9 +1265,9 @@ acquire_file_lock() {
     while [ $count -lt $timeout ]; do
         # Use exclusive creation to prevent race conditions
         if (
-            set -C  # noclobber option
+            set -C # noclobber option
             umask "$SECURE_UMASK"
-            echo "$$:$(date +%s):$(id -un):$(hostname)" > "$lock_file"
+            echo "$$:$(date +%s):$(id -un):$(hostname)" >"$lock_file"
         ) 2>/dev/null; then
             log_debug "Acquired lock: $lock_file"
             return 0
@@ -1277,7 +1275,7 @@ acquire_file_lock() {
 
         # Check if lock is stale (older than 1 hour)
         if [ -f "$lock_file" ]; then
-            lock_age=$(( $(date +%s) - $(stat -c%Y "$lock_file" 2>/dev/null || echo 0) ))
+            lock_age=$(($(date +%s) - $(stat -c%Y "$lock_file" 2>/dev/null || echo 0)))
             if [ "$lock_age" -gt 3600 ]; then
                 log_warn "Removing stale lock file (age: ${lock_age}s): $lock_file"
                 rm -f "$lock_file" 2>/dev/null || true
@@ -1298,7 +1296,7 @@ release_file_lock() {
 
     # Security: Validate lock file path
     case "$lock_file" in
-        */../*|*/./*|../*|*/..|./*|*..*)
+        */../* | */./* | ../* | */.. | ./* | *..*)
             log_error "Invalid lock file path for release: $lock_file"
             return 1
             ;;
@@ -1386,7 +1384,7 @@ create_state_file() {
     current_time=$(date -Iseconds)
 
     # Create state file with comprehensive metadata
-    cat > "$temp_file" << EOF
+    cat >"$temp_file" <<EOF
 # Remux job state file
 # Version: $STATE_FILE_VERSION
 # Job ID: $job_id
@@ -1442,7 +1440,7 @@ validate_state_file() {
 
     # Check file size limits
     if [ -s "$state_file" ]; then
-        file_size=$(wc -c < "$state_file" 2>/dev/null || echo "0")
+        file_size=$(wc -c <"$state_file" 2>/dev/null || echo "0")
         if [ "$file_size" -gt "$MAX_STATE_FILE_SIZE" ]; then
             log_error "State file too large (${file_size} > ${MAX_STATE_FILE_SIZE}): $state_file"
             return 1
@@ -1647,7 +1645,7 @@ update_state_value() {
                 }
             }
         }
-    ' "$state_file" > "$temp_file"
+    ' "$state_file" >"$temp_file"
 
     # Validate the updated file
     if [ -s "$temp_file" ]; then
@@ -1737,8 +1735,8 @@ mark_file_completed() {
 
     # Append to completed section atomically
     temp_append="$state_file.append.$$"
-    if printf '%s\n' "$relative_path" > "$temp_append" 2>/dev/null; then
-        if cat "$temp_append" >> "$state_file" 2>/dev/null; then
+    if printf '%s\n' "$relative_path" >"$temp_append" 2>/dev/null; then
+        if cat "$temp_append" >>"$state_file" 2>/dev/null; then
             rm -f "$temp_append" 2>/dev/null || true
 
             # Update completed count with error handling
@@ -1810,10 +1808,10 @@ mark_file_failed() {
 
     # Append to failed section atomically
     temp_append="$state_file.append.$$"
-    if printf '%s:%s\n' "$relative_path" "$reason" > "$temp_append" 2>/dev/null; then
+    if printf '%s:%s\n' "$relative_path" "$reason" >"$temp_append" 2>/dev/null; then
         # Find the [failed] section and append
         if awk '/^\[failed\]$/{found=1} found && /^\[/{exit} found{print} END{if(found) exit 0; else exit 1}' "$state_file" >/dev/null 2>&1; then
-            cat "$temp_append" >> "$state_file" 2>/dev/null
+            cat "$temp_append" >>"$state_file" 2>/dev/null
         fi
         rm -f "$temp_append" 2>/dev/null || true
 
@@ -1944,7 +1942,7 @@ cleanup_stale_jobs() {
         state_file="$STATE_DIR/$job_id.state"
 
         case "$reason" in
-            corrupted|no_timestamp|missing_input|missing_output_parent)
+            corrupted | no_timestamp | missing_input | missing_output_parent)
                 if [ "$force_cleanup" = 1 ]; then
                     log_info "Cleaning up problematic job: $job_id ($reason)"
                     rm -f "$state_file" 2>/dev/null || true
@@ -2052,7 +2050,7 @@ rebuild_minimal_state() {
     current_hostname=$(hostname 2>/dev/null || echo "unknown")
     current_user=$(id -un 2>/dev/null || echo "unknown")
 
-    cat > "$temp_file" << EOF
+    cat >"$temp_file" <<EOF
 # Remux job state file (RECOVERED)
 # Version: $STATE_FILE_VERSION
 # Job ID: $job_id
@@ -2112,7 +2110,7 @@ check_dependencies() {
                 log_debug "FFmpeg version: $ffmpeg_version"
                 # Check for minimum version (3.0+)
                 case "$ffmpeg_version" in
-                    [0-2].*|'')
+                    [0-2].* | '')
                         version_warnings="$version_warnings ffmpeg(old:$ffmpeg_version)"
                         ;;
                 esac
@@ -2182,27 +2180,28 @@ count_files_and_size() {
     local batch_count=0
 
     # Use a more efficient approach by batching stat calls
-    while IFS= read -r -d '' file; do
-        files_batch="$files_batch $file"
-        batch_count=$((batch_count + 1))
+    find "$input_dir" -type f -name "*$from_ext" -print0 2>/dev/null |
+        while IFS= read -r -d '' file; do
+            files_batch="$files_batch $file"
+            batch_count=$((batch_count + 1))
 
-        # Process files in batches to reduce overhead
-        if [ $batch_count -ge $batch_size ]; then
-            # Process current batch
-            eval "stat -c%s $files_batch 2>/dev/null" | {
-                while read -r size; do
-                    [ -n "$size" ] && [ "$size" -gt 0 ] && {
-                        file_count=$((file_count + 1))
-                        total_size=$((total_size + size))
-                    }
-                done
-                # Output intermediate results for very large directories
-                [ $file_count -gt 1000 ] && printf "Processed %d files...\r" "$file_count" >&2
-            }
-            files_batch=""
-            batch_count=0
-        fi
-    done < <(find "$input_dir" -type f -name "*$from_ext" -print0 2>/dev/null)
+            # Process files in batches to reduce overhead
+            if [ $batch_count -ge $batch_size ]; then
+                # Process current batch
+                eval "stat -c%s $files_batch 2>/dev/null" | {
+                    while read -r size; do
+                        [ -n "$size" ] && [ "$size" -gt 0 ] && {
+                            file_count=$((file_count + 1))
+                            total_size=$((total_size + size))
+                        }
+                    done
+                    # Output intermediate results for very large directories
+                    [ $file_count -gt 1000 ] && printf "Processed %d files...\r" "$file_count" >&2
+                }
+                files_batch=""
+                batch_count=0
+            fi
+        done
 
     # Process remaining files in the last batch
     if [ $batch_count -gt 0 ]; then
@@ -2229,12 +2228,12 @@ check_disk_space() {
 
     # Calculate total size of input files
     if command -v du >/dev/null 2>&1; then
-        total_input_size=$(find "$input_dir" -type f -name "*$from_ext" -exec du -bc {} + 2>/dev/null | \
-                          tail -1 | cut -f1 2>/dev/null || echo 0)
+        total_input_size=$(find "$input_dir" -type f -name "*$from_ext" -exec du -bc {} + 2>/dev/null |
+            tail -1 | cut -f1 2>/dev/null || echo 0)
     else
         # Fallback: estimate based on file count (assume 1GB per file)
         file_count=$(count_files "$input_dir" "$from_ext")
-        total_input_size=$((file_count * 1073741824))  # 1GB in bytes
+        total_input_size=$((file_count * 1073741824)) # 1GB in bytes
         log_debug "Using estimated input size (no du command): ${total_input_size} bytes"
     fi
 
@@ -2268,7 +2267,7 @@ check_disk_space() {
     fi
 
     # Warn if space is tight (less than 20% buffer)
-    buffer_space=$((total_input_size / 5))  # 20% buffer
+    buffer_space=$((total_input_size / 5)) # 20% buffer
     if [ "$available_space" -lt "$((total_input_size + buffer_space))" ]; then
         log_warn "Disk space is limited"
         log_warn "Available: ${available_space_mb}MB, Estimated needed: ${input_size_mb}MB"
@@ -2417,7 +2416,7 @@ remux_file_advanced() {
     local ffmpeg_cmd="ffmpeg -hide_banner -loglevel error -stats -i"
     log_debug "Executing: $ffmpeg_cmd \"$input_file\" $ffmpeg_args \"$temp_file\""
 
-    if $ffmpeg_cmd "$input_file" $ffmpeg_args "$temp_file" < /dev/null 2>/dev/null; then
+    if $ffmpeg_cmd "$input_file" $ffmpeg_args "$temp_file" </dev/null 2>/dev/null; then
         # Verify the output file was created and is not empty
         if [ ! -f "$temp_file" ]; then
             log_error "FFmpeg completed but output file was not created: $temp_file"
@@ -2572,14 +2571,14 @@ remux_file() {
         # Select best streams: video, audio, subtitle
         log_debug "Executing: $ffmpeg_cmd $ffmpeg_base_args -i '$escaped_input' -map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy '$escaped_output'"
         ffmpeg_success=0
-        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy "$temp_file" < /dev/null 2>/dev/null; then
+        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0:v:0 -map 0:a:0 -map 0:s:0? -c copy "$temp_file" </dev/null 2>/dev/null; then
             ffmpeg_success=1
         fi
     else
         # Copy all streams
         log_debug "Executing: $ffmpeg_cmd $ffmpeg_base_args -i '$escaped_input' -map 0 -c copy '$escaped_output'"
         ffmpeg_success=0
-        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0 -c copy "$temp_file" < /dev/null 2>/dev/null; then
+        if ffmpeg $ffmpeg_base_args -i "$input_file" -map 0 -c copy "$temp_file" </dev/null 2>/dev/null; then
             ffmpeg_success=1
         fi
     fi
@@ -2739,10 +2738,10 @@ is_resumable_job() {
         fi
 
         # Match parameters with normalization
-        if [ "$(realpath "$stored_input" 2>/dev/null || echo "$stored_input")" = "$(realpath "$input_dir" 2>/dev/null || echo "$input_dir")" ] && \
-           [ "$stored_from" = "$from_ext" ] && \
-           [ "$stored_to" = "$to_ext" ] && \
-           [ "$stored_status" = "running" ]; then
+        if [ "$(realpath "$stored_input" 2>/dev/null || echo "$stored_input")" = "$(realpath "$input_dir" 2>/dev/null || echo "$input_dir")" ] &&
+            [ "$stored_from" = "$from_ext" ] &&
+            [ "$stored_to" = "$to_ext" ] &&
+            [ "$stored_status" = "running" ]; then
             printf '%s' "$job_id"
             return 0
         fi
@@ -2913,7 +2912,7 @@ check_job_conflicts() {
         other_output=$(read_state_value "$job_id" "job" "output_dir" 2>/dev/null || echo "")
 
         if [ "$(realpath "$other_input" 2>/dev/null || echo "$other_input")" = "$(realpath "$input_dir" 2>/dev/null || echo "$input_dir")" ] ||
-           [ "$(realpath "$other_output" 2>/dev/null || echo "$other_output")" = "$(realpath "$output_dir" 2>/dev/null || echo "$output_dir")" ]; then
+            [ "$(realpath "$other_output" 2>/dev/null || echo "$other_output")" = "$(realpath "$output_dir" 2>/dev/null || echo "$output_dir")" ]; then
             log_warn "Conflicting job detected: $job_id"
             log_warn "This job uses the same input or output directory"
             return 1
@@ -3023,11 +3022,11 @@ show_stream_info() {
 # Get stream mapping for specific requirements
 get_stream_mapping() {
     input_file="$1"
-    video_streams="$2"    # comma-separated list or "best" or "all"
-    audio_streams="$3"    # comma-separated list or "best" or "all" or language codes
-    subtitle_streams="$4" # comma-separated list or "best" or "all" or language codes
-    preserve_metadata="${5:-1}"  # 1=preserve, 0=strip
-    preserve_chapters="${6:-1}"  # 1=preserve, 0=strip
+    video_streams="$2"          # comma-separated list or "best" or "all"
+    audio_streams="$3"          # comma-separated list or "best" or "all" or language codes
+    subtitle_streams="$4"       # comma-separated list or "best" or "all" or language codes
+    preserve_metadata="${5:-1}" # 1=preserve, 0=strip
+    preserve_chapters="${6:-1}" # 1=preserve, 0=strip
 
     if [ ! -f "$input_file" ]; then
         log_error "File not found: $input_file"
@@ -3042,7 +3041,7 @@ get_stream_mapping() {
         "all")
             mapping_args="$mapping_args -map 0:v"
             ;;
-        "best"|"")
+        "best" | "")
             mapping_args="$mapping_args -map 0:v:0"
             ;;
         "none")
@@ -3061,7 +3060,7 @@ get_stream_mapping() {
         "all")
             mapping_args="$mapping_args -map 0:a"
             ;;
-        "best"|"")
+        "best" | "")
             mapping_args="$mapping_args -map 0:a:0"
             ;;
         "none")
@@ -3091,7 +3090,7 @@ get_stream_mapping() {
         "best")
             mapping_args="$mapping_args -map 0:s:0?"
             ;;
-        "none"|"")
+        "none" | "")
             # No subtitle streams
             ;;
         *)
@@ -3156,7 +3155,7 @@ detect_optimal_format() {
             echo ".mkv"
         else
             case "$video_codec" in
-                *h264*|*avc*|*h265*|*hevc*)
+                *h264* | *avc* | *h265* | *hevc*)
                     # Modern codecs - MP4 for compatibility
                     echo ".mp4"
                     ;;
@@ -3172,7 +3171,7 @@ detect_optimal_format() {
     elif [ -z "$has_video" ] && [ -n "$has_audio" ]; then
         # Audio only - prefer M4A or MKA
         case "$input_ext" in
-            *.flac|*.wav) echo ".mka" ;;
+            *.flac | *.wav) echo ".mka" ;;
             *) echo ".m4a" ;;
         esac
     else
@@ -3185,7 +3184,7 @@ detect_optimal_format() {
 verify_remux_integrity() {
     input_file="$1"
     output_file="$2"
-    quick_check="${3:-0}"  # 1=quick check, 0=thorough check
+    quick_check="${3:-0}" # 1=quick check, 0=thorough check
 
     if [ ! -f "$input_file" ] || [ ! -f "$output_file" ]; then
         log_error "Input or output file not found for verification"
@@ -3266,7 +3265,7 @@ process_by_pattern() {
     input_dir="$1"
     pattern="$2"
     output_dir="$3"
-    processing_mode="$4"  # "pattern" or "list"
+    processing_mode="$4" # "pattern" or "list"
 
     if [ "$processing_mode" = "list" ]; then
         # Process files from a list file
@@ -3278,7 +3277,7 @@ process_by_pattern() {
         while IFS= read -r file_path; do
             # Skip empty lines and comments
             case "$file_path" in
-                ''|'#'*) continue ;;
+                '' | '#'*) continue ;;
             esac
 
             if [ -f "$file_path" ]; then
@@ -3288,7 +3287,7 @@ process_by_pattern() {
             else
                 log_warn "File from list not found: $file_path"
             fi
-        done < "$pattern"
+        done <"$pattern"
     else
         # Process files by glob pattern
         find "$input_dir" -type f -name "$pattern" | while read -r file_path; do
@@ -3316,7 +3315,7 @@ show_version() {
 }
 
 usage() {
-    cat << EOF
+    cat <<EOF
 Usage: $PROGNAME [OPTIONS] --input-dir DIR [--from EXT] [--to EXT]
 
 DESCRIPTION:
@@ -3484,7 +3483,7 @@ parse_arguments() {
 
     while [ $# -gt 0 ]; do
         case "$1" in
-            -i|--input-dir)
+            -i | --input-dir)
                 if [ -z "$2" ]; then
                     log_error "Option $1 requires an argument"
                     return $EXIT_USAGE
@@ -3495,7 +3494,7 @@ parse_arguments() {
                 fi
                 shift 2
                 ;;
-            -o|--output-dir)
+            -o | --output-dir)
                 if [ -z "$2" ]; then
                     log_error "Option $1 requires an argument"
                     return $EXIT_USAGE
@@ -3528,7 +3527,7 @@ parse_arguments() {
                 fi
                 shift 2
                 ;;
-            -j|--jobs)
+            -j | --jobs)
                 if [ -z "$2" ]; then
                     log_error "Option $1 requires an argument"
                     return $EXIT_USAGE
@@ -3656,16 +3655,16 @@ parse_arguments() {
                 FILE_LIST="$2"
                 shift 2
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 VERBOSE=1
                 log_debug "Verbose mode enabled"
                 shift
                 ;;
-            -h|--help)
+            -h | --help)
                 usage
                 exit $EXIT_SUCCESS
                 ;;
-            -V|--version)
+            -V | --version)
                 show_version
                 exit $EXIT_SUCCESS
                 ;;
@@ -3952,9 +3951,9 @@ main() {
     local use_advanced_mode=0
 
     # Pre-calculate advanced mode requirement to avoid repeated checks
-    if [ "$SHOW_STREAMS" = 1 ] || [ "$AUTO_FORMAT" = 1 ] || [ -n "$TEMPLATE" ] || [ "$VERIFY_OUTPUT" = 1 ] || \
-       [ "$PRESERVE_METADATA" = 0 ] || [ "$PRESERVE_CHAPTERS" = 0 ] || \
-       [ "$VIDEO_STREAMS" != "best" ] || [ "$AUDIO_STREAMS" != "best" ] || [ "$SUBTITLE_STREAMS" != "none" ]; then
+    if [ "$SHOW_STREAMS" = 1 ] || [ "$AUTO_FORMAT" = 1 ] || [ -n "$TEMPLATE" ] || [ "$VERIFY_OUTPUT" = 1 ] ||
+        [ "$PRESERVE_METADATA" = 0 ] || [ "$PRESERVE_CHAPTERS" = 0 ] ||
+        [ "$VIDEO_STREAMS" != "best" ] || [ "$AUDIO_STREAMS" != "best" ] || [ "$SUBTITLE_STREAMS" != "none" ]; then
         use_advanced_mode=1
     fi
 
@@ -4002,7 +4001,7 @@ main() {
             "$processing_function" {} "$INPUT_DIR" "$OUTPUT_DIR" "$FROM_EXT" "$TO_EXT" "$SELECT_BEST" "$OVERWRITE" "$CURRENT_JOB_ID"
     else
         # Standard file discovery
-        eval "$file_discovery_cmd" | \
+        eval "$file_discovery_cmd" |
             parallel --will-cite -0 -j "$PARALLEL_JOBS" \
                 "$processing_function" {} "$INPUT_DIR" "$OUTPUT_DIR" "$FROM_EXT" "$TO_EXT" "$SELECT_BEST" "$OVERWRITE" "$CURRENT_JOB_ID"
     fi
