@@ -1,4 +1,186 @@
 {
+  "cleanupPeriodDays": 7,
+  "env": {
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+    "DISABLE_COST_WARNINGS": "1",
+    "DISABLE_AUTOUPDATER": "1",
+    "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "PYTHON": "python3",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "BASH_MAX_TIMEOUT_MS": "600000",
+    "BASH_MAX_OUTPUT_LENGTH": "50000",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "8192",
+    "USE_BUILTIN_RIPGREP": "0"
+  },
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(guix shell*)",
+      "Bash(pytest*)",
+      "Bash(python3*)",
+      "Bash(cargo test*)",
+      "Bash(cargo build*)",
+      "Bash(cargo check*)",
+      "Bash(cargo clippy*)",
+      "Bash(ruff*)",
+      "Bash(pyright*)",
+      "Bash(mypy*)",
+      "Bash(black*)",
+      "Bash(isort*)",
+      "Bash(npm test*)",
+      "Bash(npm run*)",
+      "Bash(make*)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(grep*)",
+      "Bash(rg*)",
+      "Bash(find*)",
+      "Bash(which*)",
+      "Bash(pwd*)",
+      "Bash(cd*)",
+      "Bash(echo*)",
+      "Bash(head*)",
+      "Bash(tail*)",
+      "Bash(wc*)",
+      "Bash(sed*)",
+      "Bash(awk*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git add*)",
+      "Bash(git stash*)",
+      "Bash(git fetch*)",
+      "Bash(git pull*)",
+      "Bash(git checkout*)",
+      "Bash(git merge*)",
+      "Bash(tree*)",
+      "Bash(bat*)",
+      "Bash(eza*)",
+      "Bash(fd*)",
+      "Bash(jq*)",
+      "Bash(curl*)",
+      "Bash(wget*)",
+      "Bash(tar*)",
+      "Bash(unzip*)",
+      "Bash(chmod +x*)",
+      "Bash(mkdir*)",
+      "Bash(touch*)",
+      "Bash(cp*)",
+      "Bash(mv*)",
+      "Bash(beet*)",
+      "Read(manifest.scm)",
+      "Read(*.md)",
+      "Read(*.py)",
+      "Read(*.rs)",
+      "Read(*.toml)",
+      "Read(*.json)",
+      "Read(*.yaml)",
+      "Read(*.yml)",
+      "Read(*.scm)",
+      "Read(*.el)",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(rm -rf .*)",
+      "Bash(rm -rf *)",
+      "Bash(pip install*)",
+      "Bash(pip3 install*)",
+      "Bash(poetry*)",
+      "Bash(npm install -g*)",
+      "Bash(cargo install*)",
+      "Bash(apt*)",
+      "Bash(sudo*)",
+      "Bash(python -m pip*)",
+      "Bash(python3 -m pip*)",
+      "Bash(virtualenv*)",
+      "Bash(venv*)",
+      "Bash(conda*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(python *)",
+      "Read(.env*)",
+      "Read(**/secrets/**)",
+      "Read(**/.git/**)",
+      "Read(**/node_modules/**)",
+      "Read(**/__pycache__/**)",
+      "Write(.env*)",
+      "Write(**/secrets/**)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(git commit*)",
+      "Bash(git rebase*)",
+      "Bash(rm -r*)",
+      "Bash(rm -f*)",
+      "Bash(chmod -R*)",
+      "Bash(chown*)"
+    ]
+  },
+  "model": "sonnet",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/guix-wrapper.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/bash-command-validator.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/auto-format.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/test-runner-trigger.py"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-context-loader.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/stop-hook-agent-trigger.py"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline.sh"
