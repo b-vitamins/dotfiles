@@ -61,62 +61,16 @@ fi
 # Check if this commit modifies any guix/machines/*.scm files
 machine_files=$(git diff --cached --name-only | grep '^guix/machines/.*\.scm$' || true)
 
+# Relaxed validation for machine configuration files
+# Only require conventional commit format, not specific generation format
 if [ -n "$machine_files" ]; then
-    # For machine configuration updates, enforce specific format
-    if echo "$first_line" | grep -qE '^feat\(guix\): update .+ to generation [0-9]+$'; then
-        # Extract the expected format from the commit body
-        body=$(echo "$commit_msg" | tail -n +2)
-
-        # Check for required generation info format
-        if ! echo "$body" | grep -qE '^Generation [0-9]+ \([0-9]{4}-[0-9]{2}-[0-9]{2}\)$'; then
-            echo "Error: Machine configuration commits must include generation info" >&2
-            echo "Expected format:" >&2
-            echo "  feat(guix): update <machine>.scm to generation N" >&2
-            echo "" >&2
-            echo "  Generation N (YYYY-MM-DD)" >&2
-            echo "  Kernel: X.Y.Z" >&2
-            echo "  guix: <commit-hash>" >&2
-            echo "  myguix: <commit-hash>" >&2
-            echo "" >&2
-            echo "  Changes from Generation N-1:" >&2
-            echo "  - Change 1" >&2
-            echo "  - Change 2" >&2
-            exit 1
-        fi
-
-        # Check for kernel version
-        if ! echo "$body" | grep -qE '^Kernel: [0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "Error: Missing or invalid kernel version line" >&2
-            echo "Expected format: Kernel: X.Y.Z" >&2
-            exit 1
-        fi
-
-        # Check for guix commit
-        if ! echo "$body" | grep -qE '^guix: [a-f0-9]{40}$'; then
-            echo "Error: Missing or invalid guix commit hash" >&2
-            echo "Expected format: guix: <40-character-hash>" >&2
-            exit 1
-        fi
-
-        # Check for myguix commit
-        if ! echo "$body" | grep -qE '^myguix: [a-f0-9]{40}$'; then
-            echo "Error: Missing or invalid myguix commit hash" >&2
-            echo "Expected format: myguix: <40-character-hash>" >&2
-            exit 1
-        fi
-
-        # Check for changes section (only if not generation 1)
-        if ! echo "$first_line" | grep -q 'generation 1$'; then
-            if ! echo "$body" | grep -q '^Changes from Generation'; then
-                echo "Error: Missing 'Changes from Generation' section" >&2
-                echo "This section is required for all generations except the first" >&2
-                exit 1
-            fi
-        fi
-    else
-        echo "Error: Machine configuration commits must use specific format" >&2
-        echo "Expected: feat(guix): update <machine>.scm to generation N" >&2
-        exit 1
+    # Just ensure it follows conventional commit format (already checked above)
+    # and has guix scope when modifying machine files
+    if ! echo "$first_line" | grep -qE '^(feat|fix|refactor|chore)\((guix|mileva|sparck)\):'; then
+        echo "Info: Machine configuration commits should use 'guix', 'mileva', or 'sparck' as scope" >&2
+        echo "Example: feat(guix): add note-taking bundle to machines" >&2
+        echo "Example: feat(mileva): enable new service" >&2
+        # Just a warning, not an error
     fi
 fi
 

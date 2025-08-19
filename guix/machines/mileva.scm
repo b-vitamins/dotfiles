@@ -525,6 +525,7 @@ allow-preset-passphrase")))
              %latex-extended
              %document-conversion-packages
              %spell-checkers
+             %note-taking
              ;; Math/Science
              %math-core
              %math-applications
