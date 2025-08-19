@@ -173,7 +173,7 @@ ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     Managed by this script:
     - Emacs (init files, lisp modules, templates)
     - Guix System (channels.scm only)
-    - Claude Code (settings, agents, global preferences)
+    - Claude Code (settings, agents, hooks, instructions, output styles, project templates)
     - qBittorrent configuration (if present)
     - Git hooks installation
 
@@ -405,7 +405,7 @@ show_claude_status() {
     echo "Configuration files:"
 
     # Check main config files
-    local claude_files=("CLAUDE.md" "settings.json" "settings.local.json")
+    local claude_files=("CLAUDE.md" "settings.json" "settings.local.json" "statusline.sh")
     for file in "${claude_files[@]}"; do
         local repo_file="$DOTFILES_DIR/claude/$file"
         local home_file="$HOME/.claude/$file"
@@ -425,6 +425,38 @@ show_claude_status() {
         else
             if [[ -f "$repo_file" ]]; then
                 printf "${RED}✗ not installed${RESET}\n"
+            else
+                printf "${BLUE}- not available${RESET}\n"
+            fi
+        fi
+    done
+
+    # Check infrastructure directories
+    echo
+    echo "Infrastructure directories:"
+    local claude_dirs=("hooks" "instructions" "output-styles" "project-templates")
+    for dir in "${claude_dirs[@]}"; do
+        local repo_dir="$DOTFILES_DIR/claude/$dir"
+        local home_dir="$HOME/.claude/$dir"
+
+        printf "  %-20s " "$dir:"
+
+        if [[ -d "$home_dir" ]]; then
+            if [[ -d "$repo_dir" ]]; then
+                local repo_count=$(find "$repo_dir" -type f | wc -l 2>/dev/null || echo 0)
+                local home_count=$(find "$home_dir" -type f | wc -l 2>/dev/null || echo 0)
+                if [[ $repo_count -eq $home_count ]]; then
+                    printf "${GREEN}✓ installed ($home_count files)${RESET}\n"
+                else
+                    printf "${YELLOW}✓ installed ($home_count/$repo_count files)${RESET}\n"
+                fi
+            else
+                printf "${YELLOW}✓ installed (not in repo)${RESET}\n"
+            fi
+        else
+            if [[ -d "$repo_dir" ]]; then
+                local repo_count=$(find "$repo_dir" -type f | wc -l 2>/dev/null || echo 0)
+                printf "${RED}✗ not installed ($repo_count files available)${RESET}\n"
             else
                 printf "${BLUE}- not available${RESET}\n"
             fi
@@ -579,7 +611,7 @@ update_claude_config() {
     local skipped=0
 
     # Update main config files
-    local claude_files=("CLAUDE.md" "settings.json" "settings.local.json")
+    local claude_files=("CLAUDE.md" "settings.json" "settings.local.json" "statusline.sh")
     for file in "${claude_files[@]}"; do
         update_claude_file "$file" "$HOME/.claude/$file" && updated=$((updated + 1)) || skipped=$((skipped + 1))
     done
@@ -599,6 +631,20 @@ update_claude_config() {
             fi
         done
     fi
+
+    # Update infrastructure directories
+    local claude_dirs=("hooks" "instructions" "output-styles" "project-templates")
+    for dir in "${claude_dirs[@]}"; do
+        if [[ -d "$DOTFILES_DIR/claude/$dir" ]]; then
+            for source_file in "$DOTFILES_DIR/claude/$dir"/*; do
+                if [[ -f "$source_file" ]]; then
+                    local file_name="$(basename "$source_file")"
+                    local target_file="$HOME/.claude/$dir/$file_name"
+                    update_claude_file "$dir/$file_name" "$target_file" && updated=$((updated + 1)) || skipped=$((skipped + 1))
+                fi
+            done
+        fi
+    done
 
     # Clean stale agents
     clean_stale_agents
@@ -875,6 +921,11 @@ setup_claude_config() {
     setup_claude_file "CLAUDE.md" "$claude_config_dir/CLAUDE.md"
     setup_claude_file "settings.json" "$claude_config_dir/settings.json"
     setup_claude_file "settings.local.json" "$claude_config_dir/settings.local.json"
+    
+    # Setup statusline.sh if exists
+    if [[ -f "$DOTFILES_DIR/claude/statusline.sh" ]]; then
+        setup_claude_file "statusline.sh" "$claude_config_dir/statusline.sh"
+    fi
 
     # Setup agents directory
     if [[ -d "$DOTFILES_DIR/claude/agents" ]]; then
@@ -909,6 +960,12 @@ setup_claude_config() {
             log INFO "Installed $agent_count agents, skipped $skipped_count"
         fi
     fi
+
+    # Setup infrastructure directories
+    setup_claude_directory "hooks" "$claude_config_dir/hooks"
+    setup_claude_directory "instructions" "$claude_config_dir/instructions"
+    setup_claude_directory "output-styles" "$claude_config_dir/output-styles"
+    setup_claude_directory "project-templates" "$claude_config_dir/project-templates"
 }
 
 setup_claude_file() {
@@ -952,6 +1009,79 @@ setup_claude_file() {
             cp "$source_path" "$target_path"
             log SUCCESS "Created Claude config: $relative_path"
         fi
+    fi
+}
+
+setup_claude_directory() {
+    local relative_path="$1"
+    local target_path="$2"
+    local source_path="$DOTFILES_DIR/claude/$relative_path"
+
+    # Check if source directory exists
+    if [[ ! -d "$source_path" ]]; then
+        debug "Claude directory not found: $source_path (skipping)"
+        return 0
+    fi
+
+    debug "Setting up Claude directory: $relative_path"
+
+    # Create target directory if it doesn't exist
+    if [[ ! -d "$target_path" ]]; then
+        debug "Creating directory: $target_path"
+        if [[ "$DRY_RUN" == false ]]; then
+            mkdir -p "$target_path"
+        fi
+    fi
+
+    # Use symlinks if requested
+    if [[ "$CLAUDE_SYMLINK" == true ]]; then
+        create_symlink "$source_path" "$target_path"
+        return $?
+    fi
+
+    # Otherwise, copy all files in the directory
+    local file_count=0
+    local updated_count=0
+    
+    for source_file in "$source_path"/*; do
+        if [[ -f "$source_file" ]]; then
+            local file_name="$(basename "$source_file")"
+            local target_file="$target_path/$file_name"
+            
+            # Check if file needs updating
+            if [[ -f "$target_file" ]]; then
+                if [[ "$FORCE" == true ]]; then
+                    if [[ "$DRY_RUN" == false ]]; then
+                        create_backup "$target_file"
+                        cp "$source_file" "$target_file"
+                        updated_count=$((updated_count + 1))
+                        debug "Updated: $relative_path/$file_name"
+                    else
+                        echo "  Would update: $relative_path/$file_name"
+                        updated_count=$((updated_count + 1))
+                    fi
+                else
+                    debug "File exists, skipping: $relative_path/$file_name"
+                fi
+            else
+                # Copy new file
+                if [[ "$DRY_RUN" == false ]]; then
+                    cp "$source_file" "$target_file"
+                    # Make hook files executable
+                    if [[ "$relative_path" == "hooks" ]]; then
+                        chmod +x "$target_file"
+                    fi
+                    debug "Created: $relative_path/$file_name"
+                else
+                    echo "  Would create: $relative_path/$file_name"
+                fi
+                file_count=$((file_count + 1))
+            fi
+        fi
+    done
+
+    if [[ $file_count -gt 0 || $updated_count -gt 0 ]]; then
+        log SUCCESS "Setup $relative_path: $file_count new, $updated_count updated"
     fi
 }
 
