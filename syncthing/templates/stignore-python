@@ -1,0 +1,99 @@
+// Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+// Testing
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+// Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+
+// Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+// Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+// Sphinx docs
+docs/_build/
+docs/_static/
+docs/_templates/
+
+// PyBuilder
+target/
+
+// IPython
+.ipython/
+profile_default/
+ipython_config.py
+
+// pyenv
+.python-version
+
+// ML/Data
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.bin
+*.model
+*.weights
+checkpoints/
+runs/
+wandb/
+mlruns/
+.neptune/
+lightning_logs/
+tensorboard/
+data/
+models/
+outputs/
+results/
+logs/
+experiments/
+*.npy
+*.npz
+*.tfrecord
+*.parquet
+*.feather
+*.msgpack

@@ -1,0 +1,34 @@
+// GPG lock files (machine-specific)
+.#lk*
+.gpg-v*-migrated
+
+// Socket files (machine-specific)
+S.gpg-agent
+S.gpg-agent.browser
+S.gpg-agent.extra
+S.gpg-agent.ssh
+S.scdaemon
+S.dirmngr
+
+// Runtime/temporary files
+random_seed
+reader*.status
+gnupg_spawn_*.lock
+
+// Agent state (machine-specific)
+gpg-agent.log
+dirmngr.log
+scdaemon.log
+
+// Backup files
+*~
+*.bak
+*.tmp
+
+// Old format files (if migrated)
+secring.gpg
+pubring.gpg~
+trustdb.gpg.lock
+
+// Syncthing folder marker (keep this)
+# .stfolder

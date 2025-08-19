@@ -1,0 +1,41 @@
+// C++ build artifacts
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.pch
+*.gch
+*.pdb
+*.idb
+*.ilk
+*.exp
+
+// Build directories
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+// IDE
+.clangd/
+.cache/clangd/
+
+// Ninja
+.ninja_deps
+.ninja_log
+build.ninja
+
+// Conan
+conan.lock
+conaninfo.txt
+conanbuildinfo.*
+graph_info.json

@@ -1,0 +1,51 @@
+// Common media temporary files
+*.part
+*.crdownload
+*.download
+*.tmp
+*.temp
+*.partial
+*.!sync
+*~
+
+// OS files
+(?d).DS_Store
+(?d)Thumbs.db
+(?d)desktop.ini
+(?d).directory
+(?d).Spotlight-V100
+(?d).Trashes
+
+// Media player databases/caches
+.spotify-cache/
+.plex/
+albumart*.jpg
+AlbumArt*.jpg
+folder.jpg
+.folder.png
+*.db
+*.ini
+
+// Video download artifacts
+*.ytdl
+*.f*.mp4.part
+*.webm.part
+*.mkv.part
+*.temp.mp4
+
+// Image editor temporary files
+*.psd_tmp
+*-autosave.kra
+*.kra~
+
+// Audio workfiles (keep project files, ignore temp)
+*.aup3.bak
+*.reapeaks
+*.asd
+
+// Claude local state
+.claude/
+
+// Editor files
+.vscode/
+.idea/

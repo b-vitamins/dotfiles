@@ -1,0 +1,55 @@
+// Git internal state (machine-specific)
+.git/index
+.git/index.lock
+.git/FETCH_HEAD
+.git/ORIG_HEAD
+.git/COMMIT_EDITMSG
+.git/logs/
+.git/refs/remotes/
+.git/shallow
+.git/commondir
+.git/modules/*/index
+.git/modules/*/index.lock
+
+// Claude Code local state
+.claude/
+
+// Editor temporary files
+*~
+\#*\#
+.\#*
+*.swp
+*.swo
+*.swn
+.vscode/
+.idea/
+
+// OS files
+(?d).DS_Store
+(?d)Thumbs.db
+(?d)desktop.ini
+
+// Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+tmp/
+temp/
+
+// Direnv
+.direnv/
+.envrc.local
+
+// Secrets
+.env
+.env.local
+.env.*.local
+secrets/
+private/
+*.key
+*.pem
+*.p12
+*.pfx

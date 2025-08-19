@@ -1,0 +1,50 @@
+// Office temporary files
+~$*
+.~lock.*
+*.tmp
+*.temp
+*.backup
+*.bak
+*.autosave
+
+// LaTeX temporary files (if documents contain LaTeX)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+
+// PDF viewer files
+*.pdf.annotations
+
+// OS files
+(?d).DS_Store
+(?d)Thumbs.db
+(?d)desktop.ini
+
+// Editor temporary files
+*~
+\#*\#
+.\#*
+*.swp
+*.swo
+
+// Claude local state
+.claude/
+
+// Version control (if documents are in git)
+.git/index
+.git/index.lock
+.git/FETCH_HEAD
+.git/ORIG_HEAD
+.git/COMMIT_EDITMSG
+.git/logs/
+
+// Cloud sync conflicts
+*conflicted*
+*_conflict*
+*(Conflict)*

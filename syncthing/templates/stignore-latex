@@ -1,0 +1,59 @@
+// LaTeX build artifacts
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+*.dvi
+*.xdv
+*-converted-to.*
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+*.fdb_latexmk
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+*.nav
+*.snm
+*.vrb
+*.bak
+*.sav
+
+// BibTeX/BibLaTeX
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+
+// LaTeX editors
+*.latexmain
+*.upa
+*.upb
+
+// Build directories
+build/
+_build/
+out/
+
+// PDF outputs (comment if you want to sync PDFs)
+# *.pdf
+
+// Temporary files
+*.tmp
+*~
+.#*
