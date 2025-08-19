@@ -14,7 +14,7 @@ fi
 if [ -f "manifest.scm" ]; then
   # Commands that need guix shell wrapping
   NEEDS_GUIX_REGEX="^(python3|pytest|ruff|pyright|mypy|black|isort|cargo|rustc|rustfmt|clippy|npm|node|pnpm|yarn)"
-  
+
   # Skip if already a guix command or if it's a built-in command
   if [[ ! "$COMMAND" =~ ^guix ]] && [[ "$COMMAND" =~ $NEEDS_GUIX_REGEX ]]; then
     echo "NOTE: Wrapping command in 'guix shell -m manifest.scm --' due to manifest.scm presence" >&2

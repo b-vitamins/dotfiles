@@ -12,12 +12,12 @@ try:
     input_data = json.load(sys.stdin)
     tool_name = input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})
-    
+
     if tool_name not in ["Edit", "MultiEdit", "Write"]:
         sys.exit(0)
-    
+
     file_path = tool_input.get("file_path", "")
-    
+
     # Check if Python file was edited
     if file_path.endswith(".py"):
         # Check if it's a test file or implementation file
@@ -32,13 +32,13 @@ try:
             # Implementation file edited - suggest running related tests
             module_name = os.path.basename(file_path).replace(".py", "")
             output = {
-                "decision": "block", 
+                "decision": "block",
                 "reason": f"Python module '{module_name}' was modified. Consider running tests: pytest tests/test_{module_name}.py -xvs"
             }
-        
-        print(json.dumps(output))
+
+        print(json.dumps(output))  # noqa: print
         sys.exit(0)
-        
+
 except Exception as e:
     # Don't block on errors
     sys.exit(0)

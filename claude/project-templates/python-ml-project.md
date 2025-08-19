@@ -140,24 +140,24 @@ def main():
         "batch_size": 32,
         "epochs": 100,
     }
-    
+
     # Log configuration
     logger.info(f"Starting experiment with config: {config}")
-    
+
     # Your experiment code here
     results = {}
-    
+
     # Save results
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_file = RESULTS_DIR / f"exp_{timestamp}.json"
-    
+
     with open(results_file, 'w') as f:
         json.dump({
             "config": config,
             "results": results,
             "timestamp": timestamp
         }, f, indent=2)
-    
+
     logger.info(f"Results saved to {results_file}")
 
 if __name__ == "__main__":

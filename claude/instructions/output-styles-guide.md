@@ -11,7 +11,7 @@
 ### 2. Research Mode (`/output-style research-mode`)
 - **Purpose**: ML research and academic paper writing
 - **Use When**: Working on experiments, papers, presentations
-- **Behavior**: 
+- **Behavior**:
   - Tracks experiments systematically
   - Ensures LaTeX quality
   - Manages citations properly

@@ -6,7 +6,7 @@
 1. **guix-wrapper.sh** (Bash commands)
    - Automatically wraps commands in `guix shell -m manifest.scm`
    - Replaces `python` → `python3`
-   
+
 2. **bash-command-validator.py** (Bash commands)
    - Blocks pip/npm/cargo install attempts
    - Blocks dangerous rm -rf commands

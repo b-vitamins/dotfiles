@@ -22,19 +22,19 @@ These agents should run automatically in these situations:
 
 ### Python Feature Development
 ```
-python-import-resolver → python-unit-test-writer → python-property-test-writer 
+python-import-resolver → python-unit-test-writer → python-property-test-writer
 → python-ruff-fixer → test-coverage-analyzer
 ```
 
 ### Bug Fix Workflow
 ```
-python-regression-tester (capture bug) → [fix code] → pytest-runner-guix 
+python-regression-tester (capture bug) → [fix code] → pytest-runner-guix
 → python-mutation-tester (validate fix quality)
 ```
 
 ### LaTeX Paper Preparation
 ```
-latex-compiler-fixer → latex-package-resolver → latex-figure-organizer 
+latex-compiler-fixer → latex-package-resolver → latex-figure-organizer
 → latex-table-formatter → latex-math-validator → bibtex-citation-checker
 ```
 
@@ -55,7 +55,7 @@ import-cleaner → dead-function-finder → pattern-replacer → test-coverage-a
 
 ### Full Test Suite Creation
 ```
-python-unit-test-writer → python-integration-test-writer → python-e2e-test-writer 
+python-unit-test-writer → python-integration-test-writer → python-e2e-test-writer
 → python-property-test-writer → python-mutation-tester
 ```
 

@@ -28,10 +28,10 @@ Strict TDD approach with comprehensive testing strategies.
 def test_new_feature():
     # Arrange
     input_data = prepare_test_data()
-    
+
     # Act
     result = function_under_test(input_data)
-    
+
     # Assert
     assert result == expected_output
 ```
@@ -66,7 +66,7 @@ from hypothesis import given, strategies as st
 def test_sort_properties(lst):
     sorted_lst = sort_function(lst)
     assert len(sorted_lst) == len(lst)
-    assert all(sorted_lst[i] <= sorted_lst[i+1] 
+    assert all(sorted_lst[i] <= sorted_lst[i+1]
                for i in range(len(sorted_lst)-1))
 ```
 

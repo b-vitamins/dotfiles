@@ -47,14 +47,14 @@ from src.module import ClassA, function_b
 
 class TestClassA:
     """Tests for ClassA."""
-    
+
     def test_init_with_valid_params_creates_instance(self):
         # Arrange
         config = {"key": "value"}
-        
+
         # Act
         instance = ClassA(config)
-        
+
         # Assert
         assert instance.config == config
         assert instance.initialized is True

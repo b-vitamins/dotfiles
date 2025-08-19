@@ -61,11 +61,11 @@ Deep expertise in GNU Guix for system configuration and development environments
    "gcc-toolchain"
    "make"
    "pkg-config"
-   
+
    ;; Python
    "python"
    "python-pytest"
-   
+
    ;; Documentation
    "texlive"
    "pandoc"))
