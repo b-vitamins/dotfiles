@@ -35,7 +35,6 @@
 
 ;; Declare external functions
 (declare-function citar-select-refs "citar" (&optional arg))
-(declare-function citar-refresh "citar" ())
 (declare-function citar-insert-preset "citar" (&optional arg))
 (declare-function citar-insert-citation "citar" (&optional arg))
 (declare-function citar-open "citar" (&optional arg))
@@ -66,7 +65,6 @@ This keymap provides bindings for all citation-related operations.")
 (define-key bv-citation-map (kbd "f") 'citar-open-entry)
 
 ;; Bibliography management
-(define-key bv-citation-map (kbd "r") 'citar-refresh)
 (define-key bv-citation-map (kbd "a") 'citar-add-file-to-library)
 (define-key bv-citation-map (kbd "A") 'citar-attach-files)
 
@@ -75,7 +73,6 @@ This keymap provides bindings for all citation-related operations.")
 (define-key bv-citation-map (kbd "e") 'citar-export-local-bib-file)
 (define-key bv-citation-map (kbd "d") 'citar-dwim)
 (define-key bv-citation-map (kbd "p") 'citar-insert-preset)
-(define-key bv-citation-map (kbd "R") 'citar-refresh)
 (define-key bv-citation-map (kbd "c") 'citar-copy-reference)
 (define-key bv-citation-map (kbd "t") 'citar-insert-bibtex)
 

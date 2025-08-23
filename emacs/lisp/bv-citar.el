@@ -18,10 +18,7 @@
 (autoload 'citar-has-files "citar")
 (autoload 'citar-has-links "citar")
 (autoload 'citar-is-cited "citar")
-(autoload 'citar-capf-setup "citar")
 (autoload 'citar-insert-preset "citar")
-(autoload 'citar-file-parser-default "citar-file")
-(autoload 'citar-file-parser-triplet "citar-file")
 
 ;; Declare external variables to avoid warnings
 (defvar org-cite-global-bibliography)
@@ -80,11 +77,10 @@
             "is:cited"))))
 
 ;; Configure file parsers for multiple formats (Zotero, Mendeley, Calibre)
-(with-eval-after-load 'citar
-  (when (boundp 'citar-file-parser-functions)
-    (setq citar-file-parser-functions
-          '(citar-file-parser-default
-            citar-file-parser-triplet))))
+;; Note: citar already includes both parsers by default:
+;;   citar-file--parser-default (for Zotero-style paths)
+;;   citar-file--parser-triplet (for Mendeley/Calibre format)
+;; No configuration needed as both are already in the default value
 
 ;; Configure at-point behavior
 (with-eval-after-load 'citar
@@ -101,8 +97,10 @@
 ;; Setup completion-at-point for citation keys
 (defun bv-citar-setup-capf ()
   "Setup citar `completion-at-point' in supported modes."
-  (when (fboundp 'citar-capf-setup)
-    (citar-capf-setup)))
+  ;; Ensure citar is loaded before adding capf
+  (require 'citar nil t)
+  (when (fboundp 'citar-capf)
+    (add-to-list 'completion-at-point-functions #'citar-capf)))
 
 ;; Add hooks for completion-at-point
 (add-hook 'org-mode-hook #'bv-citar-setup-capf)

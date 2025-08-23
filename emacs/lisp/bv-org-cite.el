@@ -18,19 +18,13 @@
 (autoload 'citar-dwim "citar")
 (autoload 'embark-act "embark")
 
-
-(defun bv-org-cite-find-bibliography-files ()
-  "Find all .bib files in bibliography directories."
-  (let ((dirs '("~/projects/bibliography/curated"
-                "~/projects/bibliography/meta"
-                "~/projects/bibliography/books"))
-        (bib-files '()))
-    (dolist (dir dirs)
-      (when (file-directory-p (expand-file-name dir))
-        (setq bib-files
-              (append bib-files
-                      (directory-files (expand-file-name dir) t "\\.bib$")))))
-    bib-files))
+;; Declare org-cite variables that might not be loaded yet
+(defvar org-cite-global-bibliography)
+(defvar org-cite-insert-processor)
+(defvar org-cite-follow-processor)
+(defvar org-cite-activate-processor)
+(defvar org-cite-export-processors)
+(defvar org-cite-csl-styles-dir)
 
 (defun bv-org-cite-setup-oc ()
   "Setup org-cite configuration."
@@ -46,6 +40,19 @@
     (setq org-cite-activate-processor 'citar))
   (when (boundp 'org-cite-export-processors)
     (setq org-cite-export-processors '((latex biblatex) (t csl)))))
+
+(defun bv-org-cite-find-bibliography-files ()
+  "Find all .bib files in bibliography directories."
+  (let ((dirs '("~/projects/bibliography/curated"
+                "~/projects/bibliography/meta"
+                "~/projects/bibliography/books"))
+        (bib-files '()))
+    (dolist (dir dirs)
+      (when (file-directory-p (expand-file-name dir))
+        (setq bib-files
+              (append bib-files
+                      (directory-files (expand-file-name dir) t "\\.bib$")))))
+    bib-files))
 
 (with-eval-after-load 'oc
   (bv-org-cite-setup-oc))
