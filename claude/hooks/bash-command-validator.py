@@ -11,36 +11,35 @@ def validate_command(command: str) -> list[str]:
     """Validate bash commands against Guix best practices."""
     issues = []
 
-    # Block package managers
-    if re.search(r'\b(pip|pip3)\s+install', command):
+    # Block package managers - but allow pip in guix shell context
+    if re.search(r'\b(pip|pip3)\s+install', command) and 'guix shell' not in command:
         issues.append("Use 'guix shell -m manifest.scm' instead of pip install")
 
-    if re.search(r'\bnpm\s+install\s+-g', command):
+    if re.search(r'\bnpm\s+install\s+-g', command) and 'guix shell' not in command:
         issues.append("Use Guix packages instead of npm global installs")
 
-    if re.search(r'\bcargo\s+install\b', command):
+    # cargo install is blocked, but cargo build/test/check are fine
+    if re.search(r'\bcargo\s+install\b', command) and 'guix shell' not in command:
         issues.append("Use Guix packages instead of cargo install")
 
     if re.search(r'\b(apt|apt-get|yum|dnf|brew)\b', command):
         issues.append("Use Guix instead of system package managers")
 
-    # Prefer modern tools
-    if re.search(r'\bgrep\b(?!.*\|)', command) and not re.search(r'\brg\b', command):
-        issues.append("Use 'rg' (ripgrep) instead of 'grep' for better performance")
+    # Note: Removed artificial grep/find restrictions - both are perfectly valid tools
 
-    if re.search(r'\bfind\s+.*-name\b', command):
-        issues.append("Use 'fd' or 'rg --files' instead of 'find -name'")
-
-    # Python version
-    if re.search(r'\bpython\s+(?!3)', command):
+    # Python version - only check for python as a command, not in paths
+    # Also allow shebang lines and python -m usage
+    # Match python only when it's a command (not part of a path)
+    if re.search(r'(?:^|[;&|]\s*)python(?:\s+(?!3|-m)|\s*$)', command) and '#!/usr/bin/env python' not in command:
         issues.append("Use 'python3' instead of 'python'")
 
-    # Dangerous rm commands
-    if re.search(r'\brm\s+-rf\s+[~/]', command):
+    # Dangerous rm commands - be more precise
+    if re.search(r'\brm\s+-rf\s+(/|~/?\s*$)', command):
         issues.append("DANGEROUS: rm -rf on home or root directory blocked")
 
-    if re.search(r'\brm\s+-rf\s+\*', command):
-        issues.append("DANGEROUS: rm -rf * blocked - be more specific")
+    # Allow rm -rf * in specific subdirectories, block only in dangerous locations
+    if re.search(r'\brm\s+-rf\s+\*', command) and not re.search(r'(\./|tmp/|build/|dist/|__pycache__|node_modules/)', command):
+        issues.append("DANGEROUS: rm -rf * in current directory - be more specific")
 
     return issues
 
