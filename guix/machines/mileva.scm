@@ -1,4 +1,8 @@
 (use-modules (gnu)
+             (guix packages)
+             (guix profiles)
+             (guix build-system trivial)
+             (guix gexp)
              (gnu home)
              (gnu home services)
              (gnu home services desktop)
@@ -19,6 +23,7 @@
              (gnu packages networking)
              (gnu packages sync)
              (gnu packages video)
+             (gnu packages mate)
              (gnu packages gnome)
              (gnu packages gnome-xyz)
              (gnu packages shellutils)
@@ -389,18 +394,12 @@ allow-preset-passphrase")))
                                                           "  dest: ~/.cache/beets/converted"
                                                           "  format: mp3"
                                                           "  formats:"
-                                                          "    mp3: ffmpeg -i $source -y -aq 2 $dest"))))
-
-      (service home-nougat-service-type
-               (nougat-configuration (batch-size 10)
-                                     (workers 6)
-                                     (cache-dir "/home/b/.cache/nougat")))))))
+                                                          "    mp3: ffmpeg -i $source -y -aq 2 $dest"))))))))
 
 (operating-system
   (host-name "mileva")
   (timezone "Asia/Kolkata")
   (locale "en_US.utf8")
-
   (kernel linux)
   (kernel-arguments (append '("modprobe.blacklist=nouveau"
                               "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1")
@@ -542,6 +541,8 @@ allow-preset-passphrase")))
                           (gdm-configuration (wayland? #t)
                                              (debug? #f)
                                              (xorg-configuration (xorg-configuration
+                                                                  (keyboard-layout
+                                                                   keyboard-layout)
                                                                   (modules (cons
                                                                             nvda
                                                                             %default-xorg-modules))
@@ -732,7 +733,7 @@ collation-server = utf8mb4_unicode_ci")))
                                                               "../files/daemon.json"))))
                  (service oci-container-service-type
                           (list oci-meilisearch-service-type
-                                oci-grobid-service-type oci-neo4j-service-type
+                                oci-grobid-service-type
                                 oci-qdrant-service-type oci-minio-service-type)))
            (modify-services %my-desktop-services
              (delete gdm-service-type)
