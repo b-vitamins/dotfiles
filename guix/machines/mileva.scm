@@ -400,7 +400,7 @@ allow-preset-passphrase")))
   (host-name "mileva")
   (timezone "Asia/Kolkata")
   (locale "en_US.utf8")
-  (kernel linux)
+  (kernel linux-lts)
   (kernel-arguments (append '("modprobe.blacklist=nouveau"
                               "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1")
                             %default-kernel-arguments))
