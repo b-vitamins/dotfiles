@@ -45,7 +45,7 @@
   '(;; Update these with your actual display names
     ;; Run M-x bv-org-latex-list-displays to find your display names
     ("DP-1" . ((dpi . 49)  (type . tv)))        ; LG 45" 1080p TV
-    ("eDP-1" . ((dpi . 323) (type . laptop))))  ; Laptop 14" 4K (3840x2400)
+    ("eDP-1" . ((dpi . 162) (type . laptop))))  ; Laptop 14" 1920x1200 (scaled)
   "Manual DPI overrides for specific displays.
 Check your display names with: \[bv-org-latex-list-displays]"
   :type '(alist :key-type string :value-type plist)
