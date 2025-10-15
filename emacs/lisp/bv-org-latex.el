@@ -60,7 +60,6 @@ Check your display names with: \[bv-org-latex-list-displays]"
     ("" "physics" t)
     ("" "braket" t)
     ("" "tensor" t)
-    ("" "bm" t)
     ;; Additional math symbols
     ("" "dsfont" t)
     ("" "bbm" t)
@@ -120,15 +119,20 @@ Check your display names with: \[bv-org-latex-list-displays]"
          (pixel-width (and geometry (nth 2 geometry)))
          (mm-width (and mm-size (car mm-size)))
          ;; Try multiple methods to get DPI
+         (emacs-pixel-height (and (display-graphic-p) (display-pixel-height)))
+         (emacs-mm-height (and (display-graphic-p) (display-mm-height)))
+         (dpi-from-emacs
+          (when (and emacs-pixel-height
+                     emacs-mm-height
+                     (> emacs-mm-height 0))
+            (round (/ emacs-pixel-height (/ emacs-mm-height 25.4)))))
          (detected-dpi (or
                         ;; 1. Use override if available
                         (plist-get override :dpi)
                         ;; 2. Calculate from monitor attributes
                         (bv-org-latex--calculate-dpi pixel-width mm-width)
-                        ;; 3. Try Emacs display info
-                        (when (display-graphic-p)
-                          (round (/ (display-pixel-height)
-                                   (/ (display-mm-height) 25.4))))
+                        ;; 3. Try Emacs display info when reliable
+                        dpi-from-emacs
                         ;; 4. Default fallback
                         96))
          (display-type (or (plist-get override :type)
@@ -244,7 +248,7 @@ Check your display names with: \[bv-org-latex-list-displays]"
             :image-input-type "pdf"
             :image-output-type "png"
             :image-size-adjust (1.0 . 1.0)
-            :post-clean (".aux" ".log" ".out" ".synctex.gz")
+            :post-clean (".aux" ".out" ".synctex.gz")
             :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
             :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")
             :transparent-image-converter ("convert -density %D -trim -antialias -background none %f -quality 100 %O"))
@@ -358,6 +362,19 @@ Check your display names with: \[bv-org-latex-list-displays]"
 
 ;; Handle moving frames between monitors
 (add-hook 'move-frame-functions #'bv-org-latex-monitor-change-hook)
+
+;; Surface preview failures with cache hint
+(defun bv-org-latex--report-preview-failure (orig-fun &rest args)
+  "Wrap `org-create-formula-image' to report failures with cache hints."
+  (condition-case err
+      (apply orig-fun args)
+    (error
+     (message "Org LaTeX preview failed (%s). Check logs in %s"
+              (error-message-string err)
+              (bv-org-latex--get-cache-dir))
+     (signal (car err) (cdr err)))))
+
+(advice-add 'org-create-formula-image :around #'bv-org-latex--report-preview-failure)
 
 (provide 'bv-org-latex)
 ;;; bv-org-latex.el ends here
