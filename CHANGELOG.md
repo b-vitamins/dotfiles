@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Zsh prompt now shows active environment names (virtualenv/Guix/direnv) and `l` is the default `eza` listing alias
 - Guix home profiles include `%shell-zsh` bundle for Zsh tool dependencies (fzf, ripgrep, bat, eza, fd, zoxide, direnv, wl-clipboard)
 - Enhanced mileva machine configuration
+- Updated mileva configuration: adjust Zsh plugin load order, disable beets service, add securityfs mount, and add NVIDIA profiling kernel arg
 - Configured Alacritty to start Zsh as login shell
 - Switched Alacritty hint launcher to `xdg-open` and added a copy-hint binding
 ### Fixed

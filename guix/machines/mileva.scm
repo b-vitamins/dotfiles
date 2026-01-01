@@ -94,7 +94,8 @@
 ;;; Home configuration
 (define %my-home-config
   (home-environment
-    (packages (append %shell-zsh
+    (packages (append
+
                       (list font-google-roboto font-fira-go font-fira-sans
                             font-fira-code font-fira-mono)))
 
@@ -236,18 +237,29 @@ inode/directory=org.gnome.Nautilus.desktop
                                                       "zshenv"
                                                       #:recursive? #f)))
                                        (zshrc (list
-                                               ;; Add Guix completions before compinit
-                                               (mixed-text-file
-                                                "zsh-completions" "fpath+=\""
-                                                zsh-completions
-                                                "/share/zsh/site-functions\"")
-
                                                ;; Load main zshrc
                                                (local-file "../../zsh/zshrc"
                                                            "zshrc"
                                                            #:recursive? #f)
 
                                                ;; Zsh plugins
+                                               (mixed-text-file
+                                                "zsh-syntax-highlighting"
+                                                "source "
+                                                zsh-syntax-highlighting
+                                                "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")
+
+                                               (mixed-text-file
+                                                "zsh-history-substring-search"
+                                                "source "
+                                                zsh-history-substring-search
+                                                "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
+
+                                               (mixed-text-file
+                                                "zsh-completions" "fpath+=\""
+                                                zsh-completions
+                                                "/share/zsh/site-functions\"")
+
                                                (mixed-text-file
                                                 "zsh-autosuggestions"
                                                 "source " zsh-autosuggestions
@@ -259,20 +271,7 @@ inode/directory=org.gnome.Nautilus.desktop
 
                                                (mixed-text-file "fzf-tab"
                                                 "source " fzf-tab
-                                                "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")
-
-                                               (mixed-text-file
-                                                "zsh-history-substring-search"
-                                                "source "
-                                                zsh-history-substring-search
-                                                "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
-
-                                               ;; Load syntax highlighting last
-                                               (mixed-text-file
-                                                "zsh-syntax-highlighting"
-                                                "source "
-                                                zsh-syntax-highlighting
-                                                "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")))))
+                                                "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")))))
 
       ;; GPG Agent
       (service home-gpg-agent-service-type
@@ -354,48 +353,49 @@ allow-preset-passphrase")))
       (service home-syncthing-service-type)
 
       ;; Miscellaneous Home Services
-      (service home-beets-service-type
-               (home-beets-configuration (directory "/home/b/music")
-                                         (extra-packages (list ffmpeg
-                                                               chromaprint))
-                                         (extra-options '("library: ~/.local/share/beets/library.db"
-                                                          "plugins: fetchart embedart lyrics lastgenre chroma scrub mbsync convert duplicates discogs"
-                                                          "import:"
-                                                          "  copy: yes"
-                                                          "  move: no"
-                                                          "  write: yes"
-                                                          "  resume: ask"
-                                                          "  quiet_fallback: skip"
-                                                          "  timid: no"
-                                                          "paths:"
-                                                          "  default: %the{$albumartist}/$album%aunique{}/$track - $title"
-                                                          "  singleton: Non-Album/$artist - $title"
-                                                          "  comp: Compilations/$album%aunique{}/$track - $title"
-                                                          "asciify_paths: yes"
-                                                          "per_disc_numbering: yes"
-                                                          "original_date: yes"
-                                                          "ignore_hidden: yes"
-                                                          "threaded: yes"
-                                                          "fetchart:"
-                                                          "  auto: yes"
-                                                          "  sources: coverart amazon albumart wikipedia filesystem"
-                                                          "embedart:"
-                                                          "  auto: yes"
-                                                          "lyrics:"
-                                                          "  auto: yes"
-                                                          "lastgenre:"
-                                                          "  auto: yes"
-                                                          "  source: track"
-                                                          "chroma:"
-                                                          "  auto: yes"
-                                                          "scrub:"
-                                                          "  auto: yes"
-                                                          "convert:"
-                                                          "  auto: no"
-                                                          "  dest: ~/.cache/beets/converted"
-                                                          "  format: mp3"
-                                                          "  formats:"
-                                                          "    mp3: ffmpeg -i $source -y -aq 2 $dest"))))))))
+      ;; (service home-beets-service-type
+      ;; (home-beets-configuration (directory "/home/b/music")
+      ;; (extra-packages (list ffmpeg
+      ;; chromaprint))
+      ;; (extra-options '("library: ~/.local/share/beets/library.db"
+      ;; "plugins: fetchart embedart lyrics lastgenre chroma scrub mbsync convert duplicates discogs"
+      ;; "import:"
+      ;; "  copy: yes"
+      ;; "  move: no"
+      ;; "  write: yes"
+      ;; "  resume: ask"
+      ;; "  quiet_fallback: skip"
+      ;; "  timid: no"
+      ;; "paths:"
+      ;; "  default: %the{$albumartist}/$album%aunique{}/$track - $title"
+      ;; "  singleton: Non-Album/$artist - $title"
+      ;; "  comp: Compilations/$album%aunique{}/$track - $title"
+      ;; "asciify_paths: yes"
+      ;; "per_disc_numbering: yes"
+      ;; "original_date: yes"
+      ;; "ignore_hidden: yes"
+      ;; "threaded: yes"
+      ;; "fetchart:"
+      ;; "  auto: yes"
+      ;; "  sources: coverart amazon albumart wikipedia filesystem"
+      ;; "embedart:"
+      ;; "  auto: yes"
+      ;; "lyrics:"
+      ;; "  auto: yes"
+      ;; "lastgenre:"
+      ;; "  auto: yes"
+      ;; "  source: track"
+      ;; "chroma:"
+      ;; "  auto: yes"
+      ;; "scrub:"
+      ;; "  auto: yes"
+      ;; "convert:"
+      ;; "  auto: no"
+      ;; "  dest: ~/.cache/beets/converted"
+      ;; "  format: mp3"
+      ;; "  formats:"
+      ;; "    mp3: ffmpeg -i $source -y -aq 2 $dest"))))
+      ))))
 
 (operating-system
   (host-name "mileva")
@@ -403,6 +403,7 @@ allow-preset-passphrase")))
   (locale "en_US.utf8")
   (kernel linux-lts)
   (kernel-arguments (append '("modprobe.blacklist=nouveau"
+                              "nvidia.NVreg_RestrictProfilingToAdminUsers=0"
                               "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1")
                             %default-kernel-arguments))
   (kernel-loadable-modules (list v4l2loopback-linux-module nvidia-module))
@@ -434,6 +435,11 @@ allow-preset-passphrase")))
                                 (device (file-system-label "my-data"))
                                 (mount-point "/data")
                                 (type "btrfs"))
+                              (file-system
+                                (mount-point "/sys/kernel/security")
+                                (device "securityfs")
+                                (type "securityfs")
+                                (create-mount-point? #t))
                               (file-system
                                 (device (uuid "812C-DF8C"
                                               'fat32))
