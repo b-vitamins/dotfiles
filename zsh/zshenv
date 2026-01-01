@@ -4,7 +4,13 @@ export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export HISTSIZE="50000"
 export HISTFILE="$XDG_CONFIG_HOME/zsh/.zhistory"
 export SAVEHIST="50000"
-export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket 2>/dev/null)"
+
+# Prefer gpg-agent's SSH socket when available, but don't clobber forwarded agents
+if [[ -z "${SSH_AUTH_SOCK-}" ]] && (( $+commands[gpgconf] )); then
+  sock="$(gpgconf --list-dirs agent-ssh-socket 2>/dev/null)"
+  [[ -n "$sock" ]] && export SSH_AUTH_SOCK="$sock"
+  unset sock
+fi
 
 # Ensure ~/.local/bin is in PATH (XDG compliant location for user executables)
 [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"

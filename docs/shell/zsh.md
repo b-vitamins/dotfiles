@@ -48,13 +48,15 @@ Do:
 
 ### File Listing (eza replaces ls)
 
+Note: `e` is your editor (`$EDITOR`). Use `l`/`ee`/`ea`/`e1`/`et` for `eza`.
+
 Instead of:
 ```bash
 ls
 ```
 Do:
 ```bash
-e
+l
 ```
 
 Instead of:
@@ -558,6 +560,12 @@ git stash && g checkout main && gpu && - && git stash pop
 
 ## Guix Package Management
 
+### Shell Tooling Dependencies
+
+Many of the interactive helpers in this setup assume a few modern CLI tools are available: `fzf`, `ripgrep`, `fd`, `bat`, `eza`, `zoxide`, `direnv`, and a clipboard tool (`wl-clipboard`/`wl-copy`).
+
+On Guix machines, these are provided via the `%shell-zsh` bundle in `/home/b/projects/myguix/myguix/packages/base.scm` and are included in your home profiles from `guix/machines/mileva.scm` and `guix/machines/sparck.scm`.
+
 ### Package Operations
 
 Instead of:
@@ -862,6 +870,53 @@ jcu -u emacs -n 50
 
 ## Interactive Search (FZF)
 
+### Key Bindings
+
+- `ctrl+r`: interactive history search (Atuin if installed; otherwise FZF)
+- `ctrl+t`: fuzzy-pick file(s) and insert paths into the command line
+- `alt+c`: fuzzy-pick a directory and `cd` into it
+
+### Fuzzy Open & Jump
+
+Instead of:
+```bash
+$EDITOR $(fd -t f | fzf)
+```
+Do:
+```bash
+fe         # Pick one or more files to open in $EDITOR
+fe config  # Prefilter the list
+```
+
+Instead of:
+```bash
+cd "$(fd -t d | fzf)"
+```
+Do:
+```bash
+fcd  # Or press alt+c
+```
+
+Instead of:
+```bash
+rg -n "TODO" . | fzf | awk -F: '{print $1 ":" $2}' | xargs $EDITOR
+```
+Do:
+```bash
+rgo "TODO"  # Pick a match, opens at the correct line
+```
+
+Instead of:
+```bash
+ssh $(grep -E '^Host ' ~/.ssh/config | awk '{print $2}' | fzf)
+```
+Do:
+```bash
+fssh        # Pick a host and connect
+fssh query  # Prefilter
+fssh -c     # Copy the selected host to clipboard (or print)
+```
+
 ### Command History
 
 Instead of:
@@ -908,7 +963,7 @@ ls -la | grep -i config
 ```
 Do:
 ```bash
-e | fzf  # Type "config"
+l | fzf  # Type "config"
 ```
 
 Instead of:
@@ -960,6 +1015,42 @@ Do:
 gshow  # Type "fix", press enter on commit
 ```
 
+Instead of:
+```bash
+git status --porcelain | fzf --multi | xargs git add -A
+```
+Do:
+```bash
+gaf  # Select files to stage
+```
+
+Instead of:
+```bash
+git add -p path/to/file
+```
+Do:
+```bash
+gap  # Select file(s), then interactively pick hunks
+```
+
+Instead of:
+```bash
+git restore path/to/file
+```
+Do:
+```bash
+grf  # Select file(s) to restore (with confirmation)
+```
+
+Instead of:
+```bash
+git restore -p path/to/file
+```
+Do:
+```bash
+grp  # Select file(s), then interactively pick hunks
+```
+
 ### Advanced FZF Combinations
 
 Instead of:
@@ -969,6 +1060,15 @@ grep -r "TODO" . | cut -d: -f1 | sort | uniq | xargs less
 Do:
 ```bash
 rgi "TODO"  # Shows files with preview
+```
+
+Instead of:
+```bash
+rg -n "TODO" . | fzf | cut -d: -f1,2 | xargs $EDITOR
+```
+Do:
+```bash
+rgo "TODO"  # Jump straight to the match in your editor
 ```
 
 Instead of:
@@ -1026,7 +1126,7 @@ git branch && git status -s  # Check git state
 ```
 Do:
 ```bash
-# Look at right prompt: [main*] src/components
+# Look at right prompt: py:venv [main*] src/components
 ```
 
 Instead of:
@@ -1053,7 +1153,7 @@ echo $VIRTUAL_ENV  # Check virtual environment
 ```
 Do:
 ```bash
-# λ turns red when in virtual env
+# Prompt highlights env + shows names on the right (e.g. py:venv, guix:profile, direnv)
 ```
 
 ### Prompt Customization
@@ -1068,6 +1168,12 @@ ctrl+space  # Toggle between minimal and full prompt
 ```
 
 ## Key Bindings
+
+### FZF Shortcuts
+
+- `ctrl+t`: fuzzy insert file paths
+- `alt+c`: fuzzy `cd`
+- `ctrl+s`: won’t freeze your terminal (XON/XOFF disabled), and is used by some FZF bindings
 
 ### Command Line Editing
 

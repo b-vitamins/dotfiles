@@ -5,13 +5,19 @@ mkdir -p "$XDG_CACHE_HOME/zsh/zcompcache" "$XDG_CACHE_HOME/zsh/tmp"
 
 # Core modules
 autoload -Uz add-zsh-hook compinit promptinit colors vcs_info
+
+# Deduplicate paths early (Guix completions may extend fpath before this file runs)
+typeset -U path PATH fpath
+
 promptinit
 compinit -u -d "$XDG_CACHE_HOME/zsh/zcompdump"
 colors
 
 
 # Environment
-export LD_LIBRARY_PATH=$LIBRARY_PATH
+if [[ -n "${LIBRARY_PATH-}" ]] && [[ -z "${LD_LIBRARY_PATH-}" ]]; then
+  export LD_LIBRARY_PATH="$LIBRARY_PATH"
+fi
 
 # Shell behavior
 setopt AUTO_CD AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_MINUS PUSHD_SILENT PUSHD_TO_HOME
@@ -51,8 +57,8 @@ if (( $+commands[fzf] )); then
     zstyle ':fzf-tab:*' fzf-command fzf
   fi
 
-  zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always --icons $realpath'
-  zstyle ':fzf-tab:complete:*:*' fzf-preview 'bat --style=numbers --color=always --line-range=:200 ${(Q)realpath} 2>/dev/null || eza -la --color=always --icons ${(Q)realpath} 2>/dev/null || echo ${(Q)realpath}'
+  zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always --icons "${(Q)realpath}" 2>/dev/null || command ls -1 "${(Q)realpath}" 2>/dev/null || echo "${(Q)realpath}"'
+  zstyle ':fzf-tab:complete:*:*' fzf-preview 'bat --style=numbers --color=always --line-range=:200 "${(Q)realpath}" 2>/dev/null || eza -la --color=always --icons "${(Q)realpath}" 2>/dev/null || echo "${(Q)realpath}"'
   zstyle ':fzf-tab:complete:systemctl-*:*' fzf-preview 'SYSTEMD_COLORS=1 systemctl status $word'
   zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview 'git log --oneline --graph --color=always $word'
   zstyle ':fzf-tab:complete:git-log:*' fzf-preview 'git show --color=always $word'
@@ -137,6 +143,15 @@ function _prompt_right() {
   local exec_time="$(_prompt_execution_time)"
   [[ -n "$exec_time" ]] && parts+=("$exec_time")
 
+  # Active environments
+  local -a env_parts
+  env_parts=()
+  [[ -n "$VIRTUAL_ENV" ]] && env_parts+=("py:${VIRTUAL_ENV:t}")
+  [[ -n "$GUIX_PROFILE" ]] && env_parts+=("guix:${GUIX_PROFILE:t}")
+  [[ -z "$GUIX_PROFILE" && -n "$GUIX_ENVIRONMENT" ]] && env_parts+=("guix")
+  [[ -n "$DIRENV_DIR" || -n "$DIRENV_FILE" ]] && env_parts+=("direnv")
+  (( ${#env_parts} )) && parts+=("%F{${prompt_colors[env]}}${(j:, :)env_parts}%f")
+
   # Git info - just branch and dirty indicator
   if [[ -n "$vcs_info_msg_0_" ]]; then
     parts+=("%F{${prompt_colors[branch]}}${vcs_info_msg_0_}${vcs_info_msg_1_}%f")
@@ -194,6 +209,11 @@ bindkey '^@' toggle_prompt_mode
 
 # Key bindings ---
 
+# Disable terminal flow control so ctrl-s works (e.g. in fzf bindings)
+if (( $+commands[stty] )) && [[ -t 0 ]]; then
+  stty -ixon 2>/dev/null
+fi
+
 bindkey -e
 autoload -Uz edit-command-line
 zle -N edit-command-line
@@ -214,11 +234,24 @@ backward-kill-dir() {
 zle -N backward-kill-dir
 bindkey '^[^?' backward-kill-dir
 
+# Bind history-substring-search after the plugin is loaded
 if (( $+widgets[history-substring-search-up] )); then
   bindkey '^[[A' history-substring-search-up
   bindkey '^[[B' history-substring-search-down
   bindkey '^P' history-substring-search-up
   bindkey '^N' history-substring-search-down
+else
+  # Defer binding until after plugins are loaded
+  add-zsh-hook precmd _bind_history_substring_search
+  _bind_history_substring_search() {
+    if (( $+widgets[history-substring-search-up] )); then
+      bindkey '^[[A' history-substring-search-up
+      bindkey '^[[B' history-substring-search-down
+      bindkey '^P' history-substring-search-up
+      bindkey '^N' history-substring-search-down
+      add-zsh-hook -d precmd _bind_history_substring_search
+    fi
+  }
 fi
 
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
@@ -244,7 +277,7 @@ fi
 # Modern coreutils - unique memorable aliases
 # Keep standard commands working, use new names for modern alternatives
 (( $+commands[eza] )) && {
-  alias e='eza --icons'              # e for eza
+  alias l='eza --icons'              # l for list
   alias ee='eza -l --icons'          # ee for extended
   alias ea='eza -la --icons'         # ea for all
   alias e1='eza -1 --icons'          # e1 for one column
@@ -313,14 +346,23 @@ for i in {1..9}; do alias "$i"="cd +$i"; done
 # Development
 alias e='$EDITOR'
 alias v='$VISUAL'
-alias c='claude'
+alias c='codex'
 (( $+commands[python3] )) && {
   alias py='python3'
   alias venv='python3 -m venv'
 }
 (( $+commands[ipython] )) && alias ipy='ipython'
 alias activate='source venv/bin/activate'
-(( $+commands[make] )) && alias mk='make -j$(($(nproc) - 2))'
+if (( $+commands[make] )); then
+  mk() {
+    local jobs=1
+    if (( $+commands[nproc] )); then
+      jobs=$(nproc 2>/dev/null)
+      (( jobs > 2 )) && jobs=$(( jobs - 2 )) || jobs=1
+    fi
+    command make -j"$jobs" "$@"
+  }
+fi
 (( $+commands[cmake] )) && alias cninja='cmake -G Ninja'
 
 # Docker
@@ -358,35 +400,49 @@ alias zc='$EDITOR ~/.config/zsh/.zshrc'
 alias ze='$EDITOR ~/.config/zsh/.zshenv'
 
 # Core functions
-mkcd() { mkdir -p "$1" && cd "$1" }
-tmp() { cd "$(mktemp -d /tmp/${1:-tmp}-XXXXXX)" }
-bak() { cp -a "$1" "$1.bak.$(date +%Y%m%d-%H%M%S)" }
+mkcd() {
+  [[ -n "${1-}" ]] || return 1
+  mkdir -p -- "$1" && cd -- "$1"
+}
+
+tmp() {
+  local prefix="${1:-tmp}"
+  cd "$(mktemp -d "/tmp/${prefix}-XXXXXX")" || return
+}
+
+bak() {
+  [[ -n "${1-}" ]] || return 1
+  cp -a -- "$1" "$1.bak.$(date +%Y%m%d-%H%M%S)"
+}
+
 extract() {
-  if [[ -f $1 ]]; then
-    case $1 in
-      *.tar.bz2) tar xjf $1 ;;
-      *.tar.gz) tar xzf $1 ;;
-      *.tar.xz) tar xf $1 ;;
+  [[ -n "${1-}" ]] || { echo "Usage: extract <archive>"; return 1; }
+  if [[ -f "$1" ]]; then
+    case "$1" in
+      *.tar.bz2) tar xjf -- "$1" ;;
+      *.tar.gz) tar xzf -- "$1" ;;
+      *.tar.xz) tar xf -- "$1" ;;
       *.tar.zst)
         if command -v gtar &>/dev/null; then
-          gtar --zstd -xf $1
+          gtar --zstd -xf -- "$1"
         else
-          if ! tar --zstd -xf $1 2>/dev/null; then
+          if ! tar --zstd -xf -- "$1" 2>/dev/null; then
             echo "Install GNU tar (gtar) for zstd support"
             return 1
           fi
         fi ;;
-      *.bz2) bunzip2 $1 ;;
-      *.gz) gunzip $1 ;;
-      *.tar) tar xf $1 ;;
-      *.tbz2) tar xjf $1 ;;
-      *.tgz) tar xzf $1 ;;
-      *.zip) unzip $1 ;;
-      *.7z) 7z x $1 ;;
+      *.bz2) bunzip2 -- "$1" ;;
+      *.gz) gunzip -- "$1" ;;
+      *.tar) tar xf -- "$1" ;;
+      *.tbz2) tar xjf -- "$1" ;;
+      *.tgz) tar xzf -- "$1" ;;
+      *.zip) unzip "$1" ;;
+      *.7z) 7z x "$1" ;;
       *) echo "'$1' cannot be extracted" ;;
     esac
   else
     echo "'$1' is not a valid file"
+    return 1
   fi
 }
 
@@ -419,6 +475,78 @@ fi
 if (( $+commands[fzf] )); then
   export FZF_DEFAULT_OPTS="--color=fg:255,bg:-1,hl:117,fg+:255,bg+:236,hl+:117,info:150,prompt:117,pointer:117,marker:114,spinner:150,header:245"
 
+  _fzf_list_files() {
+    if (( $+commands[fd] )); then
+      command fd --hidden --follow --exclude .git --type f --type l . 2>/dev/null
+    else
+      command find . -path '*/.git/*' -prune -o -type f -print -o -type l -print 2>/dev/null | sed 's|^\./||'
+    fi
+  }
+
+  _fzf_list_dirs() {
+    if (( $+commands[fd] )); then
+      command fd --hidden --follow --exclude .git --type d . 2>/dev/null
+    else
+      command find . -mindepth 1 -path '*/.git/*' -prune -o -type d -print 2>/dev/null | sed 's|^\./||'
+    fi
+  }
+
+  _open_in_editor() {
+    local file="$1"
+    local line="${2-}"
+    local col="${3-}"
+
+    local -a editor_cmd
+    if [[ -n "${EDITOR-}" ]]; then
+      editor_cmd=("${(@z)EDITOR}")
+    elif [[ -n "${VISUAL-}" ]]; then
+      editor_cmd=("${(@z)VISUAL}")
+    else
+      editor_cmd=(vi)
+    fi
+
+    local editor_bin="${editor_cmd[1]:t}"
+    if [[ -n "$line" ]]; then
+      case "$editor_bin" in
+        nvim|vim|vi)
+          command "${editor_cmd[@]}" "+${line}" -- "$file"
+          return
+          ;;
+        emacsclient|emacs)
+          command "${editor_cmd[@]}" "+${line}${col:+:${col}}" -- "$file"
+          return
+          ;;
+        code|code-insiders|codium|code-oss)
+          command "${editor_cmd[@]}" -g "${file}:${line}${col:+:${col}}"
+          return
+          ;;
+      esac
+    fi
+
+    command "${editor_cmd[@]}" -- "$file"
+  }
+
+  fzf-file-widget() {
+    local -a selected quoted
+    local query="${LBUFFER##* }"
+    selected=("${(@f)$(_fzf_list_files | fzf --multi --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='files> ' --query="$query" --preview 'if [ -d "{}" ]; then (command -v eza >/dev/null && eza -la --icons --color=always "{}" || command ls -la "{}"); else (command -v bat >/dev/null && bat --style=numbers --color=always --line-range :500 "{}" || sed -n \"1,200p\" \"{}\" 2>/dev/null); fi' --preview-window 'right,60%,border-left')}")
+    (( ${#selected} )) || return
+    quoted=("${(@q)selected}")
+    LBUFFER+="${(j: :)quoted} "
+    zle reset-prompt
+  }
+  zle -N fzf-file-widget
+  bindkey '^T' fzf-file-widget
+
+  fzf-cd-widget() {
+    local dir
+    dir="$(_fzf_list_dirs | fzf --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='cd> ' --preview 'command -v eza >/dev/null && eza -la --icons --color=always "{}" || command ls -la "{}"' --preview-window 'right,60%,border-left')" || return
+    builtin cd -- "$dir" || return
+    zle reset-prompt
+  }
+  zle -N fzf-cd-widget
+  bindkey '^[c' fzf-cd-widget
+
   fzf-history-widget() {
     local selected num
     setopt localoptions noglobsubst noposixbuiltins pipefail no_aliases 2>/dev/null
@@ -445,12 +573,215 @@ if (( $+commands[fzf] )); then
     }
   fi
 
+  fe() {
+    local -a files editor_cmd
+    files=("${(@f)$(_fzf_list_files | fzf --multi --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='edit> ' --query="$*" --preview 'command -v bat >/dev/null && bat --style=numbers --color=always --line-range :500 "{}" || sed -n \"1,200p\" \"{}\" 2>/dev/null' --preview-window 'right,60%,border-left')}") || return
+    (( ${#files} )) || return
+
+    if [[ -n "${EDITOR-}" ]]; then
+      editor_cmd=("${(@z)EDITOR}")
+    elif [[ -n "${VISUAL-}" ]]; then
+      editor_cmd=("${(@z)VISUAL}")
+    else
+      editor_cmd=(vi)
+    fi
+
+    command "${editor_cmd[@]}" -- "${files[@]}"
+  }
+
+  fcd() {
+    local dir
+    dir="$(_fzf_list_dirs | fzf --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='cd> ' --query="$*" --preview 'command -v eza >/dev/null && eza -la --icons --color=always "{}" || command ls -la "{}"' --preview-window 'right,60%,border-left')" || return
+    builtin cd -- "$dir"
+  }
+
+  if (( $+commands[rg] )); then
+    rgo() {
+      local selected file line
+      selected="$(
+        rg --line-number --no-heading --color=never "$@" |
+        fzf --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='rg> ' --delimiter ':' \
+            --preview 'command -v bat >/dev/null && bat --style=numbers --color=always --highlight-line {2} "{1}" || sed -n \"{2},$(( {2} + 80 ))p\" \"{1}\" 2>/dev/null' \
+            --preview-window 'up,60%,border-bottom,+{2}+3/3'
+      )" || return
+
+      file="${selected%%:*}"
+      line="${selected#*:}"
+      line="${line%%:*}"
+      _open_in_editor "$file" "$line"
+    }
+  fi
+
+  _copy_to_clipboard() {
+    local text="$1"
+    if (( $+commands[wl-copy] )); then
+      print -rn -- "$text" | wl-copy
+    elif (( $+commands[xclip] )); then
+      print -rn -- "$text" | xclip -selection clipboard
+    elif (( $+commands[pbcopy] )); then
+      print -rn -- "$text" | pbcopy
+    else
+      print -r -- "$text"
+    fi
+  }
+
+  fssh() {
+    local mode="ssh"
+    local opt
+    OPTIND=1
+    while getopts ":cp" opt; do
+      case "$opt" in
+        c) mode="copy" ;;
+        p) mode="print" ;;
+        *) echo "Usage: fssh [-c|-p] [query]" >&2; return 2 ;;
+      esac
+    done
+    shift $((OPTIND - 1))
+
+    (( $+commands[ssh] )) || { echo "ssh not found" >&2; return 1; }
+
+    local -a hosts
+    hosts=()
+
+    if [[ -r "$HOME/.ssh/config" ]]; then
+      hosts+=("${(@f)$(awk '
+        /^[Hh][Oo][Ss][Tt][[:space:]]+/ {
+          for (i=2; i<=NF; i++) {
+            h=$i
+            if (h ~ /[*?]/) continue
+            if (h ~ /^!/) continue
+            if (h == "*") continue
+            print h
+          }
+        }' "$HOME/.ssh/config")}")
+    fi
+
+    if [[ -r "$HOME/.ssh/known_hosts" ]]; then
+      hosts+=("${(@f)$(awk '
+        $1 ~ /^@/ { h=$2; next }
+        { h=$1 }
+        h ~ /^\\|/ { next }
+        { print h }' "$HOME/.ssh/known_hosts" |
+        tr ',' '\n' |
+        sed -E 's/^\\[([^]]+)\\]:[0-9]+$/\\1/')}")
+    fi
+
+    (( ${#hosts} )) || { echo "No SSH hosts found" >&2; return 1; }
+
+    local host
+    host="$(print -rl -- ${(u)hosts} | fzf --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='ssh> ' --query="$*" --preview 'ssh -G "{}" 2>/dev/null | (command -v rg >/dev/null && rg -n \"^(hostname|user|port|identityfile) \" || grep -E \"^(hostname|user|port|identityfile) \")' --preview-window 'down,60%,border-top')" || return
+
+    case "$mode" in
+      copy) _copy_to_clipboard "$host" ;;
+      print) print -r -- "$host" ;;
+      ssh) command ssh "$host" ;;
+    esac
+  }
+
   if (( $+commands[git] )); then
+    _git_fzf_status_candidates() {
+      local include_untracked=1
+      if [[ "${1-}" == "--tracked-only" ]]; then
+        include_untracked=0
+        shift
+      fi
+
+      local -a entries
+      local entry git_status path
+
+      command git rev-parse --is-inside-work-tree &>/dev/null || return 1
+      entries=("${(@f)$(command git status --porcelain=v1 --untracked-files=all 2>/dev/null)}")
+
+      for entry in "${entries[@]}"; do
+        git_status="${entry[1,2]}"
+        if (( ! include_untracked )) && [[ "$git_status" == "??" ]]; then
+          continue
+        fi
+        path="${entry#?? }"
+        path="${path##* -> }"
+        printf '%s\t%s\n' "$git_status" "$path"
+      done
+    }
+
+    _git_fzf_pick_paths() {
+      local prompt="${1:-git> }"
+      shift || true
+
+      _git_fzf_status_candidates "$@" |
+        fzf --multi --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt="$prompt" --delimiter=$'\t' \
+            --with-nth=1,2 --nth=2.. --preview 'git diff --color=always -- "{2}" 2>/dev/null || git diff --no-index --color=always /dev/null -- "{2}" 2>/dev/null || (command -v bat >/dev/null && bat --style=numbers --color=always --line-range :500 "{2}" || sed -n \"1,200p\" \"{2}\" 2>/dev/null)' \
+            --preview-window 'up,60%,border-bottom'
+    }
+
+    _git_fzf_selected_paths() {
+      local prompt="$1"
+      shift || true
+
+      local selected
+      selected="$(_git_fzf_pick_paths "$prompt" "$@")" || return
+
+      local -a paths
+      local line path
+      paths=()
+      for line in "${(@f)selected}"; do
+        path="${line#*$'\t'}"
+        [[ -n "$path" ]] && paths+=("$path")
+      done
+
+      (( ${#paths} )) || return 1
+      print -rl -- "${paths[@]}"
+    }
+
+    gaf() {
+      local -a paths
+      paths=("${(@f)$(_git_fzf_selected_paths 'git add> ')}") || return
+      command git add -A -- "${paths[@]}"
+    }
+
+    gap() {
+      local -a paths
+      paths=("${(@f)$(_git_fzf_selected_paths 'git add -p> ' --tracked-only)}") || return
+      command git add -p -- "${paths[@]}"
+    }
+
+    grf() {
+      local -a paths
+      paths=("${(@f)$(_git_fzf_selected_paths 'git restore> ' --tracked-only)}") || return
+
+      print -r -- "Restore working tree changes in ${#paths} file(s)? [y/N] "
+      local reply
+      read -q reply
+      echo
+      [[ "$reply" == [yY] ]] || return 1
+
+      command git restore -- "${paths[@]}"
+    }
+
+    grp() {
+      local -a paths
+      paths=("${(@f)$(_git_fzf_selected_paths 'git restore -p> ' --tracked-only)}") || return
+      command git restore -p -- "${paths[@]}"
+    }
+
     gco() {
-      local branches branch
-      branches=$(git branch --all | grep -v HEAD) &&
-      branch=$(echo "$branches" | fzf -d $(( 2 + $(wc -l <<< "$branches") )) +m) &&
-      git checkout $(echo "$branch" | sed "s/.* //" | sed "s#remotes/[^/]*/##")
+      local branch
+      branch=$(
+        git for-each-ref --format='%(refname:short)' refs/heads refs/remotes |
+        grep -vE '(^HEAD$|/HEAD$)' |
+        fzf --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='checkout> '
+      ) || return
+
+      if [[ "$branch" == */* ]]; then
+        local remote="${branch%%/*}"
+        local local_branch="${branch#*/}"
+        if git show-ref --verify --quiet "refs/heads/$local_branch"; then
+          command git checkout "$local_branch"
+        else
+          command git checkout --track "$remote/$local_branch"
+        fi
+      else
+        command git checkout "$branch"
+      fi
     }
 
     gshow() {

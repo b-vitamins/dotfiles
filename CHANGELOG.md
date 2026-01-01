@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Emacs daemon service configuration for mileva and sparck machines
 - Git completions integration from Guix profiles in Zsh configuration
+- FZF productivity helpers in Zsh: ctrl+t/alt+c widgets, `fe`/`fcd`/`rgo`/`fssh`, and git staging helpers (`gaf`/`gap`/`grf`/`grp`)
 - Comprehensive Zsh user manual with modern command replacements
-- LD_LIBRARY_PATH export and claude alias in Zsh configuration
+- LD_LIBRARY_PATH export and codex alias in Zsh configuration
 - Structured Emacs setup directory for organization files
 - Git commit guidelines in CLAUDE.md to prevent accidental commits
 ### Changed
@@ -18,13 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
 - Modularized Emacs configuration into focused components
 - Updated Alacritty configuration with improved settings
+- Zsh prompt now shows active environment names (virtualenv/Guix/direnv) and `l` is the default `eza` listing alias
+- Guix home profiles include `%shell-zsh` bundle for Zsh tool dependencies (fzf, ripgrep, bat, eza, fd, zoxide, direnv, wl-clipboard)
 - Enhanced mileva machine configuration
 - Configured Alacritty to start Zsh as login shell
+- Switched Alacritty hint launcher to `xdg-open` and added a copy-hint binding
 ### Fixed
 - Added missing emacs-pgtk package import in Guix configurations
 - Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup
 - Eliminated Zsh welcome message for cleaner shell initialization
 - Resolved Zsh startup errors and plugin loading issues
+- Improved Zsh reliability: corrected Guix plugin load order, fixed `gco`, and fixed git/FZF selectors
 - Removed redundant custom zprofile configuration
 - Corrected multiple import and configuration errors in mileva.scm
 - Fixed indentation in sparck system services configuration
