@@ -67,9 +67,10 @@ check_merge_conflicts() {
 
 # Check for trailing whitespace
 check_trailing_whitespace() {
-    if git diff --cached --check | grep -q '^'; then
+    # guix style can emit indentation on blank lines in .scm files.
+    if git diff --cached --check -- . ':(exclude)*.scm' | grep -q '^'; then
         echo "${RED}Error: Trailing whitespace detected${NC}" >&2
-        git diff --cached --check
+        git diff --cached --check -- . ':(exclude)*.scm'
         return 1
     fi
     return 0
