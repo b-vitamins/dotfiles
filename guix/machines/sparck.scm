@@ -89,8 +89,7 @@
 ;;; Home configuration
 (define %my-home-config
   (home-environment
-    (packages (append %shell-zsh
-                      (list ;Original fonts
+    (packages (append (list ;Original fonts
                             font-google-roboto
                             font-fira-go
                             font-fira-sans
@@ -259,18 +258,29 @@ inode/directory=org.gnome.Nautilus.desktop
                                                       "zshenv"
                                                       #:recursive? #f)))
                                        (zshrc (list
-                                               ;; Add Guix completions before compinit
-                                               (mixed-text-file
-                                                "zsh-completions" "fpath+=\""
-                                                zsh-completions
-                                                "/share/zsh/site-functions\"")
-
                                                ;; Load main zshrc
                                                (local-file "../../zsh/zshrc"
                                                            "zshrc"
                                                            #:recursive? #f)
 
                                                ;; Zsh plugins
+                                               (mixed-text-file
+                                                "zsh-syntax-highlighting"
+                                                "source "
+                                                zsh-syntax-highlighting
+                                                "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")
+
+                                               (mixed-text-file
+                                                "zsh-history-substring-search"
+                                                "source "
+                                                zsh-history-substring-search
+                                                "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
+
+                                               (mixed-text-file
+                                                "zsh-completions" "fpath+=\""
+                                                zsh-completions
+                                                "/share/zsh/site-functions\"")
+
                                                (mixed-text-file
                                                 "zsh-autosuggestions"
                                                 "source " zsh-autosuggestions
@@ -282,20 +292,7 @@ inode/directory=org.gnome.Nautilus.desktop
 
                                                (mixed-text-file "fzf-tab"
                                                 "source " fzf-tab
-                                                "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")
-
-                                               (mixed-text-file
-                                                "zsh-history-substring-search"
-                                                "source "
-                                                zsh-history-substring-search
-                                                "/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh")
-
-                                               ;; Load syntax highlighting last
-                                               (mixed-text-file
-                                                "zsh-syntax-highlighting"
-                                                "source "
-                                                zsh-syntax-highlighting
-                                                "/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh")))))
+                                                "/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh")))))
 
       ;; GPG Agent
       (service home-gpg-agent-service-type
@@ -385,9 +382,9 @@ allow-preset-passphrase")))
       (service home-syncthing-service-type)
 
       ;; Miscellaneous Home Services
-      (service home-beets-service-type
-               (home-beets-configuration (directory "/home/b/music")))
-
+      ;; (service home-beets-service-type
+      ;; (home-beets-configuration (directory "/home/b/music")))
+      
       ;; Power Management Home Services
       (service home-batsignal-service-type)))))
 
@@ -496,6 +493,8 @@ allow-preset-passphrase")))
              %document-conversion-packages
              %spell-checkers
              %note-taking
+             ;; Media
+             %media-converters
              ;; Math/Science
              %math-core
              ;; Fonts (comprehensive for workstation)
