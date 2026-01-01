@@ -204,6 +204,10 @@ inode/directory=org.gnome.Nautilus.desktop
                       `((".gitconfig" ,(local-file "../../git/gitconfig"
                                                    "gitconfig"
                                                    #:recursive? #f))
+                        (".gitconfig.guix" ,(local-file
+                                             "../../git/gitconfig.guix"
+                                             "gitconfig.guix"
+                                             #:recursive? #f))
                         (".gitignore" ,(local-file "../../git/gitignore"
                                                    "gitignore"
                                                    #:recursive? #f))

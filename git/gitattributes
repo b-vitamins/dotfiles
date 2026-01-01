@@ -1,6 +1,6 @@
 # ~/.gitattributes
 
-* -text
+* text=auto
 
 # Source code
 *.c text diff=cpp
@@ -37,7 +37,7 @@
 *.rs text diff=rust
 *.go text diff=golang
 
-*.scm -text diff=scheme
+*.scm text diff=scheme eol=lf
 *.lisp text diff=lisp
 *.el text diff=elisp
 *.elc binary
@@ -56,8 +56,8 @@
 
 # Guix
 *.drv text eol=lf
-*.patch -text -whitespace
-*.diff -text -whitespace
+*.patch text -whitespace eol=lf
+*.diff text -whitespace eol=lf
 guix.scm text diff=scheme eol=lf
 manifest.scm text diff=scheme eol=lf
 channels.scm text diff=scheme eol=lf
@@ -243,14 +243,14 @@ Vagrantfile text diff=ruby
 *.ps1 text eol=crlf
 
 # Lock files
-package-lock.json binary -diff linguist-generated
-yarn.lock binary -diff linguist-generated
-Gemfile.lock binary -diff linguist-generated
-poetry.lock binary -diff linguist-generated
-composer.lock binary -diff linguist-generated
-pnpm-lock.yaml binary -diff linguist-generated
-Cargo.lock text -diff merge=ours
-go.sum text -diff merge=ours
+package-lock.json text eol=lf linguist-generated
+yarn.lock text eol=lf linguist-generated
+Gemfile.lock text eol=lf linguist-generated
+poetry.lock text eol=lf linguist-generated
+composer.lock text eol=lf linguist-generated
+pnpm-lock.yaml text eol=lf linguist-generated
+Cargo.lock text eol=lf linguist-generated
+go.sum text eol=lf linguist-generated
 
 # Generated
 *.generated.* linguist-generated
@@ -258,31 +258,6 @@ go.sum text -diff merge=ours
 *.auto.* linguist-generated
 *.min.js linguist-generated
 *.min.css linguist-generated
-
-# Export ignore
-.gitattributes export-ignore
-.gitignore export-ignore
-.gitmodules export-ignore
-.github/ export-ignore
-.gitlab/ export-ignore
-.travis.yml export-ignore
-.gitlab-ci.yml export-ignore
-tests/ export-ignore
-test/ export-ignore
-spec/ export-ignore
-docs/ export-ignore
-examples/ export-ignore
-benchmarks/ export-ignore
-*.md export-ignore
-.editorconfig export-ignore
-.eslintrc* export-ignore
-.prettierrc* export-ignore
-.dir-locals.el export-ignore
-
-# Merge strategies
-VERSION merge=ours
-version.txt merge=ours
-package.json merge=ours
 
 # Language detection
 *.h linguist-language=C

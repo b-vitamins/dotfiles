@@ -1,0 +1,3 @@
+[sendemail]
+    to = guix-patches@gnu.org
+    headerCmd = etc/teams.scm cc-members-header-cmd

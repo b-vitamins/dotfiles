@@ -38,8 +38,9 @@
     assume8bitEncoding = utf-8
     transferEncoding = 8bit
     thread = true
-    to = guix-patches@gnu.org
-    headerCmd = etc/teams.scm cc-members-header-cmd
+
+[includeIf "hasconfig:remote.*.url:*savannah.gnu.org*guix.git*"]
+    path = ~/.gitconfig.guix
 
 [format]
     pretty = fuller
@@ -192,6 +193,23 @@
     dw = diff --word-diff
     dt = difftool
 
+    # Helpers
+    default-base = "!f() { \
+        if base=$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null); then \
+            printf '%s\\n' \"$base\"; \
+        elif git show-ref -q --verify refs/remotes/origin/main; then \
+            printf '%s\\n' origin/main; \
+        elif git show-ref -q --verify refs/remotes/origin/master; then \
+            printf '%s\\n' origin/master; \
+        elif git show-ref -q --verify refs/heads/main; then \
+            printf '%s\\n' main; \
+        elif git show-ref -q --verify refs/heads/master; then \
+            printf '%s\\n' master; \
+        else \
+            printf '%s\\n' HEAD; \
+        fi; \
+    }; f"
+
     # Commit operations
     cm = commit -m
     cma = commit -am
@@ -220,19 +238,43 @@
     brD = branch -D
     brs = for-each-ref --sort='-committerdate' --format='%(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) - %(color:green)(%(committerdate:relative))%(color:reset)' refs/heads/
     bdm = "!git branch --merged | grep -Ev '\\*|master|main|develop' | xargs -n 1 git branch -d"
-    files = "!f() { git diff --name-status $(git merge-base HEAD ${1:-master})..${1:-master}; }; f"
+    files = "!f() { \
+        base=${1:-$(git default-base)}; \
+        mb=$(git merge-base HEAD \"$base\") || exit 1; \
+        git diff --name-status \"$mb..$base\"; \
+    }; f"
 
     # Guix-specific patch operations
     patches = format-patch --cover-letter --base=auto --stat --patience
-    guix-patches = "!git format-patch --cover-letter --base=origin/master --subject-prefix='PATCH' origin/master..HEAD"
-    test-patches = "!f() { git checkout -b test-patches-$(date +%s) origin/master && if git am $1; then echo '✓ Patches apply cleanly!'; git checkout - && git branch -D test-patches-*; else echo '✗ Patches failed!'; git am --abort; git checkout - && git branch -D test-patches-*; return 1; fi }; f"
+    guix-patches = "!f() { \
+        base=$(git default-base); \
+        git format-patch --cover-letter --base=\"$base\" --subject-prefix='PATCH' \"$base..HEAD\"; \
+    }; f"
+    test-patches = "!f() { \
+        base=$(git default-base); \
+        tmp_branch=test-patches-$(date +%s); \
+        orig_ref=$(git symbolic-ref -q --short HEAD 2>/dev/null || git rev-parse --verify HEAD); \
+        cleanup() { \
+            git am --abort >/dev/null 2>&1 || true; \
+            git checkout -q \"$orig_ref\" >/dev/null 2>&1 || true; \
+            git branch -D \"$tmp_branch\" >/dev/null 2>&1 || true; \
+        }; \
+        trap cleanup EXIT HUP INT TERM; \
+        git checkout -q -b \"$tmp_branch\" \"$base\" || exit 1; \
+        if git am \"$@\"; then \
+            echo '✓ Patches apply cleanly!'; \
+            exit 0; \
+        fi; \
+        echo '✗ Patches failed!' >&2; \
+        exit 1; \
+    }; f"
     send-patches-dry = send-email --dry-run
     send-patches = send-email
     check-patches = "!f() { echo 'Patches to be sent:'; ls -la *.patch 2>/dev/null || echo 'No patches in current directory'; }; f"
-    show-commits = "!git log --oneline --reverse origin/master..HEAD"
+    show-commits = "!f() { base=$(git default-base); git log --oneline --reverse \"$base..HEAD\"; }; f"
     send-to-bug = "!f() { git send-email --to=$1@debbugs.gnu.org $2; }; f"
-    send-v2 = "!f() { git format-patch --cover-letter --base=origin/master --subject-prefix='PATCH v2' origin/master..HEAD; }; f"
-    send-v3 = "!f() { git format-patch --cover-letter --base=origin/master --subject-prefix='PATCH v3' origin/master..HEAD; }; f"
+    send-v2 = "!f() { base=$(git default-base); git format-patch --cover-letter --base=\"$base\" --subject-prefix='PATCH v2' \"$base..HEAD\"; }; f"
+    send-v3 = "!f() { base=$(git default-base); git format-patch --cover-letter --base=\"$base\" --subject-prefix='PATCH v3' \"$base..HEAD\"; }; f"
 
     # Stash operations
     sl = stash list
@@ -257,7 +299,7 @@
 
     # Rebase operations
     ri = rebase -i
-    rim = rebase -i origin/master
+    rim = "!f() { base=$(git default-base); git rebase -i \"$base\"; }; f"
     rc = rebase --continue
     ra = rebase --abort
     rs = rebase --skip
