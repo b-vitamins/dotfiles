@@ -19,9 +19,6 @@
 (require 'cl-lib)
 (require 'color)
 
-;; External function declarations
-(declare-function color-contrast "color" (color-1 color-2))
-
 ;; External variable declarations
 (defvar custom-enabled-themes)
 
@@ -96,7 +93,7 @@ This creates a stronger visual hierarchy by default."
   :type 'boolean
   :group 'bv-themes)
 
-(defcustom bv-themes-italic-constructs nil
+(defcustom bv-themes-italic-constructs t
   "When non-nil, use italic for comments and docstrings."
   :type 'boolean
   :group 'bv-themes)
@@ -191,11 +188,10 @@ Can be nil (default), `subtle', `greyscale', `invisible', or `accented'."
 
 (defcustom bv-themes-hl-line nil
   "Style for line highlighting.
-Can be nil (default), `intense', `accented', `underline', or `faint'."
+Can be nil (default), `intense', `accented', or `faint'."
   :type '(choice (const :tag "Default" nil)
                  (const :tag "Intense" intense)
                  (const :tag "Accented" accented)
-                 (const :tag "Underline" underline)
                  (const :tag "Faint" faint))
   :group 'bv-themes)
 
@@ -209,14 +205,12 @@ Can be nil (default), `no-extend', `bg-only', or `accented'."
                  (const :tag "Accented" accented))
   :group 'bv-themes)
 
-(defcustom bv-themes-completions nil
-  "Control the style of completion user interfaces."
-  :type `(alist
-          :key-type symbol
-          :value-type (set :tag "Style of completion" :greedy t
-                          (const :tag "Bold weight" bold)
-                          (const :tag "Italic" italic)
-                          (const :tag "Underline" underline)))
+(defcustom bv-themes-completions 'moderate
+  "Style for completion match highlighting."
+  :type '(choice (const :tag "Default" nil)
+                 (const :tag "Opinionated" opinionated)
+                 (const :tag "Moderate" moderate)
+                 (const :tag "Minimal" minimal))
   :group 'bv-themes)
 
 ;;; User Options - Fonts
@@ -258,7 +252,8 @@ Can be nil (default), `desaturated', `fg-only', `bg-only',
 
 (defcustom bv-themes-links nil
   "Style for links.
-Can be nil (default), `neutral-underline', `faint', `no-underline', or `bold'."
+Underlines are intentionally disabled. Values can be nil (default),
+`neutral-underline', `faint', `no-underline', or `bold'."
   :type '(choice (const :tag "Default" nil)
                  (const :tag "Neutral underline" neutral-underline)
                  (const :tag "Faint" faint)
@@ -295,7 +290,6 @@ Available categories:
 Properties can include:
   - `bold': Use bold weight
   - `italic': Use italic slant
-  - `underline': Add underline
   - `box': Add subtle box
   - `background': Use nuanced background
   - `intense': Use more vivid colors"
@@ -310,7 +304,6 @@ Properties can include:
                 :value-type (set :tag "Properties"
                                  (const :tag "Bold" bold)
                                  (const :tag "Italic" italic)
-                                 (const :tag "Underline" underline)
                                  (const :tag "Box" box)
                                  (const :tag "Background" background)
                                  (const :tag "Intense" intense)))
@@ -322,12 +315,10 @@ Options:
   - `intense': Colored background with bold (default)
   - `subtle': Colored background only
   - `bold': Bold weight only
-  - `underline': Underline matched parens
   - `intense-foreground': Colored foreground with bold"
   :type '(choice (const :tag "Intense background" intense)
                  (const :tag "Subtle background" subtle)
                  (const :tag "Bold only" bold)
-                 (const :tag "Underline" underline)
                  (const :tag "Intense foreground" intense-foreground))
   :group 'bv-themes)
 
@@ -366,11 +357,49 @@ and VALUE is either a color string or another palette key."
 
 ;;; Color Utilities
 
+(defun bv-themes--hex-to-rgb (color)
+  "Convert COLOR from hexadecimal form to a list (R G B) in the range 0.0-1.0.
+Supports #RGB, #RRGGBB, #RRGGBBAA, #RRRRGGGGBBBB, and #RRRRGGGGBBBBAAAA."
+  (when (and (stringp color) (string-prefix-p "#" color))
+    (pcase (length color)
+      ;; #RGB
+      (4
+       (let* ((r (* 17 (string-to-number (substring color 1 2) 16)))
+              (g (* 17 (string-to-number (substring color 2 3) 16)))
+              (b (* 17 (string-to-number (substring color 3 4) 16))))
+         (list (/ r 255.0) (/ g 255.0) (/ b 255.0))))
+      ;; #RRGGBB or #RRGGBBAA
+      ((or 7 9)
+       (let* ((r (string-to-number (substring color 1 3) 16))
+              (g (string-to-number (substring color 3 5) 16))
+              (b (string-to-number (substring color 5 7) 16)))
+         (list (/ r 255.0) (/ g 255.0) (/ b 255.0))))
+      ;; #RRRRGGGGBBBB or #RRRRGGGGBBBBAAAA
+      ((or 13 17)
+       (let* ((r (string-to-number (substring color 1 5) 16))
+              (g (string-to-number (substring color 5 9) 16))
+              (b (string-to-number (substring color 9 13) 16)))
+         (list (/ r 65535.0) (/ g 65535.0) (/ b 65535.0))))
+      (_ nil))))
+
+(defun bv-themes--color-to-rgb (color)
+  "Convert COLOR to a list (R G B) in the range 0.0-1.0.
+Signals an error if COLOR cannot be parsed."
+  (or (bv-themes--hex-to-rgb color)
+      (color-name-to-rgb color)
+      (error "Cannot parse color: %S" color)))
+
+(defun bv-themes--maybe-color-to-rgb (color)
+  "Convert COLOR to a list (R G B) in the range 0.0-1.0, or nil."
+  (when (stringp color)
+    (or (bv-themes--hex-to-rgb color)
+        (ignore-errors (color-name-to-rgb color)))))
+
 (defun bv-themes--blend (color1 color2 alpha)
   "Blend COLOR1 with COLOR2 by ALPHA (0.0-1.0).
 ALPHA of 0.0 returns COLOR1, 1.0 returns COLOR2."
-  (cl-destructuring-bind (r1 g1 b1) (color-name-to-rgb color1)
-    (cl-destructuring-bind (r2 g2 b2) (color-name-to-rgb color2)
+  (cl-destructuring-bind (r1 g1 b1) (bv-themes--color-to-rgb color1)
+    (cl-destructuring-bind (r2 g2 b2) (bv-themes--color-to-rgb color2)
       (color-rgb-to-hex
        (+ (* r1 (- 1.0 alpha)) (* r2 alpha))
        (+ (* g1 (- 1.0 alpha)) (* g2 alpha))
@@ -388,7 +417,7 @@ ALPHA of 0.0 returns COLOR1, 1.0 returns COLOR2."
   "Make COLOR more saturated by AMOUNT (default 0.2)."
   (let ((amount (or amount 0.2)))
     (cl-destructuring-bind (h s l) (apply #'color-rgb-to-hsl
-                                          (color-name-to-rgb color))
+                                          (bv-themes--color-to-rgb color))
       (apply #'color-rgb-to-hex
              (color-hsl-to-rgb h (min 1.0 (+ s amount)) l)))))
 
@@ -396,16 +425,42 @@ ALPHA of 0.0 returns COLOR1, 1.0 returns COLOR2."
   "Make COLOR less saturated by AMOUNT (default 0.3)."
   (let ((amount (or amount 0.3)))
     (cl-destructuring-bind (h s l) (apply #'color-rgb-to-hsl
-                                          (color-name-to-rgb color))
+                                          (bv-themes--color-to-rgb color))
       (apply #'color-rgb-to-hex
              (color-hsl-to-rgb h (max 0.0 (- s amount)) l)))))
 
 (defun bv-themes--rotate-hue (color degrees)
   "Rotate COLOR hue by DEGREES."
   (cl-destructuring-bind (h s l) (apply #'color-rgb-to-hsl
-                                        (color-name-to-rgb color))
+                                        (bv-themes--color-to-rgb color))
     (apply #'color-rgb-to-hex
            (color-hsl-to-rgb (mod (+ h (/ degrees 360.0)) 1.0) s l))))
+
+(defun bv-themes--srgb-to-linear (channel)
+  "Convert CHANNEL from sRGB to linear RGB."
+  (if (<= channel 0.04045)
+      (/ channel 12.92)
+    (expt (/ (+ channel 0.055) 1.055) 2.4)))
+
+(defun bv-themes--relative-luminance (color)
+  "Return WCAG relative luminance of COLOR or nil if unknown."
+  (when (stringp color)
+    (let ((rgb (bv-themes--maybe-color-to-rgb color)))
+      (when (and rgb (= (length rgb) 3))
+        (cl-destructuring-bind (r g b) rgb
+          (+ (* 0.2126 (bv-themes--srgb-to-linear r))
+             (* 0.7152 (bv-themes--srgb-to-linear g))
+             (* 0.0722 (bv-themes--srgb-to-linear b))))))))
+
+(defun bv-themes--contrast-ratio (color-1 color-2)
+  "Return WCAG contrast ratio between COLOR-1 and COLOR-2.
+Returns nil if either color cannot be parsed."
+  (let ((l1 (bv-themes--relative-luminance color-1))
+        (l2 (bv-themes--relative-luminance color-2)))
+    (when (and (numberp l1) (numberp l2))
+      (let ((lighter (max l1 l2))
+            (darker (min l1 l2)))
+        (/ (+ lighter 0.05) (+ darker 0.05))))))
 
 ;;; Helper functions for conditional styling
 
@@ -440,8 +495,6 @@ Returns a property list of additional face attributes."
         (setq result (append result '(:weight bold))))
       (when (memq 'italic props)
         (setq result (append result '(:slant italic))))
-      (when (memq 'underline props)
-        (setq result (append result '(:underline t))))
       (when (memq 'box props)
         (setq result (append result
                             `(:box (:line-width -1
@@ -680,16 +733,13 @@ Optional CATEGORY is used for fine-grained styling preferences."
   "Compute link properties based on user settings and PALETTE."
   (let ((color (bv-themes--retrieve-palette-value 'fg-link palette)))
     (pcase bv-themes-links
-      ('neutral-underline
-       `(:foreground ,color :underline ,(bv-themes--retrieve-palette-value 'border palette)))
       ('faint
-       `(:foreground ,(bv-themes--retrieve-palette-value 'fg-link-faint palette) :underline t))
-      ('no-underline
-       `(:foreground ,color :underline nil))
+       `(:foreground ,(bv-themes--retrieve-palette-value 'fg-link-faint palette)
+         :underline nil))
       ('bold
-       `(:foreground ,color :underline t :weight bold))
+       `(:foreground ,color :underline nil :weight medium))
       (_
-       `(:foreground ,color :underline t)))))
+       `(:foreground ,color :underline nil)))))
 
 (defun bv-themes--completion-props (which palette)
   "Compute completion properties for WHICH match level using PALETTE."
@@ -755,8 +805,6 @@ Optional CATEGORY is used for fine-grained styling preferences."
      `(:background ,(bv-themes--retrieve-palette-value 'bg-hl-line-intense palette) :extend t))
     ('accented
      `(:background ,(bv-themes--retrieve-palette-value 'bg-hl-line-accent palette) :extend t))
-    ('underline
-     `(:underline ,(bv-themes--retrieve-palette-value 'border palette) :extend t))
     ('faint
      `(:background ,(bv-themes--retrieve-palette-value 'bg-hl-line-faint palette) :extend t))
     (_
@@ -771,9 +819,6 @@ Optional CATEGORY is used for fine-grained styling preferences."
        :weight bold))
     ('subtle
      `(:background ,(bv-themes--retrieve-palette-value 'bg-paren-match palette)))
-    ('underline
-     `(:underline ,(bv-themes--retrieve-palette-value 'accent-0 palette)
-       :weight bold))
     ('bold
      `(:inherit bold))
     ('intense-foreground
@@ -1047,21 +1092,69 @@ Optional CATEGORY is used for fine-grained styling preferences."
     )
   "Base palette with common colors.")
 
+(defun bv-themes--derive-palette (theme-name palette)
+  "Return derived palette entries for THEME-NAME based on PALETTE.
+Derived entries are only added when the key is missing from PALETTE."
+  (let* ((variant (pcase theme-name
+                    ('bv-light 'light)
+                    ('bv-dark 'dark)
+                    (_ nil)))
+         (bg-main (bv-themes--retrieve-palette-value 'bg-main palette))
+         (accent-0 (bv-themes--retrieve-palette-value 'accent-0 palette))
+         (alpha-bg-nuanced (if (eq variant 'light) 0.08 0.12))
+         (alpha-bg-intense (if (eq variant 'light) 0.14 0.22))
+         (alpha-hl-line (if (eq variant 'light) 0.12 0.16))
+         (alpha-hl-line-intense (if (eq variant 'light) 0.18 0.24))
+         (alpha-completion (if (eq variant 'light) 0.16 0.20))
+         (alpha-region (if (eq variant 'light) 0.20 0.26))
+         (derived
+          (append
+           ;; Nuanced and intense backgrounds.
+           (cl-loop
+            for key in '(red orange yellow green cyan blue purple magenta)
+            for color = (bv-themes--retrieve-palette-value key palette)
+            append (list
+                    (cons (intern (format "bg-%s-nuanced" key))
+                          (bv-themes--blend bg-main color alpha-bg-nuanced))
+                    (cons (intern (format "bg-%s-intense" key))
+                          (bv-themes--blend bg-main color alpha-bg-intense))))
+
+           ;; Key UI surfaces (anchored to the primary accent).
+           (list
+            (cons 'bg-accent-subtle
+                  (bv-themes--blend bg-main accent-0 alpha-bg-nuanced))
+            (cons 'bg-hl-line
+                  (bv-themes--blend bg-main accent-0 alpha-hl-line))
+            (cons 'bg-hl-line-intense
+                  (bv-themes--blend bg-main accent-0 alpha-hl-line-intense))
+            (cons 'bg-hl-line-accent
+                  (bv-themes--blend bg-main accent-0 alpha-bg-intense))
+            (cons 'bg-completion
+                  (bv-themes--blend bg-main accent-0 alpha-completion))
+            (cons 'bg-region
+                  (bv-themes--blend bg-main accent-0 alpha-region))))))
+    (cl-loop
+     for (key . value) in derived
+     unless (assq key palette)
+     collect (cons key value))))
+
 (defun bv-themes--palette-value (theme-name &optional overrides)
   "Get palette for THEME-NAME with optional OVERRIDES.
 THEME-NAME should be a symbol like \\='bv-light or \\='bv-dark."
   (let* ((base-palette-name (intern (format "%s-palette" theme-name)))
          (base-palette (symbol-value base-palette-name))
          (variant-overrides
-          (pcase theme-name
-            ('bv-light bv-themes-light-palette-overrides)
-            ('bv-dark bv-themes-dark-palette-overrides)
-            (_ nil))))
-    (append overrides
-            variant-overrides
-            bv-themes-common-palette-overrides
-            base-palette
-            bv-themes-base-palette)))
+	    (pcase theme-name
+	      ('bv-light bv-themes-light-palette-overrides)
+	      ('bv-dark bv-themes-dark-palette-overrides)
+	      (_ nil))))
+    (let* ((palette (append overrides
+                            variant-overrides
+                            bv-themes-common-palette-overrides
+                            base-palette
+                            bv-themes-base-palette))
+           (derived (bv-themes--derive-palette theme-name palette)))
+      (append derived palette))))
 
 (defun bv-themes--retrieve-palette-value (color palette)
   "Recursively retrieve COLOR from PALETTE.
@@ -1166,11 +1259,14 @@ Supports recursive semantic mappings like Modus themes."
 
       ;; Error/Warning/Note faces with language-specific underlines
       (bv-themes-lang-error
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-error palette)))))
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-red-nuanced palette)
+            :foreground unspecified)))
       (bv-themes-lang-note
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-note palette)))))
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-cyan-nuanced palette)
+            :foreground unspecified)))
       (bv-themes-lang-warning
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-yellow-nuanced palette)
+            :foreground unspecified)))
 
       (bv-themes-prominent-error
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-prominent-err palette)
@@ -1209,6 +1305,10 @@ Supports recursive semantic mappings like Modus themes."
             :weight normal
             :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
             :background ,(bv-themes--retrieve-palette-value 'bg-main palette))))
+
+      ;; Global underline disabling (intentionally avoids underlined UI/text).
+      (underline
+       ((,c :underline nil)))
 
       (cursor
        ((,c :background ,(bv-themes--retrieve-palette-value 'cursor palette))))
@@ -1272,6 +1372,7 @@ Supports recursive semantic mappings like Modus themes."
 
       (font-lock-comment-face
        ((,c :inherit bv-themes-slant
+            :underline nil
             ,@(bv-themes--syntax-color 'comment palette 'comments))))
 
       (font-lock-constant-face
@@ -1282,10 +1383,12 @@ Supports recursive semantic mappings like Modus themes."
 
       (font-lock-doc-face
        ((,c :inherit bv-themes-slant
+            :underline nil
             ,@(bv-themes--syntax-color 'docstring palette 'comments))))
 
       (font-lock-doc-markup-face
        ((,c :inherit bv-themes-slant
+            :underline nil
             ,@(bv-themes--syntax-color 'docmarkup palette 'comments))))
 
       (font-lock-escape-face
@@ -1461,8 +1564,9 @@ Supports recursive semantic mappings like Modus themes."
        ((,c ,@(bv-themes--link-props palette))))
 
       (link-visited
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-link-visited palette)
-            :underline t)))
+       ((,c :inherit link
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-link-visited palette)
+            :underline nil)))
 
       (button
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-button-active palette)
@@ -1683,6 +1787,9 @@ Supports recursive semantic mappings like Modus themes."
 
       (bv-themes-completion-selected
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-completion palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
+            :underline nil
+            :weight medium
             :extend t)))
 
       ;; Bookmark
@@ -1723,7 +1830,7 @@ Supports recursive semantic mappings like Modus themes."
 
       ;; Calendar and diary
       (calendar-today
-       ((,c :inherit bold :underline t)))
+       ((,c :inherit bold :underline nil)))
 
       (calendar-weekday-header
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-weekday palette))))
@@ -2050,18 +2157,23 @@ Supports recursive semantic mappings like Modus themes."
 
       ;; Flyspell
       (flyspell-incorrect
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-error palette)))))
+       ((,c :inherit bv-themes-lang-error
+            :underline nil)))
 
       (flyspell-duplicate
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
+       ((,c :inherit bv-themes-lang-warning
+            :underline nil)))
 
       ;; Flymake comprehensive diagnostic faces
       (flymake-error
-       ((,c :inherit bv-themes-lang-error)))
+       ((,c :inherit bv-themes-lang-error
+            :underline nil)))
       (flymake-warning
-       ((,c :inherit bv-themes-lang-warning)))
+       ((,c :inherit bv-themes-lang-warning
+            :underline nil)))
       (flymake-note
-       ((,c :inherit bv-themes-lang-note)))
+       ((,c :inherit bv-themes-lang-note
+            :underline nil)))
 
       ;; Echo area messages
       (flymake-error-echo
@@ -2088,13 +2200,16 @@ Supports recursive semantic mappings like Modus themes."
 
       ;; Flycheck
       (flycheck-error
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-error palette)))))
+       ((,c :inherit bv-themes-lang-error
+            :underline nil)))
 
       (flycheck-warning
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-warning palette)))))
+       ((,c :inherit bv-themes-lang-warning
+            :underline nil)))
 
       (flycheck-info
-       ((,c :underline (:style wave :color ,(bv-themes--retrieve-palette-value 'underline-note palette)))))
+       ((,c :inherit bv-themes-lang-note
+            :underline nil)))
 
       ;; Completion frameworks
       (orderless-match-face-0 ((,c ,@(bv-themes--completion-props 0 palette))))
@@ -2104,8 +2219,7 @@ Supports recursive semantic mappings like Modus themes."
 
       ;; Vertico
       (vertico-current
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-completion palette)
-            :extend t)))
+       ((,c :inherit bv-themes-completion-selected)))
       (vertico-group-title
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'name palette)
             :weight bold)))
@@ -2114,12 +2228,26 @@ Supports recursive semantic mappings like Modus themes."
 
       ;; Corfu
       (corfu-current
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-completion palette)
-            :extend t)))
+       ((,c :inherit bv-themes-completion-selected)))
       (corfu-default
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-popup palette))))
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-popup palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
       (corfu-border
        ((,c :background ,(bv-themes--retrieve-palette-value 'border palette))))
+      (corfu-bar
+       ((,c :background ,(bv-themes--retrieve-palette-value 'accent-0 palette))))
+      (corfu-annotations
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-dim palette)
+            :slant ,(if italic-constructs 'italic 'normal))))
+      (corfu-deprecated
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'error palette)
+            :strike-through t)))
+      (corfu-popupinfo
+       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-popup palette)
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+      (corfu-echo
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'success palette)
+            :slant ,(if italic-constructs 'italic 'normal))))
 
       ;; Consult
       (consult-file
@@ -2136,7 +2264,18 @@ Supports recursive semantic mappings like Modus themes."
       (marginalia-value
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'string palette))))
       (marginalia-key
-       ((,c :foreground ,(bv-themes--retrieve-palette-value 'keybind palette))))
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'keybind palette)
+            :weight medium)))
+      (marginalia-file-owner
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'warning palette))))
+      (marginalia-file-priv-read
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'success palette))))
+      (marginalia-file-priv-write
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'error palette))))
+      (marginalia-file-priv-exec
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'info palette))))
+      (marginalia-file-priv-dir
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'name palette))))
 
       ;; Which-key
       (which-key-key-face
@@ -2151,7 +2290,7 @@ Supports recursive semantic mappings like Modus themes."
       (company-tooltip
        ((,c :background ,(bv-themes--retrieve-palette-value 'bg-popup palette))))
       (company-tooltip-selection
-       ((,c :background ,(bv-themes--retrieve-palette-value 'bg-completion palette))))
+       ((,c :inherit bv-themes-completion-selected)))
       (company-tooltip-common
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette)
             :weight bold)))
@@ -2240,7 +2379,9 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'date-common palette)
             :inherit bold)))
       (org-agenda-date-today
-       ((,c :inherit org-agenda-date :underline t)))
+       ((,c :inherit org-agenda-date
+            :background ,(bv-themes--retrieve-palette-value 'bg-accent-subtle palette)
+            :underline nil)))
       (org-agenda-date-weekend
        ((,c :inherit org-agenda-date :foreground ,(bv-themes--retrieve-palette-value 'date-weekend palette))))
       (org-checkbox
@@ -2290,7 +2431,9 @@ Supports recursive semantic mappings like Modus themes."
       (ein:markdowncell-input-area-face
        (( ))) ; no styling
       (ein:notification-tab-normal
-       ((,c :underline t)))
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette)
+            :weight medium
+            :underline nil)))
 
       ;; Base error/warning/success faces
       (error
@@ -2543,8 +2686,9 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :inherit italic
             :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
       (font-latex-underline-face
-       ((,c :inherit underline
-            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette))))
+       ((,c :inherit bv-themes-strong
+            :foreground ,(bv-themes--retrieve-palette-value 'fg-main palette)
+            :background ,(bv-themes--retrieve-palette-value 'bg-accent-subtle palette))))
       (font-latex-math-face
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'builtin palette)
             :weight ,(bv-themes--get-weight-for-element 'builtin))))
@@ -2698,17 +2842,19 @@ Supports recursive semantic mappings like Modus themes."
             :strike-through t)))
       (transient-nonstandard-key
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'warning palette)
-            :underline t)))
+            :weight bold
+            :underline nil)))
       (transient-mismatched-key
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'error palette)
-            :underline t)))
+            :weight bold
+            :underline nil)))
 
       ;; Enhanced terminal faces (vterm/eat)
       (vterm-color-inverse-video
        ((,c :background ,(bv-themes--retrieve-palette-value 'fg-main palette)
             :foreground ,(bv-themes--retrieve-palette-value 'bg-main palette))))
       (vterm-color-underline
-       ((,c :underline t)))
+       ((,c :underline nil)))
       ;; eat terminal colors with proper bright variants
       (eat-term-color-0 ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-term-black palette))))
       (eat-term-color-1 ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-term-red palette))))
@@ -2847,14 +2993,15 @@ Supports recursive semantic mappings like Modus themes."
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'accent-0 palette)
             :weight medium)))
       (org-link
-       ((,c :inherit link
-            :underline ,(if (eq bv-themes-links 'no-underline) nil t))))
+       ((,c :inherit link)))
       (org-macro
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-macro palette)
             :background ,(bv-themes--retrieve-palette-value 'bg-dim palette)
             ,@(when mixed-fonts '(:inherit fixed-pitch)))))
       (org-target
-       ((,c :underline t)))
+       ((,c :foreground ,(bv-themes--retrieve-palette-value 'fg-special-mild palette)
+            :weight medium
+            :underline nil)))
       (org-property-value
        ((,c :foreground ,(bv-themes--retrieve-palette-value 'prose-metadata-value palette)
             ,@(when mixed-fonts '(:inherit fixed-pitch)))))
@@ -2873,6 +3020,38 @@ Supports recursive semantic mappings like Modus themes."
   "Hook run after a BV theme is loaded.
 Functions in this hook can access the current theme's palette
 using `bv-themes--current-theme-palette'.")
+
+(defconst bv-themes--no-underline-faces
+  '(underline
+    link link-visited org-link org-target org-underline
+    font-lock-comment-face font-lock-comment-delimiter-face
+    font-lock-doc-face font-lock-doc-markup-face font-lock-string-face
+    flyspell-incorrect flyspell-duplicate
+    flymake-error flymake-warning flymake-note
+    flycheck-error flycheck-warning flycheck-info)
+  "Faces that should never use underlines.")
+
+(defun bv-themes-enforce-no-underlines ()
+  "Disable underlines across all known faces.
+
+This is an intentional UI preference: underlines are hard to read on modern
+LCD/OLED displays and tend to clash with the overall aesthetic of the BV theme
+stack.  We also keep a small allowlist (`bv-themes--no-underline-faces') to
+cover faces that are commonly (re)defined by external packages."
+  (dolist (face (delete-dups (append bv-themes--no-underline-faces (face-list))))
+    (when (facep face)
+      (set-face-attribute face nil :underline nil))))
+
+(add-hook 'bv-themes-after-load-theme-hook #'bv-themes-enforce-no-underlines)
+
+(with-eval-after-load 'flyspell
+  (bv-themes-enforce-no-underlines))
+(with-eval-after-load 'flymake
+  (bv-themes-enforce-no-underlines))
+(with-eval-after-load 'flycheck
+  (bv-themes-enforce-no-underlines))
+(with-eval-after-load 'org
+  (bv-themes-enforce-no-underlines))
 
 (defvar bv-themes--current-theme nil
   "The currently loaded BV theme.")
@@ -2947,11 +3126,13 @@ Returns nil if no BV theme is loaded."
               bv-themes-variants))
 
 (defun bv-themes-variant ()
-  "Return the variant name of the current theme (\\='light\\=' or \\='dark\\=')."
+  "Return the variant of the current BV theme.
+
+The return value is one of the symbols `light', `dark', or nil."
   (let ((current (bv-themes-current)))
     (cond
-     ((eq current 'bv-light) "light")
-     ((eq current 'bv-dark) "dark")
+     ((eq current 'bv-light) 'light)
+     ((eq current 'bv-dark) 'dark)
      (t nil))))
 
 ;;; Development helpers
@@ -3017,18 +3198,29 @@ Returns nil if no BV theme is loaded."
       (with-current-buffer buf
         (erase-buffer)
         (insert (format "WCAG Contrast Report: %s\n\n" theme))
-        (let ((bg-main (bv-themes--retrieve-palette-value 'bg-main palette))
-              (test-colors '(fg-main fg-dim fg-active
-                             accent-0 accent-1 accent-2 accent-3
-                             red green blue yellow cyan magenta
-                             warning error success info)))
+        (let* ((bg-main (bv-themes--retrieve-palette-value 'bg-main palette))
+               (test-colors '(fg-main fg-dim fg-active
+                              accent-0 accent-1 accent-2 accent-3
+                              red green blue yellow cyan magenta
+                              warning error success info))
+               (surface-colors '(bg-hl-line bg-hl-line-faint bg-hl-line-accent
+                                 bg-hl-line-intense bg-popup bg-completion bg-region))
+               (text-pairs '((default-bg   fg-main bg-main)
+                             (popup       fg-main bg-popup)
+                             (completion  fg-main bg-completion)
+                             (hl-line     fg-main bg-hl-line)
+                             (region      fg-main bg-region)
+                             (dim-text    fg-dim bg-popup)
+                             (inactive    fg-inactive bg-main))))
+
+          ;; Text contrast vs bg-main
           (insert "Testing against background: " bg-main "\n\n")
           (insert "Color        Value      Ratio  WCAG AA  WCAG AAA\n")
           (insert "────────────────────────────────────────────────\n")
           (dolist (color-name test-colors)
             (let* ((fg-color (bv-themes--retrieve-palette-value color-name palette))
                    (ratio (when (stringp fg-color)
-                            (color-contrast fg-color bg-main)))
+                            (bv-themes--contrast-ratio fg-color bg-main)))
                    (aa-pass (and ratio (>= ratio 4.5)))
                    (aaa-pass (and ratio (>= ratio 7.0))))
               (when ratio
@@ -3037,7 +3229,36 @@ Returns nil if no BV theme is loaded."
                                 fg-color
                                 ratio
                                 (if aa-pass "✓ Pass" "✗ Fail")
-                                (if aaa-pass "✓ Pass" "✗ Fail")))))))
+                                (if aaa-pass "✓ Pass" "✗ Fail"))))))
+
+          ;; Surface contrast (non-text)
+          (insert "\nSurface contrast vs bg-main (non-text):\n\n")
+          (insert "Surface      Value      Ratio\n")
+          (insert "─────────────────────────────\n")
+          (dolist (surface surface-colors)
+            (let* ((value (bv-themes--retrieve-palette-value surface palette))
+                   (ratio (when (stringp value)
+                            (bv-themes--contrast-ratio value bg-main))))
+              (when ratio
+                (insert (format "%-11s  %-9s  %5.2f\n"
+                                (symbol-name surface)
+                                value
+                                ratio)))))
+
+          ;; Common UI contexts
+          (insert "\nCommon UI text contrasts:\n\n")
+          (insert "Context      FG         BG         Ratio\n")
+          (insert "─────────────────────────────────────────\n")
+          (dolist (pair text-pairs)
+            (pcase-let ((`(,label ,fg-key ,bg-key) pair))
+              (let* ((fg (bv-themes--retrieve-palette-value fg-key palette))
+                     (bg (bv-themes--retrieve-palette-value bg-key palette))
+                     (ratio (when (and (stringp fg) (stringp bg))
+                              (bv-themes--contrast-ratio fg bg))))
+                (when ratio
+                  (insert (format "%-10s  %-9s  %-9s  %5.2f\n"
+                                  (symbol-name label) fg bg ratio)))))))
+
         (goto-char (point-min))
         (special-mode))
       (switch-to-buffer buf))))

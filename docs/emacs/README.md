@@ -47,14 +47,13 @@ M-x eglot-install-server
 3. Explore [Customization](customization.md) - Make it yours
 
 ### For Power Users
-1. [Module Reference](modules/) - Deep dive into features
-2. [Recipes](recipes/) - Advanced configurations
-3. [Contributing](contributing.md) - Extend the system
+1. Browse modules in `emacs/lisp/` (one feature per file)
+2. Themes live in `emacs/themes/` and are driven by `emacs/lisp/bv-themes.el`
+3. Use `custom-file` (`custom.el`) for local overrides
 
 ### Quick References
 - [All Keybindings](keybindings.md)
 - [All Variables](customization.md#variable-index)
-- [Module Matrix](modules/README.md#feature-matrix)
 
 ## Architecture
 
@@ -81,10 +80,9 @@ M-x eglot-install-server
 
 ### Loading Strategy
 
-1. **Immediate**: Core UI and defaults
-2. **Idle (0.1s)**: Completion and navigation
-3. **Idle (1.0s)**: Development tools
-4. **On-demand**: Language modes and specialized tools
+1. **Core**: UI, themes, defaults, fonts
+2. **Features**: Loaded via `require` from `init.el`
+3. **Deferred pieces**: Some modules use hooks/idle timers internally
 
 ### Design Principles
 
@@ -108,7 +106,7 @@ M-x eglot-install-server
 
 ### User Experience
 - **Smart Completion**: Context-aware with orderless matching
-- **Visual Excellence**: Modus themes with extensive customization
+- **Visual Excellence**: BV theme engine with light/dark variants
 - **Efficient Navigation**: Ace-window, Avy, and Consult
 
 ## Directory Structure
@@ -120,18 +118,7 @@ docs/emacs/
 ├── keybindings.md        # Complete key reference
 ├── customization.md      # Configuration options
 ├── workflow-guide.md     # Practical patterns
-├── troubleshooting.md    # Common issues
-├── contributing.md       # Development guide
-├── modules/              # Module documentation
-│   ├── core.md
-│   ├── completion.md
-│   ├── development.md
-│   ├── org.md
-│   └── ...
-└── recipes/              # Configuration examples
-    ├── research-workflow.md
-    ├── development-setup.md
-    └── ...
+└── (more docs to come)
 ```
 
 ## Getting Help

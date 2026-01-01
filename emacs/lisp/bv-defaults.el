@@ -56,6 +56,9 @@
 (defvar recentf-exclude)
 (defvar savehist-file)
 (defvar read-process-output-max)
+(defvar window-divider-default-bottom-width)
+(defvar window-divider-default-places)
+(defvar window-divider-default-right-width)
 
 ;; Keep custom settings in separate file
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -163,6 +166,13 @@ and MSG is the process message."
 
 ;; Enable line highlighting
 (global-hl-line-mode 1)
+
+;; Subtle window dividers (macOS-like separators)
+(when (fboundp 'window-divider-mode)
+  (setq window-divider-default-right-width 1
+        window-divider-default-bottom-width 0
+        window-divider-default-places 'right-only)
+  (window-divider-mode 1))
 
 ;; Recent files tracking
 (require 'recentf)

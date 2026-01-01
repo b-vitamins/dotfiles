@@ -96,16 +96,8 @@
       orderless-component-separator 'orderless-escapable-split-on-space
       orderless-smart-case t)
 
-;; 2. Personalized Faces for Better Visual Feedback
+;; 2. Faces
 ;; =============================================================================
-(set-face-attribute 'orderless-match-face-0 nil
-                    :weight 'bold :foreground "#ff6c6b" :background "#2d2d2d")
-(set-face-attribute 'orderless-match-face-1 nil
-                    :weight 'bold :foreground "#98be65" :background "#2d2d2d")
-(set-face-attribute 'orderless-match-face-2 nil
-                    :weight 'bold :foreground "#51afef" :background "#2d2d2d")
-(set-face-attribute 'orderless-match-face-3 nil
-                    :weight 'bold :foreground "#c678dd" :background "#2d2d2d")
 
 (setq orderless-match-faces
       [orderless-match-face-0

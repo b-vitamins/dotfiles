@@ -83,20 +83,6 @@
 (defvar bv-corfu--history-update-timer nil
   "Timer for deferred history hash update.")
 
-;;; Face Definitions - Set once at load time
-
-(custom-set-faces
- '(corfu-default ((t :background "#1a1b26")))
- '(corfu-current ((t :background "#283457" :weight semibold)))
- '(corfu-bar ((t :background "#7aa2f7")))
- '(corfu-border ((t :background "#3b4261")))
- '(corfu-annotations ((t :foreground "#565f89" :slant italic)))
- '(corfu-deprecated ((t :foreground "#f7768e" :strike-through t)))
- ;; Popupinfo faces
- '(corfu-popupinfo ((t :background "#1f2335" :foreground "#c0caf5")))
- ;; Echo face
- '(corfu-echo ((t :foreground "#9ece6a" :slant italic))))
-
 ;;; Core Settings - Following documented defaults with Cape awareness
 
 (setq corfu-min-width 20

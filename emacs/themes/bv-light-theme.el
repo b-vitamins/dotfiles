@@ -32,10 +32,10 @@
 ;;
 ;; Accent System:
 ;; -------------
-;; • Primary (cyan): Keywords, UI elements, links
-;; • Secondary (orange): Constants, selections
+;; • Primary (blue): Functions, UI elements, links
+;; • Secondary (purple): Keywords, types, special syntax
 ;; • Tertiary (green): Strings, success states
-;; • Quaternary (purple): Types, special syntax
+;; • Quaternary (orange): Constants, numbers, selections
 ;;
 ;; Usage:
 ;; ------
@@ -52,192 +52,164 @@
   '(;; === Foundation Colors ===
     ;; Pure paper whites with subtle warmth, inspired by washi paper
     (bg-main . "#fbfbfd")          ; Pure paper white
-    (fg-main . "#2a2d3a")          ; Deep ink blue-black
-    (bg-dim . "#f4f4f7")           ; Light wash
-    (fg-dim . "#4a4d5a")           ; Medium ink
+    (fg-main . "#383a42")          ; Deep ink
+    (bg-dim . "#f3f4f6")           ; Light wash
+    (fg-dim . "#6c6f77")           ; Muted ink
     (bg-alt . "#eaeaed")           ; Alternative wash
-    (fg-alt . "#1a1d2a")           ; Dark ink
+    (fg-alt . "#282c34")           ; Dark ink
 
     ;; === Active/Inactive States ===
     (bg-active . "#e0e0e5")        ; Active wash
-    (fg-active . "#0a0d1a")        ; Very dark ink
+    (fg-active . "#282c34")        ; Dark ink
     (bg-inactive . "#f0f0f3")      ; Inactive light
-    (fg-inactive . "#6a6d7a")      ; Muted ink
+    (fg-inactive . "#8a8d96")      ; Muted ink
 
     ;; === Complete Color Scales ===
     ;; Red scale (Vermillion ink)
-    (red . "#d73a3a")              ; Deep vermillion
-    (red-warmer . "#e54545")       ; Warm flame
-    (red-cooler . "#c73030")       ; Cool crimson
-    (red-faint . "#d06060")        ; Soft coral
-    (red-intense . "#cc2222")      ; Intense ruby
+    (red . "#e45649")              ; Vermillion
+    (red-warmer . "#e44958")       ; Warm vermillion
+    (red-cooler . "#e47249")       ; Cool vermillion
+    (red-faint . "#d3938d")        ; Faded ink red
+    (red-intense . "#f23726")      ; Intense vermillion
 
     ;; Orange scale (Burnt sienna)
-    (orange . "#d77815")           ; Burnt sienna
-    (orange-warmer . "#e88520")    ; Warm amber
-    (orange-cooler . "#c76d10")    ; Deep sienna
-    (orange-faint . "#d49050")     ; Faded sienna
-    (orange-intense . "#cc6600")   ; Bright amber
+    (orange . "#da8548")           ; Burnt sienna
+    (orange-warmer . "#da6b48")    ; Warm sienna
+    (orange-cooler . "#da9f48")    ; Cool sienna
+    (orange-faint . "#cca589")     ; Faded sienna
+    (orange-intense . "#e77727")   ; Bright sienna
 
     ;; Yellow scale (Gold leaf)
-    (yellow . "#bf9000")           ; Gold leaf
-    (yellow-warmer . "#cfa000")    ; Bright gold
-    (yellow-cooler . "#af8000")    ; Deep gold
-    (yellow-faint . "#bfa040")     ; Faded gold
-    (yellow-intense . "#aa7700")   ; Brilliant gold
+    (yellow . "#c18401")           ; Gold leaf
+    (yellow-warmer . "#c16101")    ; Warm gold
+    (yellow-cooler . "#c1a707")    ; Cool gold
+    (yellow-faint . "#c39532")     ; Faded gold
+    (yellow-intense . "#ae7600")   ; Intense gold
 
     ;; Green scale (Jade & moss)
-    (green . "#4a7c4e")            ; Jade green
-    (green-warmer . "#5a8c5e")     ; Spring jade
-    (green-cooler . "#3a6c3e")     ; Deep jade
-    (green-faint . "#6a9c6e")      ; Pale jade
-    (green-intense . "#2a6c2e")    ; Brilliant jade
+    (green . "#50a14f")            ; Jade green
+    (green-warmer . "#5fa14f")     ; Warm jade
+    (green-cooler . "#4fa15d")     ; Cool jade
+    (green-faint . "#7ca87b")      ; Pale jade
+    (green-intense . "#429b41")    ; Intense jade
 
     ;; Cyan scale (Frost & ice)
-    (cyan . "#0087af")             ; Frost blue
-    (cyan-warmer . "#0097bf")      ; Light frost
-    (cyan-cooler . "#00779f")      ; Deep frost
-    (cyan-faint . "#4097af")       ; Pale frost
-    (cyan-intense . "#0077aa")     ; Brilliant ice
+    (cyan . "#0184bc")             ; Frost blue
+    (cyan-warmer . "#01a6bc")      ; Warm frost
+    (cyan-cooler . "#0162bc")      ; Cool frost
+    (cyan-faint . "#3195bf")       ; Pale frost
+    (cyan-intense . "#0076a9")     ; Intense ice
 
     ;; Blue scale (Winter sky)
-    (blue . "#4a6cc3")             ; Winter sky
-    (blue-warmer . "#5a7cd3")      ; Warm sky
-    (blue-cooler . "#3a5cb3")      ; Deep sky
-    (blue-faint . "#6a8cc3")       ; Pale sky
-    (blue-intense . "#2a4cb3")     ; Electric sky
+    (blue . "#4078f2")             ; Winter sky
+    (blue-warmer . "#4098f2")      ; Warm sky
+    (blue-cooler . "#4058f2")      ; Cool sky
+    (blue-faint . "#8aa4db")       ; Pale sky
+    (blue-intense . "#1f65ff")     ; Electric sky
 
     ;; Purple scale (Wisteria)
-    (purple . "#8959a8")           ; Wisteria purple
-    (purple-warmer . "#9969b8")    ; Warm wisteria
-    (purple-cooler . "#794998")    ; Deep wisteria
-    (purple-faint . "#9979b8")     ; Pale wisteria
-    (purple-intense . "#6939a8")   ; Vivid wisteria
+    (purple . "#a626a4")           ; Wisteria
+    (purple-warmer . "#9126a6")    ; Warm wisteria
+    (purple-cooler . "#a6268d")    ; Cool wisteria
+    (purple-faint . "#b050ae")     ; Pale wisteria
+    (purple-intense . "#a1179f")   ; Intense wisteria
 
     ;; Magenta scale (Plum blossom)
-    (magenta . "#c54b8c")          ; Plum blossom
-    (magenta-warmer . "#d55b9c")   ; Warm plum
-    (magenta-cooler . "#b53b7c")   ; Deep plum
-    (magenta-faint . "#c56b9c")    ; Pale plum
-    (magenta-intense . "#b52b7c")  ; Bright plum
+    (magenta . "#b751b6")          ; Plum blossom
+    (magenta-warmer . "#a651b7")   ; Warm plum
+    (magenta-cooler . "#b751a4")   ; Cool plum
+    (magenta-faint . "#b685b5")    ; Pale plum
+    (magenta-intense . "#b63db5")  ; Bright plum
 
     ;; Pink scale (Cherry blossom)
-    (pink . "#d5669c")             ; Cherry blossom
-    (pink-warmer . "#e576ac")      ; Warm sakura
-    (pink-cooler . "#c5568c")      ; Cool sakura
-    (pink-faint . "#d586ac")       ; Pale sakura
-    (pink-intense . "#c5468c")     ; Bright sakura
+    (pink . "#ca1243")             ; Cherry blossom
+    (pink-warmer . "#ca1264")      ; Warm sakura
+    (pink-cooler . "#ca1222")      ; Cool sakura
+    (pink-faint . "#c34c6b")       ; Pale sakura
+    (pink-intense . "#c80035")     ; Bright sakura
 
     ;; === Accent Mappings (semantic) ===
-    (accent-0 . cyan)              ; Primary accent - frost
-    (accent-1 . orange)            ; Secondary accent - sienna
+    (accent-0 . blue)              ; Primary accent - sky
+    (accent-1 . purple)            ; Secondary accent - wisteria
     (accent-2 . green)             ; Tertiary accent - jade
-    (accent-3 . purple)            ; Quaternary accent - wisteria
+    (accent-3 . orange)            ; Quaternary accent - sienna
 
-    ;; Accent intensity variants
-    (accent-0-intense . cyan-intense)
-    (accent-1-intense . orange-intense)
-    (accent-2-intense . green-intense)
-    (accent-3-intense . purple-intense)
-    (accent-0-faint . cyan-faint)
-    (accent-1-faint . orange-faint)
-    (accent-2-faint . green-faint)
-    (accent-3-faint . purple-faint)
+	    ;; Accent intensity variants
+	    (accent-0-intense . blue-intense)
+	    (accent-1-intense . purple-intense)
+	    (accent-2-intense . green-intense)
+	    (accent-3-intense . orange-intense)
+	    (accent-0-faint . blue-faint)
+	    (accent-1-faint . purple-faint)
+	    (accent-2-faint . green-faint)
+	    (accent-3-faint . orange-faint)
 
-    ;; === Nuanced/Subtle Backgrounds ===
-    (bg-red-nuanced . "#fef5f5")
-    (bg-orange-nuanced . "#fef8f0")
-    (bg-yellow-nuanced . "#fefbf0")
-    (bg-green-nuanced . "#f5fef5")
-    (bg-cyan-nuanced . "#f0fefe")
-    (bg-blue-nuanced . "#f5f5fe")
-    (bg-purple-nuanced . "#fef5fe")
-    (bg-magenta-nuanced . "#fef5f8")
+	    ;; === Syntax Highlighting Semantic Mappings ===
+	    (keyword . purple)             ; Control flow keywords
+	    (builtin . cyan)               ; Built-in functions
+	    (string . green)               ; String literals
+	    (docstring . green-faint)      ; Documentation
+	    (docmarkup . green-warmer)     ; Documentation markup
+	    (comment . fg-inactive)        ; Comments
+	    (constant . cyan)              ; Constants
+	    (fnname . blue)                ; Function names
+	    (function-call . blue)         ; Function calls
+	    (variable . red)               ; Variable definitions
+	    (variable-use . fg-main)       ; Variable references
+	    (type . yellow)                ; Type names
+	    (preprocessor . orange)        ; Preprocessor directives
+	    (rx-construct . purple)        ; Regex constructs
+	    (rx-backslash . pink-warmer)   ; Regex backslashes
+	    (number . yellow)              ; Numbers
+	    (operator . fg-dim)            ; Operators
+	    (property . fg-main)           ; Properties
+	    (property-use . fg-main)       ; Property references
+	    (punctuation . fg-dim)         ; Punctuation
+	    (bracket . fg-main)            ; Brackets
+	    (delimiter . fg-dim)           ; Delimiters
+	    (escape . red-faint)           ; Escape sequences
+	    (regexp . purple)              ; Regular expressions
 
-    ;; === Intense Backgrounds ===
-    (bg-red-intense . "#fde0e0")
-    (bg-orange-intense . "#fde8d8")
-    (bg-yellow-intense . "#fdf0d8")
-    (bg-green-intense . "#e5f5e5")
-    (bg-cyan-intense . "#d8f5f5")
-    (bg-blue-intense . "#e0e8fd")
-    (bg-purple-intense . "#f0e0fd")
-    (bg-magenta-intense . "#fde0f0")
-
-    ;; === Syntax Highlighting Semantic Mappings ===
-    (keyword . cyan-intense)       ; Control flow keywords - frost
-    (builtin . purple)             ; Built-in functions - wisteria
-    (string . green)               ; String literals - jade
-    (docstring . green-faint)      ; Documentation
-    (docmarkup . green-warmer)     ; Documentation markup
-    (comment . fg-inactive)        ; Comments
-    (constant . orange)            ; Constants - sienna
-    (fnname . blue)                ; Function names - sky
-    (function-call . blue-faint)   ; Function calls - lighter sky
-    (variable . yellow-intense)    ; Variables - gold
-    (variable-use . yellow)        ; Variable references - lighter gold
-    (type . purple-warmer)         ; Type names - wisteria
-    (preprocessor . orange-faint)  ; Preprocessor directives
-    (rx-construct . purple)        ; Regex constructs
-    (rx-backslash . pink-warmer)   ; Regex backslashes
-    (number . orange-cooler)       ; Numbers
-    (operator . cyan-cooler)       ; Operators
-    (property . yellow-warmer)     ; Properties
-    (property-use . yellow)        ; Property references
-    (punctuation . fg-dim)         ; Punctuation
-    (bracket . fg-main)            ; Brackets
-    (delimiter . fg-dim)           ; Delimiters
-    (escape . red-faint)           ; Escape sequences
-    (regexp . purple)              ; Regular expressions
-    (warning . red)                ; Warnings
-    (error . red-intense)          ; Errors
-
-    ;; === UI Elements ===
-    ;; Headers/Headings
-    (fg-heading-0 . cyan-intense)
-    (fg-heading-1 . fg-main)
-    (fg-heading-2 . yellow-intense)
-    (fg-heading-3 . fg-alt)
-    (fg-heading-4 . blue-intense)
+	    ;; === UI Elements ===
+	    ;; Headers/Headings
+	    (fg-heading-0 . blue-intense)
+	    (fg-heading-1 . fg-main)
+	    (fg-heading-2 . yellow-intense)
+	    (fg-heading-3 . fg-alt)
+	    (fg-heading-4 . blue-intense)
     (fg-heading-5 . green-intense)
     (fg-heading-6 . purple-intense)
     (fg-heading-7 . orange-intense)
     (fg-heading-8 . fg-dim)
 
-    ;; Mode line
-    (modeline-bg-active . "#e5e5ea")
-    (modeline-fg-active . "#1a1d2a")
-    (modeline-bg-active-accent . cyan)
-    (modeline-fg-active-accent . "#fbfbfd")
-    (modeline-bg-active-alt . "#eaeaed")
-    (modeline-bg-inactive . "#f0f0f3")
-    (modeline-fg-inactive . "#6a6d7a")
-    (modeline-border-active . "#d0d0d5")
-    (modeline-border-inactive . "#e0e0e5")
-    (modeline-err . red)
-    (modeline-error . red)
+	    ;; Mode line
+	    (modeline-bg-active . "#e5e5ea")
+	    (modeline-fg-active . fg-alt)
+	    (modeline-bg-active-accent . accent-0)
+	    (modeline-fg-active-accent . "#fbfbfd")
+	    (modeline-bg-active-alt . "#eaeaed")
+	    (modeline-bg-inactive . "#f0f0f3")
+	    (modeline-fg-inactive . fg-inactive)
+	    (modeline-border-active . "#d0d0d5")
+	    (modeline-border-inactive . "#e0e0e5")
+	    (modeline-err . red)
+	    (modeline-error . red)
     (modeline-warning . yellow)
     (modeline-info . cyan)
     (modeline-success . green)
 
-    ;; === Interactive Elements ===
-    (bg-hover . "#f0f0f3")         ; Hover state
-    (bg-hover-secondary . "#e8e8eb") ; Secondary hover
-    (bg-hl-line . "#f4f4f7")       ; Current line highlight
-    (bg-hl-line-intense . "#eaeaed") ; Intense line highlight
-    (bg-hl-line-accent . "#e8f0f8") ; Accent line highlight
-    (bg-hl-line-faint . "#f8f8fa") ; Faint line highlight
-    (bg-region . "#d8e0e8")        ; Selection
-    (fg-region . unspecified)      ; Let foreground show through
-    (bg-accent-subtle . "#e8f0f8") ; Subtle accent background
+	    ;; === Interactive Elements ===
+	    (bg-hover . "#f0f0f3")         ; Hover state
+	    (bg-hover-secondary . "#e8e8eb") ; Secondary hover
+	    (bg-hl-line-faint . bg-dim)    ; Faint line highlight
+	    (fg-region . unspecified)      ; Let foreground show through
 
-    ;; === Completion & Search ===
-    (bg-completion . "#e8f0f8")    ; Completion selection
-    (bg-search-current . "#fdf0d8") ; Current search match
-    (bg-search-fail . "#fde0e0")   ; Failed search
-    (bg-search-lazy . "#e8e8eb")   ; Lazy highlight
-    (bg-match . "#d8f5f5")         ; General match
-    (bg-search-replace . "#f0e0fd") ; Replace highlight
+	    ;; === Completion & Search ===
+	    (bg-search-current . bg-yellow-intense) ; Current search match
+	    (bg-search-fail . bg-red-intense) ; Failed search
+	    (bg-search-lazy . bg-dim)      ; Lazy highlight
+	    (bg-match . bg-cyan-intense)   ; General match
+	    (bg-search-replace . bg-purple-intense) ; Replace highlight
 
     ;; Search regexp groups
     (bg-search-rx-group-0 . bg-magenta-nuanced)
@@ -245,40 +217,40 @@
     (bg-search-rx-group-2 . bg-yellow-nuanced)
     (bg-search-rx-group-3 . bg-green-nuanced)
 
-    ;; Completion match levels
-    (fg-completion-match-0 . cyan-intense)
-    (fg-completion-match-1 . orange-intense)
-    (fg-completion-match-2 . green-intense)
-    (fg-completion-match-3 . purple-intense)
-    (bg-completion-match-0 . bg-cyan-nuanced)
-    (bg-completion-match-1 . bg-orange-nuanced)
-    (bg-completion-match-2 . bg-green-nuanced)
-    (bg-completion-match-3 . bg-purple-nuanced)
+	    ;; Completion match levels
+	    (fg-completion-match-0 . blue-intense)
+	    (fg-completion-match-1 . purple-intense)
+	    (fg-completion-match-2 . green-intense)
+	    (fg-completion-match-3 . orange-intense)
+	    (bg-completion-match-0 . bg-blue-nuanced)
+	    (bg-completion-match-1 . bg-purple-nuanced)
+	    (bg-completion-match-2 . bg-green-nuanced)
+	    (bg-completion-match-3 . bg-orange-nuanced)
 
-    ;; === Diffs & Version Control ===
-    (bg-added . "#e5f5e5")         ; Light green
-    (bg-added-faint . "#f0faf0")   ; Very light green
-    (bg-added-refine . "#d0e8d0")  ; Refined green
-    (bg-added-fringe . "#4a7c4e")  ; Fringe indicator
-    (fg-added . "#2a5a2e")         ; Dark green
-    (fg-added-intense . "#1a4a1e") ; Very dark green
+	    ;; === Diffs & Version Control ===
+	    (bg-added . bg-green-intense)  ; Added lines
+	    (bg-added-faint . bg-green-nuanced) ; Very light green
+	    (bg-added-refine . "#d5e7d7")  ; Refined green
+	    (bg-added-fringe . green)      ; Fringe indicator
+	    (fg-added . green)             ; Added foreground
+	    (fg-added-intense . green-intense) ; Intense foreground
 
-    (bg-removed . "#fde0e0")       ; Light red
-    (bg-removed-faint . "#fef5f5") ; Very light red
-    (bg-removed-refine . "#f0d0d0") ; Refined red
-    (bg-removed-fringe . "#d73a3a") ; Fringe indicator
-    (fg-removed . "#7a2a2a")       ; Dark red
-    (fg-removed-intense . "#6a1a1a") ; Very dark red
+	    (bg-removed . bg-red-intense)  ; Removed lines
+	    (bg-removed-faint . bg-red-nuanced) ; Very light red
+	    (bg-removed-refine . "#f6d7d5") ; Refined red
+	    (bg-removed-fringe . red)      ; Fringe indicator
+	    (fg-removed . red)             ; Removed foreground
+	    (fg-removed-intense . red-intense) ; Intense foreground
 
-    (bg-changed . "#fdf0d8")       ; Light yellow
-    (bg-changed-faint . "#fefbf0") ; Very light yellow
-    (bg-changed-refine . "#f0e5c8") ; Refined yellow
-    (bg-changed-fringe . "#bf9000") ; Fringe indicator
-    (fg-changed . "#6a5a00")       ; Dark yellow/brown
-    (fg-changed-intense . "#5a4a00") ; Very dark brown
-    (bg-changed-subtle . "#fefbf0") ; Subtle changed
+	    (bg-changed . bg-yellow-intense) ; Changed lines
+	    (bg-changed-faint . bg-yellow-nuanced) ; Very light yellow
+	    (bg-changed-refine . "#eee1c6") ; Refined yellow
+	    (bg-changed-fringe . yellow)    ; Fringe indicator
+	    (fg-changed . yellow)           ; Changed foreground
+	    (fg-changed-intense . yellow-intense) ; Intense foreground
+	    (bg-changed-subtle . bg-yellow-nuanced) ; Subtle changed
 
-    (bg-diff-context . "#fbfbfd")  ; Context lines
+	    (bg-diff-context . bg-main)    ; Context lines
 
     ;; === Status Indicators ===
     (info . cyan)                  ; Information
@@ -294,47 +266,47 @@
     (bg-prominent-warning . bg-yellow-intense)
     (fg-prominent-warning . fg-main)
 
-    ;; === Special Purpose ===
-    (bg-popup . "#f4f4f7")         ; Popup backgrounds
-    (bg-tooltip . "#fbfbfd")       ; Tooltip background
-    (bg-tab-bar . "#eaeaed")       ; Tab bar background
-    (bg-tab-current . "#fbfbfd")   ; Current tab
-    (bg-tab-other . "#f4f4f7")     ; Other tabs
-    (bg-space . "#fbfbfd")         ; Space background
-    (fg-space . "#e0e0e5")         ; Space foreground
-    (bg-space-error . "#fde0e0")   ; Space error background
-    (bg-pulse . "#e8f0f8")         ; Pulse highlight
-    (bg-fill-column . "#f4f4f7")   ; Fill column indicator
-    (bg-header . "#eaeaed")        ; Header background
-    (fg-header . "#0a0d1a")        ; Header foreground
-    (bg-keybind . "#e8f0f8")       ; Keybind background
+	    ;; === Special Purpose ===
+	    (bg-popup . bg-dim)            ; Popup backgrounds
+	    (bg-tooltip . "#fbfbfd")       ; Tooltip background
+	    (bg-tab-bar . "#eaeaed")       ; Tab bar background
+	    (bg-tab-current . "#fbfbfd")   ; Current tab
+	    (bg-tab-other . bg-dim)        ; Other tabs
+	    (bg-space . "#fbfbfd")         ; Space background
+	    (fg-space . "#e0e0e5")         ; Space foreground
+	    (bg-space-error . bg-red-intense) ; Space error background
+	    (bg-pulse . bg-yellow-intense) ; Pulse highlight
+	    (bg-fill-column . bg-dim)      ; Fill column indicator
+	    (bg-header . bg-main)          ; Header background (match window/bg)
+	    (fg-header . fg-alt)           ; Header foreground
+	    (bg-keybind . bg-blue-nuanced) ; Keybind background
 
-    ;; Mark selections (for dired, etc.)
-    (bg-mark-select . "#e8f0f8")   ; Selected mark background
-    (fg-mark-select . "#0a0d1a")   ; Selected mark foreground
-    (bg-mark-delete . "#fde0e0")   ; Delete mark background
-    (fg-mark-delete . "#0a0d1a")   ; Delete mark foreground
-    (bg-mark-other . "#fdf0d8")    ; Other mark background
-    (fg-mark-other . "#0a0d1a")    ; Other mark foreground
+	    ;; Mark selections (for dired, etc.)
+	    (bg-mark-select . bg-blue-nuanced) ; Selected mark background
+	    (fg-mark-select . fg-alt)      ; Selected mark foreground
+	    (bg-mark-delete . bg-red-nuanced) ; Delete mark background
+	    (fg-mark-delete . fg-alt)      ; Delete mark foreground
+	    (bg-mark-other . bg-yellow-nuanced) ; Other mark background
+	    (fg-mark-other . fg-alt)       ; Other mark foreground
 
-    ;; Active argument (for eldoc)
-    (bg-active-argument . "#fdf0d8") ; Yellow-tinted background
-    (fg-active-argument . "#0a0d1a") ; Dark foreground
+	    ;; Active argument (for eldoc)
+	    (bg-active-argument . bg-yellow-nuanced) ; Yellow-tinted background
+	    (fg-active-argument . fg-alt)  ; Dark foreground
 
-    ;; Paren matching
-    (bg-paren-match . "#d8e0e8")   ; Matching paren
-    (bg-paren-match-intense . "#c8d0d8") ; Intense matching paren
-    (fg-paren-match . unspecified) ; Use existing foreground
-    (bg-paren-expression . "#f0e0fd") ; Expression highlight
-    (bg-paren-mismatch . bg-red-intense) ; Mismatch
-    (fg-paren-mismatch . "#0a0d1a") ; Dark on red
+	    ;; Paren matching
+	    (bg-paren-match . bg-cyan-intense) ; Matching paren
+	    (bg-paren-match-intense . "#c4e1ef") ; Intense matching paren
+	    (fg-paren-match . unspecified) ; Use existing foreground
+	    (bg-paren-expression . bg-purple-intense) ; Expression highlight
+	    (bg-paren-mismatch . bg-red-intense) ; Mismatch
+	    (fg-paren-mismatch . fg-alt)   ; Dark on red
 
-    ;; === Links ===
-    (fg-link . cyan-intense)
-    (fg-link-faint . cyan)
-    (fg-link-visited . purple)
-    (underline-link . unspecified)
-    (underline-link-visited . unspecified)
+	    ;; === Links ===
+	    (fg-link . accent-0)
+	    (fg-link-faint . blue-faint)
+	    (fg-link-visited . purple)
+	    (underline-link . unspecified)
+	    (underline-link-visited . unspecified)
 
     ;; === Code/Prose Elements ===
     (prose-code . magenta-warmer)
@@ -392,48 +364,48 @@
     (fg-button-inactive . fg-dim)
     (bg-button-inactive . bg-inactive)
 
-    ;; === Miscellaneous ===
-    (cursor . cyan-intense)        ; Frost cursor
-    (prompt . cyan-intense)        ; Used by fg-prompt
-    (fg-prompt . prompt)
-    (hl-todo . red-intense)
-    (keybind . cyan-intense)
-    (name . purple)                ; Names (buffers, files, etc.)
-    (identifier . cyan-warmer)     ; Identifiers
-    (border . "#d0d0d5")          ; General border color
-    (fringe . bg-dim)             ; Fringe color
-    (fringe-subtle . "#fbfbfd")   ; Subtle fringe
-    (fringe-greyscale . "#e0e0e5") ; Greyscale fringe
-    (fringe-accent . cyan-faint)  ; Accent fringe
-    (shadow . "#2a2d3a30")        ; Shadow color (transparent dark)
-    (fg-whitespace . "#e0e0e5")   ; Whitespace indicators
-    (fg-special-mild . cyan-faint) ; Special mild foreground
+		    ;; === Miscellaneous ===
+		    (cursor . accent-0)            ; Cursor
+		    (prompt . accent-3-intense)    ; Used by fg-prompt (warm)
+		    (fg-prompt . prompt)
+		    (hl-todo . red-intense)
+		    (keybind . accent-0)
+	    (name . purple)                ; Names (buffers, files, etc.)
+	    (identifier . cyan-warmer)     ; Identifiers
+	    (border . "#d0d0d5")          ; General border color
+		    (fringe . bg-main)            ; Fringe color (no separator line)
+		    (fringe-subtle . "#fbfbfd")   ; Subtle fringe
+		    (fringe-greyscale . "#e0e0e5") ; Greyscale fringe
+		    (fringe-accent . blue-faint)  ; Accent fringe
+	    (shadow . "#282c3430")        ; Shadow color (transparent dark)
+	    (fg-whitespace . "#e0e0e5")   ; Whitespace indicators
+	    (fg-special-mild . cyan-faint) ; Special mild foreground
 
-    ;; === Terminal Colors ===
-    (bg-term-black . "#2a2d3a")
-    (fg-term-black . "#2a2d3a")
-    (bg-term-red . red)
-    (fg-term-red . red)
-    (bg-term-green . green)
-    (fg-term-green . green)
+	    ;; === Terminal Colors ===
+	    (bg-term-black . fg-alt)
+	    (fg-term-black . fg-alt)
+	    (bg-term-red . red)
+	    (fg-term-red . red)
+	    (bg-term-green . green)
+	    (fg-term-green . green)
     (bg-term-yellow . yellow)
     (fg-term-yellow . yellow)
     (bg-term-blue . blue)
     (fg-term-blue . blue)
-    (bg-term-magenta . magenta)
-    (fg-term-magenta . magenta)
-    (bg-term-cyan . cyan)
-    (fg-term-cyan . cyan)
-    (bg-term-white . "#e0e0e5")
-    (fg-term-white . "#e0e0e5")
+	    (bg-term-magenta . magenta)
+	    (fg-term-magenta . magenta)
+	    (bg-term-cyan . cyan)
+	    (fg-term-cyan . cyan)
+	    (bg-term-white . "#e5e5ea")
+	    (fg-term-white . "#e5e5ea")
 
-    ;; Bright terminal colors
-    (bg-term-black-bright . "#4a4d5a")
-    (fg-term-black-bright . "#4a4d5a")
-    (bg-term-red-bright . red-intense)
-    (fg-term-red-bright . red-intense)
-    (bg-term-green-bright . green-intense)
-    (fg-term-green-bright . green-intense)
+	    ;; Bright terminal colors
+	    (bg-term-black-bright . fg-dim)
+	    (fg-term-black-bright . fg-dim)
+	    (bg-term-red-bright . red-intense)
+	    (fg-term-red-bright . red-intense)
+	    (bg-term-green-bright . green-intense)
+	    (fg-term-green-bright . green-intense)
     (bg-term-yellow-bright . yellow-intense)
     (fg-term-yellow-bright . yellow-intense)
     (bg-term-blue-bright . blue-intense)

@@ -14,11 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - LD_LIBRARY_PATH export and codex alias in Zsh configuration
 - Structured Emacs setup directory for organization files
 - Git commit guidelines in CLAUDE.md to prevent accidental commits
+- Emacs cursor pulse for easier point tracking during navigation
 ### Changed
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
 - Modularized Emacs configuration into focused components
-- Updated Alacritty configuration with improved settings
+- Updated BV font stack defaults and Unicode fallbacks (JetBrains Mono, FiraGO, Noto Serif)
+- Refined BV Emacs light/dark theme palettes for improved contrast and a more polished completion UI
+- Disabled underlines across BV themes (links, comments, diagnostics) in favor of color and subtle background emphasis
+- Tuned header-line modeline padding and fringe/background integration for a cleaner look
+- Enabled right-only window dividers for clearer window separation
 - Zsh prompt now shows active environment names (virtualenv/Guix/direnv) and `l` is the default `eza` listing alias
 - Guix home profiles include `%shell-zsh` bundle for Zsh tool dependencies (fzf, ripgrep, bat, eza, fd, zoxide, direnv, wl-clipboard)
 - Enhanced mileva machine configuration
@@ -37,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Removed redundant custom zprofile configuration
 - Corrected multiple import and configuration errors in mileva.scm
 - Fixed indentation in sparck system services configuration
+- Restored completion-at-point in `git-commit-mode` buffers
 ### Removed
 - Obsolete Emacs configuration files
 

@@ -44,14 +44,13 @@
     (setq flyspell-issue-welcome-flag nil))
   (when (boundp 'flyspell-issue-message-flag)
     (setq flyspell-issue-message-flag nil))
-
-  ;; Better flyspell faces
+  ;; Faces are themed by `bv-themes' (no underlines by design).
+  ;; However, some defaults/package code can reintroduce underlines after theme
+  ;; load, so we explicitly disable them here.
   (when (facep 'flyspell-incorrect)
-    (set-face-attribute 'flyspell-incorrect nil
-                        :underline '(:style wave :color "red")))
+    (set-face-attribute 'flyspell-incorrect nil :underline nil))
   (when (facep 'flyspell-duplicate)
-    (set-face-attribute 'flyspell-duplicate nil
-                        :underline '(:style wave :color "orange"))))
+    (set-face-attribute 'flyspell-duplicate nil :underline nil)))
 
 ;; Dictionary lookup
 (with-eval-after-load 'dictionary

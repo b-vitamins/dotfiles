@@ -35,30 +35,6 @@
       marginalia-max-relative-age (* 60 60 24 30) ; Show relative age up to 30 days
       marginalia-cache-size 200)           ; Larger cache for smoother scrolling
 
-;;; Visual Enhancements - Better faces for dark themes
-
-(with-eval-after-load 'marginalia
-  ;; Make key bindings more visible
-  (set-face-attribute 'marginalia-key nil
-                      :foreground "#7aa2f7"
-                      :weight 'bold)
-
-  ;; Subdued documentation
-  (set-face-attribute 'marginalia-documentation nil
-                      :foreground "#565f89"
-                      :slant 'italic)
-
-  ;; File permissions with better contrast
-  (set-face-attribute 'marginalia-file-priv-read nil :foreground "#9ece6a")
-  (set-face-attribute 'marginalia-file-priv-write nil :foreground "#f7768e")
-  (set-face-attribute 'marginalia-file-priv-exec nil :foreground "#7aa2f7")
-  (set-face-attribute 'marginalia-file-priv-dir nil :foreground "#bb9af7")
-
-  ;; Better file owner visibility
-  (set-face-attribute 'marginalia-file-owner nil
-                      :foreground "#e0af68"
-                      :weight 'normal))
-
 ;;; Smart Prompt Categories - More intuitive classification
 
 (setq marginalia-prompt-categories

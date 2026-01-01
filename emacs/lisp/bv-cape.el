@@ -216,6 +216,10 @@
    (cape-capf-prefix-length #'cape-dict 3))
   "Text mode completion.")
 
+(defconst bv-cape--text-capf
+  (cape-capf-properties bv-cape--text-super :exclusive 'no)
+  "Non-exclusive CAPF wrapper for `bv-cape--text-super'.")
+
 ;;; Lazy-Loaded Super Capfs
 
 (defvar bv-cape--org-super nil)
@@ -275,6 +279,12 @@
 (defun bv-cape-setup-text-mode ()
   "Setup Cape for text modes."
   (bv-cape-setup-with-capf bv-cape--text-super))
+
+(defun bv-cape-setup-git-commit-mode ()
+  "Add Cape text completion in `git-commit-mode' buffers.
+This runs after `git-commit-mode' finishes initializing, so it won't be
+overridden by mode-local CAPF setup."
+  (add-hook 'completion-at-point-functions bv-cape--text-capf 90 t))
 
 (defun bv-cape-setup-org-mode ()
   "Setup Cape for Org mode."
@@ -429,6 +439,11 @@
     (when (fboundp 'project-switch-project)
       (advice-add 'project-switch-project :after
                   (lambda (&rest _) (bv-cape-clear-caches))))))
+
+;; Ensure git commit buffers keep Cape text completion even if `git-commit-mode'
+;; overwrites CAPFs after `text-mode-hook' runs.
+(with-eval-after-load 'git-commit
+  (add-hook 'git-commit-mode-hook #'bv-cape-setup-git-commit-mode))
 
 ;;; Initialization
 

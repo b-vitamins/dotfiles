@@ -63,6 +63,8 @@
   (let* ((char-width    (window-font-width nil 'header-line))
          (space-up      +0.15)
          (space-down    -0.20)
+         (edge-pad      (propertize " " 'face 'header-line))
+         (edge-pad-width (length edge-pad))
          (prefix (cond ((string= status "RO")
                         (propertize (if (window-dedicated-p) " -- " " RO ")
                                     'face 'bv-themes-header-popout))
@@ -70,8 +72,8 @@
                         (propertize (if (window-dedicated-p) " -- " " ** ")
                                     'face 'bv-themes-header-critical))
                        ((string= status "RW")
-                        (propertize (if (window-dedicated-p) " -- " " RW ")
-                                    'face 'bv-themes-header-faded))
+                       (propertize (if (window-dedicated-p) " -- " " RW ")
+                                   'face 'bv-themes-header-faded))
                        (t (propertize status 'face 'bv-themes-header-popout))))
          (left (concat
                 (propertize " " 'face 'bv-themes-header-default
@@ -82,14 +84,17 @@
                 (propertize primary 'face 'bv-themes-header-default)))
          (right (concat secondary " "))
          (available-width (- (window-total-width)
+                             edge-pad-width edge-pad-width
                              (length prefix) (length left) (length right)
                              (/ (window-right-divider-width) char-width)))
          (available-width (max 1 available-width)))
-    (concat prefix
+    (concat edge-pad
+            prefix
             left
             (propertize (make-string available-width ?\ )
                         'face 'bv-themes-header-default)
-            (propertize right 'face 'bv-themes-header-default))))
+            (propertize right 'face 'bv-themes-header-default)
+            edge-pad)))
 
 (defun bv-modeline-status ()
   "Return buffer status: read-only (RO), modified (**) or read-write (RW)."

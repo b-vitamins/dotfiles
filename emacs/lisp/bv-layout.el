@@ -30,10 +30,15 @@
                '(width      . 81)
                '(vertical-scroll-bars . nil)
                '(internal-border-width . 24)
-               '(left-fringe    . 0)
-               '(right-fringe   . 0)
+               '(left-fringe    . 8)
+               '(right-fringe   . 8)
                '(tool-bar-lines . 0)
-               '(menu-bar-lines . 0))))
+               '(menu-bar-lines . 0)
+               '(undecorated . t))))
+
+;; Ensure the initial frame picks up the configured fringe width.
+(when (display-graphic-p)
+  (set-fringe-mode 8))
 
 
 (defface fallback '((t :family "Fira Code"))
@@ -53,6 +58,10 @@
 (when (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (menu-bar-mode -1)
 (setq x-underline-at-descent-line t)
+
+;; Ensure fringe indicators (Flymake/LSP/etc.) are fully visible alongside
+;; line numbers and other margins.
+(setq fringes-outside-margins t)
 
 (setq window-divider-default-right-width 6
       window-divider-default-places 'right-only)

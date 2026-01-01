@@ -92,8 +92,11 @@
     (prettier-js))
    ((executable-find "prettier")
     (save-buffer)
-    (shell-command-on-region (point-min) (point-max)
-                            "prettier --stdin-filepath " (buffer-file-name) nil t))
+    (shell-command-on-region
+     (point-min) (point-max)
+     (format "prettier --stdin-filepath %s"
+             (shell-quote-argument (buffer-file-name)))
+     t t))
    (t
     (eglot-format-buffer))))
 

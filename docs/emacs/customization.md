@@ -1,16 +1,18 @@
 # Emacs Configuration Customization Guide
 
-Configuration customization without modifying source files. All settings use defcustom variables stored in `~/.emacs.d/custom.el`.
+Configuration customization without modifying source files. All settings use
+defcustom variables stored in `custom-file` (defaults to `custom.el` inside
+`user-emacs-directory`, typically `~/.config/emacs/custom.el` with this setup).
 
 ## Quick Start
 
-Add customizations to your `~/.emacs.d/custom.el` file:
+Add customizations to your `custom-file` (usually `~/.config/emacs/custom.el`):
 
 ```elisp
 (custom-set-variables
  '(bv-fonts-default-family "JetBrains Mono")
  '(bv-fonts-default-size 140)
- '(bv-themes-syntax 'alt-syntax)
+ '(bv-themes-syntax 'tinted)
  '(bv-org-roam-directory "~/notes"))
 ```
 
@@ -52,26 +54,26 @@ Example:
 
 **bv-themes-syntax** (symbol)
 - Default: nil
-- Options: nil, alt-syntax, deuteranopia, tritanopia
-- Controls syntax highlighting intensity
+- Options: nil, faint, intense, monochrome, rainbow, tinted, alt
+- Controls syntax highlighting intensity/style
 
 **bv-themes-mode-line** (symbol)
 - Default: nil
-- Options: nil, borderless, accented, moody, padded
+- Options: nil, accented, padded, borderless, gradient, minimal, moody
 - Mode line appearance
 
-**bv-themes-headings** (symbol)
+**bv-themes-headings** (alist)
 - Default: nil
-- Options: nil, monochrome, rainbow, highlight, no-bold
-- Org/markdown heading styles
+- Per-heading-level styling. Keys are heading levels (integers), values are
+  plists like `(:height 1.2 :weight bold :overline t :style rainbow)`.
 
 **bv-themes-bold-constructs** (boolean)
 - Default: t
 - Bold keywords and constructs
 
 **bv-themes-italic-constructs** (boolean)
-- Default: nil
-- Italic comments and strings
+- Default: t
+- Italic comments and docstrings
 
 **bv-themes-variable-pitch-ui** (boolean)
 - Default: nil
@@ -79,26 +81,29 @@ Example:
 
 **bv-themes-org-blocks** (symbol)
 - Default: nil
-- Options: nil, gray-background, tinted-background
+- Options: nil, tinted, rainbow, zebra, minimal, bordered
 - Org code block styling
 
 **bv-themes-completions** (symbol)
-- Default: nil
-- Options: nil, opinionated, moderate
-- Completion interface styling
+- Default: 'moderate
+- Options: nil, opinionated, moderate, minimal
+- Completion match highlighting
 
 **bv-themes-paren-match** (symbol)
 - Default: 'intense
-- Options: subtle-warm, intense, subtle-cool
+- Options: intense, subtle, bold, underline, intense-foreground
 - Parentheses matching highlight
 
 Theme example:
 ```elisp
 (custom-set-variables
- '(bv-themes-syntax 'alt-syntax)
+ '(bv-themes-syntax 'tinted)
  '(bv-themes-mode-line 'borderless)
- '(bv-themes-headings 'rainbow)
- '(bv-themes-org-blocks 'tinted-background))
+ '(bv-themes-org-blocks 'tinted)
+ '(bv-themes-completions 'moderate)
+ '(bv-themes-headings
+   ((1 . (:height 1.3 :weight bold))
+    (2 . (:height 1.2 :weight semibold)))))
 ```
 
 ### Circadian (Automatic Theme Switching)
@@ -264,8 +269,11 @@ Location example:
 ```elisp
 (custom-set-variables
  '(bv-org-roam-directory "~/research/notes")
- '(bv-themes-headings 'rainbow)
- '(bv-themes-org-blocks 'tinted-background)
+ '(bv-themes-org-blocks 'tinted)
+ '(bv-themes-headings
+   ((1 . (:height 1.35 :weight bold))
+    (2 . (:height 1.2 :weight semibold))
+    (3 . (:height 1.1 :weight semibold))))
  '(bv-fonts-serif-family "Crimson Text"))
 ```
 
@@ -288,23 +296,15 @@ Location example:
 
 ## Module Loading Control
 
-Modules load automatically via idle timers. Disable by removing require statements in init.el:
-
-**Immediate Loading** (0s):
-- bv-defaults, bv-fonts, bv-themes, bv-modeline
-
-**Quick Loading** (0.1s):
-- bv-completion, bv-git, bv-org
-
-**Delayed Loading** (1.0s+):
-- bv-org-roam, bv-citation, language modes
+Modules are loaded via `require` calls in `emacs/init.el`. Disable a module by
+commenting out its `require` line and restarting Emacs.
 
 ## Configuration File Locations
 
-**Main Settings**: `~/.emacs.d/custom.el`
-**Theme Cache**: `~/.cache/emacs/themes/`
-**Org Data**: `~/.local/share/emacs/org/`
-**TRAMP History**: `~/.emacs.d/tramp-history`
+**Main Settings**: `custom-file` (defaults to `custom.el` in `user-emacs-directory`)
+**History**: `history` in `user-emacs-directory` (savehist)
+**Backups**: `backups/` in `user-emacs-directory`
+**Auto-saves**: `auto-saves/` in `user-emacs-directory`
 
 ## Debugging Customizations
 

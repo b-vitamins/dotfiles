@@ -119,7 +119,7 @@
   :group 'org-roam
   :prefix "bv-org-roam-")
 
-(defcustom bv-org-roam-directory "~/projects/slipbox/slips"
+(defcustom bv-org-roam-directory "~/documents/slipbox/slips"
   "Directory for org-roam slip box files."
   :type 'directory
   :group 'bv-org-roam)

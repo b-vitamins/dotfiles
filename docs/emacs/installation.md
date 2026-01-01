@@ -40,14 +40,14 @@ cd ~/projects/dotfiles
 # Start Emacs
 emacs
 
-# Wait for package installation (first run only)
-# Check *Messages* buffer for progress
+# If you see "Cannot open load file" errors, install the missing
+# Emacs packages using your preferred method (Guix, package.el, etc.).
 ```
 
 ### 3. Verify Installation
 ```elisp
 ;; Run these commands with M-:
-(featurep 'bv-core)          ; Should return t
+(featurep 'init)             ; Should return t
 (featurep 'bv-themes)        ; Should return t
 ```
 
@@ -109,11 +109,8 @@ M-x esup
 
 ### Package Installation Issues
 ```elisp
-;; Refresh package list
-M-x package-refresh-contents
-
-;; Install missing packages manually
-M-x package-install RET package-name RET
+;; This configuration does not bootstrap packages by itself.
+;; If a package is missing, install it using your preferred method.
 ```
 
 ### Native Compilation Warnings
@@ -162,7 +159,7 @@ M-x org-roam-db-sync
 ### Verify Theme System
 ```elisp
 ;; Toggle theme
-M-x modus-themes-toggle
+M-x bv-themes-toggle
 
 ;; Check circadian
 M-x bv-circadian-status
@@ -173,4 +170,4 @@ M-x bv-circadian-status
 1. Review [Workflow Guide](workflow-guide.md) for usage patterns
 2. Customize via [Customization Guide](customization.md)
 3. Learn [Keybindings](keybindings.md)
-4. Explore [Module Documentation](modules/)
+4. Browse modules in `emacs/lisp/`

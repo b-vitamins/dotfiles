@@ -60,6 +60,7 @@
 (require 'bv-which-key)    ; Key binding hints
 (require 'bv-keycast)      ; Show keys being pressed
 (require 'bv-nerd-icons)   ; Nerd Font icon support
+(require 'bv-pulse)        ; Cursor pulse for point tracking
 
 ;; Basic functionality
 (require 'bv-calendar)     ; Calendar enhancements

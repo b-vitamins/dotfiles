@@ -30,7 +30,7 @@
   "Face for today.")
 
 (defface bv-calendar-current
-  '((t :underline t))
+  '((t :inherit region :weight medium))
   "Face for current selected date.")
 
 (defface bv-calendar-weekend
@@ -168,7 +168,7 @@
                           (propertize day-text
                                       'face (cond
                                              ((and is-current is-today)
-                                              '(:inherit bv-calendar-today :underline t))
+                                              '(:inherit (bv-calendar-current bv-calendar-today)))
                                              (is-current 'bv-calendar-current)
                                              (is-today 'bv-calendar-today)
                                              (holiday 'bv-calendar-holiday)
