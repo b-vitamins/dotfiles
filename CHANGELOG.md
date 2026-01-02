@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Git commit guidelines in CLAUDE.md to prevent accidental commits
 - Emacs cursor pulse for easier point tracking during navigation
 - Circadian Alacritty light/dark theming with synced Zsh/FZF/Bat palettes
+- Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
 ### Changed
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
