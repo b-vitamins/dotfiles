@@ -28,6 +28,9 @@
 (defvar eglot-extend-to-xref)
 (defvar eglot-autoshutdown)
 (defvar eglot-sync-connect)
+(defvar eglot-events-buffer-size)
+(defvar eglot-report-progress)
+(defvar eglot-send-changes-idle-time)
 (defvar eglot-mode-map)
 (defvar bv-app-map)
 
@@ -53,6 +56,15 @@
   (setq eglot-autoshutdown t))
 (when (boundp 'eglot-sync-connect)
   (setq eglot-sync-connect nil))
+(when (boundp 'eglot-events-buffer-size)
+  ;; Keep the events buffer essentially off unless explicitly debugging.
+  (setq eglot-events-buffer-size 0))
+(when (boundp 'eglot-report-progress)
+  ;; Avoid noisy minibuffer progress spam from some servers.
+  (setq eglot-report-progress nil))
+(when (boundp 'eglot-send-changes-idle-time)
+  ;; Slight batching for fewer RPCs on fast typists.
+  (setq eglot-send-changes-idle-time 0.2))
 
 (defun bv-eglot-has-lsp-server-p ()
   "Check if current major mode has an LSP server configured."

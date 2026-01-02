@@ -18,6 +18,8 @@
 (declare-function project-prefixed-buffer-name "project")
 (declare-function compilation--default-buffer-name "compile")
 (declare-function org-capture "org-capture")
+(declare-function magit-status "magit" (&optional directory))
+(declare-function dape "dape")
 (defvar user-emacs-directory)
 
 (defvar bv-project-dominating-files
@@ -62,6 +64,78 @@
              compilation-buffer-name-function)))
     (call-interactively 'compile nil (and comint (vector (list 4))))))
 
+(defun bv-project-ripgrep ()
+  "Run ripgrep in the current project.
+
+Uses `consult-ripgrep' when available, falling back to `project-find-regexp'."
+  (interactive)
+  (let ((root (project-root (project-current t))))
+    (if (require 'consult nil t)
+        (consult-ripgrep root)
+      (let ((default-directory root))
+        (call-interactively #'project-find-regexp)))))
+
+(defun bv-project-consult-find ()
+  "Run a fast file search in the current project.
+
+Uses `consult-find' when available, falling back to `project-find-file'."
+  (interactive)
+  (let ((root (project-root (project-current t))))
+    (if (require 'consult nil t)
+        (consult-find root)
+      (project-find-file))))
+
+(defun bv-project-magit-status ()
+  "Open `magit-status' in the current project."
+  (interactive)
+  (let ((root (project-root (project-current t))))
+    (if (require 'magit nil t)
+        (magit-status root)
+      (user-error "Magit is not available"))))
+
+(defun bv-project-dape ()
+  "Start `dape' in the current project."
+  (interactive)
+  (let ((default-directory (project-root (project-current t))))
+    (if (require 'dape nil t)
+        (call-interactively #'dape)
+      (user-error "Dape is not available"))))
+
+(defun bv-project--default-test-command (root)
+  "Return a reasonable test command guess for project ROOT."
+  (cond
+   ((file-exists-p (expand-file-name "Cargo.toml" root))
+    "cargo test")
+   ((or (file-exists-p (expand-file-name "pyproject.toml" root))
+        (file-exists-p (expand-file-name "pytest.ini" root))
+        (file-exists-p (expand-file-name "setup.py" root)))
+    "python -m pytest -q")
+   ((file-exists-p (expand-file-name "mix.exs" root))
+    "mix test")
+   ((file-exists-p (expand-file-name "go.mod" root))
+    "go test ./...")
+   ((file-exists-p (expand-file-name "package.json" root))
+    "npm test")
+   ((or (file-exists-p (expand-file-name "package.yaml" root))
+        (file-expand-wildcards (expand-file-name "*.cabal" root) t))
+    "cabal test")
+   ((file-exists-p (expand-file-name "Makefile" root))
+    "make test")
+   (t "make test")))
+
+(defun bv-project-test (&optional prompt)
+  "Run tests in the current project.
+
+With prefix argument PROMPT, edit the suggested command."
+  (interactive "P")
+  (let* ((root (project-root (project-current t)))
+         (default-directory root)
+         (default-cmd (bv-project--default-test-command root))
+         (cmd (if prompt
+                  (read-shell-command "Test command: " default-cmd)
+                default-cmd)))
+    (compile cmd)))
+
 (when (boundp 'project-find-functions)
   (add-hook 'project-find-functions 'project-try-vc -90)
   (add-hook 'project-find-functions 'bv-project-custom-root 50))
@@ -92,19 +166,32 @@
   (when (boundp 'project-switch-commands)
     (setq project-switch-commands
           '((project-find-file "Find file" ?f)
+            (bv-project-consult-find "Find (external)" ?F)
+            (bv-project-ripgrep "Ripgrep" ?R)
             (project-find-regexp "Find regexp" ?g)
+            (project-query-replace-regexp "Replace regexp" ?r)
             (project-dired "Dired" ?d)
-            (project-eshell "Eshell" ?e))))
+            (project-shell "Shell" ?s)
+            (project-eshell "Eshell" ?e)
+            (project-vc-dir "VC dir" ?v)
+            (project-compile "Build/compile" ?c)
+            (bv-project-test "Test" ?t)
+            (bv-project-magit-status "Magit" ?m)
+            (bv-project-dape "Debug (dape)" ?z))))
 
   (with-eval-after-load 'consult
-    (when (boundp 'project-prefix-map)
-      (define-key project-prefix-map "F" 'consult-find)
-      (define-key project-prefix-map "R" 'consult-ripgrep))
     (when (boundp 'consult-project-root-function)
       (setq consult-project-root-function
             (lambda ()
               (when-let (project (project-current))
                 (project-root project)))))))
+
+  (when (boundp 'project-prefix-map)
+    (define-key project-prefix-map "F" 'bv-project-consult-find)
+    (define-key project-prefix-map "R" 'bv-project-ripgrep)
+    (define-key project-prefix-map "t" 'bv-project-test)
+    (define-key project-prefix-map "m" 'bv-project-magit-status)
+    (define-key project-prefix-map "z" 'bv-project-dape))
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-app-map)

@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Emacs cursor pulse for easier point tracking during navigation
 - Emacs config doctor (`bv-doctor` / `scripts/emacs-doctor.sh`) for batch validation
 - DPI-aware per-monitor font scaling for GUI frames
+- Tree-sitter grammar audit command (`bv-treesit-audit`)
+- Project cockpit actions in `project-switch-project` (ripgrep, test, magit, dape)
+- Visual undo tree via `vundo` with friendlier redo keys
 - Circadian Alacritty light/dark theming with synced Zsh/FZF/Bat palettes
 - Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
 ### Changed
@@ -29,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Tuned header-line modeline padding and fringe/background integration for a cleaner look
 - Enabled right-only window dividers for clearer window separation
 - Enabled `save-place`, `auto-revert`, `repeat-mode`, and pixel-precise scrolling defaults
+- Expanded Vertico multiform categories and tuned Consult preview behavior for faster “peek” navigation
+- Made Corfu auto-popup mode-aware (manual in `git-commit-mode` buffers)
+- Calmed Eglot progress/events noise and added a Flymake quickfix helper (`bv-flymake-quickfix`)
 - Zsh prompt now shows active environment names (virtualenv/Guix/direnv) and `l` is the default `eza` listing alias
 - Guix home profiles include `%shell-zsh` bundle for Zsh tool dependencies (fzf, ripgrep, bat, eza, fd, zoxide, direnv, wl-clipboard)
 - Enhanced mileva machine configuration

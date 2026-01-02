@@ -12,6 +12,21 @@
 
 (require 'flymake)
 
+(declare-function consult-flymake "consult-flymake" (&optional project))
+
+(defun bv-flymake-quickfix (&optional project)
+  "Show Flymake diagnostics using a quick, interactive UI.
+
+With prefix argument PROJECT, show project diagnostics."
+  (interactive "P")
+  (cond
+   ((fboundp 'consult-flymake)
+    (consult-flymake project))
+   (project
+    (flymake-show-project-diagnostics))
+   (t
+    (flymake-show-buffer-diagnostics))))
+
 (when (boundp 'flymake-no-changes-timeout)
   (setq flymake-no-changes-timeout 0.5))
 (when (boundp 'flymake-start-on-save-buffer)
@@ -24,6 +39,7 @@
     (define-key map (kbd "M-n") 'flymake-goto-next-error)
     (define-key map (kbd "M-p") 'flymake-goto-prev-error)
     (define-key map (kbd "C-c ! l") 'flymake-show-buffer-diagnostics)
+    (define-key map (kbd "C-c ! q") 'bv-flymake-quickfix)
     (define-key map (kbd "C-c ! p") 'flymake-show-project-diagnostics)))
 
 

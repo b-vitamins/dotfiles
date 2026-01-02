@@ -388,6 +388,19 @@ CANDIDATE is the completion candidate to get documentation for."
               corfu-quit-no-match t
               completion-styles '(basic partial-completion)))
 
+(defun bv-corfu-manual-settings ()
+  "Manual completion settings for buffers where popups are distracting."
+  (setq-local corfu-auto nil
+              corfu-auto-delay nil
+              corfu-auto-prefix 3))
+
+(defun bv-corfu-git-commit-settings ()
+  "Use manual completion in `git-commit-mode' buffers."
+  (bv-corfu-manual-settings)
+  ;; `bv-corfu-text-settings' applies via `text-mode-hook' using a 0s timer;
+  ;; schedule after it to keep commit buffers quiet.
+  (run-with-timer 0 nil #'bv-corfu-manual-settings))
+
 (defun bv-corfu-minibuffer-settings ()
   "Minimal settings for minibuffer."
   (setq-local corfu-echo-delay nil
@@ -477,6 +490,7 @@ CANDIDATE is the completion candidate to get documentation for."
 (add-hook 'text-mode-hook #'bv-corfu-text-settings)
 (add-hook 'shell-mode-hook #'bv-corfu-shell-settings)
 (add-hook 'eshell-mode-hook #'bv-corfu-shell-settings)
+(add-hook 'git-commit-mode-hook #'bv-corfu-git-commit-settings)
 (add-hook 'minibuffer-setup-hook #'bv-corfu-enable-in-minibuffer)
 
 ;; Auto-completion synchronization

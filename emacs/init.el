@@ -31,9 +31,13 @@
 (bv-circadian-setup)
 
 (require 'bv-defaults)
+(require 'bv-undo)
 
 ;; Configure fonts for sharp, crystal-clear rendering
 (require 'bv-fonts)
+
+;; Tree-sitter ergonomics helpers (audit, config introspection)
+(require 'bv-treesit)
 
 ;; Set theme engine to use our configured fonts
 (setq bv-themes-font-family-monospaced bv-fonts-default-family)

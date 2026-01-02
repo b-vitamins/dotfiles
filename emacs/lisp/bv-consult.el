@@ -21,6 +21,8 @@
 (require 'consult)
 (require 'recentf)
 (require 'project)
+(autoload 'consult-compile-error "consult-compile" nil t)
+(autoload 'consult-flymake "consult-flymake" nil t)
 
 ;; External variable declarations
 (defvar consult--narrow-config)
@@ -42,6 +44,7 @@
 (declare-function consult-imenu-multi "consult-imenu" (&optional options))
 (declare-function consult-compile-error "consult-compile" (&optional project))
 (declare-function consult-flymake "consult-flymake" (&optional project))
+(declare-function bv-flymake-quickfix "bv-flymake" (&optional project))
 
 ;;;; Custom Variables
 
@@ -437,6 +440,11 @@ PRED is a predicate function to filter files."
    ;; Simple preview for buffers
    consult-buffer :preview-key '(:debounce 0.2 any)
 
+   ;; Fast, \"peek\"-style preview for navigation pickers
+   consult-imenu consult-imenu-multi consult-xref
+   consult-compile-error consult-flymake
+   :preview-key '(:debounce 0.15 any)
+
    ;; Delayed preview for grep commands
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file
@@ -447,7 +455,9 @@ PRED is a predicate function to filter files."
    ;; Configure specific commands
    consult-goto-line :prompt "Go to line: "
    consult-line :prompt "Search: " :inherit-input-method t
+   :preview-key '(:debounce 0.15 any)
    consult-outline :prompt "Outline: "
+   :preview-key '(:debounce 0.15 any)
    consult-history :category nil))
 
 ;;;; Key Bindings
@@ -470,7 +480,7 @@ PRED is a predicate function to filter files."
   (global-set-key (kbd "M-g i") #'consult-imenu)
   (global-set-key (kbd "M-g I") #'consult-imenu-multi)
   (global-set-key (kbd "M-g e") #'consult-compile-error)
-  (global-set-key (kbd "M-g f") #'consult-flymake)
+  (global-set-key (kbd "M-g f") #'bv-flymake-quickfix)
   (global-set-key (kbd "C-s") #'consult-line)
   (global-set-key (kbd "C-M-s") #'bv-consult-ripgrep-or-line)
   (global-set-key (kbd "C-S-s") #'bv-consult-line-symbol-at-point)

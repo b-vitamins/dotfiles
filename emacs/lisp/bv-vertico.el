@@ -175,12 +175,20 @@ COUNT specifies the number of words to delete when no region is active."
 (setq vertico-multiform-categories
       '(;; Files stay in normal vertical mode with directory highlighting
         (file (bv-vertico-transform-functions . bv-vertico-highlight-directory))
+        (project-file (bv-vertico-transform-functions . bv-vertico-highlight-directory))
+
+        ;; Location-heavy pickers are easier to preview in a dedicated buffer
+        (consult-location buffer)
+        (xref-location buffer)
+        (imenu buffer)
 
         ;; Info menus benefit from buffer display
         (info-menu buffer)
 
-        ;; Symbols: alphabetical sorting
-        (symbol (vertico-sort-function . vertico-sort-alpha))))
+        ;; Keep consult's ordering for buffers, but sort symbols/commands
+        (buffer (vertico-sort-function . nil))
+        (symbol (vertico-sort-function . vertico-sort-alpha))
+        (command (vertico-sort-function . vertico-sort-history-length-alpha))))
 
 (setq vertico-multiform-commands
       '(;; Your original buffer commands - these make sense!
