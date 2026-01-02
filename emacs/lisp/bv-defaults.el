@@ -186,7 +186,34 @@ and MSG is the process message."
 ;; Minibuffer history
 (require 'savehist)
 (setq savehist-file (expand-file-name "history" user-emacs-directory))
+(setq history-length 1000
+      history-delete-duplicates t
+      savehist-save-minibuffer-history t
+      savehist-autosave-interval 300
+      savehist-additional-variables
+      '(kill-ring
+        search-ring regexp-search-ring
+        extended-command-history))
 (savehist-mode 1)
+
+;; Remember point position in visited files
+(require 'saveplace)
+(setq save-place-file (expand-file-name "places" user-emacs-directory))
+(save-place-mode 1)
+
+;; Automatically refresh buffers when files change on disk
+(require 'autorevert)
+(setq global-auto-revert-non-file-buffers t
+      auto-revert-verbose nil)
+(global-auto-revert-mode 1)
+
+;; Repeat-mode for less typing (e.g. `C-x o o o' without repeating prefixes)
+(when (fboundp 'repeat-mode)
+  (repeat-mode 1))
+
+;; Pixel-precise scrolling in GUI for a modern feel
+(when (and (display-graphic-p) (fboundp 'pixel-scroll-precision-mode))
+  (pixel-scroll-precision-mode 1))
 
 ;; Auto-save and backup configuration
 (setq backup-directory-alist

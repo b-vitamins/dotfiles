@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Structured Emacs setup directory for organization files
 - Git commit guidelines in CLAUDE.md to prevent accidental commits
 - Emacs cursor pulse for easier point tracking during navigation
+- Emacs config doctor (`bv-doctor` / `scripts/emacs-doctor.sh`) for batch validation
+- DPI-aware per-monitor font scaling for GUI frames
 - Circadian Alacritty light/dark theming with synced Zsh/FZF/Bat palettes
 - Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
 ### Changed
@@ -26,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Disabled underlines across BV themes (links, comments, diagnostics) in favor of color and subtle background emphasis
 - Tuned header-line modeline padding and fringe/background integration for a cleaner look
 - Enabled right-only window dividers for clearer window separation
+- Enabled `save-place`, `auto-revert`, `repeat-mode`, and pixel-precise scrolling defaults
 - Zsh prompt now shows active environment names (virtualenv/Guix/direnv) and `l` is the default `eza` listing alias
 - Guix home profiles include `%shell-zsh` bundle for Zsh tool dependencies (fzf, ripgrep, bat, eza, fd, zoxide, direnv, wl-clipboard)
 - Enhanced mileva machine configuration

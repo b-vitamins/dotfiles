@@ -100,6 +100,7 @@
 (require 'bv-flymake)      ; On-the-fly checking
 (require 'bv-xref)         ; Cross references
 (require 'bv-smartparens)  ; Structural editing
+(require 'bv-doctor)       ; Batch config validation
 
 ;; Version control
 (require 'bv-git)          ; Git integration
