@@ -1,0 +1,64 @@
+[window]
+opacity = 1.0
+blur = false
+decorations_theme_variant = "Light"
+
+[colors]
+draw_bold_text_with_bright_colors = false
+transparent_background_colors = true
+
+[colors.primary]
+background = "#fbfbfc"
+foreground = "#1f2328"
+dim_foreground = "#57606a"
+bright_foreground = "#0b0f14"
+
+[colors.cursor]
+text = "#fbfbfc"
+cursor = "#0969da"
+
+[colors.vi_mode_cursor]
+text = "#fbfbfc"
+cursor = "#9a6700"
+
+[colors.search]
+matches = { foreground = "#1f2328", background = "#a5d6ff" }
+focused_match = { foreground = "#1f2328", background = "#ffd8a8" }
+
+[colors.hints]
+start = { foreground = "#1f2328", background = "#b7eb8f" }
+end = { foreground = "#1f2328", background = "#a5d6ff" }
+
+[colors.selection]
+text = "CellForeground"
+background = "#e7effb"
+
+[colors.normal]
+black = "#24292f"
+red = "#cf222e"
+green = "#116329"
+yellow = "#9a6700"
+blue = "#0969da"
+magenta = "#8250df"
+cyan = "#1b7c83"
+white = "#57606a"
+
+[colors.bright]
+black = "#6e7781"
+red = "#ff4d4f"
+green = "#1a7f37"
+yellow = "#bf8700"
+blue = "#218bff"
+magenta = "#a475f9"
+cyan = "#3192aa"
+white = "#1f2328"
+
+[colors.dim]
+black = "#8c959f"
+red = "#a40e26"
+green = "#2da44e"
+yellow = "#7d4e00"
+blue = "#0550ae"
+magenta = "#6639ba"
+cyan = "#0f766e"
+white = "#6e7781"

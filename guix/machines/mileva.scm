@@ -12,6 +12,7 @@
              (gnu home services media)
              (gnu home services music)
              (gnu home services shells)
+             (gnu home services shepherd)
              (gnu home services sound)
              (gnu home services ssh)
              (gnu home services syncthing)
@@ -94,10 +95,12 @@
 ;;; Home configuration
 (define %my-home-config
   (home-environment
-    (packages (append
-
-                      (list font-google-roboto font-fira-go font-fira-sans
-                            font-fira-code font-fira-mono)))
+    (packages (append (list font-google-roboto
+                            font-fira-go
+                            font-fira-sans
+                            font-fira-code
+                            font-fira-mono
+                            (specification->package "xdg-utils"))))
 
     (services
      (list
@@ -223,6 +226,18 @@ inode/directory=org.gnome.Nautilus.desktop
                                                       "../../alacritty/alacritty.toml"
                                                       "alacritty.toml"
                                                       #:recursive? #f))
+                        ("alacritty/base.toml" ,(local-file
+                                                 "../../alacritty/base.toml"
+                                                 "alacritty-base.toml"
+                                                 #:recursive? #f))
+                        ("alacritty/circadian.sh" ,(local-file
+                                                    "../../alacritty/circadian.sh"
+                                                    "alacritty-circadian.sh"
+                                                    #:recursive? #f))
+                        ("alacritty/themes" ,(local-file
+                                              "../../alacritty/themes"
+                                              "alacritty-themes"
+                                              #:recursive? #t))
                         ("mpv/input.conf" ,(local-file "../../mpv/input.conf"
                                                        "mpv-input.conf"
                                                        #:recursive? #f))
@@ -232,6 +247,40 @@ inode/directory=org.gnome.Nautilus.desktop
                         ("mpv/shaders" ,(local-file "../../mpv/shaders"
                                                     "mpv-shaders"
                                                     #:recursive? #t))))
+
+      ;; Time-based (circadian) Alacritty light/dark theme switching.
+      (simple-service 'mileva-alacritty-circadian-startup
+                      home-shepherd-service-type
+                      (list (shepherd-service (documentation
+                                               "Apply Alacritty circadian theme at login.")
+                                              (provision '(alacritty-circadian-startup))
+                                              (one-shot? #t)
+                                              (respawn? #f)
+                                              (start #~(lambda _
+                                                         (let ((script (string-append
+                                                                        (getenv
+                                                                         "HOME")
+                                                                        "/.config/alacritty/circadian.sh")))
+                                                           (if (file-exists?
+                                                                script)
+                                                               (zero? (system*
+                                                                       script
+                                                                       "--apply"))
+                                                               #t))))
+                                              (stop #~(const #t)))))
+
+      (service home-mcron-service-type
+               (home-mcron-configuration (jobs (list #~(job next-minute-from
+                                                            (lambda ()
+                                                              (let ((script (string-append
+                                                                             (getenv
+                                                                              "HOME")
+                                                                             "/.config/alacritty/circadian.sh")))
+                                                                (when (file-exists?
+                                                                       script)
+                                                                  (system*
+                                                                   script
+                                                                   "--apply")))))))))
 
       ;; Zsh configuration
       (service home-zsh-service-type

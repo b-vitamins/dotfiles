@@ -64,7 +64,7 @@ if (( $+commands[fzf] )); then
   zstyle ':fzf-tab:complete:git-log:*' fzf-preview 'git show --color=always $word'
   zstyle ':fzf-tab:*' switch-group ',' '.'
   zstyle ':fzf-tab:*' fzf-bindings 'tab:down' 'btab:up' 'ctrl-a:toggle-all'
-  zstyle ':fzf-tab:*' fzf-flags '--color=fg:255,bg:-1,hl:117,fg+:255,bg+:236,hl+:117,info:150,prompt:117,pointer:117,marker:114,spinner:150,header:245'
+  # Colors are set by the circadian theme sync in the prompt section.
 fi
 
 # Prompt configuration ---
@@ -72,15 +72,71 @@ fi
 typeset -g PROMPT_MODE=0
 typeset -g PROMPT_LAST_EXIT=0
 
-typeset -gA prompt_colors=(
-  [marker]="209"   [host]="255"     [path]="117"    [prompt]="111"
-  [branch]="150"   [dirty]="215"    [error]="210"    [time]="250"
-  [ssh]="223"      [env]="203"      [fade]="245"
+typeset -gA _prompt_colors_dark=(
+  [marker]="#ffca28" [host]="#a5abb6" [path]="#42a5f5" [prompt]="#81a1c1"
+  [branch]="#ab47bc" [dirty]="#ffca28" [error]="#ef5350" [time]="#90a4ae"
+  [ssh]="#ffd54f" [env]="#66bb6a" [fade]="#546e7a"
 )
+
+typeset -gA _prompt_colors_light=(
+  [marker]="#9a6700" [host]="#57606a" [path]="#0969da" [prompt]="#0969da"
+  [branch]="#8250df" [dirty]="#9a6700" [error]="#cf222e" [time]="#6e7781"
+  [ssh]="#9a6700" [env]="#1a7f37" [fade]="#8c959f"
+)
+
+typeset -gA prompt_colors=("${(@kv)_prompt_colors_dark}")
 
 typeset -gA prompt_symbols=(
   [marker]="λ"  [tilde]="~"  [prompt]="›"  [branch]=""  [dirty]="*"
 )
+
+# Circadian theme sync (time-based light/dark).
+typeset -g CIRCADIAN_MODE_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/circadian/mode"
+typeset -g CIRCADIAN_MODE=""
+
+typeset -g _circadian_fzf_colors_dark="--color=fg:#d8dee9,bg:-1,hl:#81a1c1,fg+:#eceff4,bg+:#2e3440,hl+:#ffca28,info:#a5abb6,prompt:#42a5f5,pointer:#81a1c1,marker:#66bb6a,spinner:#66bb6a,header:#546e7a"
+typeset -g _circadian_fzf_colors_light="--color=fg:#1f2328,bg:-1,hl:#0969da,fg+:#0b0f14,bg+:#e7effb,hl+:#9a6700,info:#57606a,prompt:#0969da,pointer:#0969da,marker:#1a7f37,spinner:#1a7f37,header:#6e7781"
+
+function _circadian_read_mode() {
+  local mode="dark"
+
+  if [[ -r "$CIRCADIAN_MODE_FILE" ]]; then
+    mode="$(<"$CIRCADIAN_MODE_FILE")"
+    mode="${mode//$'\r'/}"
+    mode="${mode//$'\n'/}"
+  fi
+
+  [[ "$mode" == "light" || "$mode" == "dark" ]] || mode="dark"
+  print -r -- "$mode"
+}
+
+function _circadian_apply_mode() {
+  local mode="$1"
+
+  if [[ "$mode" == "light" ]]; then
+    prompt_colors=("${(@kv)_prompt_colors_light}")
+    export BAT_THEME="GitHub"
+    if (( $+commands[fzf] )); then
+      export FZF_DEFAULT_OPTS="$_circadian_fzf_colors_light"
+      zstyle ':fzf-tab:*' fzf-flags "$_circadian_fzf_colors_light"
+    fi
+  else
+    prompt_colors=("${(@kv)_prompt_colors_dark}")
+    export BAT_THEME="Nord"
+    if (( $+commands[fzf] )); then
+      export FZF_DEFAULT_OPTS="$_circadian_fzf_colors_dark"
+      zstyle ':fzf-tab:*' fzf-flags "$_circadian_fzf_colors_dark"
+    fi
+  fi
+}
+
+function _circadian_sync() {
+  local mode="$(_circadian_read_mode)"
+  [[ "$mode" == "$CIRCADIAN_MODE" ]] && return 0
+
+  CIRCADIAN_MODE="$mode"
+  _circadian_apply_mode "$mode"
+}
 
 # Terminal title
 function _prompt_set_terminal_title() {
@@ -183,6 +239,7 @@ function _prompt_right() {
 
 function _prompt_build() {
   PROMPT_LAST_EXIT=$?
+  _circadian_sync
   vcs_info
   PROMPT="$(_prompt_left)"
   RPROMPT="$(_prompt_right)"
@@ -473,7 +530,7 @@ fi
 # FZF integration ---
 
 if (( $+commands[fzf] )); then
-  export FZF_DEFAULT_OPTS="--color=fg:255,bg:-1,hl:117,fg+:255,bg+:236,hl+:117,info:150,prompt:117,pointer:117,marker:114,spinner:150,header:245"
+  # `FZF_DEFAULT_OPTS` is set by `_circadian_sync` to match the terminal theme.
 
   _fzf_list_files() {
     if (( $+commands[fd] )); then
