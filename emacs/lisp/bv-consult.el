@@ -42,6 +42,7 @@
 (declare-function consult-xref "consult-xref" (fetcher &optional alist))
 (declare-function consult-imenu "consult-imenu" (&optional options))
 (declare-function consult-imenu-multi "consult-imenu" (&optional options))
+(declare-function consult-line-multi "consult" (&optional initial))
 (declare-function consult-compile-error "consult-compile" (&optional project))
 (declare-function consult-flymake "consult-flymake" (&optional project))
 (declare-function bv-flymake-quickfix "bv-flymake" (&optional project))
@@ -320,7 +321,27 @@ FILES is a list of file paths to uniquify."
       (consult-line)
     (when (buffer-modified-p)
       (save-buffer))
-    (consult-ripgrep default-directory)))
+    ;; Default to project root when available; fall back to `default-directory'.
+    (consult-ripgrep)))
+
+(defun bv-consult-search ()
+  "DWIM search: project ripgrep when possible, otherwise cross-buffer line search."
+  (interactive)
+  (cond
+   ((or (minibufferp)
+        (buffer-narrowed-p)
+        (and buffer-file-name (file-remote-p buffer-file-name)))
+    (consult-line))
+   ((project-current nil)
+    (when (and buffer-file-name (buffer-modified-p))
+      (save-buffer))
+    (consult-ripgrep))
+   ((and buffer-file-name (> (buffer-size) bv-consult-ripgrep-or-line-limit))
+    (when (buffer-modified-p)
+      (save-buffer))
+    (consult-ripgrep default-directory))
+   (t
+    (consult-line-multi))))
 
 (defun bv-consult-line-symbol-at-point ()
   "Search for symbol at point."
@@ -482,7 +503,7 @@ PRED is a predicate function to filter files."
   (global-set-key (kbd "M-g e") #'consult-compile-error)
   (global-set-key (kbd "M-g f") #'bv-flymake-quickfix)
   (global-set-key (kbd "C-s") #'consult-line)
-  (global-set-key (kbd "C-M-s") #'bv-consult-ripgrep-or-line)
+  (global-set-key (kbd "C-M-s") #'bv-consult-search)
   (global-set-key (kbd "C-S-s") #'bv-consult-line-symbol-at-point)
 
   ;; Minibuffer bindings

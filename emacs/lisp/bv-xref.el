@@ -13,6 +13,12 @@
 (declare-function consult-xref "consult-xref" (fetcher &optional alist))
 
 (with-eval-after-load 'xref
+  ;; Prefer ripgrep when available for reference searches.
+  (when (and (boundp 'xref-search-program)
+             (boundp 'xref-search-program-alist)
+             (assq 'ripgrep xref-search-program-alist)
+             (executable-find "rg"))
+    (setq xref-search-program 'ripgrep))
   (when (boundp 'xref-auto-jump-to-first-definition)
     (setq xref-auto-jump-to-first-definition 'move))
   (when (boundp 'xref-auto-jump-to-first-xref)

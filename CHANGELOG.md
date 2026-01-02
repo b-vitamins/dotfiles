@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Tree-sitter grammar audit command (`bv-treesit-audit`)
 - Project cockpit actions in `project-switch-project` (ripgrep, test, magit, dape)
 - Visual undo tree via `vundo` with friendlier redo keys
+- Direnv/envrc project environment syncing (`bv-envrc`)
+- Jump-anywhere navigation with Avy + Embark dispatch (`bv-avy`)
 - Circadian Alacritty light/dark theming with synced Zsh/FZF/Bat palettes
 - Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
 ### Changed
@@ -35,6 +37,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Expanded Vertico multiform categories and tuned Consult preview behavior for faster “peek” navigation
 - Made Corfu auto-popup mode-aware (manual in `git-commit-mode` buffers)
 - Calmed Eglot progress/events noise and added a Flymake quickfix helper (`bv-flymake-quickfix`)
+- Improved TTY parity (mouse wheel + Corfu terminal awareness) and prefer newer `.el` over stale `.elc`
+- Extended tree-sitter remaps (yaml/json/toml/css/html/dockerfile) and set `treesit-font-lock-level` to 4
+- Tightened diagnostics UX: Flymake next/prev now “peek” messages at point, plus `bv-flymake-show-at-point`
+- Improved default search ergonomics with `bv-consult-search` (DWIM project ripgrep vs cross-buffer search)
+- Made `xref` use ripgrep backend when available
 - Zsh prompt now shows active environment names (virtualenv/Guix/direnv) and `l` is the default `eza` listing alias
 - Guix home profiles include `%shell-zsh` bundle for Zsh tool dependencies (fzf, ripgrep, bat, eza, fd, zoxide, direnv, wl-clipboard)
 - Enhanced mileva machine configuration

@@ -42,6 +42,31 @@ When nil, languages are inferred from `major-mode-remap-alist'."
 (defconst bv-treesit--audit-buffer "*BV Treesit Audit*"
   "Name of the treesit audit buffer.")
 
+(defun bv-treesit--maybe-add-remap (from to)
+  "Add a `major-mode-remap-alist' entry from FROM to TO when supported."
+  (when (and (bv-treesit--available-p)
+             (fboundp to)
+             (or (fboundp from) (autoloadp (symbol-function from)))
+             (fboundp 'treesit-language-available-p))
+    (let ((lang (bv-treesit--language-from-ts-mode to)))
+      (when (and lang (treesit-language-available-p lang))
+        (cl-pushnew (cons from to) major-mode-remap-alist :test #'equal)))))
+
+(defun bv-treesit-setup ()
+  "Enable tree-sitter remaps and sensible defaults."
+  (when (bv-treesit--available-p)
+    (require 'treesit)
+    (when (boundp 'treesit-font-lock-level)
+      (setq treesit-font-lock-level 4))
+    ;; Prefer *-ts-mode variants when the grammar is available.
+    (dolist (pair '((yaml-mode . yaml-ts-mode)
+                    (toml-mode . toml-ts-mode)
+                    (json-mode . json-ts-mode)
+                    (css-mode . css-ts-mode)
+                    (html-mode . html-ts-mode)
+                    (dockerfile-mode . dockerfile-ts-mode)))
+      (bv-treesit--maybe-add-remap (car pair) (cdr pair)))))
+
 (defun bv-treesit--available-p ()
   "Return non-nil if this Emacs has tree-sitter support enabled."
   (and (fboundp 'treesit-available-p)
@@ -142,6 +167,8 @@ With prefix argument INCLUDE-SOURCES, include all languages from
                             "nil")))
       (tabulated-list-print t)
       (pop-to-buffer (current-buffer)))))
+
+(bv-treesit-setup)
 
 (provide 'bv-treesit)
 ;;; bv-treesit.el ends here

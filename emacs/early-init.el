@@ -23,6 +23,9 @@
 ;; Prevent package.el loading packages prior to init.el
 (setq package-enable-at-startup nil)
 
+;; Prefer newer source files over stale `.elc' during iteration.
+(setq load-prefer-newer t)
+
 ;; Disable file handlers during startup
 (defvar bv--file-name-handler-alist file-name-handler-alist)
 (setq file-name-handler-alist nil)

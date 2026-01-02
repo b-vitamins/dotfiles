@@ -1180,7 +1180,8 @@ Supports recursive semantic mappings like Modus themes."
 
 (defun bv-themes--face-specs (palette)
   "Generate face specifications using PALETTE."
-  (let ((c '((class color) (min-colors 256)))
+  ;; Support both GUI and TTY frames (including low-color terminals).
+  (let ((c '((class color) (min-colors 16)))
         (bold-constructs bv-themes-bold-constructs)
         (italic-constructs bv-themes-italic-constructs)
         (variable-pitch-ui bv-themes-variable-pitch-ui)

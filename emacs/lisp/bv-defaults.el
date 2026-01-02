@@ -87,10 +87,21 @@
       completion-styles '(basic substring)
       org-return-follows-link t)
 
-(unless (display-graphic-p)
-  (xterm-mouse-mode 1)
-  (global-set-key (kbd "<mouse-4>") 'scroll-down-line)
-  (global-set-key (kbd "<mouse-5>") 'scroll-up-line))
+(defun bv-defaults-tty-setup ()
+  "TTY-specific defaults for a first-class `emacs -nw' experience."
+  (when (and (not (display-graphic-p))
+             (fboundp 'xterm-mouse-mode))
+    (xterm-mouse-mode 1))
+  (when (and (not (display-graphic-p))
+             (fboundp 'mouse-wheel-mode))
+    (mouse-wheel-mode 1))
+  ;; Mouse wheel in terminals (when supported by the terminal emulator).
+  (global-set-key (kbd "<mouse-4>") #'scroll-down-line)
+  (global-set-key (kbd "<mouse-5>") #'scroll-up-line))
+
+;; Ensure TTY defaults also apply to terminal frames created via emacsclient.
+(add-hook 'tty-setup-hook #'bv-defaults-tty-setup)
+(bv-defaults-tty-setup)
 
 (if (fboundp 'scroll-bar-mode) (set-scroll-bar-mode nil))
 

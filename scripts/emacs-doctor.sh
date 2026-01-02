@@ -14,4 +14,4 @@ fi
 
 exec emacs -q --batch \
   -L "$lisp_dir" \
-  --eval "(progn (require 'bv-doctor) (bv-doctor-run-batch))"
+  --eval "(progn (setq load-prefer-newer t) (require 'bv-doctor) (bv-doctor-run-batch))"

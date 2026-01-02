@@ -224,21 +224,26 @@ METADATA contains completion metadata used for formatting."
 (defvar bv-corfu--popupinfo-cache-max-size 128
   "Maximum popupinfo cache size.")
 
+(defvar bv-corfu--popupinfo-setup nil
+  "Whether popupinfo has been configured.")
+
 (defun bv-corfu--setup-popupinfo ()
   "Setup popupinfo mode with caching."
-  (require 'corfu-popupinfo)
+  (unless bv-corfu--popupinfo-setup
+    (setq bv-corfu--popupinfo-setup t)
+    (require 'corfu-popupinfo)
 
-  (setq corfu-popupinfo-delay '(1.0 . 0.3)  ; Conservative delays
-        corfu-popupinfo-max-width 70
-        corfu-popupinfo-max-height 20
-        corfu-popupinfo-min-width 30
-        corfu-popupinfo-min-height 3
-        corfu-popupinfo-resize t
-        corfu-popupinfo-hide nil)
+    (setq corfu-popupinfo-delay '(1.0 . 0.3)  ; Conservative delays
+          corfu-popupinfo-max-width 70
+          corfu-popupinfo-max-height 20
+          corfu-popupinfo-min-width 30
+          corfu-popupinfo-min-height 3
+          corfu-popupinfo-resize t
+          corfu-popupinfo-hide nil)
 
-  ;; Add bounded cache to documentation retrieval
-  (advice-add 'corfu-popupinfo--get-documentation :around
-              #'bv-corfu--popupinfo-doc-cache)
+    ;; Add bounded cache to documentation retrieval
+    (advice-add 'corfu-popupinfo--get-documentation :around
+                #'bv-corfu--popupinfo-doc-cache))
 
   (corfu-popupinfo-mode 1))
 
@@ -270,6 +275,21 @@ CANDIDATE is the completion candidate to get documentation for."
               #'bv-corfu--echo-check-popupinfo)
 
   (corfu-echo-mode 1))
+
+(defun bv-corfu--setup-terminal ()
+  "Enable a better Corfu UI in terminal frames when available."
+  (when (and (not (display-graphic-p))
+             (require 'corfu-terminal nil t)
+             (fboundp 'corfu-terminal-mode))
+    (corfu-terminal-mode 1)))
+
+(defun bv-corfu--configure-ui-for-frame (&optional frame)
+  "Configure Corfu UI features for FRAME (defaults to selected frame)."
+  (with-selected-frame (or frame (selected-frame))
+    ;; Popupinfo relies on child frames, so only enable it for GUI frames.
+    (when (display-graphic-p)
+      (bv-corfu--setup-popupinfo))
+    (bv-corfu--setup-terminal)))
 
 (defun bv-corfu--echo-check-popupinfo (&rest _)
   "Only show echo if popupinfo is not visible."
@@ -343,8 +363,10 @@ CANDIDATE is the completion candidate to get documentation for."
 
     ;; Core extensions
     (bv-corfu--setup-history)
-    (bv-corfu--setup-popupinfo)
+    (when (display-graphic-p)
+      (bv-corfu--setup-popupinfo))
     (bv-corfu--setup-echo)
+    (bv-corfu--setup-terminal)
 
     ;; Quick selection - autoload for performance
     (autoload 'corfu-quick-complete "corfu-quick" nil t)
@@ -480,10 +502,14 @@ CANDIDATE is the completion candidate to get documentation for."
 (defun bv-corfu--init-hook ()
   "One-time initialization when Corfu is first activated."
   (bv-corfu--load-extensions)
+  (bv-corfu--configure-ui-for-frame)
   (remove-hook 'corfu-mode-hook #'bv-corfu--init-hook))
 
 ;; Core hooks
 (add-hook 'corfu-mode-hook #'bv-corfu--init-hook)
+
+;; Ensure mixed GUI/TTY daemon sessions stay sane.
+(add-hook 'after-make-frame-functions #'bv-corfu--configure-ui-for-frame)
 
 ;; Mode-specific hooks with Cape coordination
 (add-hook 'prog-mode-hook #'bv-corfu-prog-settings)

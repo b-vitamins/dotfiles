@@ -78,6 +78,7 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
 (defun bv-doctor-run ()
   "Run the BV config doctor interactively."
   (interactive)
+  (setq load-prefer-newer t)
   (message "bv-doctor: check-parens…")
   (bv-doctor-check-parens)
   (message "bv-doctor: byte-compiling modules…")
@@ -90,6 +91,7 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
   "Run the BV config doctor in batch mode.
 
 Signals an error on failure (causing a non-zero exit in batch mode)."
+  (setq load-prefer-newer t)
   (bv-doctor-check-parens)
   (bv-doctor-byte-compile)
   (bv-doctor-load-themes)

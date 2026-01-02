@@ -32,6 +32,7 @@
 
 (require 'bv-defaults)
 (require 'bv-undo)
+(require 'bv-envrc)
 
 ;; Configure fonts for sharp, crystal-clear rendering
 (require 'bv-fonts)
@@ -65,6 +66,7 @@
 (require 'bv-keycast)      ; Show keys being pressed
 (require 'bv-nerd-icons)   ; Nerd Font icon support
 (require 'bv-pulse)        ; Cursor pulse for point tracking
+(require 'bv-avy)          ; Jump-anywhere navigation
 
 ;; Basic functionality
 (require 'bv-calendar)     ; Calendar enhancements
