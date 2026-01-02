@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Hardened Git defaults: scoped Guix send-email settings, default-branch-aware aliases, POSIX-safe pre-commit hook, and safer global gitattributes
 - Configured Alacritty to start Zsh as login shell
 - Switched Alacritty hint launcher to `xdg-open` and added a copy-hint binding
+- Updated Alacritty’s BV light/dark palettes to match BV Emacs themes (including selection/search surfaces)
 ### Fixed
 - Added missing emacs-pgtk package import in Guix configurations
 - Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup

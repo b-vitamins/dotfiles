@@ -73,15 +73,15 @@ typeset -g PROMPT_MODE=0
 typeset -g PROMPT_LAST_EXIT=0
 
 typeset -gA _prompt_colors_dark=(
-  [marker]="#ffca28" [host]="#a5abb6" [path]="#42a5f5" [prompt]="#81a1c1"
-  [branch]="#ab47bc" [dirty]="#ffca28" [error]="#ef5350" [time]="#90a4ae"
-  [ssh]="#ffd54f" [env]="#66bb6a" [fade]="#546e7a"
+  [marker]="#b98a5c" [host]="#9098a0" [path]="#528ab7" [prompt]="#528ab7"
+  [branch]="#915ea0" [dirty]="#d1a850" [error]="#ff5f6b" [time]="#787880"
+  [ssh]="#c8b07a" [env]="#98c078" [fade]="#787880"
 )
 
 typeset -gA _prompt_colors_light=(
-  [marker]="#9a6700" [host]="#57606a" [path]="#0969da" [prompt]="#0969da"
-  [branch]="#8250df" [dirty]="#9a6700" [error]="#cf222e" [time]="#6e7781"
-  [ssh]="#9a6700" [env]="#1a7f37" [fade]="#8c959f"
+  [marker]="#e77727" [host]="#6c6f77" [path]="#4078f2" [prompt]="#4078f2"
+  [branch]="#a626a4" [dirty]="#ae7600" [error]="#f23726" [time]="#8a8d96"
+  [ssh]="#c18401" [env]="#429b41" [fade]="#8a8d96"
 )
 
 typeset -gA prompt_colors=("${(@kv)_prompt_colors_dark}")
@@ -94,8 +94,8 @@ typeset -gA prompt_symbols=(
 typeset -g CIRCADIAN_MODE_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/circadian/mode"
 typeset -g CIRCADIAN_MODE=""
 
-typeset -g _circadian_fzf_colors_dark="--color=fg:#d8dee9,bg:-1,hl:#81a1c1,fg+:#eceff4,bg+:#2e3440,hl+:#ffca28,info:#a5abb6,prompt:#42a5f5,pointer:#81a1c1,marker:#66bb6a,spinner:#66bb6a,header:#546e7a"
-typeset -g _circadian_fzf_colors_light="--color=fg:#1f2328,bg:-1,hl:#0969da,fg+:#0b0f14,bg+:#e7effb,hl+:#9a6700,info:#57606a,prompt:#0969da,pointer:#0969da,marker:#1a7f37,spinner:#1a7f37,header:#6e7781"
+typeset -g _circadian_fzf_colors_dark="--color=fg:#a8b0b8,bg:-1,hl:#528ab7,fg+:#e0e5ef,bg+:#394752,hl+:#d1a850,info:#9098a0,prompt:#528ab7,pointer:#5494c7,marker:#98c078,spinner:#98c078,header:#787880"
+typeset -g _circadian_fzf_colors_light="--color=fg:#383a42,bg:-1,hl:#4078f2,fg+:#282c34,bg+:#d6e1fb,hl+:#ae7600,info:#6c6f77,prompt:#4078f2,pointer:#1f65ff,marker:#429b41,spinner:#429b41,header:#8a8d96"
 
 function _circadian_read_mode() {
   local mode="dark"
@@ -115,14 +115,14 @@ function _circadian_apply_mode() {
 
   if [[ "$mode" == "light" ]]; then
     prompt_colors=("${(@kv)_prompt_colors_light}")
-    export BAT_THEME="GitHub"
+    export BAT_THEME="OneHalfLight"
     if (( $+commands[fzf] )); then
       export FZF_DEFAULT_OPTS="$_circadian_fzf_colors_light"
       zstyle ':fzf-tab:*' fzf-flags "$_circadian_fzf_colors_light"
     fi
   else
     prompt_colors=("${(@kv)_prompt_colors_dark}")
-    export BAT_THEME="Nord"
+    export BAT_THEME="OneHalfDark"
     if (( $+commands[fzf] )); then
       export FZF_DEFAULT_OPTS="$_circadian_fzf_colors_dark"
       zstyle ':fzf-tab:*' fzf-flags "$_circadian_fzf_colors_dark"

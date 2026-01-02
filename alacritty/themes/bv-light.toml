@@ -8,57 +8,57 @@ draw_bold_text_with_bright_colors = false
 transparent_background_colors = true
 
 [colors.primary]
-background = "#fbfbfc"
-foreground = "#1f2328"
-dim_foreground = "#57606a"
-bright_foreground = "#0b0f14"
+background = "#fbfbfd"
+foreground = "#383a42"
+dim_foreground = "#6c6f77"
+bright_foreground = "#282c34"
 
 [colors.cursor]
-text = "#fbfbfc"
-cursor = "#0969da"
+text = "#fbfbfd"
+cursor = "#4078f2"
 
 [colors.vi_mode_cursor]
-text = "#fbfbfc"
-cursor = "#9a6700"
+text = "#fbfbfd"
+cursor = "#e77727"
 
 [colors.search]
-matches = { foreground = "#1f2328", background = "#a5d6ff" }
-focused_match = { foreground = "#1f2328", background = "#ffd8a8" }
+matches = { foreground = "#383a42", background = "#d8eaf4" }
+focused_match = { foreground = "#383a42", background = "#f3eada" }
 
 [colors.hints]
-start = { foreground = "#1f2328", background = "#b7eb8f" }
-end = { foreground = "#1f2328", background = "#a5d6ff" }
+start = { foreground = "#fbfbfd", background = "#429b41" }
+end = { foreground = "#fbfbfd", background = "#1f65ff" }
 
 [colors.selection]
 text = "CellForeground"
-background = "#e7effb"
+background = "#d6e1fb"
 
 [colors.normal]
-black = "#24292f"
-red = "#cf222e"
-green = "#116329"
-yellow = "#9a6700"
-blue = "#0969da"
-magenta = "#8250df"
-cyan = "#1b7c83"
-white = "#57606a"
+black = "#282c34"
+red = "#e45649"
+green = "#50a14f"
+yellow = "#c18401"
+blue = "#4078f2"
+magenta = "#b751b6"
+cyan = "#0184bc"
+white = "#e5e5ea"
 
 [colors.bright]
-black = "#6e7781"
-red = "#ff4d4f"
-green = "#1a7f37"
-yellow = "#bf8700"
-blue = "#218bff"
-magenta = "#a475f9"
-cyan = "#3192aa"
-white = "#1f2328"
+black = "#6c6f77"
+red = "#f23726"
+green = "#429b41"
+yellow = "#ae7600"
+blue = "#1f65ff"
+magenta = "#b63db5"
+cyan = "#0076a9"
+white = "#f3f4f6"
 
 [colors.dim]
-black = "#8c959f"
-red = "#a40e26"
-green = "#2da44e"
-yellow = "#7d4e00"
-blue = "#0550ae"
-magenta = "#6639ba"
-cyan = "#0f766e"
-white = "#6e7781"
+black = "#8a8d96"
+red = "#d3938d"
+green = "#7ca87b"
+yellow = "#c39532"
+blue = "#8aa4db"
+magenta = "#b685b5"
+cyan = "#3195bf"
+white = "#6c6f77"
