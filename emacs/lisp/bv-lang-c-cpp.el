@@ -40,6 +40,9 @@
 (add-to-list 'auto-mode-alist '("\\.cpp\\'" . c++-ts-mode))
 (add-to-list 'auto-mode-alist '("\\.cc\\'" . c++-ts-mode))
 (add-to-list 'auto-mode-alist '("\\.cxx\\'" . c++-ts-mode))
+;; CUDA (treat as C++)
+(add-to-list 'auto-mode-alist '("\\.cu\\'" . c++-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.cuh\\'" . c++-ts-mode))
 
 ;; C/C++ style settings
 (setq-default c-basic-offset 4)
