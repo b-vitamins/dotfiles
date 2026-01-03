@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Jump-anywhere navigation with Avy + Embark dispatch (`bv-avy`)
 - Circadian Alacritty light/dark theming with synced Zsh/FZF/Bat palettes
 - Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
+- Org workflow guide documenting the `~/org` command-center system (`docs/emacs/org-workflow.md`)
 ### Changed
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
@@ -57,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Configured Alacritty to start Zsh as login shell
 - Switched Alacritty hint launcher to `xdg-open` and added a copy-hint binding
 - Updated Alacritty’s BV light/dark palettes to match BV Emacs themes (including selection/search surfaces)
+- Overhauled Org workflow: `~/org` hub, frictionless capture templates, agenda dashboards, and weekly review clock metrics
 ### Fixed
 - Added missing emacs-pgtk package import in Guix configurations
 - Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup

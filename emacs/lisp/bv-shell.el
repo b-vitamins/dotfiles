@@ -16,6 +16,7 @@
 (declare-function project-root "project" (project))
 (declare-function project-current "project" (&optional may-prompt dir))
 (declare-function consult-history "consult" (&rest args))
+(defvar bv-terminal-map)
 
 (when (featurep 'sh-script)
   (when (boundp 'sh-basic-offset)
@@ -47,9 +48,9 @@
 (global-set-key (kbd "s-S") 'bv-shell)
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "s") 'bv-shell)
-    (define-key bv-app-map (kbd "S") 'bv-shell-project)))
+  (when (boundp 'bv-terminal-map)
+    (define-key bv-terminal-map (kbd "t") 'bv-shell)
+    (define-key bv-terminal-map (kbd "T") 'bv-shell-project)))
 
 (with-eval-after-load 'shell
   (when (boundp 'shell-mode-map)

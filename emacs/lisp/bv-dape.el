@@ -14,6 +14,7 @@
 
 ;; Silence byte-compiler warnings
 (defvar user-emacs-directory)
+(defvar bv-debug-map)
 
 (when (featurep 'dape)
   (when (boundp 'dape-buffer-window-arrangement)
@@ -49,15 +50,15 @@
             (lambda () (save-some-buffers t t))))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "d d") 'dape)
-    (define-key bv-app-map (kbd "d b") 'dape-breakpoint-toggle)
-    (define-key bv-app-map (kbd "d c") 'dape-continue)
-    (define-key bv-app-map (kbd "d n") 'dape-next)
-    (define-key bv-app-map (kbd "d s") 'dape-step-in)
-    (define-key bv-app-map (kbd "d o") 'dape-step-out)
-    (define-key bv-app-map (kbd "d r") 'dape-restart)
-    (define-key bv-app-map (kbd "d q") 'dape-quit)))
+  (when (boundp 'bv-debug-map)
+    (define-key bv-debug-map (kbd "d") 'dape)
+    (define-key bv-debug-map (kbd "b") 'dape-breakpoint-toggle)
+    (define-key bv-debug-map (kbd "c") 'dape-continue)
+    (define-key bv-debug-map (kbd "n") 'dape-next)
+    (define-key bv-debug-map (kbd "s") 'dape-step-in)
+    (define-key bv-debug-map (kbd "o") 'dape-step-out)
+    (define-key bv-debug-map (kbd "r") 'dape-restart)
+    (define-key bv-debug-map (kbd "q") 'dape-quit)))
 
 (provide 'bv-dape)
 ;;; bv-dape.el ends here

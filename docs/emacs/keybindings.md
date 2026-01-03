@@ -7,6 +7,9 @@ Comprehensive keybinding reference for the bv-emacs configuration. Organized by 
 | Key | Action | Description |
 |-----|--------|-------------|
 | `C-c a` | bv-app-map | Application launcher prefix |
+| `C-c a o` | bv-org-map | Org command center |
+| `C-c a d` | bv-debug-map | Debugger map |
+| `C-c a E` | bv-terminal-map | Terminal/shell map |
 | `C-c n` | org-roam-map | Org-roam operations |
 | `C-c c` | citation-map | Citation operations |
 | `M-o` | ace-window | Window switching |
@@ -195,18 +198,28 @@ Available through Transient menus and standard Git commands.
 
 ## Org Mode
 
-### Org Capture
+### Org Command Center (`C-c a o`)
 | Key | Command | Description |
 |-----|---------|-------------|
-| `C-c c` | org-capture | Org capture |
+| `C-c a o a` | org-agenda ("d") | Dashboard (Today/Next/Waiting/Inbox) |
+| `C-c a o r` | org-agenda ("R") | Weekly review dashboard |
+| `C-c a o w` | bv-org-weekly-review-create | Create/open weekly review entry |
+| `C-c a o c` | org-capture | Capture menu |
+| `C-c a o q` | bv-org-agenda-quick-task | Quick task capture (template "q") |
+| `C-c a o v` | bv-org-agenda-calendar | Dashboard + calendar split |
+| `C-c a o f` | consult-org-heading | Jump to heading across Org files |
+| `C-c a o A` | consult-org-agenda | Search agenda items |
+| `C-c a o s` | bv-org-search | Search `~/org` (ripgrep) |
+| `C-c a o g` | (open goals file) | Open `~/org/goals.org` |
+| `C-c a o t` | bv-org-timer-map | Timer submap |
 
-### Org Timer
+### Org Timer (`C-c a o t`)
 | Key | Command | Description |
 |-----|---------|-------------|
-| `C-c a o s` | org-timer-start | Start timer |
-| `C-c a o q` | org-timer-stop | Stop timer |
-| `C-c a o p` | org-timer-pause-or-continue | Pause/continue timer |
-| `C-c a o t` | org-timer-set-timer | Set timer |
+| `s` | org-timer-start | Start timer |
+| `p` | org-timer-pause-or-continue | Pause/continue timer |
+| `t` | org-timer-set-timer | Set timer |
+| `q` | org-timer-stop | Stop timer |
 
 ## Org-roam
 
@@ -326,14 +339,15 @@ Available through Transient menus and standard Git commands.
 ### Terminal Operations
 | Key | Command | Description |
 |-----|---------|-------------|
-| `s-t` | bv-eat | Terminal |
+| `s-t` | bv-eat | Terminal (EAT) |
+| `s-e` | eshell | Eshell |
 | `s-S` | bv-shell | Shell |
 | `C-c a e` | bv-eat | Terminal (app map) |
-| `C-c a E` | bv-eat-project | Project terminal |
-| `C-c a s` | bv-shell | Shell (app map) |
-| `C-c a S` | bv-shell-project | Project shell |
-| `C-c a E s` | eshell | Eshell |
-| `C-c a E p` | bv-eshell-project | Project eshell |
+| `C-c a E p` | bv-eat-project | Project terminal (EAT) |
+| `C-c a E s` | eshell | Eshell (terminal map) |
+| `C-c a E P` | bv-eshell-project | Project eshell |
+| `C-c a E t` | bv-shell | Shell (terminal map) |
+| `C-c a E T` | bv-shell-project | Project shell |
 
 ### Shell Mode
 | Key | Command | Description |
@@ -345,14 +359,15 @@ Available through Transient menus and standard Git commands.
 ### Application Map (`C-c a`)
 | Key | Command | Description |
 |-----|---------|-------------|
-| `a` | org-agenda | Org agenda |
-| `A` | bv-org-agenda-calendar | Org agenda calendar |
 | `c` | bv-calendar | Calendar |
 | `C` | world-clock | World clock |
-| `d` | devdocs-lookup | DevDocs lookup |
-| `D` | devdocs-search | DevDocs search |
+| `d` | bv-debug-map | Debugger map (Dape) |
+| `E` | bv-terminal-map | Terminal/shell map |
+| `h` | devdocs-lookup | DevDocs lookup |
+| `H` | devdocs-search | DevDocs search |
 | `j` | org-roam-dailies-goto-today | Today's daily note |
 | `m` | bv-mpv-map | MPV controls |
+| `o` | bv-org-map | Org command center |
 | `p` | project-switch-project | Switch project |
 | `P` | bv-project-org-capture | Project org capture |
 | `q` | org-ql-search | Org QL search |

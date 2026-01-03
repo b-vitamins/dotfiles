@@ -12,8 +12,23 @@
 ;;; Code:
 
 (defvar org-mode-map)
+(defvar bv-app-map)
+(defvar bv-terminal-map)
+(defvar bv-debug-map)
 
 (global-set-key (kbd "C-x k") 'kill-current-buffer)
+
+;; Application launcher prefix map (documented as `C-c a`).
+(define-prefix-command 'bv-app-map)
+(global-set-key (kbd "C-c a") bv-app-map)
+
+;; Terminal/shell submap under `C-c a E`.
+(define-prefix-command 'bv-terminal-map)
+(define-key bv-app-map (kbd "E") bv-terminal-map)
+
+;; Debugging submap under `C-c a d`.
+(define-prefix-command 'bv-debug-map)
+(define-key bv-app-map (kbd "d") bv-debug-map)
 
 (defun new-frame ()
   "Create a new frame with scratch buffer."

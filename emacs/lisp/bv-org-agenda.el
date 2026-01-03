@@ -6,123 +6,119 @@
 
 ;;; Commentary:
 
-;; Beautiful agenda views inspired by nano-emacs.
+;; Agenda dashboards and review views.
 
 ;;; Code:
 
-(require 'org-agenda)
 (require 'calendar)
+(require 'org-agenda)
+(require 'bv-org)
 
-;; Clean agenda display
+(defvar bv-org-directory)
+
+(defun bv-org-agenda--inbox-file ()
+  "Return the absolute path of the inbox file."
+  (expand-file-name "inbox.org" bv-org-directory))
+
+(defun bv-org-agenda--project-has-next-action-p ()
+  "Return non-nil when the current subtree contains a NEXT/STARTED task."
+  (save-restriction
+    (org-narrow-to-subtree)
+    (goto-char (point-min))
+    (re-search-forward "^\\*+ \\(NEXT\\|STARTED\\)\\b" nil t)))
+
+(defun bv-org-agenda-skip-non-stuck-projects ()
+  "Skip trees that are not stuck projects.
+
+A stuck project is a PROJ heading without any NEXT/STARTED items in its
+subtree."
+  (let ((subtree-end (save-excursion (org-end-of-subtree t t))))
+    (cond
+     ((not (equal (org-get-todo-state) "PROJ")) subtree-end)
+     ((bv-org-agenda--project-has-next-action-p) subtree-end)
+     (t nil))))
+
 (with-eval-after-load 'org-agenda
-  ;; Remove clutter
-  (when (boundp 'org-agenda-block-separator)
-    (setq org-agenda-block-separator nil))
-  (when (boundp 'org-agenda-compact-blocks)
-    (setq org-agenda-compact-blocks t))
-  (when (boundp 'org-agenda-tags-column)
-    (setq org-agenda-tags-column 0))
-  (when (boundp 'org-agenda-todo-keyword-format)
-    (setq org-agenda-todo-keyword-format ""))
-  (when (boundp 'org-agenda-prefix-format)
-    (setq org-agenda-prefix-format
-          '((agenda . "  %?-12t% s")
-            (todo . "  ")
-            (tags . "  ")
-            (search . "  "))))
+  (setq org-agenda-block-separator nil)
+  (setq org-agenda-compact-blocks t)
+  (setq org-agenda-tags-column 0)
+  (setq org-agenda-todo-keyword-format "")
+  (setq org-agenda-prefix-format
+        '((agenda . "  %-12:c%?-12t% s")
+          (todo . "  %-12:c ")
+          (tags . "  %-12:c ")
+          (search . "  %-12:c ")))
 
-  ;; Time grid
-  (when (boundp 'org-agenda-time-grid)
-    (setq org-agenda-time-grid
-          '((daily today require-timed)
-            (800 1000 1200 1400 1600 1800 2000)
-            " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")))
-  (when (boundp 'org-agenda-current-time-string)
-    (setq org-agenda-current-time-string
-          "◀ ─────────────────────────────────────────────── now"))
+  (setq org-agenda-time-grid
+        '((daily today require-timed)
+          (800 1000 1200 1400 1600 1800 2000)
+          " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"))
+  (setq org-agenda-current-time-string
+        "◀ ─────────────────────────────────────────────── now")
 
-  ;; Window behavior
-  (when (boundp 'org-agenda-window-setup)
-    (setq org-agenda-window-setup 'current-window))
-  (when (boundp 'org-agenda-restore-windows-after-quit)
-    (setq org-agenda-restore-windows-after-quit t))
+  (setq org-agenda-window-setup 'current-window)
+  (setq org-agenda-restore-windows-after-quit t)
 
-  ;; Files
-  (when (boundp 'org-agenda-files)
-    (setq org-agenda-files '("~/documents/org/")))
+  (setq org-agenda-custom-commands
+        `(("d" "Dashboard"
+           ((agenda ""
+                    ((org-agenda-span 1)
+                     (org-agenda-start-day "+0d")
+                     (org-agenda-overriding-header "Today")
+                     (org-agenda-format-date "\n%A %-e %B %Y\n")
+                     (org-deadline-warning-days 7)))
+            (todo "STARTED" ((org-agenda-overriding-header "In progress")))
+            (todo "NEXT" ((org-agenda-overriding-header "Next actions")))
+            (tags-todo "deep/!NEXT|STARTED"
+                       ((org-agenda-overriding-header "Deep work")))
+            (tags-todo "@errand/!NEXT|STARTED"
+                       ((org-agenda-overriding-header "Errands")))
+            (todo "WAITING" ((org-agenda-overriding-header "Waiting / blocked")))
+            (alltodo ""
+                     ((org-agenda-overriding-header "Inbox (process/refile)")
+                      (org-agenda-files (list (bv-org-agenda--inbox-file)))
+                      (org-agenda-todo-ignore-deadlines t)
+                      (org-agenda-todo-ignore-scheduled t))))
+           ((org-agenda-window-setup 'current-window)))
 
-  ;; Custom agenda views
-  (when (boundp 'org-agenda-custom-commands)
-    (setq org-agenda-custom-commands
-          '(("d" "Daily view"
-             ((agenda ""
-                      ((org-agenda-span 'day)
-                       (org-agenda-overriding-header "")
-                       (org-agenda-format-date "\n%A %-e %B %Y\n")
-                       (org-agenda-day-face-function (lambda (date) 'org-agenda-date))
-                       (org-deadline-warning-days 0)
-                       (org-agenda-skip-scheduled-if-deadline-is-shown t)))))
+          ("R" "Weekly review"
+           ((agenda ""
+                    ((org-agenda-start-day "-14d")
+                     (org-agenda-span 14)
+                     (org-agenda-overriding-header "Past 2 weeks")))
+            (agenda ""
+                    ((org-agenda-start-day "+0d")
+                     (org-agenda-span 14)
+                     (org-agenda-overriding-header "Next 2 weeks")))
+            (alltodo ""
+                     ((org-agenda-overriding-header "Inbox (process/refile)")
+                      (org-agenda-files (list (bv-org-agenda--inbox-file)))))
+            (todo "WAITING" ((org-agenda-overriding-header "Waiting")))
+            (todo "PROJ"
+                  ((org-agenda-overriding-header "Stuck projects (no NEXT)")
+                   (org-agenda-skip-function 'bv-org-agenda-skip-non-stuck-projects))))
+           ((org-agenda-start-with-log-mode t)
+            (org-agenda-log-mode-items '(closed clock))
+            (org-agenda-window-setup 'current-window))))))
 
-            ("w" "Week view"
-             ((agenda ""
-                      ((org-agenda-span 'week)
-                       (org-agenda-overriding-header "")
-                       (org-agenda-format-date "%A %-e %B")
-                       (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))))
-
-            ("n" "Now - Active tasks"
-             ((todo "STARTED|NEXT"
-                    ((org-agenda-overriding-header "\nActive tasks\n")))
-              (agenda ""
-                      ((org-agenda-span 'day)
-                       (org-agenda-overriding-header "\nToday\n")))))
-
-            ("r" "Research"
-             ((todo "IDEA|DRAFT|EXPERIMENT"
-                    ((org-agenda-overriding-header "\nResearch pipeline\n")
-                     (org-agenda-sorting-strategy '(priority-down effort-up)))))))))
-
-)
-
-;; Nano-style calendar popup
 (defun bv-org-agenda-calendar ()
-  "Show a calendar-centric agenda view."
+  "Show the dashboard with a calendar split."
   (interactive)
-  (let ((org-agenda-span 'day)
-        (org-agenda-window-setup 'only-window)
-        (org-agenda-format-date "\n  %A %-e %B %Y\n")
-        (org-agenda-overriding-header ""))
-    (org-agenda nil "d")
-    (delete-other-windows)
-    (split-window-horizontally -24)
-    (other-window 1)
-    (calendar)
-    (other-window 1)))
+  (org-agenda nil "d")
+  (delete-other-windows)
+  (split-window-horizontally -24)
+  (other-window 1)
+  (calendar)
+  (other-window 1))
 
-;; Quick capture
 (defun bv-org-agenda-quick-task ()
-  "Quickly add a task without leaving current context."
+  "Capture a quick task (template \"q\")."
   (interactive)
   (require 'org-capture)
-  (let ((org-capture-templates
-         '(("q" "Quick task" entry
-            (file "~/documents/org/tasks.org")
-            "* TODO %?\n  SCHEDULED: %t\n"))))
-    ;; Suppress warning: org-capture-templates is used dynamically by org-capture
-    (ignore org-capture-templates)
-    (org-capture nil "q")))
+  (org-capture nil "q"))
 
-;; Keybindings
-(with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "a") 'org-agenda)
-    (define-key bv-app-map (kbd "A") 'bv-org-agenda-calendar)
-    (define-key bv-app-map (kbd "t") 'bv-org-agenda-quick-task)))
-
-;; Calendar beautification
 (with-eval-after-load 'calendar
-  (when (boundp 'calendar-week-start-day)
-    (setq calendar-week-start-day 1)))
+  (setq calendar-week-start-day 1))
 
 (provide 'bv-org-agenda)
 ;;; bv-org-agenda.el ends here

@@ -26,8 +26,8 @@
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "d") 'devdocs-lookup)
-    (define-key bv-app-map (kbd "D") 'devdocs-search)))
+    (define-key bv-app-map (kbd "h") 'devdocs-lookup)
+    (define-key bv-app-map (kbd "H") 'devdocs-search)))
 
 (provide 'bv-devdocs)
 ;;; bv-devdocs.el ends here

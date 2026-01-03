@@ -351,6 +351,11 @@ Reset to defaults:
 - bv-ytdl-downloads-dir
 
 ### Organization
+- bv-org-agenda-exclude-dirs
+- bv-org-auto-promote-next-action
+- bv-org-clock-idle-check-interval
+- bv-org-clock-idle-minutes
+- bv-org-directory
 - bv-org-latex-scale
 - bv-org-roam-directory
 - bv-org-roam-show-backlinks

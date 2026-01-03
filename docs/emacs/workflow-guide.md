@@ -612,6 +612,8 @@ Integrated change indicators in fringe
 
 ## Org-mode and Note-taking
 
+For the opinionated GTD + research system (capture → agenda → weekly review + metrics), see [Org Workflow](org-workflow.md).
+
 ### Basic Org Operations
 
 Instead of:

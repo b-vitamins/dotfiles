@@ -19,6 +19,7 @@
 (declare-function ansi-color-filter-apply "ansi-color")
 (defvar user-emacs-directory)
 (defvar eshell-hist-mode-map)
+(defvar bv-terminal-map)
 
 (defun bv-eshell-project (&optional arg)
   "Open eshell in project root or current directory.
@@ -74,9 +75,9 @@ With prefix ARG, prompt for project selection."
 (add-hook 'eshell-preoutput-filter-functions 'ansi-color-filter-apply)
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "E s") 'eshell)
-    (define-key bv-app-map (kbd "E p") 'bv-eshell-project)))
+  (when (boundp 'bv-terminal-map)
+    (define-key bv-terminal-map (kbd "s") 'eshell)
+    (define-key bv-terminal-map (kbd "P") 'bv-eshell-project)))
 
 (provide 'bv-eshell)
 ;;; bv-eshell.el ends here

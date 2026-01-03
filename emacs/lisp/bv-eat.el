@@ -12,6 +12,8 @@
 
 (require 'eat nil t)
 
+(defvar bv-terminal-map)
+
 (when (featurep 'eat)
   (when (boundp 'eat-line-input-ring-size)
     (setq eat-line-input-ring-size 4096))
@@ -38,9 +40,9 @@
     (bv-eat)))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
+  (when (and (boundp 'bv-app-map) (boundp 'bv-terminal-map))
     (define-key bv-app-map (kbd "e") 'bv-eat)
-    (define-key bv-app-map (kbd "E") 'bv-eat-project)))
+    (define-key bv-terminal-map (kbd "p") 'bv-eat-project)))
 
 (global-set-key (kbd "s-t") 'bv-eat)
 
