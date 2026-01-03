@@ -12,6 +12,7 @@
 
 (require 'cc-mode)
 (require 'eglot)
+(require 'bv-format)
 
 ;; External variables
 (defvar c-basic-offset)
@@ -87,10 +88,7 @@
 (defun bv-c-cpp-format-buffer ()
   "Format current buffer with `clang-format'."
   (interactive)
-  (if (fboundp 'clang-format-buffer)
-      (clang-format-buffer)
-    (shell-command-on-region (point-min) (point-max)
-                            "clang-format" nil t)))
+  (bv-format-buffer))
 
 (defun bv-c-cpp-format-on-save ()
   "Format buffer with `clang-format' before saving."
@@ -178,6 +176,8 @@
   (define-key c-mode-base-map (kbd "C-c C-c") bv-c-cpp-mode-map))
 
 (with-eval-after-load 'c-ts-mode
+  (define-key c-ts-mode-map (kbd "C-c C-f") #'bv-format-buffer)
+  (define-key c++-ts-mode-map (kbd "C-c C-f") #'bv-format-buffer)
   (define-key c-ts-mode-map (kbd "C-c C-c") bv-c-cpp-mode-map)
   (define-key c++-ts-mode-map (kbd "C-c C-c") bv-c-cpp-mode-map))
 

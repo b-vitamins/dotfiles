@@ -102,6 +102,7 @@
 ;; Development tools
 (require 'bv-elisp)        ; Emacs Lisp
 (require 'bv-eglot)        ; LSP client
+(require 'bv-format)       ; Unified formatting
 (require 'bv-dape)         ; Debug adapter
 (require 'bv-flymake)      ; On-the-fly checking
 (require 'bv-xref)         ; Cross references

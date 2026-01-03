@@ -19,6 +19,7 @@
 (require 'eglot)
 (require 'cl-lib)
 (autoload 'consult-eglot-symbols "consult-eglot" nil t)
+(autoload 'bv-flymake-quickfix "bv-flymake" nil t)
 
 ;; External variables
 (defvar goto-map)
@@ -42,6 +43,43 @@
 (declare-function eglot-format-buffer "eglot")
 (declare-function eglot "eglot")
 (declare-function eglot-shutdown "eglot")
+(declare-function xref-find-definitions "xref" (&optional identifier))
+(declare-function xref-find-definitions-other-window "xref" (&optional identifier))
+(declare-function xref-find-references "xref" (&optional identifier))
+(declare-function eldoc-doc-buffer "eldoc" (&optional interactive))
+
+(defun bv-eglot-peek-definition ()
+  "Peek definition at point via Xref (Consult provides the UI)."
+  (interactive)
+  (call-interactively #'xref-find-definitions))
+
+(defun bv-eglot-peek-definition-other-window ()
+  "Peek definition at point in other window."
+  (interactive)
+  (call-interactively #'xref-find-definitions-other-window))
+
+(defun bv-eglot-peek-references ()
+  "Peek references at point via Xref (Consult provides the UI)."
+  (interactive)
+  (call-interactively #'xref-find-references))
+
+(defun bv-eglot-peek-diagnostics (&optional project)
+  "Peek diagnostics via Consult/Flymake.
+
+With prefix argument PROJECT, show project diagnostics."
+  (interactive "P")
+  (cond
+   ((fboundp 'bv-flymake-quickfix) (bv-flymake-quickfix project))
+   ((fboundp 'consult-flymake) (consult-flymake project))
+   (project (flymake-show-project-diagnostics))
+   (t (flymake-show-buffer-diagnostics))))
+
+(defun bv-eglot-doc-buffer ()
+  "Show full documentation at point in a dedicated buffer."
+  (interactive)
+  (if (fboundp 'eldoc-doc-buffer)
+      (call-interactively #'eldoc-doc-buffer)
+    (user-error "Eldoc doc buffer is unavailable in this Emacs")))
 
 (when (boundp 'goto-map)
   (define-key goto-map (kbd "s") 'consult-eglot-symbols))
@@ -92,6 +130,12 @@
 
 (with-eval-after-load 'eglot
   (when (boundp 'eglot-mode-map)
+    (define-key eglot-mode-map (kbd "C-c l d") #'bv-eglot-peek-definition)
+    (define-key eglot-mode-map (kbd "C-c l D") #'bv-eglot-peek-definition-other-window)
+    (define-key eglot-mode-map (kbd "C-c l R") #'bv-eglot-peek-references)
+    (define-key eglot-mode-map (kbd "C-c l e") #'bv-eglot-peek-diagnostics)
+    (define-key eglot-mode-map (kbd "C-c l s") #'consult-eglot-symbols)
+    (define-key eglot-mode-map (kbd "C-c l h") #'bv-eglot-doc-buffer)
     (define-key eglot-mode-map (kbd "C-c l r") 'eglot-rename)
     (define-key eglot-mode-map (kbd "C-c l a") 'eglot-code-actions)
     (define-key eglot-mode-map (kbd "C-c l f") 'eglot-format)

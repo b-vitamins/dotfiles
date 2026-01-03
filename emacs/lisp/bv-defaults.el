@@ -94,10 +94,7 @@
     (xterm-mouse-mode 1))
   (when (and (not (display-graphic-p))
              (fboundp 'mouse-wheel-mode))
-    (mouse-wheel-mode 1))
-  ;; Mouse wheel in terminals (when supported by the terminal emulator).
-  (global-set-key (kbd "<mouse-4>") #'scroll-down-line)
-  (global-set-key (kbd "<mouse-5>") #'scroll-up-line))
+    (mouse-wheel-mode 1)))
 
 ;; Ensure TTY defaults also apply to terminal frames created via emacsclient.
 (add-hook 'tty-setup-hook #'bv-defaults-tty-setup)
@@ -222,9 +219,16 @@ and MSG is the process message."
 (when (fboundp 'repeat-mode)
   (repeat-mode 1))
 
-;; Pixel-precise scrolling in GUI for a modern feel
-(when (and (display-graphic-p) (fboundp 'pixel-scroll-precision-mode))
-  (pixel-scroll-precision-mode 1))
+;; Pixel-precise scrolling in GUI for a modern feel (daemon-safe).
+(defun bv-defaults--maybe-enable-pixel-scroll (&optional frame)
+  "Enable `pixel-scroll-precision-mode' for GUI frames."
+  (with-selected-frame (or frame (selected-frame))
+    (when (and (display-graphic-p)
+               (fboundp 'pixel-scroll-precision-mode))
+      (pixel-scroll-precision-mode 1))))
+
+(add-hook 'after-make-frame-functions #'bv-defaults--maybe-enable-pixel-scroll)
+(bv-defaults--maybe-enable-pixel-scroll)
 
 ;; Auto-save and backup configuration
 (setq backup-directory-alist

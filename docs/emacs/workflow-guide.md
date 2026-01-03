@@ -91,6 +91,17 @@ Do:
 C-x b proj RET  # Finds "my-project.py" buffer
 ```
 
+#### Consult Buffer: Sources & Narrowing
+
+`C-x b` runs `consult-buffer`, which merges multiple *sources* (e.g. buffers, files, bookmarks) into one picker. The headers you see (like `[Buffer]`, `[Recent File]`) are those sources.
+
+- **Default behavior:** buffers are listed in MRU order, so `C-x b RET` usually jumps back to your previous buffer.
+- **Cycle sources:** `TAB` / `S-TAB` cycles the active source narrowing.
+- **Jump to a source:** type the source key, then `SPC` (e.g. `b SPC` buffers, `f SPC` recent files, `m SPC` bookmarks, `p SPC` project, `. SPC` files in current dir).
+- **Widen back:** with empty input, press `DEL` to return to “all sources”.
+- **Discover keys:** press `?` to see a live list of available narrowing keys for the current picker.
+- **Customize order:** source cycling order is controlled by `bv-consult-narrow-cycle-order` (and the actual sources by `consult-buffer-sources`).
+
 ### File Operations
 
 Instead of:
@@ -206,6 +217,15 @@ Do:
 ```
 xref-find-definitions (M-.)  # Jump to definition instantly
 ```
+
+#### LSP “Peek” Flow (Eglot + Consult UI)
+
+In eglot-managed buffers, use the dedicated peek keymap:
+
+- `C-c l d` / `C-c l D` → definition (same window / other window)
+- `C-c l R` → references
+- `C-c l e` → diagnostics (fast picker UI)
+- `C-c l h` → full docs at point
 
 ### Buffer-Specific Navigation
 
@@ -351,6 +371,21 @@ Do:
 ```
 dape-mode  # Modern debugging with DAP protocol
 ```
+
+#### Diagnostics Fix Loop (Flymake)
+
+Think of Flymake as a tight loop: **jump → read → fix → repeat**.
+
+- `M-n` / `M-p` jumps to next/prev diagnostic and shows it at point.
+- `C-c ! q` opens a quick diagnostics picker (Consult UI when available).
+- `C-c ! b` / `C-c ! P` shows buffer/project diagnostics lists.
+
+#### Formatting (Unified)
+
+Formatting uses one dispatcher so your muscle memory stays the same across languages:
+
+- `C-c C-f` formats the current buffer in supported modes (C/C++/CUDA, Python, Rust).
+- `M-x bv-format-on-save-mode` toggles buffer-local format-on-save.
 
 ## Project Management
 

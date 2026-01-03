@@ -14,6 +14,16 @@
 
 (declare-function consult-flymake "consult-flymake" (&optional project))
 
+(defvar-keymap bv-flymake-fix-map
+  :doc "Keymap for fast Flymake navigation and fix loop."
+  "n" #'bv-flymake-goto-next-error
+  "p" #'bv-flymake-goto-prev-error
+  "d" #'bv-flymake-show-at-point
+  "q" #'bv-flymake-quickfix
+  "b" #'flymake-show-buffer-diagnostics
+  "l" #'flymake-show-buffer-diagnostics
+  "P" #'flymake-show-project-diagnostics)
+
 (defun bv-flymake-show-at-point ()
   "Show the diagnostic at point."
   (interactive)
@@ -59,10 +69,7 @@ With prefix argument PROJECT, show project diagnostics."
   (let ((map flymake-mode-map))
     (define-key map (kbd "M-n") 'bv-flymake-goto-next-error)
     (define-key map (kbd "M-p") 'bv-flymake-goto-prev-error)
-    (define-key map (kbd "C-c ! l") 'flymake-show-buffer-diagnostics)
-    (define-key map (kbd "C-c ! q") 'bv-flymake-quickfix)
-    (define-key map (kbd "C-c ! d") 'bv-flymake-show-at-point)
-    (define-key map (kbd "C-c ! p") 'flymake-show-project-diagnostics)))
+    (define-key map (kbd "C-c !") bv-flymake-fix-map)))
 
 
 (with-eval-after-load 'bv-bindings

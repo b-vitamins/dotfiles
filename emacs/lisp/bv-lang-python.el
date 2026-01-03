@@ -13,6 +13,7 @@
 (require 'python)
 (require 'eglot)
 (require 'flymake)
+(require 'bv-format)
 
 ;; External variables
 (defvar python-ts-mode-map)
@@ -60,10 +61,7 @@
 (defun bv-python-ruff-format-buffer ()
   "Format current buffer with ruff."
   (interactive)
-  (save-buffer)
-  (shell-command-on-region (point-min) (point-max)
-                          "ruff format -" nil t)
-  (shell-command (concat "ruff check --fix " (buffer-file-name))))
+  (bv-format-buffer))
 
 (defun bv-python-ruff-format-on-save ()
   "Format buffer with ruff before saving."
@@ -95,7 +93,7 @@
 
 ;; Keybindings
 (with-eval-after-load 'python
-  (define-key python-ts-mode-map (kbd "C-c C-f") #'bv-python-ruff-format-buffer)
+  (define-key python-ts-mode-map (kbd "C-c C-f") #'bv-format-buffer)
   (define-key python-ts-mode-map (kbd "C-c C-s") #'bv-python-send-region-or-buffer)
   (define-key python-ts-mode-map (kbd "C-c C-z") #'python-shell-switch-to-shell))
 

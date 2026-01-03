@@ -66,36 +66,25 @@
   :group 'bv-consult)
 
 (defcustom bv-consult-auto-narrow-modes
-  '((consult-buffer . ((emacs-lisp-mode . ?e)
-                      (lisp-interaction-mode . ?e)
-                      (python-mode . ?p)
-                      (python-ts-mode . ?p)
-                      (rust-mode . ?r)
-                      (rust-ts-mode . ?r)
-                      (javascript-mode . ?j)
-                      (javascript-ts-mode . ?j)
-                      (typescript-mode . ?t)
-                      (typescript-ts-mode . ?t)
-                      (c-mode . ?c)
-                      (c-ts-mode . ?c)
-                      (c++-mode . ?C)
-                      (c++-ts-mode . ?C)
-                      (java-mode . ?J)
-                      (java-ts-mode . ?J)
-                      (go-mode . ?g)
-                      (go-ts-mode . ?g)
-                      (ruby-mode . ?R)
-                      (ruby-ts-mode . ?R)
-                      (scheme-mode . ?s)
-                      (org-mode . ?o)
-                      (markdown-mode . ?m)
-                      (dired-mode . ?d)
-                      (magit-status-mode . ?G)
-                      (prog-mode . ?P)))
-    (consult-imenu . ((prog-mode . ?f))))
+  '((consult-imenu . ((prog-mode . ?f))))
   "Auto-narrowing configuration per command and mode."
   :type '(alist :key-type symbol
                 :value-type (alist :key-type symbol :value-type character))
+  :group 'bv-consult)
+
+(defcustom bv-consult-narrow-cycle-order
+  '(?b ?p ?B ?F ?. ?f ?m ?T ?* ?\s)
+  "Preferred cycle order for consult narrowing keys.
+
+This affects `TAB' and `S-TAB' cycling in Consult minibuffers.
+Keys not listed here are cycled after the preferred keys, in their
+original order."
+  :type '(repeat character)
+  :group 'bv-consult)
+
+(defcustom bv-consult-narrow-echo t
+  "Whether to echo the active Consult narrowing source in the echo area."
+  :type 'boolean
   :group 'bv-consult)
 
 (defcustom bv-consult-enable-xdg-recent nil
@@ -122,16 +111,57 @@ Disabled by default for performance."
                    (and (provided-mode-derived-p mode parent) key))
                  config))))
 
+(defun bv-consult--narrow-key-valid-p (key)
+  "Return non-nil when KEY is a valid consult narrowing key in this minibuffer."
+  (and (characterp key)
+       (plist-get consult--narrow-config :keys)
+       (assq key (plist-get consult--narrow-config :keys))))
+
+(defun bv-consult--narrow-keys-ordered (keys)
+  "Return KEYS ordered according to `bv-consult-narrow-cycle-order'.
+
+KEYS is an alist of (KEY . LABEL) pairs from `consult--narrow-config'."
+  (let ((preferred bv-consult-narrow-cycle-order)
+        (result nil))
+    (dolist (k preferred)
+      (when-let ((pair (assq k keys)))
+        (push pair result)))
+    (setq result (nreverse result))
+    (dolist (pair keys)
+      (unless (assq (car pair) result)
+        (setq result (append result (list pair)))))
+    result))
+
+(defvar-local bv-consult--narrow-last-key :unset
+  "Last Consult narrowing key seen in this minibuffer.")
+
+(defun bv-consult--narrow-echo (&rest _)
+  "Echo current Consult narrowing source.
+
+Intended for use from `consult-narrow' advice."
+  (when (and bv-consult-narrow-echo (minibufferp))
+    (let ((key consult--narrow))
+      (unless (eq key bv-consult--narrow-last-key)
+        (setq bv-consult--narrow-last-key key)
+        (let* ((keys (plist-get consult--narrow-config :keys))
+               (label (and key (alist-get key keys))))
+          (message "Narrow: %s"
+                   (cond
+                    ((and key label) (format "%s (%s)" label (key-description (vector key))))
+                    (key (key-description (vector key)))
+                    (t "All"))))))))
+
 (defun bv-consult-initial-narrow ()
   "Auto-narrow based on context."
   (when-let ((key (bv-consult--get-narrow-key)))
-    (setq unread-command-events
-          (append unread-command-events (list key 32)))))
+    (when (bv-consult--narrow-key-valid-p key)
+      (consult-narrow key))))
 
 (defun bv-consult-narrow-cycle-forward ()
   "Cycle forward through narrowing keys."
   (interactive)
   (when-let ((keys (plist-get consult--narrow-config :keys)))
+    (setq keys (bv-consult--narrow-keys-ordered keys))
     (consult-narrow
      (if consult--narrow
          (let ((idx (seq-position keys (assq consult--narrow keys))))
@@ -142,6 +172,7 @@ Disabled by default for performance."
   "Cycle backward through narrowing keys."
   (interactive)
   (when-let ((keys (plist-get consult--narrow-config :keys)))
+    (setq keys (bv-consult--narrow-keys-ordered keys))
     (consult-narrow
      (if consult--narrow
          (let ((idx (seq-position keys (assq consult--narrow keys))))
@@ -384,6 +415,7 @@ PRED is a predicate function to filter files."
   ;; Set narrowing keys
   (define-key consult-narrow-map (kbd "TAB") #'bv-consult-narrow-cycle-forward)
   (define-key consult-narrow-map (kbd "<backtab>") #'bv-consult-narrow-cycle-backward)
+  (define-key consult-narrow-map (kbd "?") #'consult-narrow-help)
 
   ;; Setup auto-narrowing
   (add-hook 'minibuffer-setup-hook #'bv-consult-initial-narrow)
@@ -396,15 +428,15 @@ PRED is a predicate function to filter files."
 
   ;; Configure buffer sources - start with default and add custom
   (setq consult-buffer-sources
-        '(consult--source-hidden-buffer
-          consult--source-modified-buffer
-          consult--source-buffer
+        '(consult-source-buffer
+          consult-source-project-buffer-hidden
+          consult-source-project-recent-file-hidden
           bv-consult--source-file-in-dir
           bv-consult--source-recent-file-uniquified
-          consult--source-bookmark
+          consult-source-bookmark
           bv-consult--source-tab
-          consult--source-project-buffer-hidden
-          consult--source-project-recent-file-hidden))
+          consult-source-modified-buffer
+          consult-source-hidden-buffer))
 
   ;; File reading with preview - only set if you want it globally
   ;; (setq read-file-name-function #'bv-consult-find-file-with-preview)
@@ -469,8 +501,8 @@ PRED is a predicate function to filter files."
    ;; Delayed preview for grep commands
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file
-   consult--source-bookmark consult--source-file-register
-   consult--source-recent-file consult--source-project-recent-file
+   consult-source-bookmark consult-source-file-register
+   consult-source-recent-file consult-source-project-recent-file
    :preview-key '(:debounce 0.4 any)
 
    ;; Configure specific commands
@@ -480,6 +512,9 @@ PRED is a predicate function to filter files."
    consult-outline :prompt "Outline: "
    :preview-key '(:debounce 0.15 any)
    consult-history :category nil))
+
+  (unless (advice-member-p #'bv-consult--narrow-echo #'consult-narrow)
+    (advice-add #'consult-narrow :after #'bv-consult--narrow-echo))
 
 ;;;; Key Bindings
 

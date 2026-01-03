@@ -11,6 +11,7 @@
 ;;; Code:
 
 (require 'eglot)
+(require 'bv-format)
 
 ;; External variables
 (defvar rust-ts-mode-map)
@@ -166,6 +167,7 @@
   "Keymap for Rust mode commands.")
 
 (with-eval-after-load 'rust-ts-mode
+  (define-key rust-ts-mode-map (kbd "C-c C-f") #'bv-format-buffer)
   (define-key rust-ts-mode-map (kbd "C-c C-c") bv-rust-mode-map))
 
 ;; Cargo.toml support

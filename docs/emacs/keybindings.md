@@ -76,16 +76,24 @@ Comprehensive keybinding reference for the bv-emacs configuration. Organized by 
 | `C-x r b` | consult-bookmark | Select bookmark |
 | `C-x p b` | consult-project-buffer | Project buffer |
 
+#### Consult Buffer (Minibuffer)
+| Key | Command | Description |
+|-----|---------|-------------|
+| `TAB` | bv-consult-narrow-cycle-forward | Cycle source narrowing forward |
+| `S-TAB` | bv-consult-narrow-cycle-backward | Cycle source narrowing backward |
+| `?` | consult-narrow-help | Show narrowing keys and sources |
+| `<key> SPC` | consult-narrow (via Consult) | Narrow to a source (e.g. `b`, `f`, `m`, `p`, `.`) |
+| `DEL` (empty input) | consult-narrow | Widen back to all sources |
+
 ### File Operations
 | Key | Command | Description |
 |-----|---------|-------------|
 | `s-d` | dired-jump | Jump to dired |
 
 ### Mouse Scrolling
-| Key | Command | Description |
-|-----|---------|-------------|
-| `mouse-4` | scroll-down-line | Scroll down |
-| `mouse-5` | scroll-up-line | Scroll up |
+Mouse wheel scrolling works in GUI by default. In `emacs -nw`, mouse support is
+enabled automatically when available (via `xterm-mouse-mode` and
+`mouse-wheel-mode`).
 
 ## Search & Navigation
 
@@ -234,6 +242,32 @@ Available through Transient menus and standard Git commands.
 | `C-c a L` | eglot-shutdown | Stop LSP |
 | `C-c a f` | flymake-mode | Toggle flymake |
 | `C-c a F` | flymake-show-project-diagnostics | Show diagnostics |
+
+#### Eglot (in eglot-managed buffers)
+| Key | Command | Description |
+|-----|---------|-------------|
+| `C-c l d` | bv-eglot-peek-definition | Peek definition (Xref/Consult UI) |
+| `C-c l D` | bv-eglot-peek-definition-other-window | Peek definition (other window) |
+| `C-c l R` | bv-eglot-peek-references | Peek references (Xref/Consult UI) |
+| `C-c l e` | bv-eglot-peek-diagnostics | Peek diagnostics (Consult/Flymake UI) |
+| `C-c l s` | consult-eglot-symbols | Workspace symbols |
+| `C-c l h` | bv-eglot-doc-buffer | Full docs at point |
+| `C-c l r` | eglot-rename | Rename symbol |
+| `C-c l a` | eglot-code-actions | Code actions |
+| `C-c l f` | eglot-format | Format region |
+| `C-c l F` | eglot-format-buffer | Format buffer |
+
+#### Flymake (fix loop)
+| Key | Command | Description |
+|-----|---------|-------------|
+| `M-n` | bv-flymake-goto-next-error | Next diagnostic (and show at point) |
+| `M-p` | bv-flymake-goto-prev-error | Prev diagnostic (and show at point) |
+| `C-c ! n` | bv-flymake-goto-next-error | Next diagnostic |
+| `C-c ! p` | bv-flymake-goto-prev-error | Prev diagnostic |
+| `C-c ! d` | bv-flymake-show-at-point | Show diagnostic at point |
+| `C-c ! q` | bv-flymake-quickfix | Quick diagnostics UI |
+| `C-c ! b` | flymake-show-buffer-diagnostics | Buffer diagnostics list |
+| `C-c ! P` | flymake-show-project-diagnostics | Project diagnostics list |
 
 ### Debugging (Dape)
 | Key | Command | Description |
