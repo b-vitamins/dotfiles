@@ -20,6 +20,10 @@
   "Return the absolute path of the inbox file."
   (expand-file-name "inbox.org" bv-org-directory))
 
+(defun bv-org-agenda--goals-file ()
+  "Return the absolute path of the goals file."
+  (expand-file-name "goals.org" bv-org-directory))
+
 (defun bv-org-agenda--project-has-next-action-p ()
   "Return non-nil when the current subtree contains a NEXT/STARTED task."
   (save-restriction
@@ -69,6 +73,9 @@ subtree."
                      (org-deadline-warning-days 7)))
             (todo "STARTED" ((org-agenda-overriding-header "In progress")))
             (todo "NEXT" ((org-agenda-overriding-header "Next actions")))
+            (tags-todo "STYLE=\"habit\""
+                       ((org-agenda-overriding-header "Habits")
+                        (org-agenda-files (list (bv-org-agenda--goals-file)))))
             (tags-todo "deep/!NEXT|STARTED"
                        ((org-agenda-overriding-header "Deep work")))
             (tags-todo "@errand/!NEXT|STARTED"

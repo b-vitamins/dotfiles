@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Circadian Alacritty light/dark theming with synced Zsh/FZF/Bat palettes
 - Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
 - Org workflow guide documenting the `~/org` command-center system (`docs/emacs/org-workflow.md`)
+- Org gamification tools: metrics scoreboard, focus timer, inbox processor, and citar-driven reading queue
 ### Changed
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert

@@ -201,11 +201,15 @@ Available through Transient menus and standard Git commands.
 ### Org Command Center (`C-c a o`)
 | Key | Command | Description |
 |-----|---------|-------------|
-| `C-c a o a` | org-agenda ("d") | Dashboard (Today/Next/Waiting/Inbox) |
+| `C-c a o a` | org-agenda ("d") | Dashboard (Today/Next/Habits/Waiting/Inbox) |
 | `C-c a o r` | org-agenda ("R") | Weekly review dashboard |
 | `C-c a o w` | bv-org-weekly-review-create | Create/open weekly review entry |
 | `C-c a o c` | org-capture | Capture menu |
 | `C-c a o q` | bv-org-agenda-quick-task | Quick task capture (template "q") |
+| `C-c a o i` | bv-org-inbox-process | Inbox-zero processor loop |
+| `C-c a o p` | bv-org-focus | Focus: pick NEXT → clock in → timer |
+| `C-c a o P` | bv-org-reading-add-paper | Paper pipeline (citar → reading project) |
+| `C-c a o m` | bv-org-metrics-dashboard | Metrics scoreboard |
 | `C-c a o v` | bv-org-agenda-calendar | Dashboard + calendar split |
 | `C-c a o f` | consult-org-heading | Jump to heading across Org files |
 | `C-c a o A` | consult-org-agenda | Search agenda items |
