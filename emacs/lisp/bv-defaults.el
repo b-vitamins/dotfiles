@@ -217,7 +217,9 @@ and MSG is the process message."
 
 ;; Repeat-mode for less typing (e.g. `C-x o o o' without repeating prefixes)
 (when (fboundp 'repeat-mode)
-  (repeat-mode 1))
+  (let ((inhibit-message t)
+        (message-log-max nil))
+    (repeat-mode 1)))
 
 ;; Pixel-precise scrolling in GUI for a modern feel (daemon-safe).
 (defun bv-defaults--maybe-enable-pixel-scroll (&optional frame)

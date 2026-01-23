@@ -433,11 +433,34 @@ SCALE-FACTOR is the monitor scale factor (usually 1 or 2)."
                (bv-org-latex--preview-stale-p frame))
       (bv-org-latex--schedule-refresh (current-buffer) frame))))
 
-(defun bv-org-latex--maybe-refresh-window-buffer (window _prev-buffer)
-  "Refresh Org LaTeX previews for WINDOW's current buffer when needed."
-  (when (window-live-p window)
-    (with-current-buffer (window-buffer window)
-      (bv-org-latex--maybe-refresh-buffer (window-frame window)))))
+(defun bv-org-latex--maybe-refresh-window-buffer (window-or-frame &rest _args)
+  "Refresh Org LaTeX previews for WINDOW-OR-FRAME when needed.
+
+This is intended for `window-buffer-change-functions'.  Functions installed in
+the hook's default value are called with a frame.  Buffer-local hook functions
+are called with a window."
+  (cond
+   ((windowp window-or-frame)
+    (when (window-live-p window-or-frame)
+      (with-current-buffer (window-buffer window-or-frame)
+        (bv-org-latex--maybe-refresh-buffer (window-frame window-or-frame)))))
+   ((framep window-or-frame)
+    (when (frame-live-p window-or-frame)
+      (dolist (window (window-list window-or-frame 'no-minibuf))
+        (when (window-live-p window)
+          (with-current-buffer (window-buffer window)
+            (bv-org-latex--maybe-refresh-buffer window-or-frame))))))))
+
+(with-eval-after-load 'org-fragtog
+  (defun bv-org-latex--org-fragtog-clamp-prev-point (&rest _args)
+    "Prevent `org-fragtog--post-cmd' from `goto-char' errors after buffer edits."
+    (when (and (boundp 'org-fragtog--prev-point)
+               (integerp org-fragtog--prev-point))
+      (let ((min (point-min))
+            (max (point-max)))
+        (unless (<= min org-fragtog--prev-point max)
+          (setq org-fragtog--prev-point (min max (max min org-fragtog--prev-point)))))))
+  (advice-add 'org-fragtog--post-cmd :before #'bv-org-latex--org-fragtog-clamp-prev-point))
 
 (defun bv-org-latex-refresh-previews (&optional buffer)
   "Refresh LaTeX previews in BUFFER.

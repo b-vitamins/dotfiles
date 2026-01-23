@@ -169,7 +169,7 @@ With FORCE, update even if the theme shouldn't change."
   "Setup automatic theme switching based on sunrise/sunset."
   (interactive)
   ;; Cancel any existing timer
-  (bv-circadian-stop)
+  (bv-circadian-stop t)
 
   ;; Enable circadian switching
   (setq bv-circadian-enabled-p t)
@@ -183,23 +183,28 @@ With FORCE, update even if the theme shouldn't change."
                      bv-circadian-update-interval
                      #'bv-circadian-update-theme))
 
-  (message "Circadian theme switching enabled"))
+  (when (called-interactively-p 'interactive)
+    (message "Circadian theme switching enabled")))
 
-(defun bv-circadian-stop ()
+(defun bv-circadian-stop (&optional quiet)
   "Stop automatic theme switching."
   (interactive)
   (when bv-circadian--timer
     (cancel-timer bv-circadian--timer)
     (setq bv-circadian--timer nil))
   (setq bv-circadian-enabled-p nil)
-  (message "Circadian theme switching disabled"))
+  (when (and (not quiet) (called-interactively-p 'interactive))
+    (message "Circadian theme switching disabled")))
 
 (defun bv-circadian-toggle ()
   "Toggle circadian theme switching."
   (interactive)
   (if bv-circadian-enabled-p
-      (bv-circadian-stop)
-    (bv-circadian-setup)))
+      (progn
+        (bv-circadian-stop)
+        (message "Circadian theme switching disabled"))
+    (bv-circadian-setup)
+    (message "Circadian theme switching enabled")))
 
 ;;; Location management
 

@@ -76,6 +76,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed Org LaTeX preview DPI detection (per-monitor + compositor scaling) and auto-refreshed previews when moving frames between displays
 - Made AUCTeX previews scale from the current face (instead of a fixed number) for consistent math rendering across font sizes
 - Restored Tempel `;snippet` expansion on `TAB` for Org/LaTeX buffers and aligned the `im` template with Org-style inline math (`\\( ... \\)`)
+- Prevented Org LaTeX auto-refresh and `org-fragtog` from throwing errors during window/buffer changes
+- Updated Org capture templates to the new `file+olp+datetree` format to avoid deprecation noise at startup
+- Silenced noisy circadian enable/disable messages during startup
+- Silenced repeat-mode enable message during startup
 - Disabled hl-line highlighting in Org buffers
 ### Removed
 - Obsolete Emacs configuration files

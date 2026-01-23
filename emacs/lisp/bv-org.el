@@ -913,22 +913,22 @@ With prefix ARG, also create an org-roam note and link it."
 
   ;; Capture templates: inbox/journal/meeting/idea/reading/link/quick task.
   (setq org-capture-templates
-        `(("i" "Inbox item" entry
-           (file+headline ,(bv-org--path bv-org--inbox-file) "Inbox")
-           "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n%(bv-org-capture--project-line)%(bv-org-capture--clock-line)%(bv-org-capture--context-line):END:\n%i\n%a\n"
-           :empty-lines 1 :clock-in t :clock-resume t)
+	        `(("i" "Inbox item" entry
+	           (file+headline ,(bv-org--path bv-org--inbox-file) "Inbox")
+	           "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n%(bv-org-capture--project-line)%(bv-org-capture--clock-line)%(bv-org-capture--context-line):END:\n%i\n%a\n"
+	           :empty-lines 1 :clock-in t :clock-resume t)
           ("q" "Quick task (today)" entry
            (file+headline ,(bv-org--path bv-org--inbox-file) "Inbox")
            "* NEXT %?\nDEADLINE: %t\n:PROPERTIES:\n:CREATED: %U\n%(bv-org-capture--project-line)%(bv-org-capture--clock-line)%(bv-org-capture--context-line):END:\n%a\n"
            :empty-lines 1 :clock-in t :clock-resume t)
-          ("j" "Journal" entry
-           (file+datetree ,(bv-org--path bv-org--journal-file))
-           "* %<%H:%M> %?\n:PROPERTIES:\n:CREATED: %U\n%(bv-org-capture--project-line)%(bv-org-capture--clock-line):END:\n%i\n"
-           :empty-lines 1 :clock-in t :clock-resume t)
-          ("m" "Meeting" entry
-           (file+datetree ,(bv-org--path bv-org--meetings-file))
-           "* %<%H:%M> %^{Title}  :meeting:\n:PROPERTIES:\n:CREATED: %U\n:ATTENDEES: %^{Attendees}\n:LOCATION: %^{Location}\n%(bv-org-capture--project-line)%(bv-org-capture--clock-line):END:\n\n** Context\n%a\n\n** Agenda\n- %?\n\n** Notes\n\n** Decisions\n\n** Actions\n"
-           :empty-lines 1 :clock-in t :clock-resume t)
+	          ("j" "Journal" entry
+	           (file+olp+datetree ,(bv-org--path bv-org--journal-file))
+	           "* %<%H:%M> %?\n:PROPERTIES:\n:CREATED: %U\n%(bv-org-capture--project-line)%(bv-org-capture--clock-line):END:\n%i\n"
+	           :empty-lines 1 :clock-in t :clock-resume t)
+	          ("m" "Meeting" entry
+	           (file+olp+datetree ,(bv-org--path bv-org--meetings-file))
+	           "* %<%H:%M> %^{Title}  :meeting:\n:PROPERTIES:\n:CREATED: %U\n:ATTENDEES: %^{Attendees}\n:LOCATION: %^{Location}\n%(bv-org-capture--project-line)%(bv-org-capture--clock-line):END:\n\n** Context\n%a\n\n** Agenda\n- %?\n\n** Notes\n\n** Decisions\n\n** Actions\n"
+	           :empty-lines 1 :clock-in t :clock-resume t)
           ("l" "Link" entry
            (file+headline ,(bv-org--path bv-org--inbox-file) "Links")
            "* %? :link:\n:PROPERTIES:\n:CREATED: %U\n%(bv-org-capture--project-line)%(bv-org-capture--context-line):END:\n%a\n"
