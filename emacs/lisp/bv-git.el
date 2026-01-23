@@ -12,6 +12,14 @@
 
 (require 'cl-lib)
 
+(with-no-warnings
+  (defvar magit-section-visibility-indicator nil
+    "Compatibility shim for stale native-compiled Magit code.
+
+Magit-Section 4.5.0 repurposed `magit-section-visibility-indicator' from a
+variable to a function, but older native-compiled artifacts may still treat it
+as a variable."))
+
 (autoload 'git-link--exec "git-link")
 (autoload 'git-link--branch "git-link")
 (autoload 'git-link--parse-remote "git-link")
@@ -56,6 +64,13 @@
           (concat (or (getenv "XDG_CACHE_HOME") "~/.cache")
                   "/emacs/transient/history.el"))))
 
+(with-eval-after-load 'magit-section
+  (with-no-warnings
+    (when (and (null magit-section-visibility-indicator)
+               (boundp 'magit-section-visibility-indicators)
+               (fboundp 'magit-section-visibility-indicator))
+      (setq magit-section-visibility-indicator
+            (magit-section-visibility-indicator)))))
 
 (with-eval-after-load 'magit
   (when (boundp 'magit-display-buffer-function)

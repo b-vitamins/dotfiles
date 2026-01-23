@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Silenced noisy circadian enable/disable messages during startup
 - Silenced repeat-mode enable message during startup
 - Disabled hl-line highlighting in Org buffers
+- Fixed Magit status buffer errors caused by stale native-compiled Magit code expecting `magit-section-visibility-indicator` as a variable
 ### Removed
 - Obsolete Emacs configuration files
 
