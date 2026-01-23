@@ -16,7 +16,7 @@
 ;;
 ;; Design Philosophy:
 ;; -----------------
-;; • Rich charcoal backgrounds (#1f1f1d) provide a refined foundation
+;; • Rich charcoal backgrounds (#24262b) provide a refined foundation
 ;; • Cool frost accents (cyan) serve as the primary highlight color
 ;; • Warm paper tones balance the cool palette
 ;; • Subtle color variations maintain visual hierarchy without distraction
@@ -51,18 +51,18 @@
 (defconst bv-dark-palette
   '(;; === Foundation Colors ===
     ;; Cinematic charcoal inspired by Claude
-    (bg-main . "#30302e")          ; Rich charcoal-black
-    (fg-main . "#a8b0b8")          ; Soft paper-white
-    (bg-dim . "#2d2d2b")           ; Deeper charcoal
-    (fg-dim . "#9098a0")           ; Muted gray
-    (bg-alt . "#363635")           ; Alt surface
+    (bg-main . "#24262b")          ; Rich charcoal-black (cool undertone)
+    (fg-main . "#c0c8d2")          ; Crisp paper-gray
+    (bg-dim . "#1f2126")           ; Deeper charcoal
+    (fg-dim . "#9aa2ad")           ; Muted gray-blue
+    (bg-alt . "#2b2e34")           ; Alt surface
     (fg-alt . "#d0d6e0")           ; Bright foreground
 
     ;; === Active/Inactive States ===
-    (bg-active . "#404040")        ; Active surface
+    (bg-active . "#343740")        ; Active surface
     (fg-active . "#e0e5ef")        ; Active foreground
-    (bg-inactive . "#2f2f2d")      ; Inactive surface
-    (fg-inactive . "#787880")      ; Inactive foreground
+    (bg-inactive . "#212329")      ; Inactive surface
+    (fg-inactive . "#858b95")      ; Inactive foreground
 
     ;; === Complete Color Scales ===
     ;; Red scale (Vermillion)
@@ -372,7 +372,7 @@
 		    (keybind . accent-0)
 	    (name . purple)                ; Names (buffers, files, etc.)
 	    (identifier . cyan-faint)      ; Identifiers
-	    (border . "#353637")          ; General border color
+	    (border . "#31343c")          ; General border color
 		    (fringe . bg-main)            ; Fringe color (no separator line)
 		    (fringe-subtle . bg-dim)      ; Subtle fringe
 		    (fringe-greyscale . bg-alt)   ; Greyscale fringe
