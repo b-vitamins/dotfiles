@@ -73,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Normalized Org LaTeX preview scaling to better match text size across displays
 - Fixed Org LaTeX preview DPI detection (per-monitor + compositor scaling) and auto-refreshed previews when moving frames between displays
 - Made AUCTeX previews scale from the current face (instead of a fixed number) for consistent math rendering across font sizes
+- Restored Tempel `;snippet` expansion on `TAB` for Org/LaTeX buffers and aligned the `im` template with Org-style inline math (`\\( ... \\)`)
 - Disabled hl-line highlighting in Org buffers
 ### Removed
 - Obsolete Emacs configuration files

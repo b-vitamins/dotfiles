@@ -1,8 +1,8 @@
 org-mode
 
 ;; Basic inline and display math
-(im "$" p "$")                                          ; inline math $...$
-(M "\\(" p "\\)")                                      ; inline math \(...\)
+(im "\\(" p "\\)")                                     ; inline math \(...\)
+(M "$" p "$")                                          ; inline math $...$
 (dm "\\[" n> r> n> "\\]")                               ; display math \[...\]
 (eq "\\begin{equation}" n> r> n> "\\end{equation}")     ; numbered equation
 (eq* "\\begin{equation*}" n> r> n> "\\end{equation*}")  ; unnumbered equation
