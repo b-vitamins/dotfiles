@@ -8,33 +8,33 @@ draw_bold_text_with_bright_colors = false
 transparent_background_colors = true
 
 [colors.primary]
-background = "#30302e"
-foreground = "#a8b0b8"
-dim_foreground = "#9098a0"
+background = "#24262b"
+foreground = "#c0c8d2"
+dim_foreground = "#9aa2ad"
 bright_foreground = "#e0e5ef"
 
 [colors.cursor]
-text = "#30302e"
+text = "#24262b"
 cursor = "#528ab7"
 
 [colors.vi_mode_cursor]
-text = "#30302e"
+text = "#24262b"
 cursor = "#b98a5c"
 
 [colors.search]
-matches = { foreground = "#a8b0b8", background = "#364446" }
-focused_match = { foreground = "#a8b0b8", background = "#514c3f" }
+matches = { foreground = "#c0c8d2", background = "#30444c" }
+focused_match = { foreground = "#c0c8d2", background = "#554f43" }
 
 [colors.hints]
-start = { foreground = "#30302e", background = "#98c078" }
-end = { foreground = "#30302e", background = "#5494c7" }
+start = { foreground = "#24262b", background = "#98c078" }
+end = { foreground = "#24262b", background = "#5494c7" }
 
 [colors.selection]
 text = "CellForeground"
-background = "#394752"
+background = "#364e63"
 
 [colors.normal]
-black = "#363635"
+black = "#2b2e34"
 red = "#e06c75"
 green = "#73905e"
 yellow = "#c8b07a"
@@ -44,7 +44,7 @@ cyan = "#4b8b9a"
 white = "#d0d6e0"
 
 [colors.bright]
-black = "#353637"
+black = "#31343c"
 red = "#ff5f6b"
 green = "#98c078"
 yellow = "#d1a850"
@@ -54,11 +54,11 @@ cyan = "#52aebb"
 white = "#e0e5ef"
 
 [colors.dim]
-black = "#2d2d2b"
+black = "#1f2126"
 red = "#be737a"
 green = "#637a52"
 yellow = "#a89a78"
 blue = "#3b4751"
 magenta = "#8a6a7a"
 cyan = "#5c7f88"
-white = "#9098a0"
+white = "#9aa2ad"

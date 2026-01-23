@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Updated BV font stack defaults and Unicode fallbacks (JetBrains Mono, FiraGO, Noto Serif)
 - Refined BV Emacs light/dark theme palettes for improved contrast and a more polished completion UI
 - Tweaked BV Emacs dark theme foundation colors for a richer background tint and crisper text contrast
+- Tweaked Alacritty dark palette for richer backgrounds and sharper text contrast
 - Disabled underlines across BV themes (links, comments, diagnostics) in favor of color and subtle background emphasis
 - Tuned header-line modeline padding and fringe/background integration for a cleaner look
 - Enabled right-only window dividers for clearer window separation

@@ -65,25 +65,25 @@ apply_alacritty_runtime_theme_dark() {
 		'window.decorations_theme_variant="Dark"' \
 		'colors.draw_bold_text_with_bright_colors=false' \
 		'colors.transparent_background_colors=true' \
-		'colors.primary.background="#30302e"' \
-		'colors.primary.foreground="#a8b0b8"' \
-		'colors.primary.dim_foreground="#9098a0"' \
+		'colors.primary.background="#24262b"' \
+		'colors.primary.foreground="#c0c8d2"' \
+		'colors.primary.dim_foreground="#9aa2ad"' \
 		'colors.primary.bright_foreground="#e0e5ef"' \
-		'colors.cursor.text="#30302e"' \
+		'colors.cursor.text="#24262b"' \
 		'colors.cursor.cursor="#528ab7"' \
-		'colors.vi_mode_cursor.text="#30302e"' \
+		'colors.vi_mode_cursor.text="#24262b"' \
 		'colors.vi_mode_cursor.cursor="#b98a5c"' \
-		'colors.search.matches.foreground="#a8b0b8"' \
-		'colors.search.matches.background="#364446"' \
-		'colors.search.focused_match.foreground="#a8b0b8"' \
-		'colors.search.focused_match.background="#514c3f"' \
-		'colors.hints.start.foreground="#30302e"' \
+		'colors.search.matches.foreground="#c0c8d2"' \
+		'colors.search.matches.background="#30444c"' \
+		'colors.search.focused_match.foreground="#c0c8d2"' \
+		'colors.search.focused_match.background="#554f43"' \
+		'colors.hints.start.foreground="#24262b"' \
 		'colors.hints.start.background="#98c078"' \
-		'colors.hints.end.foreground="#30302e"' \
+		'colors.hints.end.foreground="#24262b"' \
 		'colors.hints.end.background="#5494c7"' \
 		'colors.selection.text="CellForeground"' \
-		'colors.selection.background="#394752"' \
-		'colors.normal.black="#363635"' \
+		'colors.selection.background="#364e63"' \
+		'colors.normal.black="#2b2e34"' \
 		'colors.normal.red="#e06c75"' \
 		'colors.normal.green="#73905e"' \
 		'colors.normal.yellow="#c8b07a"' \
@@ -91,7 +91,7 @@ apply_alacritty_runtime_theme_dark() {
 		'colors.normal.magenta="#a05a7f"' \
 		'colors.normal.cyan="#4b8b9a"' \
 		'colors.normal.white="#d0d6e0"' \
-		'colors.bright.black="#353637"' \
+		'colors.bright.black="#31343c"' \
 		'colors.bright.red="#ff5f6b"' \
 		'colors.bright.green="#98c078"' \
 		'colors.bright.yellow="#d1a850"' \
@@ -99,14 +99,14 @@ apply_alacritty_runtime_theme_dark() {
 		'colors.bright.magenta="#b06b90"' \
 		'colors.bright.cyan="#52aebb"' \
 		'colors.bright.white="#e0e5ef"' \
-		'colors.dim.black="#2d2d2b"' \
+		'colors.dim.black="#1f2126"' \
 		'colors.dim.red="#be737a"' \
 		'colors.dim.green="#637a52"' \
 		'colors.dim.yellow="#a89a78"' \
 		'colors.dim.blue="#3b4751"' \
 		'colors.dim.magenta="#8a6a7a"' \
 		'colors.dim.cyan="#5c7f88"' \
-		'colors.dim.white="#9098a0"' \
+		'colors.dim.white="#9aa2ad"' \
 		>/dev/null 2>&1 || true
 }
 
@@ -249,7 +249,7 @@ EOF
 	# Apply immediately to running Alacritty windows (without resetting other runtime changes).
 	# Avoid spamming IPC unless the active palette is actually different.
 	if [ "$theme_file_updated" = true ]; then
-		want_bg="#30302e"
+		want_bg="#24262b"
 		[ "$mode" = light ] && want_bg="#fbfbfd"
 		if command -v alacritty >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
 			have_bg=$(alacritty msg get-config 2>/dev/null | jq -r '.colors.primary.background // empty' 2>/dev/null || true)
