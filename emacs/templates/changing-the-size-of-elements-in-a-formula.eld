@@ -35,7 +35,7 @@ latex-mode org-mode
 (dsub "_{\\displaystyle " p "}")  ; display style subscript
 (dsup "^{\\displaystyle " p "}")  ; display style superscript
 (tssub "_{\\textstyle " p "}")     ; text style subscript
-(tsup "^{\\textstyle " p "}")     ; text style superscript
+(tssup "^{\\textstyle " p "}")     ; text style superscript
 
 ;; Common patterns
 (bigfrac "\\displaystyle\\frac{" p "}{" p "}") ; big fraction

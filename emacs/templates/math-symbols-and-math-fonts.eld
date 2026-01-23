@@ -33,9 +33,12 @@ latex-mode org-mode
 (varepsilon "\\varepsilon")              ; ε varepsilon (script)
 (zeta "\\zeta")                     ; ζ zeta
 (et "\\eta")                     ; η eta
+(eta "\\eta")                     ; η eta
 (th "\\theta")                   ; θ theta
+(theta "\\theta")                   ; θ theta
 (vth "\\vartheta")               ; ϑ vartheta
 (io "\\iota")                     ; ι iota
+(iota "\\iota")                     ; ι iota
 (kappa "\\kappa")                    ; κ kappa
 (vk "\\varkappa")                ; ϰ varkappa
 (lambda "\\lambda")                   ; λ lambda
@@ -45,15 +48,20 @@ latex-mode org-mode
 (pi "\\pi")                       ; π pi
 (vp "\\varpi")                   ; ϖ varpi
 (rh "\\rho")                     ; ρ rho
+(rho "\\rho")                     ; ρ rho
 (vrh "\\varrho")                 ; ϱ varrho
 (sig "\\sigma")                    ; σ sigma
+(sigma "\\sigma")                    ; σ sigma
 (vs "\\varsigma")                ; ς varsigma
+(varsigma "\\varsigma")                ; ς varsigma
 (tau "\\tau")                    ; τ tau
 (upsilon "\\upsilon")                  ; υ upsilon
 (phi "\\phi")                     ; φ phi
 (vph "\\varphi")                 ; φ varphi
 (ch "\\chi")                     ; χ chi
+(chi "\\chi")                     ; χ chi
 (ps "\\psi")                     ; ψ psi
+(psi "\\psi")                     ; ψ psi
 (omega "\\omega")                    ; ω omega
 (dg "\\digamma")                 ; ϝ digamma
 
@@ -61,13 +69,16 @@ latex-mode org-mode
 (Gamma "\\Gamma")                    ; Γ Gamma
 (Delta "\\Delta")                    ; Δ Delta
 (Th "\\Theta")                   ; Θ Theta
+(Theta "\\Theta")                   ; Θ Theta
 (Lambda "\\Lambda")                   ; Λ Lambda
 (Xi "\\Xi")                       ; Ξ Xi
 (Pi "\\Pi")                       ; Π Pi
 (Sigma "\\Sigma")                    ; Σ Sigma
 (Upsilon "\\Upsilon")                  ; Υ Upsilon
 (Ph "\\Phi")                     ; Φ Phi
+(Phi "\\Phi")                     ; Φ Phi
 (Ps "\\Psi")                     ; Ψ Psi
+(Psi "\\Psi")                     ; Ψ Psi
 (Omega "\\Omega")                    ; Ω Omega
 
 ;; Other alphabetic symbols
@@ -107,7 +118,7 @@ latex-mode org-mode
 (mf "\\mathfrak{" p "}")         ; fraktur
 (bb "\\mathbb{" p "}")           ; blackboard bold
 (sf "\\mathsf{" p "}")           ; sans serif
-(tt "\\mathtt{" p "}")           ; typewriter
+(mtt "\\mathtt{" p "}")           ; typewriter
 (bs "\\boldsymbol{" p "}")       ; bold symbol
 (pmb "\\pmb{" p "}")             ; poor man's bold
 
@@ -469,7 +480,8 @@ latex-mode org-mode
 (own "\\owns")                   ; ∋ owns (synonym)
 (nin "\\notin")                  ; ∉ notin
 (sub "\\subset")                 ; ⊂ subset
-(sup "\\supset")                 ; ⊃ supset
+(subset "\\subset")                 ; ⊂ subset
+(supset "\\supset")                 ; ⊃ supset
 (sube "\\subseteq")              ; ⊆ subseteq
 (supe "\\supseteq")              ; ⊇ supseteq
 (ssub "\\sqsubset")              ; ⊏ sqsubset
@@ -652,7 +664,7 @@ latex-mode org-mode
 (rmo "\\rmoustache")             ; ⎱ rmoustache
 
 ;; Auto-sizing delimiters
-(lr "\\left" p " " r " \\right" p) ; \left...\right pair
+(lrp "\\left" p " " r " \\right" p) ; \left...\right pair
 (big "\\big" p)                   ; \big
 (Bi "\\Big" p)                   ; \Big
 (bg "\\bigg" p)                  ; \bigg
@@ -747,8 +759,8 @@ latex-mode org-mode
 
 ;; Limits
 (lim "\\lim")                    ; lim
-(liminf "\\liminf")              ; liminf
-(limsup "\\limsup")              ; limsup
+(liminf0 "\\liminf")              ; liminf
+(limsup0 "\\limsup")              ; limsup
 (varliminf "\\varliminf")        ; varliminf
 (varlimsup "\\varlimsup")        ; varlimsup
 

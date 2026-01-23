@@ -95,14 +95,14 @@ latex-mode org-mode
 ;; Custom spacing
 (hsp "\\hspace{" p "}")           ; horizontal space
 (hs* "\\hspace*{" p "}")         ; non-breakable hspace
-(vs "\\vspace{" p "}")           ; vertical space
-(vs* "\\vspace*{" p "}")         ; non-breakable vspace
+(vsp "\\vspace{" p "}")           ; vertical space
+(vsp* "\\vspace*{" p "}")         ; non-breakable vspace
 (msp "\\mspace{" p "mu}")        ; math space in mu units
 
 ;; Phantom spacing
 (phantom "\\phantom{" p "}")          ; full phantom (width + height)
 (hph "\\hphantom{" p "}")        ; horizontal phantom (width only)
-(vph "\\vphantom{" p "}")        ; vertical phantom (height only)
+(vphant "\\vphantom{" p "}")        ; vertical phantom (height only)
 
 ;; Fine-tuning
 (mk "\\mkern" p "mu")            ; math kern

@@ -1,4 +1,4 @@
-org-mode
+latex-mode org-mode
 
 ;; Basic inline and display math
 (im "\\(" p "\\)")                                     ; inline math \(...\)
@@ -31,7 +31,7 @@ org-mode
 ;; Subequations
 (se "\\begin{subequations}" p n> r> n> "\\end{subequations}") ; subequations
 
-org-mode
+latex-mode org-mode
 
 ;; Labels and references
 (lb "\\label{" p "}")                    ; label

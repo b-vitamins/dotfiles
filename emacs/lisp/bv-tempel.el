@@ -81,6 +81,10 @@ template name, e.g. \";im\"."
     (when (and (stringp prefix) (> (length prefix) 0))
       (let ((end (point)))
         (save-excursion
+          ;; Allow a trailing `*' in template names (e.g. `eq*').
+          (when (and (> (point) (point-min))
+                     (eq (char-before) ?*))
+            (backward-char 1))
           (skip-syntax-backward "w_")
           (let* ((beg (point))
                  (token (and (< beg end)
