@@ -63,6 +63,7 @@
 (declare-function preview-environment "preview" (count))
 (declare-function preview-section "preview" ())
 (declare-function preview-clearout "preview" (&optional start end keep-dir))
+(declare-function preview-scale-from-face "preview" ())
 (declare-function auctex-latexmk-setup "auctex-latexmk" ())
 (declare-function flyspell-mode "flyspell" (&optional arg))
 
@@ -111,7 +112,7 @@
 
 ;; Enable math preview
 (setq preview-auto-cache-preamble t)
-(setq preview-scale-function 1.2)
+(setq preview-scale-function (lambda () (* 1.2 (preview-scale-from-face))))
 
 ;; Compilation settings
 (setq TeX-show-compilation nil) ; Don't show compilation buffer
