@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Silenced repeat-mode enable message during startup
 - Disabled hl-line highlighting in Org buffers
 - Fixed Magit status buffer errors caused by stale native-compiled Magit code expecting `magit-section-visibility-indicator` as a variable
+- Restored mode-native RET behavior while a Tempel template is active to avoid `tempel--for: No active template at point`
 ### Removed
 - Obsolete Emacs configuration files
 

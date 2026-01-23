@@ -63,7 +63,9 @@
   (define-key tempel-map (kbd "S-TAB") #'tempel-previous)
   (define-key tempel-map (kbd "<backtab>") #'tempel-previous)
   (define-key tempel-map (kbd "C-g") #'tempel-abort)
-  (define-key tempel-map (kbd "RET") #'tempel-done))
+  ;; Keep RET mode-native (e.g. `org-return') even while a template is active.
+  ;; Tempel already binds M-RET to `tempel-done'.
+  )
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-app-map)
