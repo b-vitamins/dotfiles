@@ -541,6 +541,8 @@ allow-preset-passphrase")))
              %compiler-toolchains
              %version-control
              %compression-tools
+             ;; Containers
+             %container-tools
              ;; Media
              %media-players
              ;; Development - Languages (workstation needs all)
