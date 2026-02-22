@@ -1,0 +1,4 @@
+interface:
+  display_name: "HiFi PDF Transcription"
+  short_description: "High-fidelity page-by-page PDF transcription"
+  default_prompt: "Use $hifi-pdf-ocr to render this PDF to 600 DPI page images, split non-overlapping ranges for multiple agents, and transcribe assigned pages into LaTeX one page at a time."

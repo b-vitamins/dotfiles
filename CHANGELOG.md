@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
 - Org workflow guide documenting the `~/org` command-center system (`docs/emacs/org-workflow.md`)
 - Org gamification tools: metrics scoreboard, focus timer, inbox processor, and citar-driven reading queue
+- Codex `hifi-pdf-ocr` skill with reusable prompts, orchestration agents, and OCR helper scripts
 ### Changed
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
@@ -63,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Switched Alacritty hint launcher to `xdg-open` and added a copy-hint binding
 - Updated Alacritty’s BV light/dark palettes to match BV Emacs themes (including selection/search surfaces)
 - Simplified Org configuration: default TODO/DONE only with a single inbox file and minimal capture/agenda bindings
+- Extended `setup.sh` to auto-link repository Codex skills into `~/.codex/skills`
 ### Fixed
 - Added missing emacs-pgtk package import in Guix configurations
 - Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup

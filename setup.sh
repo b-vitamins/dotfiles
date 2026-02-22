@@ -133,6 +133,7 @@ ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     Managed by this script:
     - Emacs (init files, lisp modules, templates)
     - Guix System (channels.scm only)
+    - Codex skills (symlink each skill in codex/skills to ~/.codex/skills)
     - Claude Code (settings, agents, hooks, instructions, output styles, project templates)
     - qBittorrent configuration (if present)
     - Git hooks installation
@@ -649,6 +650,8 @@ define_links() {
 		if [[ -d "$DOTFILES_DIR/bin" ]]; then
 			setup_user_bin
 		fi
+		# Setup Codex skills from dotfiles repo
+		setup_codex_skills
 	fi
 	# Guix configuration (always included unless machine not found)
 	if [[ -d "$DOTFILES_DIR/guix" ]]; then
@@ -675,6 +678,46 @@ define_links() {
 				fi
 			fi
 		fi
+	fi
+}
+# -----------------------------------------------------------------------------
+# Codex skills setup
+# -----------------------------------------------------------------------------
+setup_codex_skills() {
+	local source_skills_dir="$DOTFILES_DIR/codex/skills"
+	local target_skills_dir="$HOME/.codex/skills"
+	local queued=0
+	local skill_dir
+	if [[ ! -d "$source_skills_dir" ]]; then
+		debug "No Codex skills directory found at: $source_skills_dir"
+		return 0
+	fi
+	for skill_dir in "$source_skills_dir"/*; do
+		[[ -d "$skill_dir" ]] || continue
+		[[ -f "$skill_dir/SKILL.md" ]] || {
+			debug "Skipping non-skill directory: $(basename "$skill_dir")"
+			continue
+		}
+		local skill_name
+		local target_link
+		skill_name="$(basename "$skill_dir")"
+		target_link="$target_skills_dir/$skill_name"
+		if [[ -L "$target_link" ]] && [[ "$(readlink -f "$target_link")" == "$(readlink -f "$skill_dir")" ]]; then
+			debug "Codex skill already linked: $skill_name"
+			continue
+		fi
+		# Only auto-install missing skill links. Keep any existing target untouched.
+		if [[ -e "$target_link" || -L "$target_link" ]]; then
+			log WARNING "Codex skill target exists, skipping: $target_link"
+			continue
+		fi
+		LINKS["$skill_dir"]="$target_link"
+		queued=$((queued + 1))
+	done
+	if [[ $queued -gt 0 ]]; then
+		log INFO "Queued $queued Codex skill symlink(s) for installation"
+	else
+		debug "No new Codex skill symlinks needed"
 	fi
 }
 # -----------------------------------------------------------------------------
