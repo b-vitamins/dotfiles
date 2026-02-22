@@ -201,29 +201,18 @@ Available through Transient menus and standard Git commands.
 ### Org Command Center (`C-c a o`)
 | Key | Command | Description |
 |-----|---------|-------------|
-| `C-c a o a` | org-agenda ("d") | Dashboard (Today/Next/Habits/Waiting/Inbox) |
-| `C-c a o r` | org-agenda ("R") | Weekly review dashboard |
-| `C-c a o w` | bv-org-weekly-review-create | Create/open weekly review entry |
+| `C-c a o a` | org-agenda | Agenda dispatcher |
 | `C-c a o c` | org-capture | Capture menu |
-| `C-c a o q` | bv-org-agenda-quick-task | Quick task capture (template "q") |
-| `C-c a o i` | bv-org-inbox-process | Inbox-zero processor loop |
-| `C-c a o p` | bv-org-focus | Focus: pick NEXT → clock in → timer |
-| `C-c a o P` | bv-org-reading-add-paper | Paper pipeline (citar → reading project) |
-| `C-c a o m` | bv-org-metrics-dashboard | Metrics scoreboard |
-| `C-c a o v` | bv-org-agenda-calendar | Dashboard + calendar split |
-| `C-c a o f` | consult-org-heading | Jump to heading across Org files |
-| `C-c a o A` | consult-org-agenda | Search agenda items |
-| `C-c a o s` | bv-org-search | Search `~/org` (ripgrep) |
-| `C-c a o g` | (open goals file) | Open `~/org/goals.org` |
-| `C-c a o t` | bv-org-timer-map | Timer submap |
+| `C-c a o i` | (open inbox file) | Open `~/org/inbox.org` |
+| `C-c a o I` | bv-org-clock-in | Clock in (stable) |
+| `C-c a o O` | bv-org-clock-out | Clock out (stable) |
 
-### Org Timer (`C-c a o t`)
+### Org Clocking (Org buffers)
 | Key | Command | Description |
 |-----|---------|-------------|
-| `s` | org-timer-start | Start timer |
-| `p` | org-timer-pause-or-continue | Pause/continue timer |
-| `t` | org-timer-set-timer | Set timer |
-| `q` | org-timer-stop | Stop timer |
+| `C-c C-x TAB` | bv-org-clock-in | Clock in |
+| `C-c C-x C-i` | bv-org-clock-in | Clock in (alternate) |
+| `C-c C-x C-o` | bv-org-clock-out | Clock out |
 
 ## Org-roam
 

@@ -215,7 +215,7 @@ Ignore ARGS."
 (setq org-roam-node-display-template
       (concat (propertize "${icon}" 'face 'nerd-icons-blue)
               " "
-              (propertize "${title:28}" 'face 'font-lock-function-name-face)
+              (propertize "${title:*}" 'face 'font-lock-function-name-face)
               " "
               (propertize "${tags:20}" 'face 'org-tag)
               " "

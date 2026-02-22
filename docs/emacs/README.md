@@ -29,7 +29,7 @@ M-x eglot-install-server
 | Switch buffer | `C-x b` | Consult-buffer with preview |
 | Search project | `C-c p R` | Ripgrep search in project |
 | Git status | `C-x g` | Open Magit |
-| Org dashboard | `C-c a o a` | Agenda command center |
+| Org agenda | `C-c a o a` | Open `org-agenda` |
 | Capture task/note | `C-c a o c` | Org capture |
 | Capture note | `C-c n c` | Org-roam capture |
 
@@ -45,7 +45,7 @@ M-x eglot-install-server
 
 ### For New Users
 1. Start with [Workflow Guide](workflow-guide.md) - Learn efficient patterns
-2. Read [Org Workflow](org-workflow.md) - Tasks, capture, reviews, metrics
+2. Read [Org Basics](org-workflow.md) - TODO/DONE, inbox, capture, clocking
 3. Review [Keybindings](keybindings.md) - Complete reference
 4. Explore [Customization](customization.md) - Make it yours
 
@@ -120,7 +120,7 @@ docs/emacs/
 ├── installation.md        # Setup guide
 ├── keybindings.md        # Complete key reference
 ├── customization.md      # Configuration options
-├── org-workflow.md       # GTD + research Org system
+├── org-workflow.md       # Barebones Org setup
 ├── workflow-guide.md     # Practical patterns
 └── (more docs to come)
 ```

@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Configured Alacritty to start Zsh as login shell
 - Switched Alacritty hint launcher to `xdg-open` and added a copy-hint binding
 - Updated Alacritty’s BV light/dark palettes to match BV Emacs themes (including selection/search surfaces)
-- Overhauled Org workflow: `~/org` hub, frictionless capture templates, agenda dashboards, and weekly review clock metrics
+- Simplified Org configuration: default TODO/DONE only with a single inbox file and minimal capture/agenda bindings
 ### Fixed
 - Added missing emacs-pgtk package import in Guix configurations
 - Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup
@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Restored Tempel `;snippet` expansion on `TAB` for Org/LaTeX buffers and aligned the `im` template with Org-style inline math (`\\( ... \\)`)
 - Cleaned up Tempel LaTeX templates: resolved trigger collisions, added missing aliases, enabled `*`-suffixed triggers (e.g. `eq*`), and made inline-math templates available in `latex-mode`
 - Prevented Org LaTeX auto-refresh and `org-fragtog` from throwing errors during window/buffer changes
+- Stabilized Org clocking: clock-in/out no longer steals windows, clock-in starts on first invocation, and redundant STARTED→STARTED logs are avoided
 - Updated Org capture templates to the new `file+olp+datetree` format to avoid deprecation noise at startup
 - Silenced noisy circadian enable/disable messages during startup
 - Silenced repeat-mode enable message during startup

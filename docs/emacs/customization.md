@@ -352,7 +352,6 @@ Reset to defaults:
 
 ### Organization
 - bv-org-agenda-exclude-dirs
-- bv-org-auto-promote-next-action
 - bv-org-clock-idle-check-interval
 - bv-org-clock-idle-minutes
 - bv-org-directory

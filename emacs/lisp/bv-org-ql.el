@@ -32,12 +32,12 @@
              :title "Recent items (last week)"
              :sort (date priority))
 
-            ("Research" :query (or (tags "research") (tags "paper") (todo "IDEA" "DRAFT"))
+            ("Research" :query (or (tags "research") (tags "paper"))
              :title "Research items"
              :sort (priority))
 
-            ("Stalled" :query (and (todo "STARTED" "WAITING") (ts :to -7))
-             :title "Stalled tasks"
+            ("Stale TODOs" :query (and (todo "TODO") (ts :to -7))
+             :title "Stale TODOs (older than a week)"
              :sort (date))))))
 
 ;; Custom search functions
@@ -52,7 +52,7 @@
   "Search research-related entries."
   (interactive)
   (org-ql-search (org-agenda-files)
-                 '(or (tags "research") (tags "paper") (todo "IDEA" "DRAFT" "EXPERIMENT"))
+                 '(or (tags "research") (tags "paper"))
                  :title "Research search"
                  :sort '(priority date)))
 

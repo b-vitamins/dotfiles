@@ -114,7 +114,6 @@
 
 ;; Org mode and related
 (require 'bv-org)          ; Org mode setup
-(require 'bv-org-agenda)   ; Agenda configuration
 (require 'bv-org-dailies)  ; Daily notes
 (require 'bv-org-ql)       ; Org query language
 (require 'bv-org-agenda-files-track) ; Agenda file tracking
