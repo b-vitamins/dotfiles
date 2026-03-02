@@ -796,7 +796,8 @@ collation-server = utf8mb4_unicode_ci")))
                  (service oci-container-service-type
                           (list oci-meilisearch-service-type
                                 oci-grobid-service-type
-                                oci-qdrant-service-type oci-minio-service-type)))
+                                oci-qdrant-service-type oci-minio-service-type
+                                oci-neo4j-service-type)))
            (modify-services %my-desktop-services
              (delete gdm-service-type)
              (delete network-manager-service-type))))
