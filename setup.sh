@@ -133,7 +133,7 @@ ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     Managed by this script:
     - Emacs (init files, lisp modules, templates)
     - Guix System (channels.scm only)
-    - Codex managed config + skills (symlink selected codex/* into ~/.codex)
+    - Codex managed instructions/rules + skills (keeps ~/.codex/config.toml local)
     - Claude Code (settings, agents, hooks, instructions, output styles, project templates)
     - qBittorrent configuration (if present)
     - Git hooks installation
@@ -681,6 +681,46 @@ define_links() {
 		fi
 	fi
 }
+ensure_codex_local_config() {
+	local source_codex_dir="$DOTFILES_DIR/codex"
+	local target_codex_dir="$HOME/.codex"
+	local source_config="$source_codex_dir/config.toml"
+	local target_config="$target_codex_dir/config.toml"
+
+	[[ -f "$source_config" ]] || return 0
+
+	if [[ ! -d "$target_codex_dir" ]]; then
+		debug "Creating Codex config directory: $target_codex_dir"
+		if [[ "$DRY_RUN" == false ]]; then
+			mkdir -p "$target_codex_dir"
+		fi
+	fi
+
+	if [[ -L "$target_config" ]] && [[ "$(readlink -f "$target_config")" == "$(readlink -f "$source_config")" ]]; then
+		if [[ "$DRY_RUN" == true ]]; then
+			echo "  Would decouple Codex local config from dotfiles: $target_config"
+		else
+			local tmp_config
+			tmp_config="$(mktemp "$target_codex_dir/config.toml.tmp.XXXXXX")"
+			cp "$target_config" "$tmp_config"
+			rm -f "$target_config"
+			mv "$tmp_config" "$target_config"
+			chmod 600 "$target_config" 2>/dev/null || true
+			log SUCCESS "Decoupled Codex local config from dotfiles: $target_config"
+		fi
+		return 0
+	fi
+
+	if [[ ! -e "$target_config" && ! -L "$target_config" ]]; then
+		if [[ "$DRY_RUN" == true ]]; then
+			echo "  Would create local Codex config from template: $target_config"
+		else
+			cp "$source_config" "$target_config"
+			chmod 600 "$target_config" 2>/dev/null || true
+			log SUCCESS "Created local Codex config from template: $target_config"
+		fi
+	fi
+}
 # -----------------------------------------------------------------------------
 # Codex config setup
 # -----------------------------------------------------------------------------
@@ -695,8 +735,11 @@ setup_codex_config() {
 		return 0
 	fi
 
+	# Keep Codex runtime state local (do not symlink config.toml from dotfiles).
+	ensure_codex_local_config
+
 	# Track only stable, user-authored Codex files.
-	for relative_path in "config.toml" "instructions.md"; do
+	for relative_path in "instructions.md"; do
 		local source_file="$source_codex_dir/$relative_path"
 		local target_file="$target_codex_dir/$relative_path"
 
