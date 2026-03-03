@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Zsh prompt now shows active environment names (virtualenv/Guix/direnv) and `l` is the default `eza` listing alias
 - Guix home profiles include `%shell-zsh` bundle for Zsh tool dependencies (fzf, ripgrep, bat, eza, fd, zoxide, direnv, wl-clipboard)
 - Enhanced mileva machine configuration
+- Switched mileva Home Emacs daemon declaration to `(service my-home-emacs-daemon-service-type)` for consistency
 - Updated mileva configuration: adjust Zsh plugin load order, disable beets service, add securityfs mount, and add NVIDIA profiling kernel arg
 - Updated mileva configuration: include `%container-tools` in the home package set
 - Updated sparck configuration: adjust Zsh plugin load order, disable beets service, and add media converter packages
