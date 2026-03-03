@@ -1,0 +1,284 @@
+model = "gpt-5.3-codex"
+model_reasoning_effort = "xhigh"
+personality = "pragmatic"
+web_search = "live"
+[projects."/home/b/projects/mfcl"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/myguix"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/guix"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/torchsignature"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/diffrax"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/torcheq"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/linoss"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/ossm"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/icml2026mfcl"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/causal-conv1d"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/mamba"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/trm"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/ssm"]
+trust_level = "trusted"
+
+[projects."/home/b/projects"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/audiobooks/rl"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/sony-proposal"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/mfclpilot"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/slinoss"]
+trust_level = "trusted"
+
+[projects."/home/b/slinoss"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/Mamba4Rec"]
+trust_level = "trusted"
+
+[projects."/home/b"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/pmpp"]
+trust_level = "trusted"
+
+[projects."/home/b/slinoss-backup"]
+trust_level = "trusted"
+
+[projects."/home/b/trash"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/icml2026slinoss"]
+trust_level = "trusted"
+
+[projects."/home/b/trash/neurips-oral"]
+trust_level = "trusted"
+
+[projects."/data/slinoss-heavy"]
+trust_level = "untrusted"
+
+[projects."/home/b/projects/pytorch"]
+trust_level = "trusted"
+
+[projects."/home/b/.cache/torch/datasets"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/blockss"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/oscssd"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/vec2x2ssd"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/hu_v2"]
+trust_level = "untrusted"
+
+[projects."/home/b/projects/drgss"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/Log-Neural-CDEs"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/slinoss-eval"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/WOODS"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/dream2forget"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/dgx-demo"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/damped-linoss"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/EnergyMatching"]
+trust_level = "trusted"
+
+[projects."/data/slinoss"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/jax"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/associative-scan"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/damped-linoss-pristine"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/audiobooks"]
+trust_level = "trusted"
+
+[projects."/home/b/damped-linoss"]
+trust_level = "trusted"
+
+[projects."/data"]
+trust_level = "trusted"
+
+[projects."/data/damped-linoss"]
+trust_level = "trusted"
+
+[projects."/data/linoss"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/aria"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/iclr-2026"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/dotfiles"]
+trust_level = "trusted"
+
+[projects."/data/recordings/Pattern Recognition and Machine Learning"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/bibmgr"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/bibtex-parser"]
+trust_level = "untrusted"
+
+[projects."/home/b/projects/mglu"]
+trust_level = "trusted"
+
+[projects."/home/b/trash/vec2x2ssd"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/v2x2ssd"]
+trust_level = "trusted"
+
+[projects."/home/b/trash/icml2026slinoss"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/fsa-emulation"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/SLinOSS4Rec"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/dd"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/ddd"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/citepath"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/v3x3ssd"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/spof-chapters"]
+trust_level = "trusted"
+
+[projects."/home/b/documents/slipbox/slips"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/dgm"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/pre2026dbm"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/uai2026paper"]
+trust_level = "trusted"
+
+[projects."/home/b/documents/references/bibliographies/journals/pre"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/complexity"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/dbm-torch"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/dgm/a0"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/orals/neurips"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/arachne"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/bibliography"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/orals"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/sota"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/phase-transitions-in-deep-learning"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/ptindl"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/spop-chapters"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/dlfc-chapters"]
+trust_level = "trusted"
+
+[projects."/home/b/projects/folio-lab"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/ipc-chapters"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/prml-chapters"]
+trust_level = "trusted"
+
+[projects."/home/b/downloads/pqm-chapters"]
+trust_level = "trusted"
+
+[notice]
+hide_gpt5_1_migration_prompt = true
+"hide_gpt-5.1-codex-max_migration_prompt" = true
+
+[notice.model_migrations]
+"gpt-5.2" = "gpt-5.2-codex"
+
+[sandbox_workspace_write]
+network_access = true
+
+[features]
+apps = true
+multi_agent = true

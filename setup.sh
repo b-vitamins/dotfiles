@@ -133,7 +133,7 @@ ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     Managed by this script:
     - Emacs (init files, lisp modules, templates)
     - Guix System (channels.scm only)
-    - Codex skills (symlink each skill in codex/skills to ~/.codex/skills)
+    - Codex managed config + skills (symlink selected codex/* into ~/.codex)
     - Claude Code (settings, agents, hooks, instructions, output styles, project templates)
     - qBittorrent configuration (if present)
     - Git hooks installation
@@ -650,7 +650,8 @@ define_links() {
 		if [[ -d "$DOTFILES_DIR/bin" ]]; then
 			setup_user_bin
 		fi
-		# Setup Codex skills from dotfiles repo
+		# Setup Codex managed files + skills from dotfiles repo
+		setup_codex_config
 		setup_codex_skills
 	fi
 	# Guix configuration (always included unless machine not found)
@@ -678,6 +679,61 @@ define_links() {
 				fi
 			fi
 		fi
+	fi
+}
+# -----------------------------------------------------------------------------
+# Codex config setup
+# -----------------------------------------------------------------------------
+setup_codex_config() {
+	local source_codex_dir="$DOTFILES_DIR/codex"
+	local target_codex_dir="$HOME/.codex"
+	local queued=0
+	local relative_path
+
+	if [[ ! -d "$source_codex_dir" ]]; then
+		debug "No Codex directory found at: $source_codex_dir"
+		return 0
+	fi
+
+	# Track only stable, user-authored Codex files.
+	for relative_path in "config.toml" "instructions.md"; do
+		local source_file="$source_codex_dir/$relative_path"
+		local target_file="$target_codex_dir/$relative_path"
+
+		[[ -f "$source_file" ]] || continue
+
+		if [[ -L "$target_file" ]] && [[ "$(readlink -f "$target_file")" == "$(readlink -f "$source_file")" ]]; then
+			debug "Codex file already linked: $relative_path"
+			continue
+		fi
+
+		LINKS["$source_file"]="$target_file"
+		queued=$((queued + 1))
+	done
+
+	# Optional custom rules owned by dotfiles (exclude generated default.rules).
+	local source_rules_dir="$source_codex_dir/rules"
+	if [[ -d "$source_rules_dir" ]]; then
+		while IFS= read -r -d '' rule_file; do
+			local rule_name
+			local target_rule
+			rule_name="$(basename "$rule_file")"
+			target_rule="$target_codex_dir/rules/$rule_name"
+
+			if [[ -L "$target_rule" ]] && [[ "$(readlink -f "$target_rule")" == "$(readlink -f "$rule_file")" ]]; then
+				debug "Codex rule already linked: $rule_name"
+				continue
+			fi
+
+			LINKS["$rule_file"]="$target_rule"
+			queued=$((queued + 1))
+		done < <(find "$source_rules_dir" -maxdepth 1 -type f -name "*.rules" ! -name "default.rules" -print0 | sort -z)
+	fi
+
+	if [[ $queued -gt 0 ]]; then
+		log INFO "Queued $queued Codex managed symlink(s) for installation"
+	else
+		debug "No Codex managed symlinks needed"
 	fi
 }
 # -----------------------------------------------------------------------------

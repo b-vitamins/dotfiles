@@ -66,6 +66,7 @@ See [documentation](docs/) for detailed guides.
 - **Tools**: Modern CLI replacements (eza, bat, ripgrep, fd, delta)
 - **Security**: GPG for SSH auth, git commit signing, encrypted backups
 - **Containers**: Docker + OCI services for databases and ML tools
+- **Codex**: Managed `~/.codex/config.toml`, optional `instructions.md`, and local skills
 
 ## Directory Structure
 
@@ -77,6 +78,7 @@ dotfiles/
 ├── emacs/          # Emacs configuration
 │   ├── init.el     # Entry point
 │   └── lisp/       # Custom modules (bv-*.el)
+├── codex/          # Managed Codex config and skills
 ├── zsh/            # Shell configuration
 ├── git/            # Git config and hooks
 ├── keys/           # Public keys (SSH, GPG)
