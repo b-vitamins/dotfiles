@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Switched mileva Home Emacs daemon declaration to `(service my-home-emacs-daemon-service-type)` for consistency
 - Updated mileva configuration: adjust Zsh plugin load order, disable beets service, add securityfs mount, and add NVIDIA profiling kernel arg
 - Updated mileva configuration: include `%container-tools` in the home package set
+- Switched sparck Home Emacs daemon declaration to `(service my-home-emacs-daemon-service-type)` for consistency
 - Updated sparck configuration: adjust Zsh plugin load order, disable beets service, and add media converter packages
 - Adjusted pre-commit whitespace checks to avoid conflicts with guix style Scheme formatting
 - Hardened Git defaults: scoped Guix send-email settings, default-branch-aware aliases, POSIX-safe pre-commit hook, and safer global gitattributes

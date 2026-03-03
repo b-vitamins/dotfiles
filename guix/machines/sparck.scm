@@ -66,6 +66,7 @@
              (guix deprecation)
              (guix gexp)
              (myguix home services emacs)
+             (myguix home services emacs-daemon)
              (myguix home services nougat)
              (myguix packages base)
              (myguix packages fonts)
@@ -208,6 +209,7 @@ application/x-shellscript=org.gnome.TextEditor.desktop
 inode/directory=org.gnome.Nautilus.desktop
 "))))
       (service my-home-emacs-service-type)
+      (service my-home-emacs-daemon-service-type)
 
       (service home-inputrc-service-type
                (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")
