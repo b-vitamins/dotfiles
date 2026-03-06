@@ -564,7 +564,7 @@ allow-preset-passphrase")))
              %tree-sitter-extended
              %documentation-tools
              %cuda-packages
-             %ml-packages
+             %ml-packages-cuda
              ;; Networking
              %network-core
              %network-diagnostics
