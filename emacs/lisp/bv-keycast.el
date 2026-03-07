@@ -10,7 +10,9 @@
 
 ;;; Code:
 
-(require 'keycast)
+(defconst bv-keycast--available-p
+  (require 'keycast nil t)
+  "Non-nil when the `keycast' package is available.")
 
 ;; Declare external variables from keycast package
 (defvar keycast--this-command-keys)
@@ -20,14 +22,15 @@
   "Return non-nil if current window is active."
   (eq (selected-window) (old-selected-window)))
 
-(when (boundp 'keycast-mode-line-window-predicate)
-  (setq keycast-mode-line-window-predicate 'bv-keycast-active-window-p))
-(when (boundp 'keycast-mode-line-format)
-  (setq keycast-mode-line-format "%k%c%r "))
-(when (boundp 'keycast-mode-line-insert-after)
-  (setq keycast-mode-line-insert-after 'mode-line-misc-info))
-(when (boundp 'keycast-mode-line-remove-tail-elements)
-  (setq keycast-mode-line-remove-tail-elements nil))
+(when bv-keycast--available-p
+  (when (boundp 'keycast-mode-line-window-predicate)
+    (setq keycast-mode-line-window-predicate 'bv-keycast-active-window-p))
+  (when (boundp 'keycast-mode-line-format)
+    (setq keycast-mode-line-format "%k%c%r "))
+  (when (boundp 'keycast-mode-line-insert-after)
+    (setq keycast-mode-line-insert-after 'mode-line-misc-info))
+  (when (boundp 'keycast-mode-line-remove-tail-elements)
+    (setq keycast-mode-line-remove-tail-elements nil)))
 
 
 (defun bv-keycast-header-line-formatter ()
@@ -48,14 +51,19 @@
   "Show current command and key binding in header line."
   :global t
   :group 'bv
-  (if bv-keycast-mode
-      (progn
-        (when (fboundp 'keycast-mode-line-mode)
-          (keycast-mode-line-mode -1))
-        (when (fboundp 'keycast-header-line-mode)
-          (keycast-header-line-mode 1)))
+  (cond
+   ((not bv-keycast--available-p)
+    (setq bv-keycast-mode nil)
+    (unless noninteractive
+      (message "Keycast package is unavailable; bv-keycast-mode disabled.")))
+   (bv-keycast-mode
+    (when (fboundp 'keycast-mode-line-mode)
+      (keycast-mode-line-mode -1))
     (when (fboundp 'keycast-header-line-mode)
-      (keycast-header-line-mode -1))))
+      (keycast-header-line-mode 1)))
+   (t
+    (when (fboundp 'keycast-header-line-mode)
+      (keycast-header-line-mode -1)))))
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-toggle-map)
