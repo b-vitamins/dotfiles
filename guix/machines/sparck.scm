@@ -75,7 +75,6 @@
              (myguix packages python-pqrs)
              (myguix packages video)
              (myguix services desktop)
-             (myguix services oci-containers)
              (myguix system install)
              (myguix system linux-initrd)
              (srfi srfi-1)
