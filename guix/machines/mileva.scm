@@ -759,6 +759,10 @@ collation-server = utf8mb4_unicode_ci")))
                  ;; Guix Services
                  (service guix-home-service-type
                           `(("b" ,%my-home-config)))
+                 (service shared-cache-service-type
+                          (shared-cache-configuration (mode 'share)
+                                                      (users (list (user-cache
+                                                                    (user "b"))))))
 
                  ;; Monitoring Services
                  ;; Miscellaneous Services
