@@ -916,7 +916,7 @@ setup_claude_config() {
 	# Setup individual files
 	setup_claude_file "CLAUDE.md" "$claude_config_dir/CLAUDE.md"
 	setup_claude_file "settings.json" "$claude_config_dir/settings.json"
-	setup_claude_file "settings.local.json" "$claude_config_dir/settings.local.json"
+	setup_claude_file "settings.local.json" "$claude_config_dir/settings.local.json" true
 	# Setup statusline.sh if exists
 	if [[ -f "$DOTFILES_DIR/claude/statusline.sh" ]]; then
 		setup_claude_file "statusline.sh" "$claude_config_dir/statusline.sh"
@@ -958,9 +958,14 @@ setup_claude_config() {
 setup_claude_file() {
 	local relative_path="$1"
 	local target_path="$2"
+	local optional="${3:-false}"
 	local source_path="$DOTFILES_DIR/claude/$relative_path"
 	# Check if source exists
 	if [[ ! -f "$source_path" ]]; then
+		if [[ "$optional" == true ]]; then
+			debug "Optional Claude config file not found: $source_path (skipping)"
+			return 0
+		fi
 		log WARNING "Claude config file not found: $source_path"
 		return 1
 	fi
