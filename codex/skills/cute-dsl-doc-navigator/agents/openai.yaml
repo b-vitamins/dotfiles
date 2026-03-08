@@ -1,0 +1,4 @@
+interface:
+  display_name: "CuTe DSL Docs"
+  short_description: "Map CuTe docs, APIs, notebooks, and examples"
+  default_prompt: "Use $cute-dsl-doc-navigator to answer this CuTe DSL question and point me to the exact docs and examples."

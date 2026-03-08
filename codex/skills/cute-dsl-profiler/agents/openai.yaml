@@ -1,0 +1,7 @@
+interface:
+  display_name: "CuTe Profiler"
+  short_description: "Run NCU/NSYS and summarize CuTe hotspots"
+  default_prompt: "Use $cute-dsl-profiler to profile this CuTe kernel and summarize the important NCU or NSYS findings."
+
+policy:
+  allow_implicit_invocation: false

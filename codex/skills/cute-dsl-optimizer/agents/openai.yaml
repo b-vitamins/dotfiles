@@ -1,0 +1,7 @@
+interface:
+  display_name: "CuTe Optimizer"
+  short_description: "Optimize CuTe kernel throughput and efficiency"
+  default_prompt: "Use $cute-dsl-optimizer to optimize this CuTe DSL kernel after correctness is established."
+
+policy:
+  allow_implicit_invocation: false

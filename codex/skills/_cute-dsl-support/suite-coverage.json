@@ -1,0 +1,250 @@
+{
+  "docs_root": "/home/b/projects/cute-docs/docs/cutlass/cute-dsl/4.4.1",
+  "examples_root": "/home/b/projects/cute-docs/examples",
+  "skills": [
+    {
+      "docs": [
+        "api/cute_runtime.md",
+        "api/utils.md",
+        "guide/autotuning_gemm.md",
+        "guide/dsl_jit_caching.md",
+        "guide/framework_integration.md"
+      ],
+      "examples": [
+        "all_reduce.py",
+        "cuda_graphs.ipynb",
+        "distributed_vector_add.py",
+        "elementwise_add.py",
+        "elementwise_apply.py",
+        "flash_attention_v2.py",
+        "sgemm.py",
+        "tensorop_gemm.py"
+      ],
+      "skill": "cute-dsl-benchmarker"
+    },
+    {
+      "docs": [
+        "api/cute_runtime.md",
+        "api/utils.md",
+        "faqs.md",
+        "guide/debugging.md",
+        "guide/dsl_dynamic_layout.md",
+        "guide/dsl_jit_arg_generation.md",
+        "guide/dsl_jit_caching.md",
+        "guide/dsl_jit_compilation_options.md",
+        "limitations.md"
+      ],
+      "examples": [
+        "call_bypass_dlpack.py",
+        "call_from_jit.py",
+        "cuda_graphs.ipynb",
+        "dynamic_smem_size.py",
+        "elementwise_apply.py",
+        "smem_allocator.py"
+      ],
+      "skill": "cute-dsl-debugger"
+    },
+    {
+      "docs": [
+        "api/changelog.md",
+        "api/cute.md",
+        "api/cute_arch.md",
+        "api/cute_nvgpu.md",
+        "api/cute_nvgpu_common.md",
+        "api/cute_nvgpu_cpasync.md",
+        "api/cute_nvgpu_tcgen05.md",
+        "api/cute_nvgpu_warp.md",
+        "api/cute_nvgpu_warpgroup.md",
+        "api/cute_runtime.md",
+        "api/index.md",
+        "api/pipeline.md",
+        "api/utils.md",
+        "api/utils_sm100.md",
+        "api/utils_sm90.md",
+        "assets/upstream/_images/dsl_modes.png",
+        "cute_dsl/index.md",
+        "deprecation.md",
+        "faqs.md",
+        "functionality.md",
+        "guide/autotuning_gemm.md",
+        "guide/compile_with_tvm_ffi.md",
+        "guide/debugging.md",
+        "guide/dsl_ahead_of_time_compilation.md",
+        "guide/dsl_code_generation.md",
+        "guide/dsl_control_flow.md",
+        "guide/dsl_dynamic_layout.md",
+        "guide/dsl_introduction.md",
+        "guide/dsl_jit_arg_generation.md",
+        "guide/dsl_jit_caching.md",
+        "guide/dsl_jit_compilation_options.md",
+        "guide/framework_integration.md",
+        "guide/notebooks.md",
+        "guide/resources.md",
+        "index.md",
+        "license.md",
+        "limitations.md",
+        "manifest.json",
+        "overview.md",
+        "quick_start.md"
+      ],
+      "examples": [
+        "all_reduce.py",
+        "call_bypass_dlpack.py",
+        "call_from_jit.py",
+        "cuda_graphs.ipynb",
+        "cute_layout_algebra.ipynb",
+        "data_types.ipynb",
+        "distributed_vector_add.py",
+        "dynamic_smem_size.py",
+        "elementwise_add.ipynb",
+        "elementwise_add.py",
+        "elementwise_apply.py",
+        "flash_attention_v2.py",
+        "hello_world.ipynb",
+        "print.ipynb",
+        "sgemm.py",
+        "smem_allocator.py",
+        "tensor.ipynb",
+        "tensorop_gemm.py",
+        "tensorssa.ipynb"
+      ],
+      "skill": "cute-dsl-doc-navigator"
+    },
+    {
+      "docs": [
+        "api/cute.md",
+        "api/cute_nvgpu_cpasync.md",
+        "api/cute_runtime.md",
+        "api/pipeline.md",
+        "api/utils.md",
+        "functionality.md",
+        "guide/compile_with_tvm_ffi.md",
+        "guide/dsl_ahead_of_time_compilation.md",
+        "guide/dsl_code_generation.md",
+        "guide/dsl_control_flow.md",
+        "guide/dsl_introduction.md",
+        "guide/dsl_jit_arg_generation.md",
+        "guide/dsl_jit_compilation_options.md",
+        "guide/framework_integration.md",
+        "overview.md",
+        "quick_start.md"
+      ],
+      "examples": [
+        "call_from_jit.py",
+        "data_types.ipynb",
+        "dynamic_smem_size.py",
+        "elementwise_add.ipynb",
+        "elementwise_add.py",
+        "elementwise_apply.py",
+        "flash_attention_v2.py",
+        "hello_world.ipynb",
+        "print.ipynb",
+        "sgemm.py",
+        "smem_allocator.py",
+        "tensor.ipynb",
+        "tensorop_gemm.py"
+      ],
+      "skill": "cute-dsl-kernel-author"
+    },
+    {
+      "docs": [
+        "api/cute.md",
+        "api/cute_arch.md",
+        "api/cute_nvgpu_cpasync.md",
+        "api/cute_nvgpu_warp.md",
+        "api/cute_runtime.md",
+        "api/pipeline.md",
+        "api/utils.md",
+        "guide/dsl_code_generation.md",
+        "guide/dsl_control_flow.md",
+        "guide/dsl_dynamic_layout.md",
+        "guide/dsl_introduction.md",
+        "guide/notebooks.md",
+        "overview.md",
+        "quick_start.md"
+      ],
+      "examples": [
+        "cute_layout_algebra.ipynb",
+        "data_types.ipynb",
+        "elementwise_add.ipynb",
+        "elementwise_add.py",
+        "elementwise_apply.py",
+        "flash_attention_v2.py",
+        "print.ipynb",
+        "tensor.ipynb",
+        "tensorssa.ipynb"
+      ],
+      "skill": "cute-dsl-layout-engineer"
+    },
+    {
+      "docs": [
+        "api/cute_nvgpu.md",
+        "api/cute_nvgpu_common.md",
+        "api/cute_nvgpu_cpasync.md",
+        "api/cute_nvgpu_tcgen05.md",
+        "api/cute_nvgpu_warp.md",
+        "api/cute_nvgpu_warpgroup.md",
+        "api/pipeline.md",
+        "api/utils_sm100.md",
+        "api/utils_sm90.md",
+        "guide/autotuning_gemm.md",
+        "guide/dsl_code_generation.md",
+        "guide/dsl_jit_caching.md"
+      ],
+      "examples": [
+        "all_reduce.py",
+        "distributed_vector_add.py",
+        "dynamic_smem_size.py",
+        "flash_attention_v2.py",
+        "sgemm.py",
+        "smem_allocator.py",
+        "tensorop_gemm.py"
+      ],
+      "skill": "cute-dsl-optimizer"
+    },
+    {
+      "docs": [
+        "api/cute_nvgpu_cpasync.md",
+        "api/cute_nvgpu_warp.md",
+        "api/cute_nvgpu_warpgroup.md",
+        "api/pipeline.md",
+        "guide/autotuning_gemm.md",
+        "guide/debugging.md",
+        "guide/dsl_jit_caching.md"
+      ],
+      "examples": [
+        "all_reduce.py",
+        "distributed_vector_add.py",
+        "dynamic_smem_size.py",
+        "flash_attention_v2.py",
+        "sgemm.py",
+        "tensorop_gemm.py"
+      ],
+      "skill": "cute-dsl-profiler"
+    },
+    {
+      "docs": [
+        "api/changelog.md",
+        "api/cute.md",
+        "api/cute_runtime.md",
+        "api/utils.md",
+        "deprecation.md",
+        "faqs.md",
+        "functionality.md",
+        "guide/dsl_dynamic_layout.md",
+        "guide/dsl_jit_caching.md",
+        "guide/framework_integration.md",
+        "limitations.md"
+      ],
+      "examples": [
+        "call_bypass_dlpack.py",
+        "call_from_jit.py",
+        "elementwise_add.py",
+        "elementwise_apply.py",
+        "sgemm.py",
+        "tensorop_gemm.py"
+      ],
+      "skill": "cute-dsl-refactor-review"
+    }
+  ]
+}

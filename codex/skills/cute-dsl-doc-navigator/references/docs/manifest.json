@@ -1,0 +1,237 @@
+{
+  "cutlass_docs_version": "4.4.1",
+  "upstream_channel": "latest",
+  "generated_at": "2026-03-07T11:33:21+00:00",
+  "page_count": 37,
+  "asset_count": 1,
+  "pages": [
+    {
+      "title": "CuTe DSL",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl.html",
+      "output_relpath": "cute_dsl/index.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "CuTe DSL API",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api.html",
+      "output_relpath": "api/index.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Changelog for CuTe DSL API changes",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/changelog.html",
+      "output_relpath": "api/changelog.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "cutlass.cute",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute.html",
+      "output_relpath": "api/cute.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "arch",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute_arch.html",
+      "output_relpath": "api/cute_arch.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "cutlass.cute.nvgpu",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute_nvgpu.html",
+      "output_relpath": "api/cute_nvgpu.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Common",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute_nvgpu_common.html",
+      "output_relpath": "api/cute_nvgpu_common.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "cpasync submodule",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute_nvgpu_cpasync.html",
+      "output_relpath": "api/cute_nvgpu_cpasync.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "tcgen05 submodule",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute_nvgpu_tcgen05.html",
+      "output_relpath": "api/cute_nvgpu_tcgen05.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "warp submodule",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute_nvgpu_warp.html",
+      "output_relpath": "api/cute_nvgpu_warp.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "warpgroup submodule",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute_nvgpu_warpgroup.html",
+      "output_relpath": "api/cute_nvgpu_warpgroup.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Runtime",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/cute_runtime.html",
+      "output_relpath": "api/cute_runtime.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "cutlass.pipeline",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/pipeline.html",
+      "output_relpath": "api/pipeline.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "cutlass.utils",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/utils.html",
+      "output_relpath": "api/utils.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Utilities for SM100",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/utils_sm100.html",
+      "output_relpath": "api/utils_sm100.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Utilities for SM90",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/utils_sm90.html",
+      "output_relpath": "api/utils_sm90.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Guidance for Auto-Tuning",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/autotuning_gemm.html",
+      "output_relpath": "guide/autotuning_gemm.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Compile with TVM FFI",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/compile_with_tvm_ffi.html",
+      "output_relpath": "guide/compile_with_tvm_ffi.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Debugging",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/debugging.html",
+      "output_relpath": "guide/debugging.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Ahead-of-Time (AOT) Compilation",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_ahead_of_time_compilation.html",
+      "output_relpath": "guide/dsl_ahead_of_time_compilation.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "End-to-End Code Generation",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_code_generation.html",
+      "output_relpath": "guide/dsl_code_generation.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Control Flow",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_control_flow.html",
+      "output_relpath": "guide/dsl_control_flow.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Static vs Dynamic layouts",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_dynamic_layout.html",
+      "output_relpath": "guide/dsl_dynamic_layout.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Introduction",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_introduction.html",
+      "output_relpath": "guide/dsl_introduction.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "JIT Function Argument Generation",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_jit_arg_generation.html",
+      "output_relpath": "guide/dsl_jit_arg_generation.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "JIT Caching",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_jit_caching.html",
+      "output_relpath": "guide/dsl_jit_caching.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "JIT Compilation Options",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_jit_compilation_options.html",
+      "output_relpath": "guide/dsl_jit_compilation_options.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Integration with Frameworks",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/framework_integration.html",
+      "output_relpath": "guide/framework_integration.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Educational Notebooks",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/notebooks.html",
+      "output_relpath": "guide/notebooks.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Talks and Presentations",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/resources.html",
+      "output_relpath": "guide/resources.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Deprecation Policy",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/deprecation.html",
+      "output_relpath": "deprecation.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "FAQs",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/faqs.html",
+      "output_relpath": "faqs.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Functionality",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/functionality.html",
+      "output_relpath": "functionality.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Software License Agreement",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/license.html",
+      "output_relpath": "license.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Limitations",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/limitations.html",
+      "output_relpath": "limitations.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Overview",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/overview.html",
+      "output_relpath": "overview.md",
+      "last_updated": "Mar 05, 2026"
+    },
+    {
+      "title": "Quick Start Guide",
+      "source_url": "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/quick_start.html",
+      "output_relpath": "quick_start.md",
+      "last_updated": "Mar 05, 2026"
+    }
+  ],
+  "assets": [
+    {
+      "source_url": "https://docs.nvidia.com/cutlass/latest/_images/dsl_modes.png",
+      "output_relpath": "assets/upstream/_images/dsl_modes.png"
+    }
+  ]
+}

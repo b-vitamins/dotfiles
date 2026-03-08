@@ -49,7 +49,7 @@ check_debug_prints() {
     # Python: disallow added print(...) unless explicitly allowed.
     while IFS= read -r file; do
         case $file in
-        bin/*) ;;
+        bin/* | codex/skills/*/references/*) ;;
         *.py)
             matches=$(git diff --cached -- "$file" |
                 grep -E '^\+[^+].*print\(' |

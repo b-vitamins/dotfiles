@@ -1,0 +1,4 @@
+interface:
+  display_name: "CuTe Debugger"
+  short_description: "Debug JIT, layout, launch, and runtime failures"
+  default_prompt: "Use $cute-dsl-debugger to diagnose this failing CuTe DSL program and fix the root cause."

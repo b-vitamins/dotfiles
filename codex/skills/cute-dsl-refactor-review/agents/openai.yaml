@@ -1,0 +1,4 @@
+interface:
+  display_name: "CuTe Refactor Review"
+  short_description: "Review and refactor CuTe DSL code safely"
+  default_prompt: "Use $cute-dsl-refactor-review to review this CuTe DSL code and refactor it without changing the intended behavior."

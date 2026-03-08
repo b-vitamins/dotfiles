@@ -1,0 +1,4 @@
+interface:
+  display_name: "CuTe Layout Engineer"
+  short_description: "Design CuTe layouts, tilers, and partitions"
+  default_prompt: "Use $cute-dsl-layout-engineer to reason about this CuTe layout, tiling, or partitioning problem and propose a correct design."

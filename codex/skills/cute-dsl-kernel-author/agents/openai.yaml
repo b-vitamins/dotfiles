@@ -1,0 +1,4 @@
+interface:
+  display_name: "CuTe Kernel Author"
+  short_description: "Write CuTe kernels and host launch code"
+  default_prompt: "Use $cute-dsl-kernel-author to implement this CuTe DSL kernel and its host-side launch path."
