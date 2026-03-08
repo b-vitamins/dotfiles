@@ -27,6 +27,7 @@
 (use-service-modules admin
                      avahi
                      certbot
+                     containers
                      dbus
                      docker
                      guix
@@ -337,8 +338,9 @@ COMMIT
                  (service spice-vdagent-service-type)
                  (service containerd-service-type)
                  (service docker-service-type)
-                 (service oci-container-service-type
-                          (list oci-grobid-service-type)))
+                 (simple-service 'oci-provisioning oci-service-type
+                                 (oci-extension (containers (list
+                                                             oci-grobid-container)))))
            (modify-services %my-desktop-services
              ;; Guix publish service
              (guix-publish-service-type config =>

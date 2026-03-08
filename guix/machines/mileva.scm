@@ -45,6 +45,7 @@
              (gnu services databases)
              (gnu services dbus)
              (gnu services desktop)
+             (gnu services containers)
              (gnu services docker)
              (gnu services file-sharing)
              (gnu services guix)
@@ -795,11 +796,13 @@ collation-server = utf8mb4_unicode_ci")))
                  (service docker-service-type
                           (docker-configuration (config-file (local-file
                                                               "../files/daemon.json"))))
-                 (service oci-container-service-type
-                          (list oci-meilisearch-service-type
-                                oci-grobid-service-type
-                                oci-qdrant-service-type oci-minio-service-type
-                                oci-neo4j-service-type)))
+                 (simple-service 'oci-provisioning oci-service-type
+                                 (oci-extension (containers (list
+                                                             oci-meilisearch-container
+                                                             oci-grobid-container
+                                                             oci-qdrant-container
+                                                             oci-minio-container
+                                                             oci-neo4j-container)))))
            (modify-services %my-desktop-services
              (delete gdm-service-type)
              (delete network-manager-service-type))))
