@@ -548,6 +548,7 @@ allow-preset-passphrase")))
              %container-tools
              ;; Media
              %media-players
+             %media-editors
              ;; Development - Languages (workstation needs all)
              %c-cpp-development
              %rust-development
