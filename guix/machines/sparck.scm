@@ -526,7 +526,6 @@ allow-preset-passphrase")))
              ;; Development - Support
              %tree-sitter-core
              %documentation-tools
-             %ml-packages
              ;; Networking
              %network-core
              %network-diagnostics
