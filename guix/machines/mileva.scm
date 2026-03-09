@@ -560,7 +560,6 @@ allow-preset-passphrase")))
              %perl-development
              ;; Language Servers
              %language-servers-core
-             %language-servers-extended
              ;; Development - Support
              %tree-sitter-core
              %tree-sitter-extended
