@@ -1,0 +1,6 @@
+interface:
+  display_name: "Research Paper Notes (Strict TeX)"
+  short_description: "Strict TeX-first forensic paper notes"
+  default_prompt: "Use $research-paper-notes to stage a paper source tree, enforce the strict source gate, preserve sequential readthrough progress, scaffold the notes workspace, and produce source-anchored reader-notes only after a complete validated readthrough."
+policy:
+  allow_implicit_invocation: false

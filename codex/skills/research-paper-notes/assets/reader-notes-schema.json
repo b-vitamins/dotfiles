@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Reader Notes",
+  "type": "object",
+  "required": [
+    "title",
+    "paper_type",
+    "external_ids",
+    "source_version",
+    "source_coverage",
+    "source_provenance",
+    "input_quality",
+    "tex_source_gate",
+    "readthrough_complete",
+    "readthrough_chunks",
+    "coordinates",
+    "claim_surfaces",
+    "problem",
+    "main_claim",
+    "notation",
+    "assumptions",
+    "results",
+    "algorithms",
+    "datasets",
+    "metrics",
+    "hardware",
+    "effects",
+    "artifacts",
+    "relation_hints",
+    "repro_thresholds",
+    "limitations",
+    "red_flags"
+  ],
+  "properties": {
+    "title": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "doi": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "venue": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "year": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ]
+    },
+    "paper_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "external_ids": {
+      "type": "object",
+      "required": [
+        "arxiv",
+        "doi",
+        "openreview_forum",
+        "openalex",
+        "semantic_scholar"
+      ],
+      "properties": {
+        "arxiv": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "openreview_forum": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "openalex": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "semantic_scholar": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "source_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_coverage": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_provenance": {
+      "type": "object",
+      "required": [
+        "input_type",
+        "input_label",
+        "tex_source_authority",
+        "companion_pdf_used"
+      ],
+      "properties": {
+        "input_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "input_label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tex_source_authority": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "companion_pdf_used": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "input_quality": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tex_source_gate": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "readthrough_complete": {
+      "type": "boolean"
+    },
+    "readthrough_chunks": {
+      "type": "object",
+      "required": [
+        "completed",
+        "total"
+      ],
+      "properties": {
+        "completed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "coordinates": {
+      "type": "object",
+      "required": [
+        "purpose",
+        "problem_form",
+        "learning_signal",
+        "mechanism",
+        "evidence_regime"
+      ],
+      "properties": {
+        "purpose": {
+          "type": "array"
+        },
+        "problem_form": {
+          "type": "array"
+        },
+        "learning_signal": {
+          "type": "array"
+        },
+        "mechanism": {
+          "type": "array"
+        },
+        "evidence_regime": {
+          "type": "array"
+        }
+      }
+    },
+    "claim_surfaces": {
+      "type": "object",
+      "required": [
+        "problem",
+        "data",
+        "objective",
+        "mechanism",
+        "regime",
+        "evaluation",
+        "deployment"
+      ],
+      "properties": {
+        "problem": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "data": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "objective": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mechanism": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "regime": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evaluation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deployment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "problem": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "main_claim": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notation": {
+      "type": "array"
+    },
+    "assumptions": {
+      "type": "array"
+    },
+    "results": {
+      "type": "array"
+    },
+    "algorithms": {
+      "type": "array"
+    },
+    "datasets": {
+      "type": "array"
+    },
+    "metrics": {
+      "type": "array"
+    },
+    "hardware": {
+      "type": "object"
+    },
+    "effects": {
+      "type": "array"
+    },
+    "artifacts": {
+      "type": "object"
+    },
+    "relation_hints": {
+      "type": "array"
+    },
+    "repro_thresholds": {
+      "type": "array"
+    },
+    "limitations": {
+      "type": "array"
+    },
+    "red_flags": {
+      "type": "array"
+    }
+  },
+  "additionalProperties": true
+}
