@@ -27,6 +27,14 @@
   "Font configuration and rendering optimization."
   :group 'faces)
 
+(defvar bv-fonts--configured-display-overrides nil
+  "Configured per-display font settings before runtime adjustments.")
+
+(defun bv-fonts--set-display-overrides (symbol value)
+  "Set SYMBOL to VALUE and refresh the configured display baselines."
+  (set-default symbol value)
+  (setq bv-fonts--configured-display-overrides (copy-tree value)))
+
 (defcustom bv-fonts-default-family "JetBrains Mono"
   "Default monospace font family for coding."
   :type 'string
@@ -40,7 +48,8 @@
     "Iosevka"
     "Inconsolata"
     "DejaVu Sans Mono")
-  "Fallback monospace font families used when `bv-fonts-default-family' is unavailable."
+  "Fallback monospace font families used when
+`bv-fonts-default-family' is unavailable."
   :type '(repeat string)
   :group 'bv-fonts)
 
@@ -59,7 +68,8 @@
     "Fira Sans"
     "Noto Sans"
     "Cantarell")
-  "Fallback proportional font families used when `bv-fonts-variable-family' is unavailable."
+  "Fallback proportional font families used when
+`bv-fonts-variable-family' is unavailable."
   :type '(repeat string)
   :group 'bv-fonts)
 
@@ -73,7 +83,8 @@
     "TeX Gyre Termes"
     "DejaVu Serif"
     "Bitstream Vera Serif")
-  "Fallback serif font families used when `bv-fonts-serif-family' is unavailable."
+  "Fallback serif font families used when
+`bv-fonts-serif-family' is unavailable."
   :type '(repeat string)
   :group 'bv-fonts)
 
@@ -100,43 +111,28 @@
   :type 'boolean
   :group 'bv-fonts)
 
-(defcustom bv-fonts-dpi-scaling t
-  "When non-nil, scale font size per monitor DPI for consistent physical size.
+(defcustom bv-fonts-display-overrides
+  '(("LG TV" . (:size 160))
+    ("BenQ RD240Q" . (:size 140))
+    ("0x419f" . (:size 125)))
+  "Explicit font settings for specific displays.
 
-This is applied per frame using monitor information from
-`frame-monitor-attributes'."
-  :type 'boolean
-  :group 'bv-fonts)
+Each entry is (MONITOR-NAME . PLIST) matched exactly against monitor
+`name' from `frame-monitor-attributes'.
 
-(defcustom bv-fonts-dpi-reference-ppi nil
-  "Reference monitor PPI for `bv-fonts-dpi-scaling'.
-
-When nil, the first detected GUI frame's monitor PPI becomes the reference."
-  :type '(choice (const :tag "Auto" nil)
-                 (number :tag "Reference PPI"))
-  :group 'bv-fonts)
-
-(defcustom bv-fonts-display-overrides nil
-  "Per-display overrides for DPI scaling.
-
-Each entry is (REGEXP . PLIST) matched against monitor `name' from
-`frame-monitor-attributes'.
-
-Supported keys in PLIST:
-- `:size'  (integer) Base size in 1/10 pt (overrides `bv-fonts-default-size')
-- `:scale' (number)  Extra multiplier applied after DPI scaling."
-  :type '(repeat (cons (string :tag "Monitor name regexp")
-                       (plist :options ((:size integer)
-                                        (:scale number)))))
+  Supported keys in PLIST:
+- `:size'  (integer) Base size in 1/10 pt.
+- `:scale' (number)  Optional extra multiplier applied to `:size'."
+  :type '(alist :key-type string
+                :value-type (plist :options ((:size integer)
+                                             (:scale number))))
+  :set #'bv-fonts--set-display-overrides
   :group 'bv-fonts)
 
 (defvar bv-fonts--base-size nil
   "Session base font size in units of 1/10 pt.
 
-This is the \"reference monitor\" size used before DPI scaling.")
-
-(defvar bv-fonts--reference-ppi nil
-  "Auto-detected reference PPI used when `bv-fonts-dpi-reference-ppi' is nil.")
+This is the fallback size used when no explicit display override applies.")
 
 (defvar bv-fonts--rendering-setup nil
   "Non-nil once GUI rendering options have been applied.")
@@ -169,55 +165,76 @@ This is the \"reference monitor\" size used before DPI scaling.")
          (geometry (and attrs (alist-get 'geometry attrs))))
     (list name geometry)))
 
-(defun bv-fonts--frame-ppi (frame)
-  "Estimate FRAME monitor PPI using `frame-monitor-attributes'."
-  (let* ((attrs (bv-fonts--frame-monitor-attributes frame))
-         (geometry (and attrs (alist-get 'geometry attrs)))
-         (mm-size (and attrs (alist-get 'mm-size attrs)))
-         (px-width (and (consp geometry) (nth 2 geometry)))
-         (mm-width (and (consp mm-size) (car mm-size))))
-    (when (and (numberp px-width) (numberp mm-width)
-               (> px-width 0) (> mm-width 0))
-      (/ (float px-width) (/ (float mm-width) 25.4)))))
-
-(defun bv-fonts--reference-ppi (frame)
-  "Return reference PPI for FRAME."
-  (or (and (numberp bv-fonts-dpi-reference-ppi) bv-fonts-dpi-reference-ppi)
-      (and (numberp bv-fonts--reference-ppi) bv-fonts--reference-ppi)
-      (let ((ppi (bv-fonts--frame-ppi frame)))
-        (when (numberp ppi)
-          (setq bv-fonts--reference-ppi ppi))
-        (or ppi 96.0))))
-
 (defun bv-fonts--display-override (frame)
   "Return matching override entry for FRAME, or nil."
   (let ((name (bv-fonts--frame-monitor-name frame)))
-    (cl-find-if (lambda (entry)
-                  (and (stringp (car entry))
-                       (stringp name)
-                       (string-match-p (car entry) name)))
-                bv-fonts-display-overrides)))
+    (and (stringp name)
+         (assoc name bv-fonts-display-overrides))))
+
+(defun bv-fonts--configured-display-override (frame)
+  "Return the configured override entry for FRAME, or nil."
+  (let ((name (bv-fonts--frame-monitor-name frame)))
+    (and (stringp name)
+         (assoc name bv-fonts--configured-display-overrides))))
+
+(defun bv-fonts--display-settings (&optional frame)
+  "Return effective font settings for FRAME."
+  (let* ((frame (or frame (selected-frame)))
+         (name (bv-fonts--frame-monitor-name frame))
+         (entry (bv-fonts--display-override frame))
+         (plist (copy-sequence (or (cdr entry) nil))))
+    (list :name name
+          :entry entry
+          :size (or (plist-get plist :size) (bv-fonts--base-size))
+          :scale (or (plist-get plist :scale) 1.0))))
+
+(defun bv-fonts--configured-display-size (&optional frame)
+  "Return the configured baseline font size for FRAME."
+  (let* ((frame (or frame (selected-frame)))
+         (entry (bv-fonts--configured-display-override frame))
+         (plist (copy-sequence (or (cdr entry) nil))))
+    (or (plist-get plist :size) bv-fonts-default-size)))
+
+(defun bv-fonts--set-display-size (frame size)
+  "Set explicit font SIZE for FRAME's display."
+  (let* ((frame (or frame (selected-frame)))
+         (name (bv-fonts--frame-monitor-name frame))
+         (entry (and (stringp name)
+                     (assoc name bv-fonts-display-overrides)))
+         (plist (copy-sequence (or (cdr entry) nil))))
+    (setq plist (plist-put plist :size size))
+    (if entry
+        (setcdr entry plist)
+      (push (cons name plist) bv-fonts-display-overrides))
+    size))
 
 (defun bv-fonts--scaled-height (frame)
   "Compute a frame-local `default' face height for FRAME."
   (let* ((override (bv-fonts--display-override frame))
          (plist (cdr override))
          (base (or (plist-get plist :size) (bv-fonts--base-size)))
-         (scale (if (and bv-fonts-dpi-scaling (display-graphic-p frame))
-                    (let ((ppi (bv-fonts--frame-ppi frame))
-                          (ref (bv-fonts--reference-ppi frame)))
-                      (if (and (numberp ppi) (numberp ref) (> ref 0))
-                          (/ ppi ref)
-                        1.0))
-                  1.0))
-         (extra (plist-get plist :scale))
-         (scale (if (numberp extra) (* scale extra) scale)))
+         (scale (or (plist-get plist :scale) 1.0)))
     (max 1 (round (* base scale)))))
+
+(defun bv-fonts--apply-to-display (&optional frame)
+  "Apply font settings to every live frame on FRAME's current display."
+  (let* ((frame (or frame (selected-frame)))
+         (name (bv-fonts--frame-monitor-name frame))
+         (matched nil))
+    (dolist (other (frame-list))
+      (when (and (frame-live-p other)
+                 (display-graphic-p other)
+                 (equal (bv-fonts--frame-monitor-name other) name))
+        (setq matched t)
+        (bv-fonts-apply-to-frame other)))
+    (unless matched
+      (bv-fonts-apply-to-frame frame))))
 
 (defun bv-fonts-apply-to-frame (&optional frame)
   "Apply per-frame font settings to FRAME.
 
-This primarily adjusts the `default' face height for DPI consistency."
+This primarily adjusts the `default' face height using explicit
+per-display settings."
   (let ((frame (or frame (selected-frame))))
     (when (and (framep frame) (frame-live-p frame) (display-graphic-p frame))
       (let ((height (bv-fonts--scaled-height frame)))
@@ -409,17 +426,16 @@ ARGS are forwarded to `set-fontset-font'."
     (bv-fonts--set-fontset-font t 'symbol family nil 'append)))
 
 (defun bv-fonts-adjust-size (increment)
-  "Adjust the default font size by INCREMENT.
+  "Adjust the current display font size by INCREMENT.
 INCREMENT is in units of 1/10 pt."
   (interactive "nSize increment (1/10 pt): ")
-  (setq bv-fonts--base-size (+ (bv-fonts--base-size) increment))
-  (when (boundp 'bv-themes-font-size)
-    (setq bv-themes-font-size (bv-fonts--base-size)))
-  (bv-fonts-configure-faces)
-  (bv-fonts-apply-to-frames)
-  (message "Base font size: %d (this frame: %d)"
-           (bv-fonts--base-size)
-           (face-attribute 'default :height (selected-frame))))
+  (let* ((frame (selected-frame))
+         (settings (bv-fonts--display-settings frame))
+         (name (or (plist-get settings :name) "Unknown"))
+         (size (+ (plist-get settings :size) increment)))
+    (bv-fonts--set-display-size frame size)
+    (bv-fonts--apply-to-display frame)
+    (message "Font size for %s: %d" name size)))
 
 (defun bv-fonts-increase-size ()
   "Increase font size by 10 units (1 pt)."
@@ -432,15 +448,16 @@ INCREMENT is in units of 1/10 pt."
   (bv-fonts-adjust-size -10))
 
 (defun bv-fonts-reset-size ()
-  "Reset font size to default."
+  "Reset the current display font size to its configured baseline."
   (interactive)
-  (setq bv-fonts--base-size bv-fonts-default-size)
-  (set-face-attribute 'default nil :height (bv-fonts--base-size))
-  (when (boundp 'bv-themes-font-size)
-    (setq bv-themes-font-size (bv-fonts--base-size)))
-  (bv-fonts-configure-faces)
-  (bv-fonts-apply-to-frames)
-  (message "Base font size reset to %d" (bv-fonts--base-size)))
+  (let* ((frame (selected-frame))
+         (name (or (bv-fonts--frame-monitor-name frame) "Unknown"))
+         (size (bv-fonts--configured-display-size frame)))
+    (bv-fonts--set-display-size frame size)
+    (bv-fonts--apply-to-display frame)
+    (message "Font size for %s reset to %d"
+             name
+             size)))
 
 ;; Key bindings
 (global-set-key (kbd "C-+") #'bv-fonts-increase-size)
@@ -454,6 +471,9 @@ INCREMENT is in units of 1/10 pt."
 ;; Initialize font configuration
 (defun bv-fonts-init ()
   "Initialize font configuration."
+  (unless bv-fonts--configured-display-overrides
+    (setq bv-fonts--configured-display-overrides
+          (copy-tree bv-fonts-display-overrides)))
   (unless bv-fonts--base-size
     (setq bv-fonts--base-size bv-fonts-default-size))
   (when (boundp 'bv-themes-font-size)

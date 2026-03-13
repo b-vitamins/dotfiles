@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Git commit guidelines in CLAUDE.md to prevent accidental commits
 - Emacs cursor pulse for easier point tracking during navigation
 - Emacs config doctor (`bv-doctor` / `scripts/emacs-doctor.sh`) for batch validation
-- DPI-aware per-monitor font scaling for GUI frames
+- Explicit per-display font sizing for GUI frames
 - Tree-sitter grammar audit command (`bv-treesit-audit`)
 - Project cockpit actions in `project-switch-project` (ripgrep, test, magit, dape)
 - Unified formatting dispatcher (`bv-format` / `bv-format-on-save-mode`) and standardized `C-c C-f` formatting key
@@ -32,9 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
 - Modularized Emacs configuration into focused components
-- Updated BV font stack defaults and Unicode fallbacks (JetBrains Mono, FiraGO, Noto Serif)
 - Switched Org LaTeX previews to `org-fast-latex-preview` with Org-native auto state detection, explicit per-display scaling, and OFLP-backed refresh behavior
 - Refined BV Emacs light/dark theme palettes for improved contrast and a more polished completion UI
+- Updated BV font stack defaults and Unicode fallbacks (JetBrains Mono, FiraGO, Noto Serif)
 - Tweaked BV Emacs dark theme foundation colors for a richer background tint and crisper text contrast
 - Tweaked Alacritty dark palette for richer backgrounds and sharper text contrast
 - Disabled underlines across BV themes (links, comments, diagnostics) in favor of color and subtle background emphasis
@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Removed misleading per-display DPI assumptions from Org LaTeX preview sizing and refreshed previews when moving frames between displays
 - Made AUCTeX previews scale from the current face (instead of a fixed number) for consistent math rendering across font sizes
 - Restored Tempel `;snippet` expansion on `TAB` for Org/LaTeX buffers and aligned the `im` template with Org-style inline math (`\\( ... \\)`)
+- Cleared Emacs config doctor byte-compile warnings and made display-local font adjustments/reset behavior consistent across frames
 - Cleaned up Tempel LaTeX templates: resolved trigger collisions, added missing aliases, enabled `*`-suffixed triggers (e.g. `eq*`), and made inline-math templates available in `latex-mode`
 - Prevented Org LaTeX auto-refresh and `org-fragtog` from throwing errors during window/buffer changes
 - Stabilized Org clocking: clock-in/out no longer steals windows, clock-in starts on first invocation, and redundant STARTED→STARTED logs are avoided

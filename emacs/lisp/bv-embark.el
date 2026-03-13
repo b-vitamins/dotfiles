@@ -235,8 +235,8 @@ Remove common prefixes/suffixes, clean up whitespace."
   (cl-pushnew #'embark--mark-target
               (alist-get 'consult-grep embark-around-action-hooks))
 
-  ;; Preview when collecting
-  (add-hook 'embark-collect-mode-hook #'consult-preview-at-point-mode))
+  ;; Consult now enables preview automatically in collect buffers.
+  )
 
 ;;; Mouse Support - Right-click context menu
 

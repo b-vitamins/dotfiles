@@ -7,6 +7,17 @@
 
 ;;; Code:
 
+(defvar ebdb-sources)
+(defvar ebdb-default-country)
+(defvar ebdb-default-window-size)
+(defvar ebdb-dedicated-window)
+(defvar ebdb-mail-avoid-redundancy)
+(defvar ebdb-complete-mail)
+(defvar ebdb-completion-display-record)
+(defvar ebdb-complete-mail-allow-cycling)
+(defvar ebdb-save-on-exit)
+(defvar ebdb-mode-map)
+
 (declare-function ebdb-display-all-records "ebdb")
 (declare-function ebdb-create-record-extended "ebdb")
 (declare-function ebdb-search "ebdb")
@@ -28,7 +39,7 @@
   :group 'bv-ebdb)
 
 ;; Load EBDB after idle delay
-(run-with-idle-timer bv-ebdb-idle-delay t
+(run-with-idle-timer bv-ebdb-idle-delay nil
                      (lambda ()
                        (require 'ebdb nil t)))
 

@@ -474,9 +474,6 @@ PRED is a predicate function to filter files."
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
 
-  ;; Enable preview at point
-  (add-hook 'completion-list-mode-hook #'consult-preview-at-point-mode)
-
   ;; Preview exclusions - simplified
   (setq consult-preview-excluded-buffers
         (lambda (buf)

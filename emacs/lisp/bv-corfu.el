@@ -34,6 +34,8 @@
 (defvar corfu-preserve-symlinks)
 (defvar corfu-history-duplicate)
 (defvar corfu-history-decay)
+(defvar corfu-auto-delay)
+(defvar corfu-auto-prefix)
 (defvar corfu-popupinfo-delay)
 (defvar corfu-popupinfo-max-width)
 (defvar corfu-popupinfo-max-height)

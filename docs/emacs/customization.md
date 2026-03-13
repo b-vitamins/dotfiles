@@ -23,7 +23,7 @@ Reload: `M-x eval-buffer` in custom.el or restart Emacs.
 ### Fonts
 
 **bv-fonts-default-family** (string)
-- Default: "Fira Code"
+- Default: "JetBrains Mono"
 - Monospaced font for code editing
 
 **bv-fonts-default-size** (integer)
@@ -31,16 +31,20 @@ Reload: `M-x eval-buffer` in custom.el or restart Emacs.
 - Font size in tenths of points (120 = 12pt)
 
 **bv-fonts-variable-family** (string)
-- Default: "IBM Plex Sans"
+- Default: "FiraGO"
 - Variable-width font for UI elements
 
 **bv-fonts-serif-family** (string)
-- Default: "ET Book"
+- Default: "Noto Serif"
 - Serif font for reading modes
 
 **bv-fonts-enable-ligatures** (boolean)
 - Default: t
 - Enable programming ligatures
+
+**bv-fonts-display-overrides** (alist)
+- Default: explicit monitor-name keyed `:size` values
+- Per-display font sizes for GUI frames
 
 Example:
 ```elisp
