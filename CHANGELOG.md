@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Org workflow guide documenting the `~/org` command-center system (`docs/emacs/org-workflow.md`)
 - Org gamification tools: metrics scoreboard, focus timer, inbox processor, and citar-driven reading queue
 - Codex `hifi-pdf-ocr` skill with reusable prompts, orchestration agents, and OCR helper scripts
+- Codex `research-paper-notes` skill for strict TeX-first single-paper analysis with arXiv source ingestion, sequential readthrough logging, and note validation
 ### Changed
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
@@ -69,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Simplified Org configuration: default TODO/DONE only with a single inbox file and minimal capture/agenda bindings
 - Extended `setup.sh` to auto-link repository Codex skills into `~/.codex/skills`
 - Updated `setup.sh` to keep `~/.codex/config.toml` as a local file and stop symlinking it from dotfiles
+- Refined the Codex `research-paper-notes` skill with multi-axis paper coordinates, claim-surface summaries, typed prior-work relation hints, and stronger machine-readable provenance
 ### Fixed
 - Added missing emacs-pgtk package import in Guix configurations
 - Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup
