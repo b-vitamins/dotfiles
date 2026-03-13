@@ -146,17 +146,13 @@ Location example:
 
 ### Org LaTeX
 
-**bv-org-latex-scale** (float)
-- Default: 2.0
-- Preview image scaling factor
-
 **bv-org-latex-auto-scale** (boolean)
 - Default: t
-- Automatic DPI-based scaling
+- Follow the configured per-display preview scale
 
-**bv-org-latex-base-dpi** (integer)
-- Default: 96
-- Reference DPI for scaling calculations
+**bv-org-latex-display-overrides** (alist)
+- Default: monitor-name keyed plist values
+- Explicit per-display `:scale` settings for Org/OFLP previews
 
 ### Completion System
 
@@ -355,7 +351,7 @@ Reset to defaults:
 - bv-org-clock-idle-check-interval
 - bv-org-clock-idle-minutes
 - bv-org-directory
-- bv-org-latex-scale
+- bv-org-latex-display-overrides
 - bv-org-roam-directory
 - bv-org-roam-show-backlinks
 

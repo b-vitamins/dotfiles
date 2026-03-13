@@ -100,7 +100,7 @@ M-x eglot-install-server
 ### Research Workflow
 - **Org-roam**: Slip-box method for knowledge management
 - **Citations**: Academic reference management with Citar
-- **LaTeX**: High-DPI preview and comprehensive export
+- **LaTeX**: `org-fast-latex-preview` following native Org preview settings, plus explicit per-display preview scaling and comprehensive export
 
 ### Development Environment
 - **LSP Support**: Automatic language server integration

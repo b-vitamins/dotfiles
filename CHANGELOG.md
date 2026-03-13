@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
 - Modularized Emacs configuration into focused components
 - Updated BV font stack defaults and Unicode fallbacks (JetBrains Mono, FiraGO, Noto Serif)
+- Switched Org LaTeX previews to `org-fast-latex-preview` with Org-native auto state detection, explicit per-display scaling, and OFLP-backed refresh behavior
 - Refined BV Emacs light/dark theme palettes for improved contrast and a more polished completion UI
 - Tweaked BV Emacs dark theme foundation colors for a richer background tint and crisper text contrast
 - Tweaked Alacritty dark palette for richer backgrounds and sharper text contrast
@@ -79,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed indentation in sparck system services configuration
 - Restored completion-at-point in `git-commit-mode` buffers
 - Normalized Org LaTeX preview scaling to better match text size across displays
-- Fixed Org LaTeX preview DPI detection (per-monitor + compositor scaling) and auto-refreshed previews when moving frames between displays
+- Removed misleading per-display DPI assumptions from Org LaTeX preview sizing and refreshed previews when moving frames between displays
 - Made AUCTeX previews scale from the current face (instead of a fixed number) for consistent math rendering across font sizes
 - Restored Tempel `;snippet` expansion on `TAB` for Org/LaTeX buffers and aligned the `im` template with Org-style inline math (`\\( ... \\)`)
 - Cleaned up Tempel LaTeX templates: resolved trigger collisions, added missing aliases, enabled `*`-suffixed triggers (e.g. `eq*`), and made inline-math templates available in `latex-mode`
