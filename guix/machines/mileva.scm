@@ -582,7 +582,7 @@ allow-preset-passphrase")))
              %desktop-core
              %audio-system
              %bluetooth-system
-             %my-gnome-shell-assets
+             %desktop-gnome-assets
              %media-converters
              ;; Documents
              %latex-core
