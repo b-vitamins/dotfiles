@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Org gamification tools: metrics scoreboard, focus timer, inbox processor, and citar-driven reading queue
 - Codex `hifi-pdf-ocr` skill with reusable prompts, orchestration agents, and OCR helper scripts
 - Codex `research-paper-notes` skill for strict TeX-first single-paper analysis with arXiv source ingestion, sequential readthrough logging, and note validation
+- Automatic `setup.sh` preflight/bootstrap for SSH identity, mileva OCI root credentials, and actionable post-run setup reporting
 ### Changed
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert

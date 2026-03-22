@@ -34,6 +34,13 @@ EXCLUDE_AGENTS=""
 SHOW_STATUS=false
 BACKUP_ON_OVERWRITE=true
 QUICK_MODE=false
+PROVISION_ROOT_SECRETS=false
+AUTO_PROVISION_ROOT_SECRETS=false
+readonly DEFAULT_SSH_PASS_ENTRY="keys/ssh/freydis/id_ed25519"
+readonly DEFAULT_SSH_PUBLIC_PASS_ENTRY="keys/ssh/freydis/id_ed25519.pub"
+declare -a SETUP_BLOCKERS=()
+declare -a SETUP_WARNINGS=()
+declare -a SETUP_NOTES=()
 # -----------------------------------------------------------------------------
 # Utility functions
 # -----------------------------------------------------------------------------
@@ -59,6 +66,59 @@ debug() {
 	if [[ "$VERBOSE" == true ]]; then
 		log INFO "$@"
 	fi
+}
+record_setup_issue() {
+	local kind="$1"
+	local summary="$2"
+	local action="${3:-}"
+	local entry="$summary"
+	local -n bucket="$kind"
+	if [[ -n "$action" ]]; then
+		entry+="|$action"
+	fi
+	bucket+=("$entry")
+}
+clear_setup_issues() {
+	SETUP_BLOCKERS=()
+	SETUP_WARNINGS=()
+	SETUP_NOTES=()
+}
+print_setup_issue_group() {
+	local title="$1"
+	local -n bucket="$2"
+	local entry
+	local summary
+	local action
+	[[ ${#bucket[@]} -gt 0 ]] || return 0
+	echo "$title:"
+	for entry in "${bucket[@]}"; do
+		summary="${entry%%|*}"
+		action=""
+		if [[ "$entry" == *"|"* ]]; then
+			action="${entry#*|}"
+		fi
+		echo "  - $summary"
+		if [[ -n "$action" ]]; then
+			echo "    Action: $action"
+		fi
+	done
+	echo
+}
+print_setup_action_report() {
+	if [[ ${#SETUP_BLOCKERS[@]} -eq 0 ]] &&
+		[[ ${#SETUP_WARNINGS[@]} -eq 0 ]] &&
+		[[ ${#SETUP_NOTES[@]} -eq 0 ]]; then
+		debug "No action items detected during preflight"
+		return 0
+	fi
+	log INFO "Action Report"
+	echo "============="
+	print_setup_issue_group "Blocking Items" SETUP_BLOCKERS
+	print_setup_issue_group "Warnings" SETUP_WARNINGS
+	print_setup_issue_group "Manual Follow-Ups" SETUP_NOTES
+}
+xdg_data_home() {
+	printf '%s\n' "${XDG_DATA_HOME:-$HOME/.local/share}"
 }
 confirm() {
 	local prompt="$1"
@@ -110,6 +170,8 @@ ${BOLD}OPTIONS${RESET}
         Show status of installed configs (all, claude, emacs, guix)
     --no-backup
         Don't create backups when overwriting files
+    --provision-root-secrets
+        Force machine-specific root credential provisioning from pass using sudo
     -q, --quick
         Quick mode - skip all prompts, assume yes (for experienced users)
     -h, --help
@@ -129,6 +191,8 @@ ${BOLD}EXAMPLES${RESET}
     $SCRIPT_NAME --claude-symlink
     # Install only Python and LaTeX agents
     $SCRIPT_NAME --claude-agents "python-*,latex-*"
+    # Re-run only the root credential provisioning logic
+    $SCRIPT_NAME --machine mileva --guix-only --provision-root-secrets
 ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     Managed by this script:
     - Emacs (init files, lisp modules, templates)
@@ -136,6 +200,7 @@ ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     - Codex managed instructions/rules + skills (keeps ~/.codex/config.toml local)
     - Claude Code (settings, agents, hooks, instructions, output styles, project templates)
     - qBittorrent configuration (if present)
+    - Automatic bootstrap of default SSH identity and machine-specific root credentials when available
     - Git hooks installation
     Managed by Guix home configuration:
     - Shell (zsh configuration)
@@ -205,13 +270,17 @@ parse_arguments() {
 				shift
 			fi
 			;;
-		--no-backup)
-			BACKUP_ON_OVERWRITE=false
-			shift
-			;;
-		-q | --quick)
-			QUICK_MODE=true
-			shift
+			--no-backup)
+				BACKUP_ON_OVERWRITE=false
+				shift
+				;;
+			--provision-root-secrets)
+				PROVISION_ROOT_SECRETS=true
+				shift
+				;;
+			-q | --quick)
+				QUICK_MODE=true
+				shift
 			;;
 		-h | --help)
 			usage
@@ -617,8 +686,8 @@ clean_stale_agents() {
 # -----------------------------------------------------------------------------
 # Link definitions
 # -----------------------------------------------------------------------------
-declare -A LINKS
-declare -A COPIES
+declare -A LINKS=()
+declare -A COPIES=()
 define_links() {
 	# Only add non-Guix links if not in guix-only mode
 	if [[ "$GUIX_ONLY" == false ]]; then
@@ -1254,6 +1323,329 @@ copy_files() {
 	fi
 }
 # -----------------------------------------------------------------------------
+# Credential bootstrap and preflight
+# -----------------------------------------------------------------------------
+declare -a ROOT_SECRET_SPECS=()
+define_root_secret_specs() {
+	ROOT_SECRET_SPECS=()
+	case "$MACHINE" in
+	mileva)
+		ROOT_SECRET_SPECS=(
+			"infra/meili:/root/meili.credentials"
+			"infra/minio:/root/minio.credentials"
+			"infra/neo4j:/root/neo4j.credentials"
+			"infra/qdrant:/root/qdrant.credentials"
+		)
+		;;
+	esac
+}
+password_store_entry_exists() {
+	local entry="$1"
+	[[ -f "$HOME/.password-store/$entry.gpg" ]] || [[ -f "$HOME/.password-store/$entry.age" ]]
+}
+write_first_line_from_pass() {
+	local pass_entry="$1"
+	local target_path="$2"
+	local mode="$3"
+	local temp_file
+	local target_dir
+	temp_file="$(mktemp "${TMPDIR:-/tmp}/dotfiles-secret.XXXXXX")"
+	target_dir="$(dirname "$target_path")"
+	if ! pass show "$pass_entry" 2>/dev/null | sed -n '1p' >"$temp_file"; then
+		rm -f "$temp_file"
+		return 1
+	fi
+	if [[ ! -s "$temp_file" ]]; then
+		rm -f "$temp_file"
+		return 1
+	fi
+	chmod 600 "$temp_file" 2>/dev/null || true
+	if [[ "$DRY_RUN" == true ]]; then
+		echo "  Would install secret: $pass_entry -> $target_path ($mode)"
+		rm -f "$temp_file"
+		return 0
+	fi
+	mkdir -p "$target_dir"
+	install -m "$mode" "$temp_file" "$target_path"
+	rm -f "$temp_file"
+}
+provision_default_ssh_identity() {
+	local ssh_dir="$HOME/.ssh"
+	local private_key="$ssh_dir/id_ed25519"
+	local public_key="$ssh_dir/id_ed25519.pub"
+	local status=0
+	if [[ "$DRY_RUN" == true ]]; then
+		echo "  Would ensure SSH directory exists: $ssh_dir (700)"
+	else
+		mkdir -p "$ssh_dir"
+		chmod 700 "$ssh_dir"
+	fi
+	if [[ ! -f "$private_key" ]]; then
+		if ! command -v pass >/dev/null 2>&1; then
+			record_setup_issue SETUP_BLOCKERS \
+				"SSH private key is missing at $private_key" \
+				"Install 'pass' and ensure $DEFAULT_SSH_PASS_ENTRY exists, then rerun ./setup.sh."
+			status=1
+		elif ! password_store_entry_exists "$DEFAULT_SSH_PASS_ENTRY"; then
+			record_setup_issue SETUP_BLOCKERS \
+				"SSH private key is missing at $private_key" \
+				"Add $DEFAULT_SSH_PASS_ENTRY to ~/.password-store, then rerun ./setup.sh."
+			status=1
+		elif write_first_line_from_pass "$DEFAULT_SSH_PASS_ENTRY" "$private_key" 600; then
+			log SUCCESS "Installed SSH private key: $private_key"
+		else
+			record_setup_issue SETUP_BLOCKERS \
+				"Failed to install SSH private key at $private_key" \
+				"Check that $DEFAULT_SSH_PASS_ENTRY decrypts cleanly with pass, then rerun ./setup.sh."
+			status=1
+		fi
+	fi
+	if [[ ! -f "$public_key" ]]; then
+		if command -v pass >/dev/null 2>&1 &&
+			password_store_entry_exists "$DEFAULT_SSH_PUBLIC_PASS_ENTRY"; then
+			if write_first_line_from_pass "$DEFAULT_SSH_PUBLIC_PASS_ENTRY" "$public_key" 644; then
+				log SUCCESS "Installed SSH public key: $public_key"
+			else
+				record_setup_issue SETUP_WARNINGS \
+					"Failed to install SSH public key at $public_key" \
+					"Check that $DEFAULT_SSH_PUBLIC_PASS_ENTRY decrypts cleanly with pass, or regenerate it from the private key."
+				status=1
+			fi
+		elif [[ -f "$private_key" ]] && command -v ssh-keygen >/dev/null 2>&1; then
+			if [[ "$DRY_RUN" == true ]]; then
+				echo "  Would derive SSH public key from $private_key"
+			elif ssh-keygen -y -f "$private_key" >"$public_key"; then
+				chmod 644 "$public_key"
+				log SUCCESS "Derived SSH public key: $public_key"
+			else
+				record_setup_issue SETUP_WARNINGS \
+					"Failed to derive SSH public key from $private_key" \
+					"Run: ssh-keygen -y -f $private_key > $public_key"
+				status=1
+			fi
+		fi
+	fi
+	return "$status"
+}
+provision_root_secret() {
+	local pass_entry="$1"
+	local target_path="$2"
+	local action="Installed"
+	if ! password_store_entry_exists "$pass_entry"; then
+		record_setup_issue SETUP_BLOCKERS \
+			"Password store entry missing for $target_path" \
+			"Add $pass_entry to ~/.password-store, then rerun ./setup.sh."
+		return 1
+	fi
+	if [[ "$DRY_RUN" == true ]]; then
+		echo "  Would provision root secret: $pass_entry -> $target_path (root:root 600)"
+		return 0
+	fi
+	if sudo test -f "$target_path"; then
+		local temp_file
+		temp_file="$(mktemp "${TMPDIR:-/tmp}/dotfiles-root-secret-compare.XXXXXX")"
+		if ! pass show "$pass_entry" 2>/dev/null | sed -n '1p' >"$temp_file"; then
+			rm -f "$temp_file"
+			record_setup_issue SETUP_BLOCKERS \
+				"Failed to read password store entry for $target_path" \
+				"Check that $pass_entry decrypts cleanly with pass, then rerun ./setup.sh."
+			return 1
+		fi
+		if sudo cmp -s "$temp_file" "$target_path"; then
+			log INFO "Root secret already current: $target_path"
+			rm -f "$temp_file"
+			return 0
+		fi
+		rm -f "$temp_file"
+		action="Updated"
+	fi
+	# Do not use the standard backup path here; backing up root secrets into the
+	# dotfiles checkout would leak secret material into the repo worktree.
+	local temp_file
+	temp_file="$(mktemp "${TMPDIR:-/tmp}/dotfiles-root-secret.XXXXXX")"
+	if ! pass show "$pass_entry" 2>/dev/null | sed -n '1p' >"$temp_file"; then
+		rm -f "$temp_file"
+		record_setup_issue SETUP_BLOCKERS \
+			"Failed to read password store entry for $target_path" \
+			"Check that $pass_entry decrypts cleanly with pass, then rerun ./setup.sh."
+		return 1
+	fi
+	if [[ ! -s "$temp_file" ]]; then
+		rm -f "$temp_file"
+		record_setup_issue SETUP_BLOCKERS \
+			"Password store entry is empty for $target_path" \
+			"Put the secret on the first line of $pass_entry, then rerun ./setup.sh."
+		return 1
+	fi
+	chmod 600 "$temp_file" 2>/dev/null || true
+	sudo install -d -o root -g root -m 700 "$(dirname "$target_path")"
+	if ! sudo install -o root -g root -m 600 "$temp_file" "$target_path"; then
+		rm -f "$temp_file"
+		record_setup_issue SETUP_BLOCKERS \
+			"Failed to install root credential file at $target_path" \
+			"Re-run ./setup.sh and approve the sudo prompt."
+		return 1
+	fi
+	rm -f "$temp_file"
+	log SUCCESS "$action root secret: $target_path"
+}
+provision_machine_root_secrets() {
+	if [[ ${#ROOT_SECRET_SPECS[@]} -eq 0 ]]; then
+		return 0
+	fi
+	if ! command -v pass >/dev/null 2>&1; then
+		record_setup_issue SETUP_BLOCKERS \
+			"pass is not installed but $MACHINE needs root credential bootstrap" \
+			"Install pass, ensure ~/.password-store is usable, and rerun ./setup.sh."
+		return 1
+	fi
+	if ! command -v sudo >/dev/null 2>&1; then
+		record_setup_issue SETUP_BLOCKERS \
+			"sudo is not available but $MACHINE needs root credential bootstrap" \
+			"Install/configure sudo, then rerun ./setup.sh."
+		return 1
+	fi
+	if [[ ! -d "$HOME/.password-store" ]]; then
+		record_setup_issue SETUP_BLOCKERS \
+			"Password store not found at $HOME/.password-store" \
+			"Populate ~/.password-store and ~/.gnupg, then rerun ./setup.sh."
+		return 1
+	fi
+	if [[ "$DRY_RUN" == false ]]; then
+		log INFO "Authenticating for root secret provisioning..."
+		if ! sudo -v; then
+			record_setup_issue SETUP_BLOCKERS \
+				"sudo authentication failed during root credential provisioning" \
+				"Re-run ./setup.sh and complete the sudo prompt."
+			return 1
+		fi
+	fi
+	log INFO "Provisioning machine-specific root secrets..."
+	local status=0
+	for spec in "${ROOT_SECRET_SPECS[@]}"; do
+		local pass_entry
+		local target_path
+		IFS=: read -r pass_entry target_path <<<"$spec"
+		if ! provision_root_secret "$pass_entry" "$target_path"; then
+			status=1
+		fi
+	done
+	return "$status"
+}
+check_root_secret_target() {
+	local pass_entry="$1"
+	local target_path="$2"
+	local mode
+	if [[ "$DRY_RUN" == true ]]; then
+		return 0
+	fi
+	if ! command -v sudo >/dev/null 2>&1; then
+		record_setup_issue SETUP_BLOCKERS \
+			"Cannot verify $target_path because sudo is unavailable" \
+			"Install/configure sudo, then rerun ./setup.sh."
+		return 1
+	fi
+	if ! sudo test -f "$target_path"; then
+		record_setup_issue SETUP_BLOCKERS \
+			"Root credential file missing: $target_path" \
+			"Ensure $pass_entry exists in pass, then rerun ./setup.sh."
+		return 1
+	fi
+	mode="$(sudo stat -c '%a %U:%G' "$target_path" 2>/dev/null || true)"
+	if [[ "$mode" != "600 root:root" ]]; then
+		record_setup_issue SETUP_BLOCKERS \
+			"Unexpected ownership or mode on $target_path ($mode)" \
+			"Run: sudo chown root:root $target_path && sudo chmod 600 $target_path"
+		return 1
+	fi
+	return 0
+}
+check_gpg_signing_key() {
+	local signing_key
+	signing_key="$(git config -f "$DOTFILES_DIR/git/gitconfig" user.signingkey 2>/dev/null || true)"
+	[[ -n "$signing_key" ]] || return 0
+	if ! command -v gpg >/dev/null 2>&1; then
+		record_setup_issue SETUP_BLOCKERS \
+			"gpg is unavailable but Git commit signing is configured" \
+			"Install gpg and import the secret key $signing_key."
+		return 1
+	fi
+	if ! gpg --list-secret-keys "$signing_key" >/dev/null 2>&1; then
+		record_setup_issue SETUP_BLOCKERS \
+			"Git signing key $signing_key is not available in your secret keyring" \
+			"Import the secret key for $signing_key, then rerun ./setup.sh."
+		return 1
+	fi
+	return 0
+}
+check_ssh_identity() {
+	local private_key="$HOME/.ssh/id_ed25519"
+	local public_key="$HOME/.ssh/id_ed25519.pub"
+	if [[ ! -f "$private_key" ]]; then
+		record_setup_issue SETUP_BLOCKERS \
+			"SSH private key is missing at $private_key" \
+			"Ensure $DEFAULT_SSH_PASS_ENTRY exists and rerun ./setup.sh, or install the key manually."
+		return 1
+	fi
+	if [[ "$(stat -c '%a' "$private_key" 2>/dev/null || true)" != "600" ]]; then
+		record_setup_issue SETUP_WARNINGS \
+			"SSH private key permissions are not 600 at $private_key" \
+			"Run: chmod 600 $private_key"
+	fi
+	if [[ ! -f "$public_key" ]]; then
+		record_setup_issue SETUP_WARNINGS \
+			"SSH public key is missing at $public_key" \
+			"Regenerate it with: ssh-keygen -y -f $private_key > $public_key"
+	fi
+	return 0
+}
+check_authinfo_file() {
+	local authinfo_path
+	authinfo_path="$(xdg_data_home)/authinfo/authinfo.gpg"
+	if [[ ! -f "$authinfo_path" ]]; then
+		record_setup_issue SETUP_WARNINGS \
+			"Mail auth file is missing at $authinfo_path" \
+			"If you use Emacs mail or git send-email, place authinfo.gpg there."
+	fi
+}
+check_nvidia_container_runtime() {
+	local runtime_path="/run/current-system/profile/bin/nvidia-container-runtime"
+	if [[ "$MACHINE" != "mileva" ]]; then
+		return 0
+	fi
+	if [[ ! -x "$runtime_path" ]]; then
+		record_setup_issue SETUP_WARNINGS \
+			"Docker references $runtime_path but the binary is missing" \
+			"Either provide nvidia-container-runtime in the system profile or update guix/files/daemon.json to a valid runtime."
+		fi
+}
+run_setup_preflight() {
+	check_ssh_identity || true
+	check_gpg_signing_key || true
+	check_authinfo_file || true
+	check_nvidia_container_runtime || true
+	if [[ ${#ROOT_SECRET_SPECS[@]} -gt 0 ]]; then
+		local spec
+		for spec in "${ROOT_SECRET_SPECS[@]}"; do
+			local pass_entry
+			local target_path
+			IFS=: read -r pass_entry target_path <<<"$spec"
+			check_root_secret_target "$pass_entry" "$target_path" || true
+		done
+		record_setup_issue SETUP_NOTES \
+			"Container services still need application-level initialization" \
+			"Create your MinIO buckets, Meilisearch indexes, Neo4j schema/users, and Qdrant collections after reconfigure if you rely on them."
+	fi
+	if [[ "$MACHINE" == "mileva" || "$MACHINE" == "sparck" ]]; then
+		record_setup_issue SETUP_NOTES \
+			"Syncthing still requires one-time device pairing and folder approval" \
+			"Open the Syncthing UI after login and pair the machine, then approve folders."
+		record_setup_issue SETUP_NOTES \
+			"GNOME visuals are installed but not selected declaratively yet" \
+			"Use Tweaks to pick Yaru, Papirus, and Bibata until the dconf defaults are declared."
+	fi
+}
+# -----------------------------------------------------------------------------
 # Git hooks installation
 # -----------------------------------------------------------------------------
 install_git_hooks() {
@@ -1298,6 +1690,12 @@ main() {
 	fi
 	# Detect environment
 	detect_environment
+	define_root_secret_specs
+	if [[ "$PROVISION_ROOT_SECRETS" == false ]] &&
+		[[ ${#ROOT_SECRET_SPECS[@]} -gt 0 ]]; then
+		PROVISION_ROOT_SECRETS=true
+		AUTO_PROVISION_ROOT_SECRETS=true
+	fi
 	# Handle status command early
 	if [[ "$SHOW_STATUS" == true ]]; then
 		show_status "${STATUS_COMPONENT:-all}"
@@ -1327,6 +1725,13 @@ main() {
 	fi
 	if [[ -n "$EXCLUDE_AGENTS" ]]; then
 		log INFO "Excluding agents matching: $EXCLUDE_AGENTS"
+	fi
+	if [[ "$PROVISION_ROOT_SECRETS" == true ]]; then
+		if [[ "$AUTO_PROVISION_ROOT_SECRETS" == true ]]; then
+			log INFO "Machine-specific root credential provisioning auto-enabled for $MACHINE"
+		else
+			log INFO "Machine-specific root credential provisioning enabled"
+		fi
 	fi
 	echo
 	# Regenerate templates if applicable
@@ -1366,20 +1771,37 @@ main() {
 		done
 	fi
 	echo
+	log INFO "Bootstrapping credentials..."
+	clear_setup_issues
+	if ! provision_default_ssh_identity; then
+		log WARNING "Default SSH identity bootstrap was incomplete"
+	fi
+	if [[ "$PROVISION_ROOT_SECRETS" == true ]]; then
+		if ! provision_machine_root_secrets; then
+			log WARNING "Machine-specific root credential bootstrap was incomplete"
+		fi
+	fi
+	echo
 	# Install Git hooks if applicable
 	if [[ "$GUIX_ONLY" == false ]]; then
 		install_git_hooks
 		echo
 	fi
+	run_setup_preflight
+	print_setup_action_report
+	local blockers_count=${#SETUP_BLOCKERS[@]}
+	local warnings_count=${#SETUP_WARNINGS[@]}
 	# Summary
 	log INFO "Setup Summary"
 	echo "============="
 	echo "  Created: $created symlinks"
 	[[ $copied -gt 0 ]] && echo "  Copied:  $copied directories"
 	[[ $failed -gt 0 ]] && echo "  Failed:  $failed operations"
+	[[ $blockers_count -gt 0 ]] && echo "  Blockers: $blockers_count"
+	[[ $warnings_count -gt 0 ]] && echo "  Warnings: $warnings_count"
 	[[ "$DRY_RUN" == true ]] && echo "  (DRY RUN - no actual changes made)"
 	echo
-	if [[ $failed -eq 0 ]]; then
+	if [[ $failed -eq 0 ]] && [[ $blockers_count -eq 0 ]]; then
 		log SUCCESS "Setup completed successfully!"
 		# Post-setup advice
 		if [[ "$GUIX_ONLY" == false ]]; then
@@ -1388,9 +1810,16 @@ main() {
 			echo "  1. Restart Emacs to load new configuration"
 			echo "  2. Source ~/.zshrc or start a new shell"
 			echo "  3. Run 'guix pull' to update channels"
+			if [[ "$PROVISION_ROOT_SECRETS" == true ]]; then
+				echo "  4. Re-run sudo guix system reconfigure if container secrets changed"
+			fi
 		fi
 	else
-		die "Setup completed with errors"
+		if [[ "$DRY_RUN" == true ]] && [[ $failed -eq 0 ]]; then
+			log WARNING "Dry run found unresolved setup items"
+		else
+			die "Setup completed with unresolved blocking items"
+		fi
 	fi
 }
 # Cleanup on exit

@@ -12,7 +12,7 @@ A comprehensive GNU/Linux environment using Guix System, modern tools, and Emacs
 # Clone and setup
 git clone https://github.com/b-vitamins/dotfiles.git ~/projects/dotfiles
 cd ~/projects/dotfiles
-./setup.sh --machine $(hostname)
+./setup.sh
 
 # System configuration (choose your machine)
 sudo guix system reconfigure ~/projects/dotfiles/guix/machines/mileva.scm  # Workstation
@@ -120,6 +120,18 @@ guix shell python python-numpy python-pandas
 # From manifest
 guix shell -m manifest.scm
 ```
+
+### OCI Secrets On mileva
+
+```bash
+# Re-run only the root-side container credential provisioning logic
+./setup.sh --machine mileva --guix-only --provision-root-secrets
+```
+
+On `mileva`, the default `./setup.sh` run now auto-detects the host, attempts
+to provision the required `root:root` `0600` OCI credential files under
+`/root/` from `pass`, bootstraps the default SSH identity when needed, and then
+prints an action report for anything still manual.
 
 ### Emacs Operations
 
