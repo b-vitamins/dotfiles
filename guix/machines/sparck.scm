@@ -547,6 +547,7 @@ allow-preset-passphrase")))
              %spell-checkers
              %note-taking
              ;; Media
+             %video-players
              %media-converters
              ;; Math/Science
              %math-core
