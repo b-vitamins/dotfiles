@@ -488,16 +488,12 @@ allow-preset-passphrase")))
                                 (mount-point "/")
                                 (type "btrfs"))
                               (file-system
-                                (device (file-system-label "my-data"))
-                                (mount-point "/data")
-                                (type "btrfs"))
-                              (file-system
                                 (mount-point "/sys/kernel/security")
                                 (device "securityfs")
                                 (type "securityfs")
                                 (create-mount-point? #t))
                               (file-system
-                                (device (uuid "812C-DF8C"
+                                (device (uuid "9A95-AE76"
                                               'fat32))
                                 (mount-point "/boot/efi")
                                 (type "vfat"))) %base-file-systems))
