@@ -150,6 +150,12 @@
   :type 'string
   :group 'bv-elfeed)
 
+(defvar bv-elfeed-db-loaded-p nil
+  "Non-nil when the Elfeed database loaded successfully this session.")
+
+(defvar bv-elfeed-db-load-error nil
+  "Cached startup error for the Elfeed database, if any.")
+
 ;;; Face definitions are now in bv-themes.el for theme-aware colors
 
 ;;; Feed list embedded directly
@@ -560,6 +566,59 @@
       (elfeed-search-update :force)
       (message "Rescored %d entries" count))))
 
+(defun bv-elfeed--db-index-file ()
+  "Return the Elfeed database index file path."
+  (expand-file-name "index" elfeed-db-directory))
+
+(defun bv-elfeed--db-reset-hint ()
+  "Return a recovery hint for a broken Elfeed database."
+  (format "Backup or remove %s and restart Emacs."
+          elfeed-db-directory))
+
+(defun bv-elfeed--db-index-empty-p ()
+  "Return non-nil when the Elfeed database index exists but is empty."
+  (let ((index-file (bv-elfeed--db-index-file)))
+    (and (file-exists-p index-file)
+         (zerop (file-attribute-size
+                 (file-attributes index-file 'integer))))))
+
+(defun bv-elfeed--warn-db-load-failure (reason)
+  "Record and display a database load failure with REASON."
+  (setq bv-elfeed-db-loaded-p nil
+        bv-elfeed-db-load-error reason)
+  (display-warning
+   'bv-elfeed
+   (format "Skipping Elfeed database load: %s. %s"
+           reason
+           (bv-elfeed--db-reset-hint))
+   :warning))
+
+(defun bv-elfeed--load-db-safely ()
+  "Load the Elfeed database without aborting Emacs startup."
+  (setq bv-elfeed-db-loaded-p nil
+        bv-elfeed-db-load-error nil)
+  (cond
+   ((bv-elfeed--db-index-empty-p)
+    (bv-elfeed--warn-db-load-failure
+     (format "database index %s is empty"
+             (bv-elfeed--db-index-file))))
+   (t
+    (condition-case err
+        (progn
+          (elfeed-db-load)
+          (setq bv-elfeed-db-loaded-p t))
+      ((end-of-file error)
+       (bv-elfeed--warn-db-load-failure
+        (error-message-string err)))))))
+
+(defun bv-elfeed-save-db-if-loaded ()
+  "Persist the Elfeed database when it loaded successfully."
+  (when bv-elfeed-db-loaded-p
+    (when (fboundp 'elfeed-db-save)
+      (elfeed-db-save))
+    (when (fboundp 'elfeed-db-compact)
+      (elfeed-db-compact))))
+
 
 ;;; Initialize elfeed
 (defun bv-elfeed-init ()
@@ -574,7 +633,7 @@
   (bv-elfeed-score-setup)
 
   ;; Load database
-  (elfeed-db-load)
+  (bv-elfeed--load-db-safely)
 
   ;; Apply faces
   (push '(star bv-elfeed-star-face) elfeed-search-face-alist)
@@ -633,22 +692,21 @@
 (defun bv-elfeed-save-and-quit ()
   "Save database and quit."
   (interactive)
-  (elfeed-db-save)
+  (if bv-elfeed-db-loaded-p
+      (elfeed-db-save)
+    (message "Elfeed database was not loaded. %s"
+             (bv-elfeed--db-reset-hint)))
   (quit-window))
 
 ;; Global keybinding
 (global-set-key (kbd "C-x w") 'elfeed)
 
 ;; Save on exit
-(add-hook 'kill-emacs-hook
-          (lambda ()
-            (when (fboundp 'elfeed-db-save)
-              (elfeed-db-save))
-            (when (fboundp 'elfeed-db-compact)
-              (elfeed-db-compact))))
+(add-hook 'kill-emacs-hook #'bv-elfeed-save-db-if-loaded)
 
 ;; Auto-update every 4 hours
-(run-with-idle-timer (* 4 60 60) t 'elfeed-update)
+(when bv-elfeed-db-loaded-p
+  (run-with-idle-timer (* 4 60 60) t 'elfeed-update))
 
 (provide 'bv-elfeed)
 ;;; bv-elfeed.el ends here
