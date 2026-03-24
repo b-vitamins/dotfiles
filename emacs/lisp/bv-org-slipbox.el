@@ -25,7 +25,6 @@
 (declare-function consult-org-slipbox-mode "consult-org-slipbox" (&optional arg))
 (declare-function consult-org-slipbox-ref-find "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult-org-slipbox-search "consult-org-slipbox" (&optional other-window initial-input))
-(declare-function marginalia--time "marginalia" (time))
 (declare-function nerd-icons-codicon "nerd-icons" (icon-name &rest args))
 (declare-function nerd-icons-mdicon "nerd-icons" (icon-name &rest args))
 ;; Autoloaded from `org-slipbox-maintenance'.
@@ -192,46 +191,78 @@
   (propertize (truncate-string-to-width (or text "") width 0 ?\s t)
               'face face))
 
+(defun bv-org-slipbox--completion-width ()
+  "Return the active completion window width."
+  (let ((window (or (active-minibuffer-window)
+                    (and (minibufferp) (selected-window))
+                    (frame-selected-window))))
+    (window-width window)))
+
+(defun bv-org-slipbox--pad-display (text width)
+  "Return TEXT truncated or padded to WIDTH, preserving text properties."
+  (let* ((text (or text ""))
+         (display (truncate-string-to-width text width 0 ?\s t))
+         (padding (max 0 (- width (string-width display)))))
+    (concat display (make-string padding ?\s))))
+
+(defun bv-org-slipbox--node-main-width ()
+  "Return the width to use for the flexible node column."
+  (max 24 (- (bv-org-slipbox--completion-width) 24)))
+
 (defun bv-org-slipbox--node-modtime (node)
-  "Return NODE modification time formatted for completion display."
+  "Return NODE modification time formatted for the node table."
   (let ((mtime-ns (plist-get node :file_mtime_ns)))
-    (when (and (integerp mtime-ns)
-               (> mtime-ns 0)
-               (fboundp 'marginalia--time))
-      (marginalia--time
-       (seconds-to-time (/ mtime-ns 1000000000.0))))))
+    (when (and (integerp mtime-ns) (> mtime-ns 0))
+      (format-time-string
+       "%b %d %H:%M"
+       (seconds-to-time (/ (float mtime-ns) 1000000000.0))))))
+
+(defun bv-org-slipbox--node-tags (node)
+  "Return NODE tags joined for the completion table."
+  (let ((tags (bv-org-slipbox--sequence (plist-get node :tags))))
+    (when tags
+      (propertize
+       (string-join
+        (cl-remove-duplicates
+         (mapcar (lambda (tag) (concat "#" tag)) tags)
+         :test #'equal)
+        " ")
+       'face 'org-tag))))
+
+(defun bv-org-slipbox--node-backlinks (node)
+  "Return NODE backlink count formatted for the completion table."
+  (when-let ((count (plist-get node :backlink_count)))
+    (format "<- %s" count)))
+
+(defun bv-org-slipbox--node-main-column (node)
+  "Return the flexible completion column for NODE."
+  (let* ((title (propertize (or (plist-get node :title) "")
+                            'face 'font-lock-function-name-face))
+         (tags (bv-org-slipbox--node-tags node))
+         (text (if tags
+                   (concat title "  " tags)
+                 title)))
+    (bv-org-slipbox--pad-display text (bv-org-slipbox--node-main-width))))
 
 (defun bv-org-slipbox-node-display (node)
   "Return the main completion display string for NODE."
   (let ((icon (bv-org-slipbox--node-icon node))
-        (title (or (plist-get node :title) "")))
-    (concat icon
-            " "
-            (propertize title 'face 'font-lock-function-name-face))))
+        (modtime (bv-org-slipbox--node-modtime node))
+        (backlinks (and bv-org-slipbox-show-backlinks
+                        (bv-org-slipbox--node-backlinks node))))
+    (concat
+     icon
+     " "
+     (bv-org-slipbox--node-main-column node)
+     "  "
+     (bv-org-slipbox--column modtime 12 'marginalia-date)
+     (when backlinks
+       (concat "  "
+               (bv-org-slipbox--column backlinks 6 'marginalia-number))))))
 
-(defun bv-org-slipbox-node-annotation (node)
+(defun bv-org-slipbox-node-annotation (_node)
   "Return the annotation string for NODE completions."
-  (let* ((tags (bv-org-slipbox--sequence (plist-get node :tags)))
-         (tags-text (when tags
-                      (string-join
-                       (cl-remove-duplicates tags :test #'equal)
-                       ",")))
-         (mtime (bv-org-slipbox--node-modtime node))
-         (backlinks (plist-get node :backlink_count))
-         (parts
-          (delq nil
-                (list
-                 (when tags-text
-                   (bv-org-slipbox--column tags-text 20 'org-tag))
-                 (when mtime
-                   (bv-org-slipbox--column mtime 12 'marginalia-date))
-                 (when (and bv-org-slipbox-show-backlinks
-                            (integerp backlinks))
-                   (propertize (format "← %d" backlinks)
-                               'face 'marginalia-number))))))
-    (if parts
-        (concat " " (string-join parts " "))
-      "")))
+  "")
 
 (defun bv-org-slipbox-node-insert-immediate (&optional initial-input filter-fn)
   "Insert a slipbox node immediately.
