@@ -129,14 +129,14 @@ M-x esup
  '(bv-circadian-longitude 77.5946)) ; Your longitude
 ```
 
-### Configure Org-roam
+### Configure Org-slipbox
 ```elisp
 ;; Set slip box location
 (custom-set-variables
- '(bv-org-roam-directory "~/documents/slipbox/slips"))
+ '(bv-org-slipbox-directory "~/documents/slipbox/slips"))
 
 ;; Initialize database
-M-x org-roam-db-sync
+M-x org-slipbox-sync
 ```
 
 ### Enable Optional Features

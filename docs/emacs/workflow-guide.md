@@ -640,7 +640,7 @@ Plain text notes without linking
 ```
 Do:
 ```
-org-roam  # Networked knowledge base
+org-slipbox  # Networked knowledge base
 ```
 
 Instead of:
@@ -660,7 +660,7 @@ Scattered notes across different tools
 ```
 Do:
 ```
-Centralized org-roam knowledge system
+Centralized org-slipbox knowledge system
 ```
 
 Instead of:
@@ -687,7 +687,7 @@ Manual daily note creation
 ```
 Do:
 ```
-org-roam-dailies  # Automatic daily notes
+org-slipbox-dailies  # Automatic daily notes
 ```
 
 ### Document Creation
@@ -1046,7 +1046,7 @@ Manual linking between related notes
 ```
 Do:
 ```
-Use org-roam for automatic relationship tracking
+Use org-slipbox for indexed relationship tracking
 ```
 
 ### Window Management Issues
@@ -1088,7 +1088,7 @@ Separate tools for reading, note-taking, and writing
 ```
 Do:
 ```
-org-roam → citar → org-latex → org-export pipeline
+org-slipbox → citar → org-latex → org-export pipeline
 ```
 
 Instead of:
@@ -1106,7 +1106,7 @@ Disconnected notes and references
 ```
 Do:
 ```
-Integrated knowledge graph with org-roam
+Integrated knowledge graph with org-slipbox
 ```
 
 ### Development Project Workflow
@@ -1146,7 +1146,7 @@ Scattered task management across tools
 ```
 Do:
 ```
-org-agenda + org-capture + org-roam integration
+org-agenda + org-capture + org-slipbox integration
 ```
 
 Instead of:
@@ -1155,7 +1155,7 @@ Manual daily note creation
 ```
 Do:
 ```
-org-roam-dailies with template automation
+org-slipbox-dailies with template automation
 ```
 
 Instead of:

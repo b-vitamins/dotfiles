@@ -10,7 +10,7 @@ Comprehensive keybinding reference for the bv-emacs configuration. Organized by 
 | `C-c a o` | bv-org-map | Org command center |
 | `C-c a d` | bv-debug-map | Debugger map |
 | `C-c a E` | bv-terminal-map | Terminal/shell map |
-| `C-c n` | org-roam-map | Org-roam operations |
+| `C-c n` | bv-org-slipbox-map | Org-slipbox operations |
 | `C-c c` | citation-map | Citation operations |
 | `M-o` | ace-window | Window switching |
 | `C-s` | consult-line | Enhanced search |
@@ -28,7 +28,7 @@ Comprehensive keybinding reference for the bv-emacs configuration. Organized by 
 - [Project Management](#project-management)
 - [Version Control](#version-control)
 - [Org Mode](#org-mode)
-- [Org-roam](#org-roam)
+- [Org-slipbox](#org-slipbox)
 - [Development](#development)
 - [Language-specific](#language-specific)
 - [Terminal & Shell](#terminal--shell)
@@ -214,30 +214,30 @@ Available through Transient menus and standard Git commands.
 | `C-c C-x C-i` | bv-org-clock-in | Clock in (alternate) |
 | `C-c C-x C-o` | bv-org-clock-out | Clock out |
 
-## Org-roam
+## Org-slipbox
 
-### Main Org-roam Map (`C-c n`)
+### Main Org-slipbox Map (`C-c n`)
 | Key | Command | Description |
 |-----|---------|-------------|
-| `f` | org-roam-node-find | Find node |
-| `i` | org-roam-node-insert | Insert node |
-| `I` | bv-org-roam-node-insert-immediate | Insert node immediately |
-| `c` | bv-org-roam-capture-slip | Capture slip |
-| `C` | bv-org-roam-quick-capture | Quick capture |
-| `s` | bv-org-roam-capture-slip | Capture slip (alternate) |
-| `r` | bv-org-roam-random | Random node |
-| `b` | org-roam-buffer-toggle | Toggle buffer |
-| `R` | bv-org-roam-add-reference | Add reference |
-| `g` | bv-org-roam-find-by-tag | Find by tag |
-| `/` | consult-org-roam-search | Search content |
-| `l` | consult-org-roam-backlinks | Show backlinks |
-| `L` | consult-org-roam-forward-links | Show forward links |
-| `F` | consult-org-roam-file-find | Find files |
+| `f` | org-slipbox-node-find | Find node |
+| `i` | org-slipbox-node-insert | Insert node |
+| `I` | bv-org-slipbox-node-insert-immediate | Insert node immediately |
+| `c` | bv-org-slipbox-capture-slip | Capture slip |
+| `C` | bv-org-slipbox-quick-capture | Quick capture |
+| `s` | bv-org-slipbox-capture-slip | Capture slip (alternate) |
+| `r` | org-slipbox-node-random | Random node |
+| `b` | org-slipbox-buffer-toggle | Toggle buffer |
+| `R` | org-slipbox-ref-add | Add reference |
+| `g` | bv-org-slipbox-find-by-tag | Find by tag |
+| `/` | consult-org-slipbox-search | Search content |
+| `l` | consult-org-slipbox-backlinks | Show backlinks |
+| `L` | consult-org-slipbox-forward-links | Show forward links |
+| `F` | consult-org-slipbox-file-find | Find files |
 
 ### Org Mode Context
 | Key | Command | Description |
 |-----|---------|-------------|
-| `C-c n i` | org-roam-node-insert | Insert node in org-mode |
+| `C-c n i` | org-slipbox-node-insert | Insert node in org-mode |
 
 ## Development
 
@@ -358,7 +358,7 @@ Available through Transient menus and standard Git commands.
 | `E` | bv-terminal-map | Terminal/shell map |
 | `h` | devdocs-lookup | DevDocs lookup |
 | `H` | devdocs-search | DevDocs search |
-| `j` | org-roam-dailies-goto-today | Today's daily note |
+| `j` | org-slipbox-dailies-goto-today | Today's daily note |
 | `m` | bv-mpv-map | MPV controls |
 | `o` | bv-org-map | Org command center |
 | `p` | project-switch-project | Switch project |

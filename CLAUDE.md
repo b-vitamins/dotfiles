@@ -204,7 +204,7 @@ The Emacs configuration implements a custom module system with:
 2. **Module Loading Strategy**:
    - Immediate: Core modules (defaults, UI, navigation)
    - 0.1s idle: Productivity tools (completion, git, org)
-   - 1.0s idle: Research tools (org-roam, citation, language modes)
+   - 1.0s idle: Research tools (org-slipbox, citation, language modes)
    - On-demand: Language-specific configurations
 
 3. **Key Module Categories**:

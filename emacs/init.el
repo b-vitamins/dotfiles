@@ -114,10 +114,10 @@
 
 ;; Org mode and related
 (require 'bv-org)          ; Org mode setup
+(require 'bv-org-slipbox)  ; Slipbox notes
 (require 'bv-org-dailies)  ; Daily notes
 (require 'bv-org-ql)       ; Org query language
 (require 'bv-org-agenda-files-track) ; Agenda file tracking
-(require 'bv-org-roam)     ; Roam notes
 (require 'bv-org-recur)    ; Recurring tasks
 (require 'bv-bibtex)       ; BibTeX configuration
 (require 'bv-org-cite)     ; Org-cite configuration

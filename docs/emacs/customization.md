@@ -13,7 +13,7 @@ Add customizations to your `custom-file` (usually `~/.config/emacs/custom.el`):
  '(bv-fonts-default-family "JetBrains Mono")
  '(bv-fonts-default-size 140)
  '(bv-themes-syntax 'tinted)
- '(bv-org-roam-directory "~/notes"))
+ '(bv-org-slipbox-directory "~/notes"))
 ```
 
 Reload: `M-x eval-buffer` in custom.el or restart Emacs.
@@ -138,15 +138,15 @@ Location example:
 
 ## Module-Specific Variables
 
-### Org-Roam (Knowledge Management)
+### Org-Slipbox (Knowledge Management)
 
-**bv-org-roam-directory** (string)
+**bv-org-slipbox-directory** (string)
 - Default: "~/documents/slipbox/slips"
-- Main directory for roam notes
+- Main directory for slipbox notes
 
-**bv-org-roam-show-backlinks** (boolean)
+**bv-org-slipbox-show-backlinks** (boolean)
 - Default: t
-- Display backlinks in roam buffers
+- Display backlink counts in slipbox completions
 
 ### Org LaTeX
 
@@ -268,7 +268,7 @@ Location example:
 ### Research-Focused
 ```elisp
 (custom-set-variables
- '(bv-org-roam-directory "~/research/notes")
+ '(bv-org-slipbox-directory "~/research/notes")
  '(bv-themes-org-blocks 'tinted)
  '(bv-themes-headings
    ((1 . (:height 1.35 :weight bold))
@@ -356,8 +356,8 @@ Reset to defaults:
 - bv-org-clock-idle-minutes
 - bv-org-directory
 - bv-org-latex-display-overrides
-- bv-org-roam-directory
-- bv-org-roam-show-backlinks
+- bv-org-slipbox-directory
+- bv-org-slipbox-show-backlinks
 
 ### System
 - bv-nerd-icons-font-family

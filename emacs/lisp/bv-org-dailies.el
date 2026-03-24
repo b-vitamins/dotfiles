@@ -6,51 +6,51 @@
 
 ;;; Commentary:
 
-;; Daily journaling with org-roam.
+;; Daily journaling with org-slipbox.
 ;;
-;; This module configures org-roam-dailies for daily note-taking.
-;; It sets up capture templates for default, morning, and evening entries,
-;; and provides keybinding integration for quick access to daily notes.
+;; This module configures org-slipbox dailies for daily note-taking. It keeps
+;; the existing daily note templates and keybinding integration unchanged while
+;; using the org-slipbox dailies surface directly.
 
 ;;; Code:
 
-(defvar org-roam-dailies-directory)
-(defvar org-roam-dailies-capture-templates)
+(defvar org-slipbox-dailies-directory)
+(defvar org-slipbox-dailies-capture-templates)
 (defvar mode-specific-map)
 (defvar bv-app-map)
 
-(autoload 'org-roam-dailies-map "org-roam-dailies" "Keymap for org-roam dailies commands." nil 'keymap)
-(autoload 'org-roam-dailies-goto-today "org-roam-dailies" "Go to today's daily note.")
-(autoload 'org-roam-dailies-capture-today "org-roam-dailies" "Capture entry for today's daily note.")
-(autoload 'org-roam-dailies-goto-yesterday "org-roam-dailies" "Go to yesterday's daily note.")
-(autoload 'org-roam-dailies-goto-tomorrow "org-roam-dailies" "Go to tomorrow's daily note.")
-(autoload 'org-roam-dailies-goto-date "org-roam-dailies" "Go to daily note for specific date.")
+(autoload 'org-slipbox-dailies-map "org-slipbox-dailies" "Keymap for org-slipbox dailies commands." nil 'keymap)
+(autoload 'org-slipbox-dailies-goto-today "org-slipbox-dailies" "Go to today's daily note.")
+(autoload 'org-slipbox-dailies-capture-today "org-slipbox-dailies" "Capture entry for today's daily note.")
+(autoload 'org-slipbox-dailies-goto-yesterday "org-slipbox-dailies" "Go to yesterday's daily note.")
+(autoload 'org-slipbox-dailies-goto-tomorrow "org-slipbox-dailies" "Go to tomorrow's daily note.")
+(autoload 'org-slipbox-dailies-goto-date "org-slipbox-dailies" "Go to daily note for specific date.")
 
-(with-eval-after-load 'org-roam-dailies
-  (when (boundp 'org-roam-dailies-directory)
-    (setq org-roam-dailies-directory "daily/"))
+(with-eval-after-load 'org-slipbox-dailies
+  (when (boundp 'org-slipbox-dailies-directory)
+    (setq org-slipbox-dailies-directory "daily/"))
 
-  (when (boundp 'org-roam-dailies-capture-templates)
-    (setq org-roam-dailies-capture-templates
+  (when (boundp 'org-slipbox-dailies-capture-templates)
+    (setq org-slipbox-dailies-capture-templates
           '(("d" "default" entry
              "* %?"
              :target (file+head "%<%Y-%m-%d>.org"
-                               "#+title: %<%Y-%m-%d>\n#+filetags: daily\n\n"))
+                                "#+title: %<%Y-%m-%d>\n#+filetags: daily\n\n"))
             ("m" "morning" entry
              "* Morning Review\n\n** What am I grateful for?\n\n** What would make today great?\n\n** Daily affirmation\n\n"
              :target (file+head "%<%Y-%m-%d>.org"
-                               "#+title: %<%Y-%m-%d>\n#+filetags: daily\n\n"))
+                                "#+title: %<%Y-%m-%d>\n#+filetags: daily\n\n"))
             ("e" "evening" entry
              "* Evening Review\n\n** What went well today?\n\n** What could be improved?\n\n** What did I learn?\n\n"
              :target (file+head "%<%Y-%m-%d>.org"
-                               "#+title: %<%Y-%m-%d>\n#+filetags: daily\n\n"))))))
+                                "#+title: %<%Y-%m-%d>\n#+filetags: daily\n\n"))))))
 
 (when (boundp 'mode-specific-map)
-  (define-key mode-specific-map (kbd "d") 'org-roam-dailies-map))
+  (define-key mode-specific-map (kbd "d") 'org-slipbox-dailies-map))
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "j") 'org-roam-dailies-goto-today)))
+    (define-key bv-app-map (kbd "j") 'org-slipbox-dailies-goto-today)))
 
 (provide 'bv-org-dailies)
 ;;; bv-org-dailies.el ends here

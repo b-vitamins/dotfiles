@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
 - Modularized Emacs configuration into focused components
+- Migrated the Emacs slipbox configuration fully to org-slipbox and removed the legacy compatibility layer
 - Hardened Elfeed startup so a corrupt database index warns cleanly instead of breaking Emacs initialization
 - Switched Org LaTeX previews to `org-fast-latex-preview` with Org-native auto state detection, explicit per-display scaling, and OFLP-backed refresh behavior
 - Refined BV Emacs light/dark theme palettes for improved contrast and a more polished completion UI
