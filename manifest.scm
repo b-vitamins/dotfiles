@@ -5,5 +5,4 @@
                             "dconf"
                             "gsettings-desktop-schemas"
                             "python"
-                            "python-pyside-2-tools"
                             "xvfb-run"))

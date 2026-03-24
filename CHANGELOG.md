@@ -101,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Restored mode-native RET behavior while a Tempel template is active to avoid `tempel--for: No active template at point`
 ### Removed
 - Obsolete Emacs configuration files
+- `python-pyside-2-tools` from the Guix CI manifest
 
 ## [2025-06-29]
 ### Added
