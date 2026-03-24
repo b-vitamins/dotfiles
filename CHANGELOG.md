@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup
 - Eliminated Zsh welcome message for cleaner shell initialization
 - Resolved Zsh startup errors and plugin loading issues
+- Bootstrapped the initial org-slipbox index automatically so `C-c n f` and related note pickers show existing nodes on first use
 - Improved Zsh reliability: corrected Guix plugin load order, fixed `gco`, and fixed git/FZF selectors
 - Removed redundant custom zprofile configuration
 - Corrected multiple import and configuration errors in mileva.scm

@@ -23,10 +23,14 @@
 (declare-function consult-org-slipbox-file-find "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult-org-slipbox-forward-links "consult-org-slipbox" (&optional other-window))
 (declare-function consult-org-slipbox-mode "consult-org-slipbox" (&optional arg))
+(declare-function consult-org-slipbox-ref-find "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult-org-slipbox-search "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function marginalia--time "marginalia" (time))
 (declare-function nerd-icons-codicon "nerd-icons" (icon-name &rest args))
 (declare-function nerd-icons-mdicon "nerd-icons" (icon-name &rest args))
+;; Autoloaded from `org-slipbox-maintenance'.
+(declare-function org-slipbox-sync "org-slipbox-maintenance" ())
+(autoload 'org-slipbox-sync "org-slipbox-maintenance" nil t)
 
 (defvar consult-org-slipbox-buffer-after-buffers)
 (defvar consult-org-slipbox-buffer-narrow-key)
@@ -60,6 +64,12 @@
   '(plain entry item checkitem table-line)
   "Capture template content types recognized by org-slipbox.")
 
+(defvar bv-org-slipbox--initial-index-ready nil
+  "Non-nil when the slipbox index is known to contain existing notes.")
+
+(defvar bv-org-slipbox--initial-sync-running nil
+  "Non-nil while an initial slipbox bootstrap sync is in progress.")
+
 (defun bv-org-slipbox--sequence (value)
   "Normalize JSON-like VALUE into a plain list."
   (cond
@@ -77,6 +87,64 @@
   "Ensure the slipbox directory exists."
   (unless (file-directory-p org-slipbox-directory)
     (make-directory org-slipbox-directory t)))
+
+(defun bv-org-slipbox--eligible-files ()
+  "Return eligible slipbox files under `org-slipbox-directory'."
+  (when (file-directory-p org-slipbox-directory)
+    (org-slipbox-list-files org-slipbox-directory)))
+
+(defun bv-org-slipbox--index-populated-p ()
+  "Return non-nil when the current org-slipbox index already has content."
+  (let* ((status (org-slipbox-rpc-status))
+         (files-indexed (or (plist-get status :files_indexed) 0))
+         (nodes-indexed (or (plist-get status :nodes_indexed) 0)))
+    (or (> files-indexed 0)
+        (> nodes-indexed 0))))
+
+(defun bv-org-slipbox--ensure-initial-index ()
+  "Build the initial org-slipbox index when notes exist but the DB is empty."
+  (unless (or bv-org-slipbox--initial-index-ready
+              bv-org-slipbox--initial-sync-running)
+    (when-let ((files (bv-org-slipbox--eligible-files)))
+      (condition-case err
+          (if (bv-org-slipbox--index-populated-p)
+              (setq bv-org-slipbox--initial-index-ready t)
+            (let ((file-count (length files)))
+              (setq bv-org-slipbox--initial-sync-running t)
+              (message "org-slipbox: indexing %d existing note%s..."
+                       file-count
+                       (if (= file-count 1) "" "s"))
+              (unwind-protect
+                  (let* ((response (org-slipbox-sync))
+                         (files-indexed (or (plist-get response :files_indexed) 0))
+                         (nodes-indexed (or (plist-get response :nodes_indexed) 0)))
+                    (setq bv-org-slipbox--initial-index-ready
+                          (or (> files-indexed 0)
+                              (> nodes-indexed 0)))
+                    (if bv-org-slipbox--initial-index-ready
+                        (message "org-slipbox: initial index ready (%d files, %d nodes)"
+                                 files-indexed
+                                 nodes-indexed)
+                      (display-warning
+                       'bv-org-slipbox
+                       (format
+                        "Initial org-slipbox sync completed but indexed 0 files and 0 nodes under %s"
+                        org-slipbox-directory)
+                       :warning)))
+                (setq bv-org-slipbox--initial-sync-running nil))))
+        (error
+         (if (ignore-errors (bv-org-slipbox--index-populated-p))
+             (setq bv-org-slipbox--initial-index-ready t)
+           (display-warning
+            'bv-org-slipbox
+            (format "Initial org-slipbox sync failed: %s"
+                    (error-message-string err))
+            :warning)))))))
+
+(defun bv-org-slipbox--with-initial-index (fn &rest args)
+  "Ensure the slipbox index exists before calling FN with ARGS."
+  (bv-org-slipbox--ensure-initial-index)
+  (apply fn args))
 
 (defun bv-org-slipbox--template-prefix-length (template)
   "Return the non-plist prefix length for capture TEMPLATE."
@@ -190,8 +258,10 @@ INITIAL-INPUT seeds the minibuffer. FILTER-FN filters indexed nodes."
   "Select a node limited to TAG.
 With OTHER-WINDOW, visit the node in another window."
   (interactive
-   (list (completing-read "Tag: " #'org-slipbox-tag-completions nil t)
-         current-prefix-arg))
+   (progn
+     (bv-org-slipbox--ensure-initial-index)
+     (list (completing-read "Tag: " #'org-slipbox-tag-completions nil t)
+           current-prefix-arg)))
   (org-slipbox-node-find
    nil
    (lambda (node)
@@ -229,10 +299,24 @@ With OTHER-WINDOW, visit the node in another window."
 
 (org-slipbox-mode 1)
 
+(dolist (command '(org-slipbox-node-find
+                   org-slipbox-node-insert
+                   org-slipbox-node-insert-immediate
+                   org-slipbox-node-random
+                   org-slipbox-node-backlinks
+                   org-slipbox-node-forward-links))
+  (advice-add command :around #'bv-org-slipbox--with-initial-index))
+
 (with-eval-after-load 'consult
   (require 'consult-org-slipbox)
   (setq consult-org-slipbox-buffer-narrow-key ?r
         consult-org-slipbox-buffer-after-buffers t)
+  (dolist (command '(consult-org-slipbox-file-find
+                     consult-org-slipbox-ref-find
+                     consult-org-slipbox-search
+                     consult-org-slipbox-backlinks
+                     consult-org-slipbox-forward-links))
+    (advice-add command :around #'bv-org-slipbox--with-initial-index))
   (consult-org-slipbox-mode 1))
 
 (with-eval-after-load 'org
