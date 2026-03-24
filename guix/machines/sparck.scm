@@ -262,8 +262,8 @@ inode/directory=org.gnome.Nautilus.desktop
                         ("mpv/input.conf" ,(local-file "../../mpv/input.conf"
                                                        "mpv-input.conf"
                                                        #:recursive? #f))
-                        ("mpv/mpv.conf" ,(local-file "../../mpv/mpv.conf"
-                                                     "mpv.conf"
+                        ("mpv/mpv.conf" ,(local-file "../../mpv/sparck.conf"
+                                                     "mpv-sparck.conf"
                                                      #:recursive? #f))
                         ("mpv/shaders" ,(local-file "../../mpv/shaders"
                                                     "mpv-shaders"
@@ -537,6 +537,7 @@ allow-preset-passphrase")))
              ;; Desktop
              %desktop-browsers
              %desktop-core
+             %intel-media-runtime
              %audio-system
              %bluetooth-system
              %gnome-shell-assets
@@ -597,10 +598,11 @@ allow-preset-passphrase")))
                  ;; Power Management for laptop
                  (service tlp-service-type
                           (tlp-configuration
+                           ;; Intel HWP exposes only performance/powersave governors.
+                           ;; Use EPP below to bias toward performance or battery life.
                            ;; CPU settings
-                           (cpu-scaling-governor-on-ac (list
-                                                        "balance_performance"))
-                           (cpu-scaling-governor-on-bat (list "balance_power"))
+                           (cpu-scaling-governor-on-ac (list "powersave"))
+                           (cpu-scaling-governor-on-bat (list "powersave"))
                            (cpu-energy-perf-policy-on-ac "balance_performance")
                            (cpu-energy-perf-policy-on-bat "balance_power")
                            (cpu-boost-on-ac? #t)
@@ -658,6 +660,8 @@ allow-preset-passphrase")))
                  (simple-service 'wayland-environment
                                  session-environment-service-type
                                  '(("MOZ_ENABLE_WAYLAND" . "1") ;Firefox Wayland
+                                   ("LIBVA_DRIVER_NAME" . "iHD") ;Intel VA-API backend
+                                   ("LIBVA_DRIVERS_PATH" . "/run/current-system/profile/lib/dri")
                                    ("QT_QPA_PLATFORM" . "wayland;xcb") ;Qt apps prefer Wayland
                                    ("CLUTTER_BACKEND" . "wayland") ;Clutter/GTK
                                    ("SDL_VIDEODRIVER" . "wayland") ;SDL applications
