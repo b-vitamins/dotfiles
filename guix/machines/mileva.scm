@@ -244,8 +244,8 @@ inode/directory=org.gnome.Nautilus.desktop
                         ("mpv/input.conf" ,(local-file "../../mpv/input.conf"
                                                        "mpv-input.conf"
                                                        #:recursive? #f))
-                        ("mpv/mpv.conf" ,(local-file "../../mpv/mpv.conf"
-                                                     "mpv.conf"
+                        ("mpv/mpv.conf" ,(local-file "../../mpv/mileva.conf"
+                                                     "mpv-mileva.conf"
                                                      #:recursive? #f))
                         ("mpv/shaders" ,(local-file "../../mpv/shaders"
                                                     "mpv-shaders"
