@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Codex `research-paper-notes` skill for strict TeX-first single-paper analysis with arXiv source ingestion, sequential readthrough logging, and note validation
 - Automatic `setup.sh` preflight/bootstrap for SSH identity, mileva OCI root credentials, and actionable post-run setup reporting
 ### Changed
+- Relaxed global Git SSH key ignore patterns so exact private/public key
+  filenames stay ignored without also ignoring encrypted `pass` entries such as
+  `id_ed25519.gpg`
 - Formatted Guix machine configurations with guix style for consistency
 - Refactored scripts with guix style formatting and cleaned up new-client-cert
 - Modularized Emacs configuration into focused components
