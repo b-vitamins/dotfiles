@@ -81,6 +81,7 @@
              (myguix packages video)
              (myguix services desktop)
              (myguix services nvidia)
+             (myguix services nvidia-containers)
              (myguix services oci-containers)
              (myguix system install)
              (myguix system linux-initrd)
@@ -93,6 +94,30 @@
                            (ice-9 colorized))
 (activate-readline)
 (activate-colorized)"))
+
+(define %mileva-nvidia-docker-extra-arguments
+  '("--runtime=nvidia" "--gpus" "device=0"))
+
+(define (oci-container-with-extra-arguments container extra-arguments)
+  (oci-container-configuration (inherit container)
+                               (extra-arguments (append (oci-container-configuration-extra-arguments
+                                                         container)
+                                                        extra-arguments))))
+
+(define (oci-container-with-environment container environment)
+  (oci-container-configuration (inherit container)
+                               (environment (append (oci-container-configuration-environment
+                                                     container) environment))))
+
+(define oci-grobid-container-gpu
+  (oci-container-with-environment (oci-container-with-extra-arguments
+                                   oci-grobid-container
+                                   %mileva-nvidia-docker-extra-arguments)
+                                  '(("CUDA_VISIBLE_DEVICES" . "0"))))
+
+(define oci-qdrant-container-gpu
+  (oci-container-with-extra-arguments oci-qdrant-container
+                                      %mileva-nvidia-docker-extra-arguments))
 
 ;;; Home configuration
 (define %my-home-config
@@ -611,6 +636,7 @@ allow-preset-passphrase")))
                                                                             %default-xorg-modules))
                                                                   (drivers '("nvidia"))))))
                  (service nvidia-service-type)
+                 (service nvidia-container-toolkit-service-type)
                  (set-xorg-configuration
                   (xorg-configuration (keyboard-layout keyboard-layout)
                                       (modules (cons nvda
@@ -795,14 +821,12 @@ collation-server = utf8mb4_unicode_ci")))
                  (service spice-vdagent-service-type)
                  (service inputattach-service-type)
                  (service containerd-service-type)
-                 (service docker-service-type
-                          (docker-configuration (config-file (local-file
-                                                              "../files/daemon.json"))))
+                 (service docker-service-type)
                  (simple-service 'oci-provisioning oci-service-type
                                  (oci-extension (containers (list
                                                              oci-meilisearch-container
-                                                             oci-grobid-container
-                                                             oci-qdrant-container
+                                                             oci-grobid-container-gpu
+                                                             oci-qdrant-container-gpu
                                                              oci-minio-container
                                                              oci-neo4j-container)))))
            (modify-services %my-desktop-services
