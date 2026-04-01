@@ -484,7 +484,6 @@ allow-preset-passphrase")))
   (locale "en_US.utf8")
   (kernel linux-lts)
   (kernel-arguments (append '("modprobe.blacklist=nouveau"
-                              "modprobe.blacklist=nova_core,nova_drm"
                               "nvidia.NVreg_RestrictProfilingToAdminUsers=0"
                               "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1")
                             %default-kernel-arguments))
