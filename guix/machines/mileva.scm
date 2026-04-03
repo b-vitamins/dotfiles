@@ -422,7 +422,7 @@ allow-preset-passphrase")))
   StrictHostKeyChecking ask
   VerifyHostKeyDNS yes
   VisualHostKey yes"))))
-                                           (add-keys-to-agent "confirm")))
+                                           (add-keys-to-agent "yes")))
 
       ;; Desktop Home Services
       (service home-dbus-service-type)
