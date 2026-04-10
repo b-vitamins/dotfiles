@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Assign logical page groups to agents with approximate load balancing."""
+"""Assign logical page groups to agents with approximate load balancing.
+
+File safety is preserved by co-assigning all rows that share the same
+``target_tex`` to the same agent.
+"""
 
 from __future__ import annotations
 
 import argparse
 import csv
 import json
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,6 +22,14 @@ class Group:
     end: int
     pages: int
     target_tex: str
+
+
+@dataclass(frozen=True)
+class Bundle:
+    target_tex: str
+    groups: tuple[Group, ...]
+    pages: int
+    start: int
 
 
 def load_groups(path: Path) -> list[Group]:
@@ -59,37 +72,60 @@ def verify_no_overlap(groups: list[Group]) -> None:
         prev = curr
 
 
-def assign(groups: list[Group], agents: int) -> tuple[list[list[Group]], list[int]]:
-    buckets: list[list[Group]] = [[] for _ in range(agents)]
-    loads = [0 for _ in range(agents)]
+def bundle_by_target(groups: list[Group]) -> list[Bundle]:
+    grouped: dict[str, list[Group]] = defaultdict(list)
+    for group in groups:
+        grouped[group.target_tex].append(group)
 
-    for group in sorted(groups, key=lambda g: (-g.pages, g.start, g.group)):
+    bundles: list[Bundle] = []
+    for target_tex, items in grouped.items():
+        ordered = tuple(sorted(items, key=lambda g: (g.start, g.end, g.group)))
+        pages = sum(item.pages for item in ordered)
+        bundles.append(Bundle(target_tex=target_tex, groups=ordered, pages=pages, start=ordered[0].start))
+    return bundles
+
+
+def assign(groups: list[Group], agents: int) -> tuple[list[list[Bundle]], list[int]]:
+    buckets: list[list[Bundle]] = [[] for _ in range(agents)]
+    loads = [0 for _ in range(agents)]
+    bundles = bundle_by_target(groups)
+
+    for bundle in sorted(bundles, key=lambda b: (-b.pages, b.start, b.target_tex)):
         idx = min(range(agents), key=lambda i: loads[i])
-        buckets[idx].append(group)
-        loads[idx] += group.pages
+        buckets[idx].append(bundle)
+        loads[idx] += bundle.pages
 
     for bucket in buckets:
-        bucket.sort(key=lambda g: g.start)
+        bucket.sort(key=lambda b: b.start)
 
     return buckets, loads
 
 
-def write_csv(path: Path, assignments: list[list[Group]], agent_prefix: str) -> None:
+def write_csv(path: Path, assignments: list[list[Bundle]], agent_prefix: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["agent", "group", "start", "end", "pages", "target_tex"])
-        for idx, groups in enumerate(assignments, start=1):
+        for idx, bundles in enumerate(assignments, start=1):
             agent = f"{agent_prefix}-{idx}"
-            for group in groups:
-                writer.writerow([agent, group.group, group.start, group.end, group.pages, group.target_tex])
+            for bundle in bundles:
+                for group in bundle.groups:
+                    writer.writerow([agent, group.group, group.start, group.end, group.pages, group.target_tex])
 
 
-def print_summary(assignments: list[list[Group]], loads: list[int], agent_prefix: str) -> None:
+def print_summary(assignments: list[list[Bundle]], loads: list[int], agent_prefix: str) -> None:
     print("agent,total_pages,groups")  # noqa: print
-    for idx, groups in enumerate(assignments, start=1):
+    for idx, bundles in enumerate(assignments, start=1):
         agent = f"{agent_prefix}-{idx}"
-        label = " | ".join(f"{g.group}({g.start}-{g.end})" for g in groups) if groups else "-"
+        labels: list[str] = []
+        for bundle in bundles:
+            if len(bundle.groups) == 1:
+                group = bundle.groups[0]
+                labels.append(f"{group.group}({group.start}-{group.end})")
+            else:
+                parts = ",".join(f"{g.group}({g.start}-{g.end})" for g in bundle.groups)
+                labels.append(f"{bundle.target_tex}=[{parts}]")
+        label = " | ".join(labels) if labels else "-"
         print(f"{agent},{loads[idx - 1]},{label}")  # noqa: print
 
 
@@ -126,7 +162,8 @@ def main() -> int:
                             "pages": g.pages,
                             "target_tex": g.target_tex,
                         }
-                        for g in bucket
+                        for bundle in bucket
+                        for g in bundle.groups
                     ],
                 }
             )

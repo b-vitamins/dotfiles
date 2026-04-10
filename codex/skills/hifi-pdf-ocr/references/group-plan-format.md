@@ -7,7 +7,7 @@ Use `plans/groups.csv` to define logical transcription units before parallel wor
 - `group`: Logical unit name (chapter, section, appendix range).
 - `start`: First page number (inclusive).
 - `end`: Last page number (inclusive).
-- `target_tex`: Output `.tex` path for this group.
+- `target_tex`: Output `.tex` path for this group. This should be explicit for every row.
 
 ## Rules
 
@@ -15,6 +15,7 @@ Use `plans/groups.csv` to define logical transcription units before parallel wor
 - Keep ranges non-overlapping.
 - Cover the exact requested scope with no gaps.
 - Use stable names that make ownership obvious (for example `chapter-10`).
+- If multiple rows share the same `target_tex`, they must stay on the same agent unless you deliberately use shard files instead.
 
 ## Example
 
@@ -34,3 +35,4 @@ python3 scripts/assign-groups.py --groups plans/groups.csv --agents 3 --out plan
 ```
 
 If overlap exists, `assign-groups.py` exits with an error.
+Rows that share a `target_tex` are co-assigned to preserve file safety.
