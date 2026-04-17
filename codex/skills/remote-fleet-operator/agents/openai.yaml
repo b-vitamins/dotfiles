@@ -1,0 +1,4 @@
+interface:
+  display_name: "Remote Fleet Operator"
+  short_description: "Run remote work through fleetctl instead of ad hoc SSH"
+  default_prompt: "Use $remote-fleet-operator to inspect the current fleet context, resolve the target protocol and queue rules, smoke test the target, sync code if needed, and run the requested remote work through fleetctl with the narrowest stable interface."

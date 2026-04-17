@@ -18,6 +18,9 @@ Comprehensive documentation for all components of the dotfiles repository.
 #### Research Tools
 - [harvester](bin/harvester.md) - ArXiv paper aggregation and organization
 
+#### Remote Operations
+- [fleetctl](bin/fleetctl.md) - Private fleet inventory, protocol-aware remote execution, and scheduler submission
+
 ## Quick Navigation
 
 ### Emacs Documentation
@@ -46,6 +49,7 @@ Comprehensive documentation for all components of the dotfiles repository.
 | `transcode` | Convert audio formats | `transcode -i /music/flac --from .flac --to .mp3` |
 | `remux` | Change video containers | `remux -i /videos --from .m2ts --to .mkv` |
 | `harvester` | Download papers | `harvester --categories cs.LG cs.AI` |
+| `fleetctl` | Run remote work through a private host inventory and protocol layer | `fleetctl protocol show gpu-a` |
 
 ### Key Features
 

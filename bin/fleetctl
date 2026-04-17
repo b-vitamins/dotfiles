@@ -1,0 +1,3389 @@
+#!/usr/bin/env python3
+"""Fleet-wide remote execution and sync helper.
+
+This tool keeps fleet inventory and secrets in user-local XDG directories while
+letting dotfiles own the operator UX, documentation, and Codex integration.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import posixpath
+import random
+import re
+import shlex
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+import tomllib
+from dataclasses import dataclass, field
+from pathlib import Path, PurePosixPath
+from typing import Any, Iterable
+
+VERSION = "0.1.0"
+PRIVATE_DIR_MODE = 0o700
+PRIVATE_FILE_MODE = 0o600
+STATE_DIR_MODE = 0o700
+DEFAULT_SCRIPT_REMOTE_ROOT = ".local/state/fleet/scripts"
+DEFAULT_SYNC_EXCLUDES = [
+    ".direnv/",
+    ".env",
+    ".env.local",
+    ".git/",
+    ".mypy_cache/",
+    ".nox/",
+    ".pytest_cache/",
+    ".ruff_cache/",
+    ".venv/",
+    "__pycache__/",
+    "artifacts/",
+    "build/",
+    "dist/",
+    "log/",
+    "logs/",
+    "remote-downloads/",
+    "runs/",
+    "*.pyc",
+]
+
+EXEC_REMOTE_STUB = """\
+import base64
+import json
+import os
+import subprocess
+import sys
+
+payload = json.loads(base64.b64decode(sys.argv[2]).decode("utf-8"))
+env = os.environ.copy()
+env.update(payload.get("env", {}))
+completed = subprocess.run(
+    payload["argv"],
+    check=False,
+    cwd=payload.get("cwd") or None,
+    env=env,
+)
+raise SystemExit(completed.returncode)
+"""
+
+EXEC_REMOTE_BOOTSTRAP = (
+    "import base64, sys; exec(base64.b64decode(sys.argv[1]).decode('utf-8'))"
+)
+
+
+class FleetError(RuntimeError):
+    """Raised for user-facing fleetctl errors."""
+
+    def __init__(self, message: str, *, exit_code: int = 2) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
+
+
+@dataclass(frozen=True)
+class FleetSecret:
+    """Resolved connection details that should stay outside version control."""
+
+    host: str
+    user: str
+    port: int = 22
+    auth: str = "key"
+    identity_file: str | None = None
+    password: str | None = None
+    proxy_jump: str | None = None
+    identities_only: bool = True
+    forward_agent: bool = False
+    compression: bool = False
+    connect_timeout: int = 30
+    server_alive_interval: int = 30
+    server_alive_count_max: int = 3
+    strict_host_key_checking: str | None = None
+    extra_options: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def target(self) -> str:
+        return f"{self.user}@{self.host}"
+
+
+@dataclass(frozen=True)
+class TargetRecord:
+    """Version-controlled metadata about one remote target."""
+
+    name: str
+    enabled: bool = True
+    transport: str = "ssh"
+    protocol: str | None = None
+    workdir: str | None = None
+    tags: tuple[str, ...] = ()
+    secret_backend: str = "file"
+    secret_ref: str | None = None
+    secret_inline: dict[str, Any] = field(default_factory=dict)
+    ssh_host_alias: str | None = None
+    default_profile: str | None = None
+    scheduler: str = "none"
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class PoolRecord:
+    """Logical grouping of concrete targets."""
+
+    name: str
+    targets: tuple[str, ...] = ()
+    match_tags: tuple[str, ...] = ()
+    strategy: str = "ordered"
+    default_profile: str | None = None
+
+
+@dataclass(frozen=True)
+class ProfileRecord:
+    """Execution behavior for one class of target."""
+
+    name: str
+    kind: str = "direct"
+    interpreter: str | None = "/usr/bin/env bash"
+    remote_script_root: str = DEFAULT_SCRIPT_REMOTE_ROOT
+    environment: dict[str, str] = field(default_factory=dict)
+    submit_command: tuple[str, ...] = ()
+    status_command: tuple[str, ...] = ()
+    cancel_command: tuple[str, ...] = ()
+    logs_command: tuple[str, ...] = ()
+    job_id_pattern: str | None = None
+
+
+@dataclass(frozen=True)
+class QueueRecord:
+    """One reusable scheduler queue preset."""
+
+    name: str
+    partition: str
+    default: bool = False
+    time_limit: str | None = None
+    gpus: int | None = None
+    gres: str | None = None
+    cpus_per_task: int | None = None
+    mem: str | None = None
+    account: str | None = None
+    qos: str | None = None
+    constraint: str | None = None
+    extra_directives: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ProtocolRecord:
+    """Execution rules shared by one class of target."""
+
+    name: str
+    kind: str = "direct"
+    description: str | None = None
+    default_profile: str | None = None
+    scheduler_required: bool = False
+    allow_login_exec: bool = True
+    smoke_gpu_probe: bool = True
+    gpu_request_mode: str = "gres"
+    job_runtime: str = "host"
+    job_output_dir: str = ".fleet/jobs"
+    docs: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+    queues: tuple[QueueRecord, ...] = ()
+
+    def default_queue(self) -> QueueRecord | None:
+        """Return the preferred queue for this protocol."""
+        for queue in self.queues:
+            if queue.default:
+                return queue
+        if self.queues:
+            return self.queues[0]
+        return None
+
+    def queue_named(self, name: str) -> QueueRecord | None:
+        """Resolve one queue by name."""
+        for queue in self.queues:
+            if queue.name == name or queue.partition == name:
+                return queue
+        return None
+
+
+@dataclass(frozen=True)
+class ProjectBinding:
+    """Per-project defaults stored only in local home state."""
+
+    path: Path
+    default_target: str | None = None
+    default_pool: str | None = None
+    default_profile: str | None = None
+    remote_root: str | None = None
+    remote_roots_by_target: dict[str, str] = field(default_factory=dict)
+    sync_excludes: tuple[str, ...] = ()
+
+    def remote_root_for(self, target_name: str) -> str | None:
+        """Return the landing strip for one target in this project."""
+        return self.remote_roots_by_target.get(target_name) or self.remote_root
+
+
+@dataclass(frozen=True)
+class FleetPaths:
+    """Resolved XDG path layout."""
+
+    config_home: Path
+    state_home: Path
+    cache_home: Path
+    config_file: Path
+    targets_dir: Path
+    pools_dir: Path
+    protocols_dir: Path
+    profiles_dir: Path
+    secrets_dir: Path
+    projects_file: Path
+    known_hosts_file: Path
+    control_dir: Path
+
+
+@dataclass
+class FleetContext:
+    """Loaded fleet configuration and private local state."""
+
+    paths: FleetPaths
+    config: dict[str, Any]
+    targets: dict[str, TargetRecord]
+    pools: dict[str, PoolRecord]
+    protocols: dict[str, ProtocolRecord]
+    profiles: dict[str, ProfileRecord]
+    projects: list[ProjectBinding]
+
+    @classmethod
+    def load(
+        cls,
+        *,
+        config_home: Path | None = None,
+        state_home: Path | None = None,
+        cache_home: Path | None = None,
+    ) -> "FleetContext":
+        paths = build_paths(
+            config_home=config_home,
+            state_home=state_home,
+            cache_home=cache_home,
+        )
+        config = load_toml_file(paths.config_file, default={})
+        targets = load_targets(paths.targets_dir)
+        pools = load_pools(paths.pools_dir)
+        protocols = load_protocols(paths.protocols_dir)
+        profiles = load_profiles(paths.profiles_dir)
+        projects = load_projects(paths.projects_file)
+        return cls(
+            paths=paths,
+            config=config,
+            targets=targets,
+            pools=pools,
+            protocols=protocols,
+            profiles=profiles,
+            projects=projects,
+        )
+
+    def project_binding_for(self, path: Path | None = None) -> ProjectBinding | None:
+        """Return the longest-prefix project binding for PATH or current cwd."""
+        current = (path or Path.cwd()).resolve()
+        matches = [
+            binding
+            for binding in self.projects
+            if current == binding.path or binding.path in current.parents
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: len(str(item.path)))
+
+    def normalize_selector(self, selector: str | None) -> str | None:
+        """Strip user-facing fleet prefixes."""
+        if selector is None:
+            return None
+        if selector.startswith("fleet:"):
+            return selector[len("fleet:") :]
+        return selector
+
+    def resolve_target(
+        self,
+        selector: str | None,
+        *,
+        cwd: Path | None = None,
+    ) -> tuple[TargetRecord, ProjectBinding | None]:
+        """Resolve a user selector or project default to one concrete target."""
+        binding = self.project_binding_for(cwd)
+        normalized = self.normalize_selector(selector)
+        if normalized:
+            if normalized in self.targets:
+                return self.targets[normalized], binding
+            if normalized in self.pools:
+                return self.select_pool(self.pools[normalized]), binding
+            raise FleetError(
+                f"unknown target or pool {normalized!r}; run `fleetctl list`"
+            )
+
+        if binding and binding.default_target:
+            if binding.default_target not in self.targets:
+                raise FleetError(
+                    f"project binding for {binding.path} refers to missing target "
+                    f"{binding.default_target!r}"
+                )
+            return self.targets[binding.default_target], binding
+        if binding and binding.default_pool:
+            if binding.default_pool not in self.pools:
+                raise FleetError(
+                    f"project binding for {binding.path} refers to missing pool "
+                    f"{binding.default_pool!r}"
+                )
+            return self.select_pool(self.pools[binding.default_pool]), binding
+
+        raise FleetError(
+            "no target specified and no project default available; "
+            "pass a target or pool explicitly"
+        )
+
+    def select_pool(self, pool: PoolRecord) -> TargetRecord:
+        """Select one target from a logical pool."""
+        candidates: list[TargetRecord] = []
+        if pool.targets:
+            for name in pool.targets:
+                target = self.targets.get(name)
+                if target is None:
+                    raise FleetError(
+                        f"pool {pool.name!r} references missing target {name!r}"
+                    )
+                if target.enabled:
+                    candidates.append(target)
+        else:
+            for target in self.targets.values():
+                if not target.enabled:
+                    continue
+                if pool.match_tags and not set(pool.match_tags).issubset(target.tags):
+                    continue
+                candidates.append(target)
+
+        if not candidates:
+            raise FleetError(f"pool {pool.name!r} has no eligible targets")
+
+        if pool.strategy == "random":
+            return random.choice(candidates)
+        if pool.strategy != "ordered":
+            raise FleetError(
+                f"unsupported pool strategy {pool.strategy!r} for {pool.name!r}"
+            )
+        return candidates[0]
+
+    def resolve_profile(
+        self,
+        target: TargetRecord,
+        binding: ProjectBinding | None,
+        requested: str | None,
+    ) -> ProfileRecord:
+        """Resolve a profile by precedence."""
+        protocol = self.resolve_protocol(target)
+        chosen = requested or target.default_profile or protocol.default_profile
+        if chosen is None and binding is not None:
+            chosen = binding.default_profile
+        if chosen is None:
+            chosen = "plain-ssh"
+        if chosen not in self.profiles:
+            raise FleetError(
+                f"profile {chosen!r} is not configured; initialize fleet config first"
+            )
+        return self.profiles[chosen]
+
+    def resolve_protocol(self, target: TargetRecord) -> ProtocolRecord:
+        """Resolve the behavior protocol for TARGET."""
+        chosen = target.protocol
+        if chosen is None:
+            if target.scheduler != "none":
+                chosen = "slurm"
+            else:
+                chosen = "direct"
+        protocol = self.protocols.get(chosen)
+        if protocol is None:
+            raise FleetError(
+                f"target {target.name!r} refers to unknown protocol {chosen!r}"
+            )
+        return protocol
+
+    def resolve_secret(self, target: TargetRecord) -> FleetSecret:
+        """Load sensitive connection details for TARGET."""
+        if target.secret_backend == "inline":
+            return parse_secret_dict(target.secret_inline)
+        if target.secret_backend == "file":
+            if not target.secret_ref:
+                raise FleetError(f"target {target.name!r} is missing `secret_ref`")
+            path = expand_local_path(target.secret_ref)
+            raw = load_toml_file(path)
+            return parse_secret_dict(raw)
+        if target.secret_backend == "pass":
+            if not target.secret_ref:
+                raise FleetError(f"target {target.name!r} is missing `secret_ref`")
+            raw = parse_secret_blob(run_pass_show(target.secret_ref))
+            return parse_secret_dict(raw)
+        raise FleetError(
+            f"target {target.name!r} uses unsupported secret backend "
+            f"{target.secret_backend!r}"
+        )
+
+
+def build_paths(
+    *,
+    config_home: Path | None = None,
+    state_home: Path | None = None,
+    cache_home: Path | None = None,
+) -> FleetPaths:
+    """Resolve the fleet XDG layout."""
+    config_root = expand_local_path(
+        str(config_home)
+        if config_home is not None
+        else os.environ.get("FLEET_CONFIG_HOME", "~/.config/fleet")
+    )
+    state_root = expand_local_path(
+        str(state_home)
+        if state_home is not None
+        else os.environ.get("FLEET_STATE_HOME", "~/.local/state/fleet")
+    )
+    cache_root = expand_local_path(
+        str(cache_home)
+        if cache_home is not None
+        else os.environ.get("FLEET_CACHE_HOME", "~/.cache/fleet")
+    )
+    return FleetPaths(
+        config_home=config_root,
+        state_home=state_root,
+        cache_home=cache_root,
+        config_file=config_root / "config.toml",
+        targets_dir=config_root / "targets.d",
+        pools_dir=config_root / "pools.d",
+        protocols_dir=config_root / "protocols.d",
+        profiles_dir=config_root / "profiles.d",
+        secrets_dir=config_root / "secrets",
+        projects_file=config_root / "projects.toml",
+        known_hosts_file=state_root / "known_hosts",
+        control_dir=cache_root / "mux",
+    )
+
+
+def expand_local_path(value: str) -> Path:
+    """Expand shell-style home and env variables."""
+    return Path(os.path.expandvars(os.path.expanduser(value))).resolve()
+
+
+def expand_path_text(value: str) -> str:
+    """Expand a local path string while preserving SSH placeholders like `%C`."""
+    return str(expand_local_path(value))
+
+
+def load_toml_file(path: Path, *, default: Any | None = None) -> dict[str, Any]:
+    """Load PATH as TOML or return DEFAULT when missing."""
+    if not path.exists():
+        if default is None:
+            raise FleetError(f"missing required config file: {path}")
+        return default
+    try:
+        with path.open("rb") as handle:
+            data = tomllib.load(handle)
+    except tomllib.TOMLDecodeError as exc:
+        raise FleetError(f"invalid TOML in {path}: {exc}") from exc
+    return data
+
+
+def load_records_from_dir(path: Path) -> list[tuple[str, dict[str, Any], Path]]:
+    """Read every TOML file in PATH and return (name, raw, source_path)."""
+    if not path.exists():
+        return []
+    records: list[tuple[str, dict[str, Any], Path]] = []
+    for entry in sorted(path.glob("*.toml")):
+        raw = load_toml_file(entry)
+        name = str(raw.get("name") or entry.stem)
+        records.append((name, raw, entry))
+    return records
+
+
+TARGET_FILE_WARNINGS: dict[str, str] = {
+    "remote_root": "project landing strips belong in project bindings, not targets",
+    "host": "sensitive connection material belongs in secret records",
+    "user": "sensitive connection material belongs in secret records",
+    "port": "sensitive connection material belongs in secret records",
+    "password": "sensitive connection material belongs in secret records",
+    "identity_file": "sensitive connection material belongs in secret records",
+}
+
+
+def load_targets(path: Path) -> dict[str, TargetRecord]:
+    """Load target metadata files."""
+    targets: dict[str, TargetRecord] = {}
+    for name, raw, _source in load_records_from_dir(path):
+        target = TargetRecord(
+            name=name,
+            enabled=bool(raw.get("enabled", True)),
+            transport=str(raw.get("transport", "ssh")),
+            protocol=optional_str(raw.get("protocol")),
+            workdir=optional_str(raw.get("workdir")),
+            tags=tuple(str(item) for item in raw.get("tags", [])),
+            secret_backend=str(raw.get("secret_backend", "file")),
+            secret_ref=optional_str(raw.get("secret_ref")),
+            secret_inline=dict(raw.get("secret", {})),
+            ssh_host_alias=optional_str(raw.get("ssh_host_alias")),
+            default_profile=optional_str(raw.get("default_profile")),
+            scheduler=str(raw.get("scheduler", "none")),
+            metadata=dict(raw.get("metadata", {})),
+        )
+        targets[target.name] = target
+    return targets
+
+
+def load_pools(path: Path) -> dict[str, PoolRecord]:
+    """Load pool metadata files."""
+    pools: dict[str, PoolRecord] = {}
+    for name, raw, _source in load_records_from_dir(path):
+        pool = PoolRecord(
+            name=name,
+            targets=tuple(str(item) for item in raw.get("targets", [])),
+            match_tags=tuple(str(item) for item in raw.get("match_tags", [])),
+            strategy=str(raw.get("strategy", "ordered")),
+            default_profile=optional_str(raw.get("default_profile")),
+        )
+        pools[pool.name] = pool
+    return pools
+
+
+def built_in_protocols() -> dict[str, ProtocolRecord]:
+    """Return the built-in protocol catalog."""
+    direct = ProtocolRecord(
+        name="direct",
+        kind="direct",
+        description="Direct SSH execution on a host-level workdir.",
+        default_profile="plain-ssh",
+        scheduler_required=False,
+        allow_login_exec=True,
+        smoke_gpu_probe=True,
+        gpu_request_mode="gres",
+        job_runtime="host",
+    )
+    slurm = ProtocolRecord(
+        name="slurm",
+        kind="slurm",
+        description="Scheduler-backed login surface that submits compute via Slurm.",
+        default_profile="slurm-batch",
+        scheduler_required=True,
+        allow_login_exec=False,
+        smoke_gpu_probe=False,
+        gpu_request_mode="gres",
+        job_runtime="host",
+    )
+    return {
+        direct.name: direct,
+        slurm.name: slurm,
+    }
+
+
+def load_protocols(path: Path) -> dict[str, ProtocolRecord]:
+    """Load protocol definitions and merge them over the built-ins."""
+    protocols = built_in_protocols()
+    for name, raw, _source in load_records_from_dir(path):
+        queues: list[QueueRecord] = []
+        for item in raw.get("queue", []):
+            if not isinstance(item, dict):
+                raise FleetError(
+                    f"invalid queue entry in protocol {name!r}; expected a table"
+                )
+            partition = optional_str(item.get("partition")) or optional_str(
+                item.get("name")
+            )
+            queue_name = optional_str(item.get("name")) or partition
+            if not partition or not queue_name:
+                raise FleetError(
+                    f"protocol {name!r} has a queue without `name`/`partition`"
+                )
+            directives = item.get("directive", item.get("directives", []))
+            if isinstance(directives, str):
+                directive_values = (directives,)
+            else:
+                directive_values = tuple(str(value) for value in directives)
+            notes = item.get("notes", [])
+            if isinstance(notes, str):
+                note_values = (notes,)
+            else:
+                note_values = tuple(str(value) for value in notes)
+            queues.append(
+                QueueRecord(
+                    name=queue_name,
+                    partition=partition,
+                    default=bool(item.get("default", False)),
+                    time_limit=optional_str(item.get("time_limit")),
+                    gpus=optional_int(item.get("gpus")),
+                    gres=optional_str(item.get("gres")),
+                    cpus_per_task=optional_int(item.get("cpus_per_task")),
+                    mem=optional_str(item.get("mem")),
+                    account=optional_str(item.get("account")),
+                    qos=optional_str(item.get("qos")),
+                    constraint=optional_str(item.get("constraint")),
+                    extra_directives=directive_values,
+                    notes=note_values,
+                )
+            )
+        docs = raw.get("docs", [])
+        if isinstance(docs, str):
+            doc_values = (docs,)
+        else:
+            doc_values = tuple(str(value) for value in docs)
+        notes = raw.get("notes", [])
+        if isinstance(notes, str):
+            note_values = (notes,)
+        else:
+            note_values = tuple(str(value) for value in notes)
+        kind = str(raw.get("kind", "direct"))
+        protocols[name] = ProtocolRecord(
+            name=name,
+            kind=kind,
+            description=optional_str(raw.get("description")),
+            default_profile=optional_str(raw.get("default_profile"))
+            or ("slurm-batch" if kind == "slurm" else "plain-ssh"),
+            scheduler_required=bool(
+                raw.get("scheduler_required", kind == "slurm")
+            ),
+            allow_login_exec=bool(raw.get("allow_login_exec", kind != "slurm")),
+            smoke_gpu_probe=bool(raw.get("smoke_gpu_probe", kind != "slurm")),
+            gpu_request_mode=str(raw.get("gpu_request_mode", "gres")),
+            job_runtime=str(raw.get("job_runtime", "host")),
+            job_output_dir=str(raw.get("job_output_dir", ".fleet/jobs")),
+            docs=doc_values,
+            notes=note_values,
+            queues=tuple(queues),
+        )
+    return protocols
+
+
+def load_profiles(path: Path) -> dict[str, ProfileRecord]:
+    """Load execution profile files."""
+    profiles: dict[str, ProfileRecord] = {}
+    for name, raw, _source in load_records_from_dir(path):
+        submit = tuple(str(item) for item in raw.get("submit_command", []))
+        status = tuple(str(item) for item in raw.get("status_command", []))
+        cancel = tuple(str(item) for item in raw.get("cancel_command", []))
+        logs = tuple(str(item) for item in raw.get("logs_command", []))
+        script = raw.get("script", {})
+        environment = raw.get("environment", {})
+        if isinstance(script, dict):
+            interpreter = optional_str(script.get("interpreter"))
+            remote_script_root = str(
+                script.get("remote_script_root", DEFAULT_SCRIPT_REMOTE_ROOT)
+            )
+        else:
+            interpreter = "/usr/bin/env bash"
+            remote_script_root = DEFAULT_SCRIPT_REMOTE_ROOT
+        profiles[name] = ProfileRecord(
+            name=name,
+            kind=str(raw.get("kind", "direct")),
+            interpreter=interpreter,
+            remote_script_root=remote_script_root,
+            environment={str(key): str(value) for key, value in environment.items()},
+            submit_command=submit,
+            status_command=status,
+            cancel_command=cancel,
+            logs_command=logs,
+            job_id_pattern=optional_str(raw.get("job_id_pattern")),
+        )
+    if "plain-ssh" not in profiles:
+        profiles["plain-ssh"] = ProfileRecord(name="plain-ssh")
+    return profiles
+
+
+def load_projects(path: Path) -> list[ProjectBinding]:
+    """Load local per-project defaults."""
+    if not path.exists():
+        return []
+    raw = load_toml_file(path)
+    bindings: list[ProjectBinding] = []
+    for item in raw.get("project", []):
+        target_roots = {}
+        for entry in item.get("target_root", []):
+            target_name = optional_str(entry.get("target"))
+            remote_root = optional_str(entry.get("remote_root"))
+            if target_name and remote_root:
+                target_roots[target_name] = remote_root
+        bindings.append(
+            ProjectBinding(
+                path=expand_local_path(str(item["path"])),
+                default_target=optional_str(item.get("default_target")),
+                default_pool=optional_str(item.get("default_pool")),
+                default_profile=optional_str(item.get("default_profile")),
+                remote_root=optional_str(item.get("remote_root")),
+                remote_roots_by_target=target_roots,
+                sync_excludes=tuple(
+                    str(entry) for entry in item.get("sync_excludes", [])
+                ),
+            )
+        )
+    return bindings
+
+
+def target_schema_warnings(path: Path) -> list[str]:
+    """Report misplaced fields in target metadata files."""
+    warnings: list[str] = []
+    for entry in sorted(path.glob("*.toml")):
+        raw = load_toml_file(entry, default={})
+        for field, guidance in TARGET_FILE_WARNINGS.items():
+            if field in raw:
+                warnings.append(
+                    f"target file {entry} defines `{field}`; {guidance}"
+                )
+    return warnings
+
+
+def parse_secret_dict(raw: dict[str, Any]) -> FleetSecret:
+    """Parse one secret record from TOML-style data."""
+    host = optional_str(raw.get("host"))
+    user = optional_str(raw.get("user"))
+    if not host or not user:
+        raise FleetError("secret record must define both `host` and `user`")
+    port = int(raw.get("port", 22))
+    auth = str(raw.get("auth", "key"))
+    identity_file = optional_str(raw.get("identity_file"))
+    password = optional_str(raw.get("password"))
+    proxy_jump = optional_str(raw.get("proxy_jump"))
+    strict_host_key_checking = optional_str(raw.get("strict_host_key_checking"))
+    extra_options_raw = raw.get("ssh_option", {})
+    return FleetSecret(
+        host=host,
+        user=user,
+        port=port,
+        auth=auth,
+        identity_file=identity_file,
+        password=password,
+        proxy_jump=proxy_jump,
+        identities_only=bool(raw.get("identities_only", True)),
+        forward_agent=bool(raw.get("forward_agent", False)),
+        compression=bool(raw.get("compression", False)),
+        connect_timeout=int(raw.get("connect_timeout", 30)),
+        server_alive_interval=int(raw.get("server_alive_interval", 30)),
+        server_alive_count_max=int(raw.get("server_alive_count_max", 3)),
+        strict_host_key_checking=strict_host_key_checking,
+        extra_options={
+            str(key): str(value) for key, value in dict(extra_options_raw).items()
+        },
+    )
+
+
+def parse_secret_blob(text: str) -> dict[str, Any]:
+    """Parse multi-line secret material from `pass show`."""
+    stripped = text.lstrip()
+    if "=" in stripped:
+        try:
+            return tomllib.loads(stripped)
+        except tomllib.TOMLDecodeError as exc:
+            raise FleetError(f"invalid TOML secret material: {exc}") from exc
+    raise FleetError(
+        "pass secret material must be TOML with keys like `host`, `user`, and `port`"
+    )
+
+
+def optional_str(value: Any) -> str | None:
+    """Normalize optional values to strings."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def optional_int(value: Any) -> int | None:
+    """Normalize optional values to integers."""
+    if value is None:
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    return int(value)
+
+
+def parse_target_root_arg(value: str) -> tuple[str, str]:
+    """Parse TARGET=PATH for per-target project landing strips."""
+    target_name, separator, remote_root = value.partition("=")
+    target_name = target_name.strip()
+    remote_root = remote_root.strip()
+    if not separator or not target_name or not remote_root:
+        raise FleetError(
+            f"invalid --target-root value {value!r}; expected TARGET=/remote/path"
+        )
+    return target_name, remote_root
+
+
+def resolve_remote_root(
+    target: TargetRecord,
+    binding: ProjectBinding | None,
+    override: str | None = None,
+) -> str | None:
+    """Resolve the effective cwd for TARGET."""
+    if override:
+        return override
+    if binding is not None:
+        project_root = binding.remote_root_for(target.name)
+        if project_root:
+            return project_root
+        if target.workdir:
+            return remote_posix_join(target.workdir, binding.path.name)
+        return None
+    return target.workdir
+
+
+def ensure_private_dir(path: Path, *, mode: int) -> None:
+    """Create PATH and enforce private directory permissions."""
+    path.mkdir(parents=True, exist_ok=True)
+    os.chmod(path, mode)
+
+
+def write_text_file(path: Path, content: str, *, mode: int, force: bool = True) -> None:
+    """Write CONTENT atomically to PATH with MODE."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and not force:
+        raise FleetError(f"refusing to overwrite existing file {path}")
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, delete=False
+    ) as handle:
+        handle.write(content)
+        temp_path = Path(handle.name)
+    os.chmod(temp_path, mode)
+    temp_path.replace(path)
+
+
+def write_text_if_missing(path: Path, content: str, *, mode: int) -> None:
+    """Create PATH only when absent."""
+    if path.exists():
+        return
+    write_text_file(path, content, mode=mode, force=False)
+
+
+def run_pass_show(secret_ref: str) -> str:
+    """Fetch one pass entry."""
+    try:
+        completed = subprocess.run(
+            ["pass", "show", secret_ref],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        raise FleetError("`pass` is required for pass-backed secrets") from exc
+    if completed.returncode != 0:
+        message = completed.stderr.strip() or completed.stdout.strip()
+        raise FleetError(
+            f"failed to read pass secret {secret_ref!r}: {message or 'unknown error'}"
+        )
+    return completed.stdout
+
+
+def ssh_env(secret: FleetSecret) -> dict[str, str]:
+    """Prepare subprocess environment for SSH-family commands."""
+    env = os.environ.copy()
+    if secret.auth == "password" and secret.password is not None:
+        env["SSHPASS"] = secret.password
+    return env
+
+
+def ssh_runtime_kwargs(context: FleetContext) -> dict[str, Any]:
+    """Return fleet-managed SSH runtime settings."""
+    ensure_private_dir(context.paths.state_home, mode=STATE_DIR_MODE)
+    ensure_private_dir(context.paths.cache_home, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(context.paths.control_dir, mode=PRIVATE_DIR_MODE)
+    write_text_if_missing(context.paths.known_hosts_file, "", mode=PRIVATE_FILE_MODE)
+    ssh_config = dict(context.config.get("ssh", {}))
+    return {
+        "known_hosts_file": expand_path_text(
+            str(ssh_config.get("user_known_hosts_file", context.paths.known_hosts_file))
+        ),
+        "control_path": expand_path_text(
+            str(ssh_config.get("control_path", context.paths.control_dir / "%C"))
+        ),
+        "strict_host_key_checking": optional_str(
+            ssh_config.get("strict_host_key_checking")
+        )
+        or "accept-new",
+        "update_host_keys": bool(ssh_config.get("update_host_keys", True)),
+    }
+
+
+def ssh_option_parts(
+    secret: FleetSecret,
+    *,
+    known_hosts_file: str | None = None,
+    control_path: str | None = None,
+    strict_host_key_checking: str | None = None,
+    update_host_keys: bool = True,
+) -> list[str]:
+    """Build stable OpenSSH options for one target."""
+    options = [
+        "-o",
+        f"ConnectTimeout={secret.connect_timeout}",
+        "-o",
+        f"ServerAliveInterval={secret.server_alive_interval}",
+        "-o",
+        f"ServerAliveCountMax={secret.server_alive_count_max}",
+    ]
+    if known_hosts_file:
+        options += ["-o", f"UserKnownHostsFile={known_hosts_file}"]
+    if control_path:
+        options += [
+            "-o",
+            "ControlMaster=auto",
+            "-o",
+            "ControlPersist=600",
+            "-o",
+            f"ControlPath={control_path}",
+        ]
+    if secret.proxy_jump:
+        options += ["-o", f"ProxyJump={secret.proxy_jump}"]
+    if secret.identities_only:
+        options += ["-o", "IdentitiesOnly=yes"]
+    if secret.forward_agent:
+        options += ["-A"]
+    if secret.compression:
+        options += ["-C"]
+    chosen_strict_host_key_checking = (
+        secret.strict_host_key_checking or strict_host_key_checking
+    )
+    if chosen_strict_host_key_checking:
+        options += [
+            "-o",
+            f"StrictHostKeyChecking={chosen_strict_host_key_checking}",
+        ]
+    if update_host_keys:
+        options += ["-o", "UpdateHostKeys=yes"]
+    if secret.identity_file:
+        options += ["-i", os.path.expanduser(secret.identity_file)]
+    if secret.auth == "password":
+        options += [
+            "-o",
+            "PreferredAuthentications=password",
+            "-o",
+            "PubkeyAuthentication=no",
+        ]
+    else:
+        options += ["-o", "BatchMode=yes"]
+    for key, value in secret.extra_options.items():
+        options += ["-o", f"{key}={value}"]
+    return options
+
+
+def ssh_transport_prefix(secret: FleetSecret) -> list[str]:
+    """Return local wrapper commands such as sshpass."""
+    if secret.auth != "password" or secret.password is None:
+        return []
+    return ["sshpass", "-e"]
+
+
+def build_ssh_command(
+    secret: FleetSecret,
+    *,
+    allocate_tty: bool,
+    remote_command: str | None,
+    known_hosts_file: str | None = None,
+    control_path: str | None = None,
+    strict_host_key_checking: str | None = None,
+    update_host_keys: bool = True,
+) -> list[str]:
+    """Build one ssh command."""
+    command = ssh_transport_prefix(secret) + ["ssh"]
+    if allocate_tty:
+        command.append("-t")
+    command += ["-p", str(secret.port)]
+    command += ssh_option_parts(
+        secret,
+        known_hosts_file=known_hosts_file,
+        control_path=control_path,
+        strict_host_key_checking=strict_host_key_checking,
+        update_host_keys=update_host_keys,
+    )
+    command.append(secret.target)
+    if remote_command is not None:
+        command.append(remote_command)
+    return command
+
+
+def build_scp_command(
+    secret: FleetSecret,
+    *,
+    source: str,
+    dest: str,
+    known_hosts_file: str | None = None,
+    control_path: str | None = None,
+    strict_host_key_checking: str | None = None,
+    update_host_keys: bool = True,
+) -> list[str]:
+    """Build one scp command."""
+    command = ssh_transport_prefix(secret) + ["scp", "-P", str(secret.port)]
+    command += ssh_option_parts(
+        secret,
+        known_hosts_file=known_hosts_file,
+        control_path=control_path,
+        strict_host_key_checking=strict_host_key_checking,
+        update_host_keys=update_host_keys,
+    )
+    command += [source, dest]
+    return command
+
+
+def build_rsync_transport(
+    secret: FleetSecret,
+    *,
+    known_hosts_file: str | None = None,
+    control_path: str | None = None,
+    strict_host_key_checking: str | None = None,
+    update_host_keys: bool = True,
+) -> str:
+    """Build the SSH transport string for rsync."""
+    parts = ssh_transport_prefix(secret) + ["ssh", "-p", str(secret.port)]
+    parts += ssh_option_parts(
+        secret,
+        known_hosts_file=known_hosts_file,
+        control_path=control_path,
+        strict_host_key_checking=strict_host_key_checking,
+        update_host_keys=update_host_keys,
+    )
+    return shlex.join(parts)
+
+
+def run_command(
+    command: list[str],
+    *,
+    env: dict[str, str] | None = None,
+    capture_output: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    """Run one local command with optional capture."""
+    try:
+        return subprocess.run(
+            command,
+            check=False,
+            env=env,
+            capture_output=capture_output,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        raise FleetError(f"missing required command: {command[0]}") from exc
+
+
+def run_ssh_command(
+    secret: FleetSecret,
+    *,
+    allocate_tty: bool,
+    remote_command: str | None,
+    capture_output: bool = False,
+    known_hosts_file: str | None = None,
+    control_path: str | None = None,
+    strict_host_key_checking: str | None = None,
+    update_host_keys: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    """Run one ssh command with fleet defaults."""
+    command = build_ssh_command(
+        secret,
+        allocate_tty=allocate_tty,
+        remote_command=remote_command,
+        known_hosts_file=known_hosts_file,
+        control_path=control_path,
+        strict_host_key_checking=strict_host_key_checking,
+        update_host_keys=update_host_keys,
+    )
+    return run_command(command, env=ssh_env(secret), capture_output=capture_output)
+
+
+def render_template_values(
+    values: Iterable[str],
+    *,
+    script_path: str | None = None,
+    job_id: str | None = None,
+    workdir: str | None = None,
+) -> list[str]:
+    """Render simple `{name}` placeholders in argv templates."""
+    rendered: list[str] = []
+    substitutions = {
+        "script": script_path or "",
+        "job_id": job_id or "",
+        "workdir": workdir or "",
+    }
+    for value in values:
+        rendered.append(value.format(**substitutions))
+    return rendered
+
+
+def remote_shell_command(command: list[str], *, cwd: str | None = None) -> str:
+    """Build a remote shell command from argv."""
+    inner = shlex.join(command)
+    if cwd:
+        quoted_cwd = shlex.quote(cwd)
+        inner = (
+            f"if [ -d {quoted_cwd} ]; then cd {quoted_cwd};"
+            f" else printf '%s\\n' 'error: remote cwd not found: {cwd}' >&2;"
+            " exit 1; fi;"
+            f" {inner}"
+        )
+    return shlex.join(["/bin/sh", "-c", inner])
+
+
+def remote_posix_join(base: str, name: str) -> str:
+    """Join remote POSIX paths while preserving `~` prefixes."""
+    if base.startswith("~/"):
+        return "~/" + posixpath.join(base[2:], name)
+    return posixpath.join(base, name)
+
+
+def scp_remote_path(path: str) -> str:
+    """Normalize a remote path for scp/sftp transports."""
+    if path.startswith("~/"):
+        return path[2:]
+    return path
+
+
+def resolve_remote_home(
+    secret: FleetSecret,
+    *,
+    ssh_runtime: dict[str, Any] | None = None,
+) -> str:
+    """Resolve the remote user's home directory."""
+    completed = run_ssh_command(
+        secret,
+        allocate_tty=False,
+        remote_command=shlex.join(["/bin/sh", "-c", 'printf "%s" "$HOME"']),
+        capture_output=True,
+        **(ssh_runtime or {}),
+    )
+    home = completed.stdout.strip()
+    if completed.returncode != 0 or not home:
+        raise FleetError(f"failed to resolve remote home directory on {secret.target}")
+    return home
+
+
+def stage_remote_script(
+    secret: FleetSecret,
+    profile: ProfileRecord,
+    local_script: Path,
+    *,
+    ssh_runtime: dict[str, Any] | None = None,
+) -> str:
+    """Copy one local script into a remote scratch directory and return its path."""
+    script_name = local_script.name
+    token = next(tempfile._get_candidate_names())
+    ssh_runtime = ssh_runtime or {}
+    remote_root = profile.remote_script_root
+    if not remote_root.startswith("/"):
+        remote_home = resolve_remote_home(secret, ssh_runtime=ssh_runtime)
+        if remote_root.startswith("~/"):
+            remote_root = posixpath.join(remote_home, remote_root[2:])
+        else:
+            remote_root = posixpath.join(remote_home, remote_root)
+    remote_dir = remote_posix_join(remote_root, token)
+    remote_path = remote_posix_join(remote_dir, script_name)
+
+    mkdir = run_ssh_command(
+        secret,
+        allocate_tty=False,
+        remote_command=remote_shell_command(["mkdir", "-p", remote_dir]),
+        **ssh_runtime,
+    )
+    if mkdir.returncode != 0:
+        raise FleetError(
+            f"failed to create remote script directory {remote_dir!r} on "
+            f"{secret.target}"
+        )
+
+    scp = run_command(
+        build_scp_command(
+            secret,
+            source=str(local_script),
+            dest=f"{secret.target}:{scp_remote_path(remote_path)}",
+            **ssh_runtime,
+        ),
+        env=ssh_env(secret),
+    )
+    if scp.returncode != 0:
+        raise FleetError(
+            f"failed to upload {local_script} to {secret.target}:{remote_path}"
+        )
+
+    chmod = run_ssh_command(
+        secret,
+        allocate_tty=False,
+        remote_command=remote_shell_command(["chmod", "700", remote_path]),
+        **ssh_runtime,
+    )
+    if chmod.returncode != 0:
+        raise FleetError(
+            f"failed to chmod remote script {remote_path!r} on {secret.target}"
+        )
+    return remote_path
+
+
+def prefixed_env_command(
+    argv: list[str],
+    environment: dict[str, str],
+) -> list[str]:
+    """Prefix one argv vector with `/usr/bin/env` assignments when needed."""
+    if not environment:
+        return argv
+    assignments = [f"{key}={value}" for key, value in sorted(environment.items())]
+    return ["/usr/bin/env", *assignments, *argv]
+
+
+def ensure_remote_directory(
+    secret: FleetSecret,
+    remote_path: str,
+    *,
+    ssh_runtime: dict[str, Any] | None = None,
+) -> None:
+    """Create one remote directory or raise a fleet error."""
+    mkdir = run_ssh_command(
+        secret,
+        allocate_tty=False,
+        remote_command=remote_shell_command(["mkdir", "-p", remote_path]),
+        **(ssh_runtime or {}),
+    )
+    if mkdir.returncode != 0:
+        raise FleetError(
+            f"failed to create remote directory {remote_path!r} on {secret.target}"
+        )
+
+
+def protocol_base_root(
+    target: TargetRecord,
+    binding: ProjectBinding | None,
+    override: str | None = None,
+) -> str | None:
+    """Resolve the most specific remote root available for logs and jobs."""
+    return override or resolve_remote_root(target, binding) or target.workdir
+
+
+def resolve_job_output_paths(
+    protocol: ProtocolRecord,
+    *,
+    base_root: str | None,
+    output_override: str | None,
+    error_override: str | None,
+) -> tuple[str | None, str | None, str | None]:
+    """Resolve absolute stdout/stderr paths for one job submission."""
+    if base_root is None and (output_override is None or error_override is None):
+        return None, None, None
+    output_dir: str | None = None
+    if base_root is not None:
+        if protocol.job_output_dir.startswith("/"):
+            output_dir = protocol.job_output_dir
+        else:
+            output_dir = remote_posix_join(base_root, protocol.job_output_dir)
+
+    def resolve_one(value: str | None, fallback_name: str) -> str | None:
+        if value is None:
+            if output_dir is None:
+                return None
+            return remote_posix_join(output_dir, fallback_name)
+        if value.startswith("/"):
+            return value
+        if base_root is None:
+            return value
+        return remote_posix_join(base_root, value)
+
+    output_path = resolve_one(output_override, "%j.out")
+    error_path = resolve_one(error_override, "%j.err")
+    return output_dir, output_path, error_path
+
+
+def sanitize_job_name(value: str) -> str:
+    """Produce a scheduler-safe job name."""
+    cleaned = re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip("-")
+    return cleaned[:128] or "fleet-job"
+
+
+def ensure_login_exec_allowed(
+    target: TargetRecord,
+    protocol: ProtocolRecord,
+    *,
+    allow_login: bool,
+) -> None:
+    """Require an explicit acknowledgment on scheduler-backed login surfaces."""
+    if protocol.allow_login_exec or allow_login:
+        return
+    raise FleetError(
+        f"target {target.name!r} uses protocol {protocol.name!r}; "
+        "direct login-surface execution requires `--login`, while compute jobs "
+        "should go through `fleetctl submit`"
+    )
+
+
+def resolve_queue(
+    protocol: ProtocolRecord,
+    requested: str | None,
+) -> QueueRecord:
+    """Resolve one queue preset from a protocol."""
+    if requested:
+        queue = protocol.queue_named(requested)
+        if queue is None:
+            raise FleetError(
+                f"protocol {protocol.name!r} does not define queue {requested!r}"
+            )
+        return queue
+    queue = protocol.default_queue()
+    if queue is None:
+        raise FleetError(
+            f"protocol {protocol.name!r} does not define a default queue"
+        )
+    return queue
+
+
+def slurm_gpu_directive(
+    protocol: ProtocolRecord,
+    queue: QueueRecord,
+    requested_gpus: int | None,
+) -> str | None:
+    """Resolve the scheduler GPU directive line."""
+    if protocol.gpu_request_mode == "none":
+        return None
+    gpu_count = requested_gpus if requested_gpus is not None else queue.gpus
+    if protocol.gpu_request_mode == "gpus":
+        if gpu_count is None:
+            return None
+        return f"#SBATCH --gpus={gpu_count}"
+    if protocol.gpu_request_mode == "gres":
+        gres = queue.gres
+        if gres is None and gpu_count is not None:
+            gres = f"gpu:{gpu_count}"
+        if gres is None:
+            return None
+        return f"#SBATCH --gres={gres}"
+    raise FleetError(
+        f"unsupported gpu_request_mode {protocol.gpu_request_mode!r} in "
+        f"protocol {protocol.name!r}"
+    )
+
+
+def render_slurm_wrapper(
+    *,
+    protocol: ProtocolRecord,
+    remote_script: str,
+    script_args: list[str],
+    interpreter: str | None,
+    environment: dict[str, str],
+    cwd: str | None,
+    queue: QueueRecord,
+    job_name: str,
+    time_limit: str | None,
+    gpus: int | None,
+    cpus_per_task: int | None,
+    mem: str | None,
+    output_path: str | None,
+    error_path: str | None,
+) -> str:
+    """Render a tiny Slurm wrapper for a staged script."""
+    lines = [
+        "#!/usr/bin/env bash",
+        f"#SBATCH --job-name={job_name}",
+        f"#SBATCH --partition={queue.partition}",
+        "#SBATCH --ntasks=1",
+    ]
+    gpu_directive = slurm_gpu_directive(protocol, queue, gpus)
+    if gpu_directive:
+        lines.append(gpu_directive)
+    resolved_time = time_limit or queue.time_limit
+    if resolved_time:
+        lines.append(f"#SBATCH --time={resolved_time}")
+    resolved_cpus = cpus_per_task if cpus_per_task is not None else queue.cpus_per_task
+    if resolved_cpus is not None:
+        lines.append(f"#SBATCH --cpus-per-task={resolved_cpus}")
+    resolved_mem = mem or queue.mem
+    if resolved_mem:
+        lines.append(f"#SBATCH --mem={resolved_mem}")
+    if queue.account:
+        lines.append(f"#SBATCH --account={queue.account}")
+    if queue.qos:
+        lines.append(f"#SBATCH --qos={queue.qos}")
+    if queue.constraint:
+        lines.append(f"#SBATCH --constraint={queue.constraint}")
+    if output_path:
+        lines.append(f"#SBATCH --output={output_path}")
+    if error_path:
+        lines.append(f"#SBATCH --error={error_path}")
+    for directive in queue.extra_directives:
+        lines.append(f"#SBATCH {directive}")
+    lines.extend(
+        [
+            "",
+            "set -euo pipefail",
+        ]
+    )
+    if cwd:
+        lines.append(f"cd {shlex.quote(cwd)}")
+    for key, value in sorted(environment.items()):
+        lines.append(f"export {key}={shlex.quote(value)}")
+    argv: list[str] = []
+    if interpreter:
+        argv.extend(shlex.split(interpreter))
+    argv.append(remote_script)
+    argv.extend(script_args)
+    lines.append(shlex.join(argv))
+    return "\n".join(lines) + "\n"
+
+
+def target_display(
+    target: TargetRecord,
+    *,
+    protocol_name: str,
+    pool_names: Iterable[str] = (),
+) -> dict[str, Any]:
+    """Render one target for table or JSON output."""
+    return {
+        "name": target.name,
+        "transport": target.transport,
+        "protocol": protocol_name,
+        "workdir": target.workdir or "",
+        "enabled": target.enabled,
+        "tags": list(target.tags),
+        "default_profile": target.default_profile or "",
+        "scheduler": target.scheduler,
+        "pools": sorted(pool_names),
+    }
+
+
+def protocol_display(protocol: ProtocolRecord) -> dict[str, Any]:
+    """Render one protocol as structured data."""
+    default_queue = protocol.default_queue()
+    return {
+        "name": protocol.name,
+        "kind": protocol.kind,
+        "description": protocol.description or "",
+        "default_profile": protocol.default_profile or "",
+        "default_queue": default_queue.name if default_queue is not None else "",
+        "scheduler_required": protocol.scheduler_required,
+        "allow_login_exec": protocol.allow_login_exec,
+        "smoke_gpu_probe": protocol.smoke_gpu_probe,
+        "gpu_request_mode": protocol.gpu_request_mode,
+        "job_runtime": protocol.job_runtime,
+        "job_output_dir": protocol.job_output_dir,
+        "docs": list(protocol.docs),
+        "notes": list(protocol.notes),
+        "queues": [queue_display(queue) for queue in protocol.queues],
+    }
+
+
+def queue_display(queue: QueueRecord) -> dict[str, Any]:
+    """Render one queue preset."""
+    return {
+        "name": queue.name,
+        "partition": queue.partition,
+        "default": queue.default,
+        "gpus": queue.gpus if queue.gpus is not None else "",
+        "cpus_per_task": (
+            queue.cpus_per_task if queue.cpus_per_task is not None else ""
+        ),
+        "mem": queue.mem or "",
+        "time_limit": queue.time_limit or "",
+        "gres": queue.gres or "",
+        "account": queue.account or "",
+        "qos": queue.qos or "",
+        "constraint": queue.constraint or "",
+        "extra_directives": list(queue.extra_directives),
+        "notes": list(queue.notes),
+    }
+
+
+def redact_secret(secret: FleetSecret) -> dict[str, Any]:
+    """Produce a safe secret preview."""
+    return {
+        "host": "<redacted>",
+        "user": secret.user,
+        "port": secret.port,
+        "auth": secret.auth,
+        "identity_file": secret.identity_file or "",
+        "proxy_jump": secret.proxy_jump or "",
+        "password_configured": secret.password is not None,
+    }
+
+
+def format_table(rows: list[dict[str, Any]], columns: list[str]) -> str:
+    """Render a tiny fixed-width table."""
+    def cell(value: Any) -> str:
+        if isinstance(value, (list, tuple)):
+            return ",".join(str(item) for item in value)
+        return str(value)
+
+    widths = {column: len(column) for column in columns}
+    for row in rows:
+        for column in columns:
+            widths[column] = max(widths[column], len(cell(row.get(column, ""))))
+    header = "  ".join(column.ljust(widths[column]) for column in columns)
+    body = [
+        "  ".join(cell(row.get(column, "")).ljust(widths[column]) for column in columns)
+        for row in rows
+    ]
+    return "\n".join([header, *body])
+
+
+def serialize_projects(projects: list[ProjectBinding]) -> str:
+    """Serialize project bindings without third-party TOML dependencies."""
+    lines = ['version = 1', ""]
+    for item in sorted(projects, key=lambda binding: str(binding.path)):
+        lines += [
+            "[[project]]",
+            f'path = "{item.path}"',
+        ]
+        if item.default_target:
+            lines.append(f'default_target = "{item.default_target}"')
+        if item.default_pool:
+            lines.append(f'default_pool = "{item.default_pool}"')
+        if item.default_profile:
+            lines.append(f'default_profile = "{item.default_profile}"')
+        if item.remote_root:
+            lines.append(f'remote_root = "{item.remote_root}"')
+        for target_name, remote_root in sorted(item.remote_roots_by_target.items()):
+            lines += [
+                "",
+                "[[project.target_root]]",
+                f'target = "{target_name}"',
+                f'remote_root = "{remote_root}"',
+            ]
+        if item.sync_excludes:
+            quoted = ", ".join(f'"{entry}"' for entry in item.sync_excludes)
+            lines.append(f"sync_excludes = [{quoted}]")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def default_config_template() -> str:
+    """Return a minimal config.toml template."""
+    return """\
+version = 1
+
+[defaults]
+redact_sensitive_output = true
+
+[ssh]
+user_known_hosts_file = "~/.local/state/fleet/known_hosts"
+strict_host_key_checking = "accept-new"
+update_host_keys = true
+control_path = "~/.cache/fleet/mux/%C"
+"""
+
+
+def default_projects_template() -> str:
+    """Return a starter projects.toml template."""
+    return """\
+version = 1
+"""
+
+
+def default_plain_profile_template() -> str:
+    """Return the safe direct execution profile template."""
+    return """\
+version = 1
+name = "plain-ssh"
+kind = "direct"
+
+[script]
+interpreter = "/usr/bin/env bash"
+remote_script_root = ".local/state/fleet/scripts"
+"""
+
+
+def default_slurm_profile_template() -> str:
+    """Return a starter Slurm profile template."""
+    return """\
+version = 1
+name = "slurm-batch"
+kind = "scheduler"
+job_id_pattern = "Submitted batch job (?P<job_id>\\\\d+)"
+submit_command = ["sbatch", "{script}"]
+status_command = ["squeue", "--jobs", "{job_id}"]
+cancel_command = ["scancel", "{job_id}"]
+logs_command = ["sacct", "--jobs", "{job_id}", "--format=JobID,State,Elapsed"]
+
+[script]
+interpreter = "/usr/bin/env bash"
+remote_script_root = ".local/state/fleet/scripts"
+"""
+
+
+def local_target_template(name: str) -> str:
+    """Return a starter target file that keeps secrets elsewhere."""
+    return f"""\
+version = 1
+name = "{name}"
+enabled = true
+transport = "ssh"
+protocol = "direct"
+workdir = "/srv/work"
+tags = ["example"]
+secret_backend = "file"
+secret_ref = "~/.config/fleet/secrets/{name}.toml"
+default_profile = "plain-ssh"
+"""
+
+
+def local_secret_template() -> str:
+    """Return a starter local secret file."""
+    return """\
+host = "host.example.org"
+user = "username"
+port = 22
+auth = "key"
+identity_file = "~/.ssh/id_ed25519"
+identities_only = true
+connect_timeout = 30
+server_alive_interval = 30
+server_alive_count_max = 3
+"""
+
+
+def pool_template(name: str) -> str:
+    """Return a starter logical pool."""
+    return f"""\
+version = 1
+name = "{name}"
+strategy = "ordered"
+targets = ["target-name"]
+default_profile = "plain-ssh"
+"""
+
+
+def parse_ssh_g_output(text: str) -> dict[str, str]:
+    """Parse `ssh -G` output into a lowercase key map."""
+    result: dict[str, str] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        key, _, value = stripped.partition(" ")
+        result[key.lower()] = value.strip()
+    return result
+
+
+def int_setting(raw: dict[str, str], key: str, default: int) -> int:
+    """Parse an integer-like SSH setting, tolerating `none` and empties."""
+    value = optional_str(raw.get(key))
+    if value is None or value.lower() == "none":
+        return default
+    return int(value)
+
+
+def infer_secret_from_ssh_alias(alias: str) -> FleetSecret:
+    """Resolve one existing SSH alias from the local SSH client."""
+    completed = run_command(["ssh", "-G", alias], capture_output=True)
+    if completed.returncode != 0:
+        message = completed.stderr.strip() or completed.stdout.strip()
+        raise FleetError(
+            f"failed to resolve ssh alias {alias!r}: {message or 'unknown error'}"
+        )
+    raw = parse_ssh_g_output(completed.stdout)
+    host = optional_str(raw.get("hostname"))
+    user = optional_str(raw.get("user"))
+    if not host or not user:
+        raise FleetError(
+            f"ssh alias {alias!r} did not resolve to both HostName and User"
+        )
+    identity_file = optional_str(raw.get("identityfile"))
+    proxy_jump = optional_str(raw.get("proxyjump"))
+    return FleetSecret(
+        host=host,
+        user=user,
+        port=int_setting(raw, "port", 22),
+        auth="key",
+        identity_file=identity_file,
+        proxy_jump=proxy_jump,
+        identities_only=raw.get("identitiesonly", "no").lower() == "yes",
+        forward_agent=raw.get("forwardagent", "no").lower() == "yes",
+        compression=raw.get("compression", "no").lower() == "yes",
+        connect_timeout=int_setting(raw, "connecttimeout", 30),
+        server_alive_interval=int_setting(raw, "serveraliveinterval", 30),
+        server_alive_count_max=int_setting(raw, "serveralivecountmax", 3),
+        strict_host_key_checking=optional_str(raw.get("stricthostkeychecking")),
+    )
+
+
+def parse_env_file(path: Path) -> dict[str, str]:
+    """Parse simple KEY=VALUE env files with shell quoting."""
+    values: dict[str, str] = {}
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].lstrip()
+        key, separator, value = line.partition("=")
+        if not separator:
+            raise FleetError(f"invalid env line {line_number} in {path}: {raw_line!r}")
+        parsed = shlex.split(value, posix=True)
+        if len(parsed) > 1:
+            raise FleetError(
+                f"env value for {key.strip()} on line {line_number} must parse to one token"
+            )
+        values[key.strip()] = parsed[0] if parsed else ""
+    return values
+
+
+def normalize_machine_name(name: str) -> str:
+    """Normalize a machine name for env-style prefixes."""
+    return name.upper().replace("-", "_").replace(".", "_")
+
+
+def machine_field(env: dict[str, str], prefix: str, machine: str, field: str) -> str | None:
+    """Return one imported env field."""
+    return env.get(f"{prefix}_{normalize_machine_name(machine)}_{field}")
+
+
+def configured_machine_names(env: dict[str, str], prefix: str) -> list[str]:
+    """Enumerate machine names from one env-based remote schema."""
+    configured = env.get(f"{prefix}_MACHINES", "")
+    if configured:
+        return [item.strip() for item in configured.split(",") if item.strip()]
+    suffix = "_HOST"
+    stem = f"{prefix}_"
+    names = []
+    for key in sorted(env):
+        if key.startswith(stem) and key.endswith(suffix):
+            names.append(key[len(stem) : -len(suffix)].lower())
+    return names
+
+
+def secret_to_toml(secret: FleetSecret) -> str:
+    """Serialize a secret file."""
+    lines = [
+        f'host = "{secret.host}"',
+        f'user = "{secret.user}"',
+        f"port = {secret.port}",
+        f'auth = "{secret.auth}"',
+    ]
+    if secret.identity_file:
+        lines.append(f'identity_file = "{secret.identity_file}"')
+    if secret.password:
+        lines.append(f'password = "{secret.password}"')
+    if secret.proxy_jump:
+        lines.append(f'proxy_jump = "{secret.proxy_jump}"')
+    lines.append(f"identities_only = {'true' if secret.identities_only else 'false'}")
+    lines.append(f"forward_agent = {'true' if secret.forward_agent else 'false'}")
+    lines.append(f"compression = {'true' if secret.compression else 'false'}")
+    lines.append(f"connect_timeout = {secret.connect_timeout}")
+    lines.append(f"server_alive_interval = {secret.server_alive_interval}")
+    lines.append(f"server_alive_count_max = {secret.server_alive_count_max}")
+    if secret.strict_host_key_checking:
+        lines.append(
+            f'strict_host_key_checking = "{secret.strict_host_key_checking}"'
+        )
+    for key, value in sorted(secret.extra_options.items()):
+        lines.append(f'ssh_option.{key} = "{value}"')
+    return "\n".join(lines) + "\n"
+
+
+def target_to_toml(target: TargetRecord) -> str:
+    """Serialize a target file."""
+    lines = [
+        "version = 1",
+        f'name = "{target.name}"',
+        f"enabled = {'true' if target.enabled else 'false'}",
+        f'transport = "{target.transport}"',
+    ]
+    if target.protocol:
+        lines.append(f'protocol = "{target.protocol}"')
+    if target.workdir:
+        lines.append(f'workdir = "{target.workdir}"')
+    if target.tags:
+        tags = ", ".join(f'"{tag}"' for tag in target.tags)
+        lines.append(f"tags = [{tags}]")
+    lines.append(f'secret_backend = "{target.secret_backend}"')
+    if target.secret_ref:
+        lines.append(f'secret_ref = "{target.secret_ref}"')
+    if target.ssh_host_alias:
+        lines.append(f'ssh_host_alias = "{target.ssh_host_alias}"')
+    if target.default_profile:
+        lines.append(f'default_profile = "{target.default_profile}"')
+    if target.scheduler:
+        lines.append(f'scheduler = "{target.scheduler}"')
+    return "\n".join(lines) + "\n"
+
+
+def binding_for_project(
+    path: Path,
+    target: str | None,
+    pool: str | None,
+    profile: str | None,
+    remote_root: str | None,
+    remote_roots_by_target: dict[str, str] | None = None,
+    sync_excludes: tuple[str, ...] = (),
+) -> ProjectBinding:
+    """Construct one project binding."""
+    return ProjectBinding(
+        path=path.resolve(),
+        default_target=target,
+        default_pool=pool,
+        default_profile=profile,
+        remote_root=remote_root,
+        remote_roots_by_target=dict(remote_roots_by_target or {}),
+        sync_excludes=sync_excludes,
+    )
+
+
+def update_project_binding(
+    path: Path,
+    *,
+    project_path: Path,
+    target: str | None,
+    pool: str | None,
+    profile: str | None,
+    remote_root: str | None,
+    remote_roots_by_target: dict[str, str] | None = None,
+    sync_excludes: tuple[str, ...] = (),
+) -> None:
+    """Create or replace one project binding."""
+    existing = load_projects(path)
+    replacement = binding_for_project(
+        project_path,
+        target,
+        pool,
+        profile,
+        remote_root,
+        remote_roots_by_target,
+        sync_excludes,
+    )
+    filtered = [item for item in existing if item.path != replacement.path]
+    filtered.append(replacement)
+    write_text_file(path, serialize_projects(filtered), mode=PRIVATE_FILE_MODE)
+
+
+def command_project_bind(args: argparse.Namespace) -> int:
+    """Bind one project path to a default target or pool."""
+    if bool(args.target) == bool(args.pool):
+        raise FleetError("pass exactly one of --target or --pool")
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    ensure_private_dir(context.paths.config_home, mode=PRIVATE_DIR_MODE)
+    write_text_if_missing(
+        context.paths.projects_file,
+        default_projects_template(),
+        mode=PRIVATE_FILE_MODE,
+    )
+    project_path = expand_local_path(args.path or str(Path.cwd()))
+    existing = next(
+        (item for item in context.projects if item.path == project_path),
+        None,
+    )
+    normalized_target = context.normalize_selector(args.target)
+    normalized_pool = context.normalize_selector(args.pool)
+    merged_target_roots = (
+        dict(existing.remote_roots_by_target)
+        if existing is not None
+        else {}
+    )
+    if normalized_target and normalized_target not in context.targets:
+        raise FleetError(f"unknown target {args.target!r}; run `fleetctl list`")
+    if normalized_pool and normalized_pool not in context.pools:
+        raise FleetError(f"unknown pool {args.pool!r}; run `fleetctl list`")
+    for raw_target_root in args.target_root:
+        target_name, remote_root = parse_target_root_arg(raw_target_root)
+        normalized_target_name = context.normalize_selector(target_name) or target_name
+        if normalized_target_name not in context.targets:
+            raise FleetError(
+                f"unknown target {target_name!r} in --target-root; run `fleetctl list`"
+            )
+        merged_target_roots[normalized_target_name] = remote_root
+    update_project_binding(
+        context.paths.projects_file,
+        project_path=project_path,
+        target=normalized_target,
+        pool=normalized_pool,
+        profile=args.profile or (existing.default_profile if existing else None),
+        remote_root=args.remote_root if args.remote_root is not None else (
+            existing.remote_root if existing else None
+        ),
+        remote_roots_by_target=merged_target_roots,
+        sync_excludes=(
+            tuple(args.sync_exclude)
+            if args.sync_exclude
+            else (existing.sync_excludes if existing else ())
+        ),
+    )
+    print(project_path)
+    return 0
+
+
+def command_project_show(args: argparse.Namespace) -> int:
+    """Show the effective project binding for one path."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    project_path = expand_local_path(args.path or str(Path.cwd()))
+    binding = context.project_binding_for(project_path)
+    if binding is None:
+        raise FleetError(f"no project binding found for {project_path}")
+    payload = {
+        "path": str(binding.path),
+        "default_target": binding.default_target or "",
+        "default_pool": binding.default_pool or "",
+        "default_profile": binding.default_profile or "",
+        "remote_root": binding.remote_root or "",
+        "remote_roots_by_target": dict(sorted(binding.remote_roots_by_target.items())),
+        "sync_excludes": list(binding.sync_excludes),
+    }
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_project_list(args: argparse.Namespace) -> int:
+    """List all configured project bindings."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    rows = [
+        {
+            "path": str(binding.path),
+            "default_target": binding.default_target or "",
+            "default_pool": binding.default_pool or "",
+            "default_profile": binding.default_profile or "",
+            "remote_root": binding.remote_root or "",
+            "target_roots": ",".join(sorted(binding.remote_roots_by_target)),
+        }
+        for binding in sorted(context.projects, key=lambda item: str(item.path))
+    ]
+    if args.json:
+        print(json.dumps(rows, indent=2, sort_keys=True))
+    else:
+        print(
+            format_table(
+                rows,
+                [
+                    "path",
+                    "default_target",
+                    "default_pool",
+                    "default_profile",
+                    "remote_root",
+                    "target_roots",
+                ],
+            )
+        )
+    return 0
+
+
+def command_init(args: argparse.Namespace) -> int:
+    """Create the local private fleet directory layout."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    paths = context.paths
+    ensure_private_dir(paths.config_home, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.targets_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.pools_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.protocols_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.profiles_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.secrets_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.state_home, mode=STATE_DIR_MODE)
+    ensure_private_dir(paths.cache_home, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.control_dir, mode=PRIVATE_DIR_MODE)
+
+    write_text_if_missing(paths.config_file, default_config_template(), mode=PRIVATE_FILE_MODE)
+    write_text_if_missing(paths.projects_file, default_projects_template(), mode=PRIVATE_FILE_MODE)
+    write_text_if_missing(paths.known_hosts_file, "", mode=PRIVATE_FILE_MODE)
+    write_text_if_missing(
+        paths.profiles_dir / "plain-ssh.toml",
+        default_plain_profile_template(),
+        mode=PRIVATE_FILE_MODE,
+    )
+    write_text_if_missing(
+        paths.profiles_dir / "slurm-batch.toml",
+        default_slurm_profile_template(),
+        mode=PRIVATE_FILE_MODE,
+    )
+    if args.write_examples:
+        write_text_if_missing(
+            paths.targets_dir / "example-target.toml",
+            local_target_template("example-target"),
+            mode=PRIVATE_FILE_MODE,
+        )
+        write_text_if_missing(
+            paths.secrets_dir / "example-target.toml",
+            local_secret_template(),
+            mode=PRIVATE_FILE_MODE,
+        )
+        write_text_if_missing(
+            paths.pools_dir / "example-pool.toml",
+            pool_template("example-pool"),
+            mode=PRIVATE_FILE_MODE,
+        )
+
+    print(paths.config_home)
+    return 0
+
+
+def command_list(args: argparse.Namespace) -> int:
+    """List configured targets."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    if args.format == "ssh-hosts":
+        for target in sorted(context.targets.values(), key=lambda item: item.name):
+            if not target.enabled:
+                continue
+            if args.tag and args.tag not in target.tags:
+                continue
+            print(f"fleet:{target.name}")
+        return 0
+
+    pool_index: dict[str, list[str]] = {}
+    for pool in context.pools.values():
+        names = list(pool.targets)
+        if not names and pool.match_tags:
+            names = [
+                target.name
+                for target in context.targets.values()
+                if set(pool.match_tags).issubset(target.tags)
+            ]
+        for name in names:
+            pool_index.setdefault(name, []).append(pool.name)
+
+    rows = []
+    for target in sorted(context.targets.values(), key=lambda item: item.name):
+        if args.tag and args.tag not in target.tags:
+            continue
+        rows.append(
+            target_display(
+                target,
+                protocol_name=context.resolve_protocol(target).name,
+                pool_names=pool_index.get(target.name, []),
+            )
+        )
+    if args.json:
+        print(json.dumps(rows, indent=2, sort_keys=True))
+    else:
+        print(
+            format_table(
+                rows,
+                [
+                    "name",
+                    "enabled",
+                    "transport",
+                    "protocol",
+                    "default_profile",
+                    "scheduler",
+                    "tags",
+                    "pools",
+                ],
+            )
+        )
+    return 0
+
+
+def command_show(args: argparse.Namespace) -> int:
+    """Show one target or pool with optional secret preview."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    selector = context.normalize_selector(args.selector)
+    payload: dict[str, Any]
+
+    if selector in context.targets:
+        target = context.targets[selector]
+        payload = target_display(
+            target,
+            protocol_name=context.resolve_protocol(target).name,
+        )
+        payload["kind"] = "target"
+        if args.secret:
+            secret = context.resolve_secret(target)
+            payload["secret"] = (
+                {
+                    "host": secret.host,
+                    "user": secret.user,
+                    "port": secret.port,
+                    "auth": secret.auth,
+                    "identity_file": secret.identity_file or "",
+                    "proxy_jump": secret.proxy_jump or "",
+                    "password_configured": secret.password is not None,
+                }
+                if args.sensitive
+                else redact_secret(secret)
+            )
+    elif selector in context.pools:
+        pool = context.pools[selector]
+        resolved = context.select_pool(pool)
+        payload = {
+            "kind": "pool",
+            "name": pool.name,
+            "targets": list(pool.targets),
+            "match_tags": list(pool.match_tags),
+            "strategy": pool.strategy,
+            "default_profile": pool.default_profile or "",
+            "resolved_target": resolved.name,
+            "resolved_protocol": context.resolve_protocol(resolved).name,
+        }
+    else:
+        raise FleetError(f"unknown target or pool {args.selector!r}")
+
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_protocol_show(args: argparse.Namespace) -> int:
+    """Show the resolved protocol for one target, pool, or protocol name."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    selector = context.normalize_selector(args.selector)
+    payload: dict[str, Any]
+    if selector in context.protocols:
+        protocol = context.protocols[selector]
+        payload = protocol_display(protocol)
+        payload["selector_kind"] = "protocol"
+    else:
+        target, _binding = context.resolve_target(selector, cwd=Path.cwd())
+        protocol = context.resolve_protocol(target)
+        payload = protocol_display(protocol)
+        payload["selector_kind"] = "target"
+        payload["target"] = target.name
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_queue_list(args: argparse.Namespace) -> int:
+    """List the queue presets for one target, pool, or protocol."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    selector = context.normalize_selector(args.selector)
+    if selector in context.protocols:
+        protocol = context.protocols[selector]
+    else:
+        target, _binding = context.resolve_target(selector, cwd=Path.cwd())
+        protocol = context.resolve_protocol(target)
+    rows = [queue_display(queue) for queue in protocol.queues]
+    if args.json:
+        print(json.dumps(rows, indent=2, sort_keys=True))
+    else:
+        if not rows:
+            raise FleetError(f"protocol {protocol.name!r} does not define any queues")
+        print(
+            format_table(
+                rows,
+                [
+                    "name",
+                    "partition",
+                    "default",
+                    "gpus",
+                    "cpus_per_task",
+                    "mem",
+                    "time_limit",
+                ],
+            )
+        )
+    return 0
+
+
+def command_resolve(args: argparse.Namespace) -> int:
+    """Resolve one pool or project binding to a concrete target name."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, _binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    if args.json:
+        print(json.dumps({"target": target.name}, indent=2))
+    else:
+        print(target.name)
+    return 0
+
+
+def command_import_ssh(args: argparse.Namespace) -> int:
+    """Import one existing local SSH alias into private fleet config."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    ensure_private_dir(context.paths.config_home, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(context.paths.targets_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(context.paths.secrets_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(context.paths.profiles_dir, mode=PRIVATE_DIR_MODE)
+    write_text_if_missing(
+        context.paths.profiles_dir / "plain-ssh.toml",
+        default_plain_profile_template(),
+        mode=PRIVATE_FILE_MODE,
+    )
+
+    name = args.name or args.alias
+    target_path = context.paths.targets_dir / f"{name}.toml"
+    secret_path = context.paths.secrets_dir / f"{name}.toml"
+    if not args.force and (target_path.exists() or secret_path.exists()):
+        raise FleetError(
+            f"target {name!r} already exists; rerun with --force to overwrite"
+        )
+
+    secret = infer_secret_from_ssh_alias(args.alias)
+    target = TargetRecord(
+        name=name,
+        protocol=args.protocol or ("slurm" if args.scheduler != "none" else None),
+        workdir=args.workdir,
+        tags=tuple(args.tag),
+        secret_backend="file",
+        secret_ref=str(secret_path),
+        default_profile=args.profile or "plain-ssh",
+        scheduler=args.scheduler,
+    )
+    write_text_file(target_path, target_to_toml(target), mode=PRIVATE_FILE_MODE)
+    write_text_file(secret_path, secret_to_toml(secret), mode=PRIVATE_FILE_MODE)
+    if args.project_path:
+        update_project_binding(
+            context.paths.projects_file,
+            project_path=expand_local_path(args.project_path),
+            target=name,
+            pool=None,
+            profile=target.default_profile,
+            remote_root=None,
+            remote_roots_by_target={},
+        )
+    print(name)
+    return 0
+
+
+def command_migrate_env(args: argparse.Namespace) -> int:
+    """Import env-based remote config into private fleet state."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    ensure_private_dir(context.paths.config_home, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(context.paths.targets_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(context.paths.secrets_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(context.paths.profiles_dir, mode=PRIVATE_DIR_MODE)
+    write_text_if_missing(
+        context.paths.profiles_dir / "plain-ssh.toml",
+        default_plain_profile_template(),
+        mode=PRIVATE_FILE_MODE,
+    )
+
+    env = parse_env_file(args.env_file)
+    prefix = args.prefix
+    names = configured_machine_names(env, prefix)
+    if not names:
+        raise FleetError(
+            f"no machines found in {args.env_file}; expected keys like "
+            f"{prefix}_MACHINES or {prefix}_<MACHINE>_HOST"
+        )
+
+    imported: list[str] = []
+    target_roots: dict[str, str] = {}
+    project_path = (
+        expand_local_path(args.project_path)
+        if args.project_path
+        else args.env_file.resolve().parent
+    )
+    project_name = project_path.name
+    for machine in names:
+        secret_path = context.paths.secrets_dir / f"{machine}.toml"
+        target_path = context.paths.targets_dir / f"{machine}.toml"
+        if not args.force and (secret_path.exists() or target_path.exists()):
+            raise FleetError(
+                f"target {machine!r} already exists; rerun with --force to overwrite"
+            )
+        secret = FleetSecret(
+            host=required_env_field(env, prefix, machine, "HOST"),
+            user=required_env_field(env, prefix, machine, "USER"),
+            port=int(machine_field(env, prefix, machine, "PORT") or "22"),
+            auth=(machine_field(env, prefix, machine, "AUTH") or "key").lower(),
+            identity_file=optional_str(machine_field(env, prefix, machine, "SSH_KEY")),
+            password=optional_str(machine_field(env, prefix, machine, "PASSWORD")),
+            connect_timeout=int(args.connect_timeout),
+            server_alive_interval=int(args.server_alive_interval),
+            server_alive_count_max=int(args.server_alive_count_max),
+        )
+        remote_root = optional_str(machine_field(env, prefix, machine, "WORKDIR"))
+        inferred_workdir = None
+        if remote_root:
+            remote_root_path = PurePosixPath(remote_root)
+            if remote_root_path.name == project_name:
+                inferred_workdir = str(remote_root_path.parent)
+        target = TargetRecord(
+            name=machine,
+            protocol=args.protocol or ("slurm" if args.scheduler != "none" else None),
+            workdir=inferred_workdir,
+            tags=tuple(args.tag),
+            secret_backend="file",
+            secret_ref=str(secret_path),
+            default_profile=args.profile or "plain-ssh",
+            scheduler=args.scheduler,
+        )
+        write_text_file(target_path, target_to_toml(target), mode=PRIVATE_FILE_MODE)
+        write_text_file(secret_path, secret_to_toml(secret), mode=PRIVATE_FILE_MODE)
+        if remote_root and not inferred_workdir:
+            target_roots[machine] = remote_root
+        imported.append(machine)
+
+    default_machine = optional_str(env.get(f"{prefix}_DEFAULT_MACHINE"))
+    existing = next(
+        (item for item in context.projects if item.path == project_path),
+        None,
+    )
+    update_project_binding(
+        context.paths.projects_file,
+        project_path=project_path,
+        target=default_machine or (existing.default_target if existing else None),
+        pool=existing.default_pool if existing else None,
+        profile=args.profile or (
+            existing.default_profile if existing else "plain-ssh"
+        ),
+        remote_root=existing.remote_root if existing else None,
+        remote_roots_by_target={
+            **(existing.remote_roots_by_target if existing else {}),
+            **target_roots,
+        },
+        sync_excludes=existing.sync_excludes if existing else (),
+    )
+
+    for machine in imported:
+        print(machine)
+    return 0
+
+
+def required_env_field(env: dict[str, str], prefix: str, machine: str, field: str) -> str:
+    """Require one imported env field."""
+    value = machine_field(env, prefix, machine, field)
+    if value is None or value == "":
+        raise FleetError(
+            f"missing required field {prefix}_{normalize_machine_name(machine)}_{field}"
+        )
+    return value
+
+
+def command_ssh(args: argparse.Namespace) -> int:
+    """Open one interactive SSH session."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, _binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    secret = context.resolve_secret(target)
+    completed = run_ssh_command(
+        secret,
+        allocate_tty=True,
+        remote_command=None,
+        **ssh_runtime_kwargs(context),
+    )
+    return completed.returncode
+
+
+def command_smoke(args: argparse.Namespace) -> int:
+    """Run a lightweight connectivity check."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    secret = context.resolve_secret(target)
+    profile = context.resolve_profile(target, binding, args.profile)
+    protocol = context.resolve_protocol(target)
+    workdir = target.workdir
+    project_root = resolve_remote_root(target, binding, args.cwd)
+    prelude = ""
+    if workdir:
+        quoted_workdir = shlex.quote(workdir)
+        prelude += (
+            f"workdir={quoted_workdir};"
+            " printf 'workdir=%s\\n' \"$workdir\";"
+            " if [ -d \"$workdir\" ]; then"
+            " cd \"$workdir\";"
+            " printf 'workdir_status=present\\n';"
+            " else"
+            " printf 'workdir_status=missing\\n';"
+            " fi;"
+        )
+    if project_root and project_root != workdir:
+        quoted_project_root = shlex.quote(project_root)
+        prelude += (
+            f"project_root={quoted_project_root};"
+            " printf 'project_root=%s\\n' \"$project_root\";"
+            " if [ -d \"$project_root\" ]; then"
+            " cd \"$project_root\";"
+            " printf 'project_root_status=present\\n';"
+            " else"
+            " printf 'project_root_status=missing\\n';"
+            " fi;"
+        )
+    smoke_body = (
+        "set -eu;"
+        f"{prelude}"
+        f" printf 'protocol=%s\\n' {shlex.quote(protocol.name)};"
+        f" printf 'protocol_kind=%s\\n' {shlex.quote(protocol.kind)};"
+        " printf 'host=%s\\n' \"$(hostname)\";"
+        " printf 'user=%s\\n' \"$(whoami)\";"
+        " printf 'pwd=%s\\n' \"$(pwd)\";"
+        " if command -v python3 >/dev/null 2>&1; then python3 --version; fi;"
+    )
+    if protocol.kind == "slurm":
+        queue = protocol.default_queue()
+        if queue is not None:
+            smoke_body += (
+                f" printf 'default_queue=%s\\n' {shlex.quote(queue.name)};"
+            )
+        smoke_body += (
+            " tools_missing='';"
+            " for tool in sbatch squeue sacct sinfo; do"
+            " if ! command -v \"$tool\" >/dev/null 2>&1; then"
+            " tools_missing=\"$tools_missing $tool\";"
+            " fi;"
+            " done;"
+            " if [ -n \"$tools_missing\" ]; then"
+            " printf 'scheduler_tools=missing:%s\\n' \"$tools_missing\";"
+            " exit 1;"
+            " fi;"
+            " printf 'scheduler_tools=present\\n';"
+            " queues=\"$(sinfo -h -o '%P' | paste -sd, -)\";"
+            " if [ -n \"$queues\" ]; then printf 'queues=%s\\n' \"$queues\"; fi;"
+        )
+    elif protocol.smoke_gpu_probe:
+        smoke_body += (
+            " if command -v nvidia-smi >/dev/null 2>&1; then"
+            " nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader;"
+            " fi;"
+        )
+    smoke_argv = [
+        "/usr/bin/env",
+        "bash",
+        "-lc",
+        smoke_body,
+    ]
+    completed = run_ssh_command(
+        secret,
+        allocate_tty=False,
+        remote_command=remote_shell_command(smoke_argv),
+        capture_output=True,
+        **ssh_runtime_kwargs(context),
+    )
+    if completed.stdout:
+        print(completed.stdout, end="")
+    if completed.stderr:
+        print(completed.stderr, end="", file=sys.stderr)
+    if completed.returncode != 0:
+        raise FleetError(
+            f"smoke check failed for {target.name!r} with exit code {completed.returncode}",
+            exit_code=completed.returncode,
+        )
+    if profile.kind not in {"direct", "scheduler"}:
+        raise FleetError(
+            f"profile {profile.name!r} uses unsupported kind {profile.kind!r}"
+        )
+    return 0
+
+
+def command_exec(args: argparse.Namespace) -> int:
+    """Run one argv vector remotely without shell interpretation of the user payload."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    argv = list(args.argv)
+    selector = args.selector_override or args.selector
+    if args.selector_override and args.selector:
+        normalized = context.normalize_selector(args.selector)
+        if normalized in context.targets or normalized in context.pools:
+            raise FleetError("pass either a positional selector or --target, not both")
+        argv = [args.selector, *argv]
+        selector = args.selector_override
+    if not argv and selector is not None:
+        normalized = context.normalize_selector(selector)
+        if normalized not in context.targets and normalized not in context.pools:
+            argv = [selector]
+            selector = None
+    if not argv:
+        raise FleetError("`fleetctl exec` requires a command after `--`")
+    target, binding = context.resolve_target(selector, cwd=Path.cwd())
+    protocol = context.resolve_protocol(target)
+    ensure_login_exec_allowed(target, protocol, allow_login=bool(args.login))
+    secret = context.resolve_secret(target)
+    profile = context.resolve_profile(target, binding, args.profile)
+    cwd = resolve_remote_root(target, binding, args.cwd)
+    environment = dict(profile.environment)
+    encoded_stub = base64.b64encode(EXEC_REMOTE_STUB.encode("utf-8")).decode("ascii")
+    payload = base64.b64encode(
+        json.dumps(
+            {
+                "argv": argv,
+                "env": environment,
+            }
+        ).encode("utf-8")
+    ).decode("ascii")
+    remote = remote_shell_command(
+        ["python3", "-c", EXEC_REMOTE_BOOTSTRAP, encoded_stub, payload],
+        cwd=cwd,
+    )
+    completed = run_ssh_command(
+        secret,
+        allocate_tty=bool(args.tty),
+        remote_command=remote,
+        **ssh_runtime_kwargs(context),
+    )
+    return completed.returncode
+
+
+def command_script(args: argparse.Namespace) -> int:
+    """Upload and run one local script on a target."""
+    local_script = Path(args.local_script).expanduser().resolve()
+    if not local_script.is_file():
+        raise FleetError(f"missing local script: {local_script}")
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    protocol = context.resolve_protocol(target)
+    ensure_login_exec_allowed(target, protocol, allow_login=bool(args.login))
+    secret = context.resolve_secret(target)
+    profile = context.resolve_profile(target, binding, args.profile)
+    ssh_runtime = ssh_runtime_kwargs(context)
+    remote_script = stage_remote_script(
+        secret,
+        profile,
+        local_script,
+        ssh_runtime=ssh_runtime,
+    )
+    cwd = resolve_remote_root(target, binding, args.cwd)
+    interpreter = args.interpreter or profile.interpreter
+    argv = []
+    if interpreter:
+        argv.extend(shlex.split(interpreter))
+    argv.append(remote_script)
+    argv.extend(args.script_args)
+    argv = prefixed_env_command(argv, profile.environment)
+    completed = run_ssh_command(
+        secret,
+        allocate_tty=bool(args.tty),
+        remote_command=remote_shell_command(argv, cwd=cwd),
+        **ssh_runtime,
+    )
+    return completed.returncode
+
+
+def command_sync(args: argparse.Namespace) -> int:
+    """Push or pull files with rsync."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    secret = context.resolve_secret(target)
+    ssh_runtime = ssh_runtime_kwargs(context)
+    default_remote = (
+        args.remote_path
+        or resolve_remote_root(target, binding)
+        or "."
+    )
+    excludes = list(DEFAULT_SYNC_EXCLUDES)
+    if binding is not None:
+        excludes.extend(binding.sync_excludes)
+
+    command = ["rsync", "-az"]
+    if args.delete:
+        command.append("--delete")
+    if args.direction == "push":
+        remote_parent = posixpath.dirname(default_remote.rstrip("/")) or "."
+        for pattern in excludes:
+            command += ["--exclude", pattern]
+        mkdir = run_ssh_command(
+            secret,
+            allocate_tty=False,
+            remote_command=remote_shell_command(["mkdir", "-p", remote_parent]),
+            **ssh_runtime,
+        )
+        if mkdir.returncode != 0:
+            raise FleetError(
+                f"failed to create remote parent path {remote_parent!r} on {target.name!r}"
+            )
+    command += ["-e", build_rsync_transport(secret, **ssh_runtime)]
+
+    if args.direction == "push":
+        local_path = Path(args.local_path).expanduser().resolve()
+        local = str(local_path)
+        if local_path.is_dir():
+            local = f"{local.rstrip('/')}/"
+        remote = f"{secret.target}:{default_remote}"
+        command += [local, remote]
+    else:
+        local = str(Path(args.local_path).expanduser().resolve())
+        remote = f"{secret.target}:{default_remote}"
+        command += [remote, local]
+
+    completed = run_command(command, env=ssh_env(secret))
+    return completed.returncode
+
+
+def command_submit(args: argparse.Namespace) -> int:
+    """Submit or launch a script according to its profile."""
+    local_script = Path(args.local_script).expanduser().resolve()
+    if not local_script.is_file():
+        raise FleetError(f"missing local script: {local_script}")
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    protocol = context.resolve_protocol(target)
+    secret = context.resolve_secret(target)
+    profile = context.resolve_profile(target, binding, args.profile)
+    ssh_runtime = ssh_runtime_kwargs(context)
+    cwd = resolve_remote_root(target, binding, args.cwd)
+
+    if profile.kind == "direct":
+        if args.native_batch:
+            raise FleetError("`--native-batch` only applies to scheduler profiles")
+        namespace = argparse.Namespace(
+            config_home=args.config_home,
+            state_home=args.state_home,
+            cache_home=args.cache_home,
+            selector=target.name,
+            profile=profile.name,
+            cwd=cwd,
+            local_script=str(local_script),
+            interpreter=args.interpreter,
+            script_args=args.script_args,
+            login=False,
+            tty=False,
+        )
+        return command_script(namespace)
+
+    if args.native_batch:
+        if args.script_args:
+            raise FleetError(
+                "`fleetctl submit --native-batch` does not accept extra script arguments"
+            )
+        remote_script = stage_remote_script(
+            secret,
+            profile,
+            local_script,
+            ssh_runtime=ssh_runtime,
+        )
+        submit_argv = render_template_values(
+            profile.submit_command,
+            script_path=remote_script,
+            workdir=cwd,
+        )
+        if not submit_argv:
+            raise FleetError(
+                f"profile {profile.name!r} does not define `submit_command`"
+            )
+        completed = run_ssh_command(
+            secret,
+            allocate_tty=False,
+            remote_command=remote_shell_command(submit_argv, cwd=cwd),
+            capture_output=True,
+            **ssh_runtime,
+        )
+        if completed.stdout:
+            print(completed.stdout, end="")
+        if completed.stderr:
+            print(completed.stderr, end="", file=sys.stderr)
+        if completed.returncode != 0:
+            return completed.returncode
+        if profile.job_id_pattern:
+            match = re.search(profile.job_id_pattern, completed.stdout)
+            if match:
+                job_id = match.groupdict().get("job_id") or match.group(1)
+                print(f"job_id={job_id}")
+        return completed.returncode
+
+    if protocol.kind == "slurm":
+        queue = resolve_queue(protocol, args.queue)
+        remote_script = stage_remote_script(
+            secret,
+            profile,
+            local_script,
+            ssh_runtime=ssh_runtime,
+        )
+        job_base_root = protocol_base_root(target, binding, args.cwd)
+        output_dir, output_path, error_path = resolve_job_output_paths(
+            protocol,
+            base_root=job_base_root,
+            output_override=args.output,
+            error_override=args.error,
+        )
+        if output_dir:
+            ensure_remote_directory(secret, output_dir, ssh_runtime=ssh_runtime)
+        job_name = sanitize_job_name(args.job_name or local_script.stem)
+        wrapper_text = render_slurm_wrapper(
+            protocol=protocol,
+            remote_script=remote_script,
+            script_args=args.script_args,
+            interpreter=args.interpreter or profile.interpreter,
+            environment=profile.environment,
+            cwd=cwd,
+            queue=queue,
+            job_name=job_name,
+            time_limit=args.time,
+            gpus=args.gpus,
+            cpus_per_task=args.cpus_per_task,
+            mem=args.mem,
+            output_path=output_path,
+            error_path=error_path,
+        )
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+            handle.write(wrapper_text)
+            wrapper_local = Path(handle.name)
+        try:
+            remote_wrapper = stage_remote_script(
+                secret,
+                profile,
+                wrapper_local,
+                ssh_runtime=ssh_runtime,
+            )
+        finally:
+            wrapper_local.unlink(missing_ok=True)
+        submit_argv = render_template_values(
+            profile.submit_command,
+            script_path=remote_wrapper,
+            workdir=cwd,
+        )
+        if not submit_argv:
+            raise FleetError(
+                f"profile {profile.name!r} does not define `submit_command`"
+            )
+        completed = run_ssh_command(
+            secret,
+            allocate_tty=False,
+            remote_command=remote_shell_command(submit_argv, cwd=cwd),
+            capture_output=True,
+            **ssh_runtime,
+        )
+        if completed.stdout:
+            print(completed.stdout, end="")
+        if completed.stderr:
+            print(completed.stderr, end="", file=sys.stderr)
+        if completed.returncode != 0:
+            return completed.returncode
+        if profile.job_id_pattern:
+            match = re.search(profile.job_id_pattern, completed.stdout)
+            if match:
+                job_id = match.groupdict().get("job_id") or match.group(1)
+                print(f"job_id={job_id}")
+                if output_path:
+                    print(f"log_out={output_path.replace('%j', job_id)}")
+                if error_path:
+                    print(f"log_err={error_path.replace('%j', job_id)}")
+        return completed.returncode
+
+    remote_script = stage_remote_script(
+        secret,
+        profile,
+        local_script,
+        ssh_runtime=ssh_runtime,
+    )
+    submit_argv = render_template_values(
+        profile.submit_command,
+        script_path=remote_script,
+        workdir=cwd,
+    )
+    if not submit_argv:
+        raise FleetError(
+            f"profile {profile.name!r} does not define `submit_command`"
+        )
+    completed = run_ssh_command(
+        secret,
+        allocate_tty=False,
+        remote_command=remote_shell_command(submit_argv, cwd=cwd),
+        capture_output=True,
+        **ssh_runtime,
+    )
+    if completed.stdout:
+        print(completed.stdout, end="")
+    if completed.stderr:
+        print(completed.stderr, end="", file=sys.stderr)
+    if completed.returncode != 0:
+        return completed.returncode
+    if profile.job_id_pattern:
+        match = re.search(profile.job_id_pattern, completed.stdout)
+        if match:
+            job_id = match.groupdict().get("job_id") or match.group(1)
+            print(job_id)
+    return completed.returncode
+
+
+def run_job_command(
+    args: argparse.Namespace,
+    template: tuple[str, ...],
+) -> int:
+    """Run one scheduler command from the current profile."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    secret = context.resolve_secret(target)
+    profile = context.resolve_profile(target, binding, args.profile)
+    cwd = resolve_remote_root(target, binding, args.cwd)
+    if not template:
+        raise FleetError(
+            f"profile {profile.name!r} does not support this job operation"
+        )
+    argv = render_template_values(template, job_id=args.job_id, workdir=cwd)
+    completed = run_ssh_command(
+        secret,
+        allocate_tty=False,
+        remote_command=remote_shell_command(argv, cwd=cwd),
+        capture_output=True,
+        **ssh_runtime_kwargs(context),
+    )
+    if completed.stdout:
+        print(completed.stdout, end="")
+    if completed.stderr:
+        print(completed.stderr, end="", file=sys.stderr)
+    return completed.returncode
+
+
+def command_job_status(args: argparse.Namespace) -> int:
+    """Check remote scheduler status."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    profile = context.resolve_profile(target, binding, args.profile)
+    return run_job_command(args, profile.status_command)
+
+
+def command_job_logs(args: argparse.Namespace) -> int:
+    """Fetch remote scheduler logs."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    profile = context.resolve_profile(target, binding, args.profile)
+    return run_job_command(args, profile.logs_command)
+
+
+def command_job_cancel(args: argparse.Namespace) -> int:
+    """Cancel one remote scheduler job."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    target, binding = context.resolve_target(args.selector, cwd=Path.cwd())
+    profile = context.resolve_profile(target, binding, args.profile)
+    return run_job_command(args, profile.cancel_command)
+
+
+def command_doctor(args: argparse.Namespace) -> int:
+    """Validate local prerequisites and private file permissions."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    paths = context.paths
+    problems: list[str] = []
+    warnings: list[str] = []
+
+    for required_dir in [
+        paths.config_home,
+        paths.targets_dir,
+        paths.pools_dir,
+        paths.protocols_dir,
+        paths.profiles_dir,
+        paths.secrets_dir,
+        paths.state_home,
+        paths.cache_home,
+    ]:
+        if not required_dir.exists():
+            warnings.append(f"missing directory: {required_dir}")
+            continue
+        mode = stat.S_IMODE(required_dir.stat().st_mode)
+        if mode & 0o077:
+            warnings.append(
+                f"directory is more permissive than expected ({oct(mode)}): {required_dir}"
+            )
+
+    for command_name in ["ssh", "scp", "rsync"]:
+        if shutil.which(command_name) is None:
+            problems.append(f"missing required command: {command_name}")
+
+    warnings.extend(target_schema_warnings(paths.targets_dir))
+
+    for target in context.targets.values():
+        try:
+            protocol = context.resolve_protocol(target)
+        except FleetError as exc:
+            problems.append(str(exc))
+            continue
+        try:
+            secret = context.resolve_secret(target)
+        except FleetError as exc:
+            problems.append(str(exc))
+            continue
+        if target.secret_backend == "file" and target.secret_ref:
+            secret_path = expand_local_path(target.secret_ref)
+            if secret_path.exists():
+                mode = stat.S_IMODE(secret_path.stat().st_mode)
+                if mode & 0o077:
+                    problems.append(
+                        f"secret file is too permissive ({oct(mode)}): {secret_path}"
+                    )
+        if secret.auth == "password":
+            if shutil.which("sshpass") is None:
+                problems.append(
+                    f"target {target.name!r} uses password auth but `sshpass` is missing"
+                )
+        if protocol.kind == "slurm" and not protocol.queues:
+            warnings.append(
+                f"target {target.name!r} uses Slurm protocol {protocol.name!r} "
+                "without any queue presets"
+            )
+
+    for binding in context.projects:
+        for target_name in sorted(binding.remote_roots_by_target):
+            if target_name not in context.targets:
+                warnings.append(
+                    f"project binding {binding.path} defines a landing strip for "
+                    f"unknown target {target_name!r}"
+                )
+
+    payload = {
+        "config_home": str(paths.config_home),
+        "targets": sorted(context.targets),
+        "pools": sorted(context.pools),
+        "protocols": sorted(context.protocols),
+        "profiles": sorted(context.profiles),
+        "warnings": warnings,
+        "problems": problems,
+    }
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    if problems:
+        return 1
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser."""
+    parser = argparse.ArgumentParser(prog="fleetctl")
+    parser.add_argument("--config-home", type=Path, help="Override FLEET_CONFIG_HOME")
+    parser.add_argument("--state-home", type=Path, help="Override FLEET_STATE_HOME")
+    parser.add_argument("--cache-home", type=Path, help="Override FLEET_CACHE_HOME")
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    init_parser = subparsers.add_parser("init", help="Initialize local fleet directories")
+    init_parser.add_argument(
+        "--write-examples",
+        action="store_true",
+        help="Populate example target, pool, and secret templates",
+    )
+    init_parser.set_defaults(handler=command_init)
+
+    list_parser = subparsers.add_parser("list", help="List configured targets")
+    list_parser.add_argument("--json", action="store_true", help="Emit JSON")
+    list_parser.add_argument(
+        "--format",
+        choices=["table", "ssh-hosts"],
+        default="table",
+        help="Output format",
+    )
+    list_parser.add_argument("--tag", help="Filter by one target tag")
+    list_parser.set_defaults(handler=command_list)
+
+    show_parser = subparsers.add_parser("show", help="Show one target or pool")
+    show_parser.add_argument("selector", help="Target or pool name")
+    show_parser.add_argument("--json", action="store_true", help="Emit JSON")
+    show_parser.add_argument(
+        "--secret",
+        action="store_true",
+        help="Include resolved secret metadata",
+    )
+    show_parser.add_argument(
+        "--sensitive",
+        action="store_true",
+        help="Show the real host instead of a redacted preview",
+    )
+    show_parser.set_defaults(handler=command_show)
+
+    protocol_parser = subparsers.add_parser(
+        "protocol",
+        help="Inspect resolved protocol rules",
+    )
+    protocol_subparsers = protocol_parser.add_subparsers(
+        dest="protocol_command",
+        required=True,
+    )
+    protocol_show_parser = protocol_subparsers.add_parser(
+        "show",
+        help="Show one protocol or the protocol resolved for a target",
+    )
+    protocol_show_parser.add_argument(
+        "selector",
+        help="Protocol name, target name, or pool name",
+    )
+    protocol_show_parser.add_argument("--json", action="store_true", help="Emit JSON")
+    protocol_show_parser.set_defaults(handler=command_protocol_show)
+
+    queue_parser = subparsers.add_parser(
+        "queue",
+        help="Inspect scheduler queue presets",
+    )
+    queue_subparsers = queue_parser.add_subparsers(dest="queue_command", required=True)
+    queue_list_parser = queue_subparsers.add_parser(
+        "list",
+        help="List queue presets for a protocol or target",
+    )
+    queue_list_parser.add_argument(
+        "selector",
+        help="Protocol name, target name, or pool name",
+    )
+    queue_list_parser.add_argument("--json", action="store_true", help="Emit JSON")
+    queue_list_parser.set_defaults(handler=command_queue_list)
+
+    resolve_parser = subparsers.add_parser("resolve", help="Resolve a selector to a target")
+    resolve_parser.add_argument("selector", nargs="?", help="Target or pool name")
+    resolve_parser.add_argument("--json", action="store_true", help="Emit JSON")
+    resolve_parser.set_defaults(handler=command_resolve)
+
+    project_parser = subparsers.add_parser("project", help="Manage project bindings")
+    project_subparsers = project_parser.add_subparsers(
+        dest="project_command", required=True
+    )
+
+    project_bind_parser = project_subparsers.add_parser(
+        "bind",
+        help="Bind a project path to a default target or pool",
+    )
+    project_bind_parser.add_argument(
+        "path",
+        nargs="?",
+        help="Project path to bind (defaults to current directory)",
+    )
+    project_bind_parser.add_argument("--target", help="Default target name")
+    project_bind_parser.add_argument("--pool", help="Default pool name")
+    project_bind_parser.add_argument("--profile", help="Default execution profile")
+    project_bind_parser.add_argument(
+        "--remote-root",
+        help="Default absolute project root override used when workdir/project-name is not correct",
+    )
+    project_bind_parser.add_argument(
+        "--target-root",
+        action="append",
+        default=[],
+        help="Per-target absolute project root override as TARGET=/remote/path",
+    )
+    project_bind_parser.add_argument(
+        "--sync-exclude",
+        action="append",
+        default=[],
+        help="Additional rsync exclude pattern for this project",
+    )
+    project_bind_parser.set_defaults(handler=command_project_bind)
+
+    project_show_parser = project_subparsers.add_parser(
+        "show",
+        help="Show the effective project binding for a path",
+    )
+    project_show_parser.add_argument(
+        "path",
+        nargs="?",
+        help="Project path to inspect (defaults to current directory)",
+    )
+    project_show_parser.set_defaults(handler=command_project_show)
+
+    project_list_parser = project_subparsers.add_parser(
+        "list",
+        help="List configured project bindings",
+    )
+    project_list_parser.add_argument("--json", action="store_true", help="Emit JSON")
+    project_list_parser.set_defaults(handler=command_project_list)
+
+    import_ssh_parser = subparsers.add_parser(
+        "import-ssh",
+        help="Import one existing local SSH alias into fleet config",
+    )
+    import_ssh_parser.add_argument("alias", help="SSH alias to import via `ssh -G`")
+    import_ssh_parser.add_argument("--name", help="Fleet target name")
+    import_ssh_parser.add_argument(
+        "--workdir",
+        help="Host-level work directory where projects land by default",
+    )
+    import_ssh_parser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Tag to attach to the imported target",
+    )
+    import_ssh_parser.add_argument(
+        "--profile",
+        default="plain-ssh",
+        help="Default execution profile",
+    )
+    import_ssh_parser.add_argument(
+        "--protocol",
+        help="Protocol name to attach to the imported target",
+    )
+    import_ssh_parser.add_argument(
+        "--scheduler",
+        default="none",
+        help="Scheduler label for metadata only",
+    )
+    import_ssh_parser.add_argument(
+        "--project-path",
+        help="Optional project path to bind to this imported target",
+    )
+    import_ssh_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing target and secret files",
+    )
+    import_ssh_parser.set_defaults(handler=command_import_ssh)
+
+    migrate_env_parser = subparsers.add_parser(
+        "migrate-env",
+        help="Import env-based remote config into private fleet state",
+    )
+    migrate_env_parser.add_argument(
+        "--env-file",
+        type=Path,
+        required=True,
+        help="Path to the env file that currently holds remote config",
+    )
+    migrate_env_parser.add_argument(
+        "--prefix",
+        required=True,
+        help="Env variable prefix, without trailing underscore",
+    )
+    migrate_env_parser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Tag to attach to imported targets",
+    )
+    migrate_env_parser.add_argument(
+        "--profile",
+        default="plain-ssh",
+        help="Default profile to assign to imported targets",
+    )
+    migrate_env_parser.add_argument(
+        "--protocol",
+        help="Protocol name to attach to imported targets",
+    )
+    migrate_env_parser.add_argument(
+        "--scheduler",
+        default="none",
+        help="Scheduler label for imported targets",
+    )
+    migrate_env_parser.add_argument(
+        "--project-path",
+        help="Project path for the generated local project binding",
+    )
+    migrate_env_parser.add_argument(
+        "--connect-timeout",
+        default=30,
+        help="Default connect timeout to store in imported secrets",
+    )
+    migrate_env_parser.add_argument(
+        "--server-alive-interval",
+        default=30,
+        help="Default ServerAliveInterval to store in imported secrets",
+    )
+    migrate_env_parser.add_argument(
+        "--server-alive-count-max",
+        default=3,
+        help="Default ServerAliveCountMax to store in imported secrets",
+    )
+    migrate_env_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing targets and secrets",
+    )
+    migrate_env_parser.set_defaults(handler=command_migrate_env)
+
+    ssh_parser = subparsers.add_parser("ssh", help="Open an interactive SSH session")
+    ssh_parser.add_argument("selector", nargs="?", help="Target or pool name")
+    ssh_parser.set_defaults(handler=command_ssh)
+
+    smoke_parser = subparsers.add_parser("smoke", help="Run a remote smoke check")
+    smoke_parser.add_argument("selector", nargs="?", help="Target or pool name")
+    smoke_parser.add_argument("--profile", help="Execution profile override")
+    smoke_parser.add_argument("--cwd", help="Remote working directory override")
+    smoke_parser.set_defaults(handler=command_smoke)
+
+    exec_parser = subparsers.add_parser(
+        "exec",
+        help="Run one argv vector remotely without shell interpretation",
+    )
+    exec_parser.add_argument("selector", nargs="?", help="Target or pool name")
+    exec_parser.add_argument("--target", dest="selector_override", help="Target or pool name")
+    exec_parser.add_argument("--profile", help="Execution profile override")
+    exec_parser.add_argument("--cwd", help="Remote working directory override")
+    exec_parser.add_argument(
+        "--login",
+        action="store_true",
+        help="Acknowledge login-surface execution on scheduler-backed targets",
+    )
+    exec_parser.add_argument("--tty", action="store_true", help="Allocate a TTY")
+    exec_parser.add_argument(
+        "argv",
+        nargs=argparse.REMAINDER,
+        help="Command to run remotely, introduced by `--`",
+    )
+    exec_parser.set_defaults(handler=command_exec)
+
+    script_parser = subparsers.add_parser(
+        "script",
+        help="Upload and run a local script remotely",
+    )
+    script_parser.add_argument("local_script", help="Local script to upload and run")
+    script_parser.add_argument("--target", dest="selector", help="Target or pool name")
+    script_parser.add_argument("--profile", help="Execution profile override")
+    script_parser.add_argument("--cwd", help="Remote working directory override")
+    script_parser.add_argument(
+        "--login",
+        action="store_true",
+        help="Acknowledge direct script execution on a scheduler login surface",
+    )
+    script_parser.add_argument("--interpreter", help="Interpreter to prepend")
+    script_parser.add_argument("--tty", action="store_true", help="Allocate a TTY")
+    script_parser.add_argument(
+        "script_args",
+        nargs="*",
+        help="Arguments passed to the uploaded script after `--`",
+    )
+    script_parser.set_defaults(handler=command_script)
+
+    sync_parser = subparsers.add_parser("sync", help="Push or pull files with rsync")
+    sync_parser.add_argument("direction", choices=["push", "pull"])
+    sync_parser.add_argument("local_path", help="Local source or destination path")
+    sync_parser.add_argument(
+        "remote_path",
+        nargs="?",
+        help="Remote source or destination path (defaults to target/project root)",
+    )
+    sync_parser.add_argument("--target", dest="selector", help="Target or pool name")
+    sync_parser.add_argument("--delete", action="store_true", help="Pass --delete")
+    sync_parser.set_defaults(handler=command_sync)
+
+    submit_parser = subparsers.add_parser(
+        "submit",
+        help="Submit or launch a script according to its profile",
+    )
+    submit_parser.add_argument("local_script", help="Local script to submit")
+    submit_parser.add_argument("--target", dest="selector", help="Target or pool name")
+    submit_parser.add_argument("--profile", help="Execution profile override")
+    submit_parser.add_argument("--cwd", help="Remote working directory override")
+    submit_parser.add_argument("--interpreter", help="Interpreter override")
+    submit_parser.add_argument(
+        "--native-batch",
+        action="store_true",
+        help="Submit the staged script unchanged through the scheduler profile",
+    )
+    submit_parser.add_argument("--queue", help="Queue preset name for scheduler protocols")
+    submit_parser.add_argument("--job-name", help="Scheduler job name override")
+    submit_parser.add_argument("--time", help="Scheduler time limit override")
+    submit_parser.add_argument(
+        "--gpus",
+        type=int,
+        help="Scheduler GPU count override",
+    )
+    submit_parser.add_argument(
+        "--cpus-per-task",
+        type=int,
+        help="Scheduler CPU count override",
+    )
+    submit_parser.add_argument("--mem", help="Scheduler memory override")
+    submit_parser.add_argument(
+        "--output",
+        help="Relative or absolute stdout path, `%j` allowed on scheduler targets",
+    )
+    submit_parser.add_argument(
+        "--error",
+        help="Relative or absolute stderr path, `%j` allowed on scheduler targets",
+    )
+    submit_parser.add_argument(
+        "script_args",
+        nargs="*",
+        help="Arguments for direct-profile submissions after `--`",
+    )
+    submit_parser.set_defaults(handler=command_submit)
+
+    job_parser = subparsers.add_parser("job", help="Inspect or manage remote jobs")
+    job_subparsers = job_parser.add_subparsers(dest="job_command", required=True)
+
+    status_parser = job_subparsers.add_parser("status", help="Show scheduler status")
+    status_parser.add_argument("job_id", help="Scheduler job ID")
+    status_parser.add_argument("--target", dest="selector", help="Target or pool name")
+    status_parser.add_argument("--profile", help="Execution profile override")
+    status_parser.add_argument("--cwd", help="Remote working directory override")
+    status_parser.set_defaults(handler=command_job_status)
+
+    logs_parser = job_subparsers.add_parser("logs", help="Fetch scheduler logs")
+    logs_parser.add_argument("job_id", help="Scheduler job ID")
+    logs_parser.add_argument("--target", dest="selector", help="Target or pool name")
+    logs_parser.add_argument("--profile", help="Execution profile override")
+    logs_parser.add_argument("--cwd", help="Remote working directory override")
+    logs_parser.set_defaults(handler=command_job_logs)
+
+    cancel_parser = job_subparsers.add_parser("cancel", help="Cancel scheduler jobs")
+    cancel_parser.add_argument("job_id", help="Scheduler job ID")
+    cancel_parser.add_argument("--target", dest="selector", help="Target or pool name")
+    cancel_parser.add_argument("--profile", help="Execution profile override")
+    cancel_parser.add_argument("--cwd", help="Remote working directory override")
+    cancel_parser.set_defaults(handler=command_job_cancel)
+
+    doctor_parser = subparsers.add_parser("doctor", help="Validate local fleet setup")
+    doctor_parser.add_argument("--json", action="store_true", help="Emit JSON")
+    doctor_parser.set_defaults(handler=command_doctor)
+
+    return parser
+
+
+def normalize_remainder(argv: list[str]) -> list[str]:
+    """Drop the separator argparse leaves in REMAINDER lists."""
+    if argv and argv[0] == "--":
+        return argv[1:]
+    return argv
+
+
+def main() -> int:
+    """CLI entry point."""
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if hasattr(args, "argv"):
+        args.argv = normalize_remainder(args.argv)
+    if hasattr(args, "script_args"):
+        args.script_args = normalize_remainder(args.script_args)
+
+    try:
+        return int(args.handler(args))
+    except FleetError as exc:
+        parser.exit(exc.exit_code, f"error: {exc}\n")
+    except KeyboardInterrupt:
+        parser.exit(130, "error: interrupted\n")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
