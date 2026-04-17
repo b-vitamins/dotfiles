@@ -62,7 +62,7 @@ expressed through preview scale alone."
     ;; Run M-x bv-org-latex-list-displays to find your display names
     ("LG TV" . (:scale 2.0))          ; LG 45\" 1080p TV, far viewing distance
     ("BenQ RD240Q" . (:scale 1.7))    ; BenQ 24\" 4K monitor
-    ("0x419f" . (:scale 1.1)))        ; ThinkPad X1 Carbon 14\" 1920x1200
+    ("0x419f" . (:scale 1.8)))        ; ThinkPad X1 Carbon 14\" 1920x1200
   "Explicit preview settings for specific displays.
 
 Each entry is (MONITOR-NAME . PLIST).  Supported PLIST keys:
