@@ -29,6 +29,7 @@ VERSION = "0.1.0"
 PRIVATE_DIR_MODE = 0o700
 PRIVATE_FILE_MODE = 0o600
 STATE_DIR_MODE = 0o700
+DEFAULT_PASS_PREFIX = "infra/fleet"
 DEFAULT_SCRIPT_REMOTE_ROOT = ".local/state/fleet/scripts"
 DEFAULT_SYNC_EXCLUDES = [
     ".direnv/",
@@ -186,6 +187,7 @@ class ProtocolRecord:
     smoke_gpu_probe: bool = True
     gpu_request_mode: str = "gres"
     job_runtime: str = "host"
+    native_batch_required: bool = False
     job_output_dir: str = ".fleet/jobs"
     docs: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
@@ -476,6 +478,24 @@ def expand_path_text(value: str) -> str:
     return str(expand_local_path(value))
 
 
+def dotfiles_root() -> Path:
+    """Return the root of the dotfiles checkout that owns this script."""
+    return Path(__file__).resolve().parents[1]
+
+
+def fleet_template_root() -> Path:
+    """Return the repository path containing public fleet templates."""
+    return dotfiles_root() / "fleet" / "templates"
+
+
+def load_repo_template(path: str, fallback: str) -> str:
+    """Load one public template from the dotfiles repo."""
+    template_path = fleet_template_root() / path
+    if not template_path.exists():
+        return fallback
+    return template_path.read_text(encoding="utf-8")
+
+
 def load_toml_file(path: Path, *, default: Any | None = None) -> dict[str, Any]:
     """Load PATH as TOML or return DEFAULT when missing."""
     if not path.exists():
@@ -562,6 +582,7 @@ def built_in_protocols() -> dict[str, ProtocolRecord]:
         smoke_gpu_probe=True,
         gpu_request_mode="gres",
         job_runtime="host",
+        native_batch_required=False,
     )
     slurm = ProtocolRecord(
         name="slurm",
@@ -573,6 +594,7 @@ def built_in_protocols() -> dict[str, ProtocolRecord]:
         smoke_gpu_probe=False,
         gpu_request_mode="gres",
         job_runtime="host",
+        native_batch_required=False,
     )
     return {
         direct.name: direct,
@@ -649,6 +671,7 @@ def load_protocols(path: Path) -> dict[str, ProtocolRecord]:
             smoke_gpu_probe=bool(raw.get("smoke_gpu_probe", kind != "slurm")),
             gpu_request_mode=str(raw.get("gpu_request_mode", "gres")),
             job_runtime=str(raw.get("job_runtime", "host")),
+            native_batch_required=bool(raw.get("native_batch_required", False)),
             job_output_dir=str(raw.get("job_output_dir", ".fleet/jobs")),
             docs=doc_values,
             notes=note_values,
@@ -855,6 +878,14 @@ def write_text_if_missing(path: Path, content: str, *, mode: int) -> None:
     write_text_file(path, content, mode=mode, force=False)
 
 
+def clear_toml_dir(path: Path) -> None:
+    """Remove managed TOML files from PATH."""
+    if not path.exists():
+        return
+    for entry in path.glob("*.toml"):
+        entry.unlink()
+
+
 def run_pass_show(secret_ref: str) -> str:
     """Fetch one pass entry."""
     try:
@@ -872,6 +903,63 @@ def run_pass_show(secret_ref: str) -> str:
             f"failed to read pass secret {secret_ref!r}: {message or 'unknown error'}"
         )
     return completed.stdout
+
+
+def password_store_root() -> Path:
+    """Resolve the password-store root directory."""
+    return expand_local_path(os.environ.get("PASSWORD_STORE_DIR", "~/.password-store"))
+
+
+def pass_entry_path(secret_ref: str) -> Path:
+    """Map one pass entry name to its on-disk `.gpg` path."""
+    relative = Path(secret_ref)
+    return password_store_root() / relative.parent / f"{relative.name}.gpg"
+
+
+def pass_entry_exists(secret_ref: str) -> bool:
+    """Return whether one pass entry currently exists."""
+    return pass_entry_path(secret_ref).exists()
+
+
+def list_pass_entries(prefix: str) -> list[str]:
+    """List pass entry names relative to PREFIX."""
+    root = password_store_root() / Path(prefix)
+    if not root.exists():
+        return []
+    entries: list[str] = []
+    for entry in sorted(root.rglob("*.gpg")):
+        entries.append(str(entry.relative_to(root)).removesuffix(".gpg"))
+    return entries
+
+
+def run_pass_insert(secret_ref: str, content: str, *, force: bool) -> None:
+    """Write one pass entry from multi-line CONTENT."""
+    command = ["pass", "insert", "-m"]
+    if force:
+        command.append("-f")
+    command.append(secret_ref)
+    env = os.environ.copy()
+    existing_gpg_opts = env.get("PASSWORD_STORE_GPG_OPTS", "").strip()
+    extra_gpg_opts = "--batch --yes --trust-model always"
+    env["PASSWORD_STORE_GPG_OPTS"] = (
+        f"{existing_gpg_opts} {extra_gpg_opts}".strip()
+    )
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            input=content,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+    except FileNotFoundError as exc:
+        raise FleetError("`pass` is required for pass-backed fleet config") from exc
+    if completed.returncode != 0:
+        message = completed.stderr.strip() or completed.stdout.strip()
+        raise FleetError(
+            f"failed to write pass entry {secret_ref!r}: {message or 'unknown error'}"
+        )
 
 
 def ssh_env(secret: FleetSecret) -> dict[str, str]:
@@ -1454,6 +1542,7 @@ def protocol_display(protocol: ProtocolRecord) -> dict[str, Any]:
         "smoke_gpu_probe": protocol.smoke_gpu_probe,
         "gpu_request_mode": protocol.gpu_request_mode,
         "job_runtime": protocol.job_runtime,
+        "native_batch_required": protocol.native_batch_required,
         "job_output_dir": protocol.job_output_dir,
         "docs": list(protocol.docs),
         "notes": list(protocol.notes),
@@ -1546,7 +1635,7 @@ def serialize_projects(projects: list[ProjectBinding]) -> str:
 
 def default_config_template() -> str:
     """Return a minimal config.toml template."""
-    return """\
+    fallback = """\
 version = 1
 
 [defaults]
@@ -1558,18 +1647,20 @@ strict_host_key_checking = "accept-new"
 update_host_keys = true
 control_path = "~/.cache/fleet/mux/%C"
 """
+    return load_repo_template("config.toml", fallback)
 
 
 def default_projects_template() -> str:
     """Return a starter projects.toml template."""
-    return """\
+    fallback = """\
 version = 1
 """
+    return load_repo_template("projects.toml", fallback)
 
 
 def default_plain_profile_template() -> str:
     """Return the safe direct execution profile template."""
-    return """\
+    fallback = """\
 version = 1
 name = "plain-ssh"
 kind = "direct"
@@ -1578,11 +1669,12 @@ kind = "direct"
 interpreter = "/usr/bin/env bash"
 remote_script_root = ".local/state/fleet/scripts"
 """
+    return load_repo_template("profiles/plain-ssh.toml", fallback)
 
 
 def default_slurm_profile_template() -> str:
     """Return a starter Slurm profile template."""
-    return """\
+    fallback = """\
 version = 1
 name = "slurm-batch"
 kind = "scheduler"
@@ -1596,6 +1688,7 @@ logs_command = ["sacct", "--jobs", "{job_id}", "--format=JobID,State,Elapsed"]
 interpreter = "/usr/bin/env bash"
 remote_script_root = ".local/state/fleet/scripts"
 """
+    return load_repo_template("profiles/slurm-batch.toml", fallback)
 
 
 def local_target_template(name: str) -> str:
@@ -1793,6 +1886,38 @@ def target_to_toml(target: TargetRecord) -> str:
     if target.scheduler:
         lines.append(f'scheduler = "{target.scheduler}"')
     return "\n".join(lines) + "\n"
+
+
+def pass_entry_name(prefix: str, *parts: str) -> str:
+    """Build one pass entry path."""
+    cleaned = [prefix.strip("/"), *(part.strip("/") for part in parts if part.strip("/"))]
+    return "/".join(cleaned)
+
+
+def read_file_if_exists(path: Path) -> str | None:
+    """Return file contents when PATH exists."""
+    if not path.exists():
+        return None
+    return path.read_text(encoding="utf-8")
+
+
+def write_pass_tree_to_dir(
+    prefix: str,
+    target_dir: Path,
+    *,
+    mode: int = PRIVATE_FILE_MODE,
+) -> list[str]:
+    """Render one pass subtree into flat TOML files under TARGET_DIR."""
+    written: list[str] = []
+    for name in list_pass_entries(prefix):
+        if "/" in name:
+            raise FleetError(
+                f"nested pass entries are not supported under {prefix!r}: {name!r}"
+            )
+        content = run_pass_show(pass_entry_name(prefix, name))
+        write_text_file(target_dir / f"{name}.toml", content, mode=mode)
+        written.append(name)
+    return written
 
 
 def binding_for_project(
@@ -2366,6 +2491,165 @@ def required_env_field(env: dict[str, str], prefix: str, machine: str, field: st
     return value
 
 
+def command_seed_pass(args: argparse.Namespace) -> int:
+    """Seed pass entries from the current live fleet config."""
+    context = FleetContext.load(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    prefix = args.pass_prefix.strip("/")
+    if not prefix:
+        raise FleetError("`--pass-prefix` must not be empty")
+
+    written: list[str] = []
+
+    config_text = read_file_if_exists(context.paths.config_file) or default_config_template()
+    if args.include_defaults or config_text != default_config_template():
+        entry = pass_entry_name(prefix, "config")
+        run_pass_insert(entry, config_text, force=args.force)
+        written.append(entry)
+
+    projects_text = read_file_if_exists(context.paths.projects_file)
+    if projects_text and (args.include_defaults or projects_text != default_projects_template()):
+        entry = pass_entry_name(prefix, "projects")
+        run_pass_insert(entry, projects_text, force=args.force)
+        written.append(entry)
+
+    default_profile_templates = {
+        "plain-ssh": default_plain_profile_template(),
+        "slurm-batch": default_slurm_profile_template(),
+    }
+    for entry_path in sorted(context.paths.profiles_dir.glob("*.toml")):
+        content = entry_path.read_text(encoding="utf-8")
+        if (
+            not args.include_defaults
+            and entry_path.stem in default_profile_templates
+            and content == default_profile_templates[entry_path.stem]
+        ):
+            continue
+        entry = pass_entry_name(prefix, "profiles", entry_path.stem)
+        run_pass_insert(entry, content, force=args.force)
+        written.append(entry)
+
+    for entry_path in sorted(context.paths.pools_dir.glob("*.toml")):
+        entry = pass_entry_name(prefix, "pools", entry_path.stem)
+        run_pass_insert(entry, entry_path.read_text(encoding="utf-8"), force=args.force)
+        written.append(entry)
+
+    for entry_path in sorted(context.paths.protocols_dir.glob("*.toml")):
+        entry = pass_entry_name(prefix, "protocols", entry_path.stem)
+        run_pass_insert(entry, entry_path.read_text(encoding="utf-8"), force=args.force)
+        written.append(entry)
+
+    for target_name in sorted(context.targets):
+        target = context.targets[target_name]
+        secret = context.resolve_secret(target)
+        secret_entry = pass_entry_name(prefix, "secrets", target.name)
+        run_pass_insert(secret_entry, secret_to_toml(secret), force=args.force)
+        written.append(secret_entry)
+        rendered_target = TargetRecord(
+            name=target.name,
+            enabled=target.enabled,
+            transport=target.transport,
+            protocol=target.protocol,
+            workdir=target.workdir,
+            tags=target.tags,
+            secret_backend="pass",
+            secret_ref=secret_entry,
+            secret_inline={},
+            ssh_host_alias=target.ssh_host_alias,
+            default_profile=target.default_profile,
+            scheduler=target.scheduler,
+            metadata=target.metadata,
+        )
+        target_entry = pass_entry_name(prefix, "targets", target.name)
+        run_pass_insert(target_entry, target_to_toml(rendered_target), force=args.force)
+        written.append(target_entry)
+
+    for entry in written:
+        print(entry)
+    return 0
+
+
+def command_deploy_config(args: argparse.Namespace) -> int:
+    """Render ~/.config/fleet from public templates and pass-backed private state."""
+    paths = build_paths(
+        config_home=args.config_home,
+        state_home=args.state_home,
+        cache_home=args.cache_home,
+    )
+    prefix = args.pass_prefix.strip("/")
+    if not prefix:
+        raise FleetError("`--pass-prefix` must not be empty")
+
+    ensure_private_dir(paths.config_home, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.targets_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.pools_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.protocols_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.profiles_dir, mode=PRIVATE_DIR_MODE)
+    ensure_private_dir(paths.secrets_dir, mode=PRIVATE_DIR_MODE)
+
+    clear_toml_dir(paths.targets_dir)
+    clear_toml_dir(paths.pools_dir)
+    clear_toml_dir(paths.protocols_dir)
+    clear_toml_dir(paths.profiles_dir)
+    clear_toml_dir(paths.secrets_dir)
+
+    config_entry = pass_entry_name(prefix, "config")
+    config_text = run_pass_show(config_entry) if pass_entry_exists(config_entry) else default_config_template()
+    write_text_file(paths.config_file, config_text, mode=PRIVATE_FILE_MODE)
+
+    projects_entry = pass_entry_name(prefix, "projects")
+    projects_text = run_pass_show(projects_entry) if pass_entry_exists(projects_entry) else default_projects_template()
+    write_text_file(paths.projects_file, projects_text, mode=PRIVATE_FILE_MODE)
+
+    write_text_file(
+        paths.profiles_dir / "plain-ssh.toml",
+        default_plain_profile_template(),
+        mode=PRIVATE_FILE_MODE,
+    )
+    write_text_file(
+        paths.profiles_dir / "slurm-batch.toml",
+        default_slurm_profile_template(),
+        mode=PRIVATE_FILE_MODE,
+    )
+    write_pass_tree_to_dir(pass_entry_name(prefix, "profiles"), paths.profiles_dir)
+    targets_written = write_pass_tree_to_dir(pass_entry_name(prefix, "targets"), paths.targets_dir)
+    write_pass_tree_to_dir(pass_entry_name(prefix, "pools"), paths.pools_dir)
+    write_pass_tree_to_dir(pass_entry_name(prefix, "protocols"), paths.protocols_dir)
+
+    if not targets_written:
+        raise FleetError(
+            f"no target entries found under pass prefix {pass_entry_name(prefix, 'targets')!r}"
+        )
+
+    deployed = FleetContext.load(
+        config_home=paths.config_home,
+        state_home=paths.state_home,
+        cache_home=paths.cache_home,
+    )
+    for target in deployed.targets.values():
+        if target.secret_backend != "pass":
+            raise FleetError(
+                f"deployed target {target.name!r} does not use pass-backed secrets"
+            )
+        deployed.resolve_secret(target)
+
+    if args.doctor:
+        payload = {
+            "config_home": str(paths.config_home),
+            "targets": sorted(deployed.targets),
+            "pools": sorted(deployed.pools),
+            "protocols": sorted(deployed.protocols),
+            "profiles": sorted(deployed.profiles),
+        }
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(paths.config_home)
+    return 0
+
+
 def command_ssh(args: argparse.Namespace) -> int:
     """Open one interactive SSH session."""
     context = FleetContext.load(
@@ -2708,6 +2992,11 @@ def command_submit(args: argparse.Namespace) -> int:
         return completed.returncode
 
     if protocol.kind == "slurm":
+        if protocol.native_batch_required:
+            raise FleetError(
+                f"protocol {protocol.name!r} requires `fleetctl submit --native-batch` "
+                "so the scheduler receives the site-native batch script unchanged"
+            )
         queue = resolve_queue(protocol, args.queue)
         remote_script = stage_remote_script(
             secret,
@@ -3119,6 +3408,43 @@ def build_parser() -> argparse.ArgumentParser:
     project_list_parser.add_argument("--json", action="store_true", help="Emit JSON")
     project_list_parser.set_defaults(handler=command_project_list)
 
+    seed_pass_parser = subparsers.add_parser(
+        "seed-pass",
+        help="Seed pass entries from the current live fleet config",
+    )
+    seed_pass_parser.add_argument(
+        "--pass-prefix",
+        default=DEFAULT_PASS_PREFIX,
+        help="Pass prefix that will hold fleet source data",
+    )
+    seed_pass_parser.add_argument(
+        "--include-defaults",
+        action="store_true",
+        help="Store public default config and profile templates in pass too",
+    )
+    seed_pass_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing pass entries",
+    )
+    seed_pass_parser.set_defaults(handler=command_seed_pass)
+
+    deploy_config_parser = subparsers.add_parser(
+        "deploy-config",
+        help="Render ~/.config/fleet from templates and pass-backed private state",
+    )
+    deploy_config_parser.add_argument(
+        "--pass-prefix",
+        default=DEFAULT_PASS_PREFIX,
+        help="Pass prefix that holds fleet source data",
+    )
+    deploy_config_parser.add_argument(
+        "--doctor",
+        action="store_true",
+        help="Print a short post-deploy summary after validation",
+    )
+    deploy_config_parser.set_defaults(handler=command_deploy_config)
+
     import_ssh_parser = subparsers.add_parser(
         "import-ssh",
         help="Import one existing local SSH alias into fleet config",
@@ -3316,11 +3642,11 @@ def build_parser() -> argparse.ArgumentParser:
     submit_parser.add_argument("--mem", help="Scheduler memory override")
     submit_parser.add_argument(
         "--output",
-        help="Relative or absolute stdout path, `%j` allowed on scheduler targets",
+        help="Relative or absolute stdout path, `%%j` allowed on scheduler targets",
     )
     submit_parser.add_argument(
         "--error",
-        help="Relative or absolute stderr path, `%j` allowed on scheduler targets",
+        help="Relative or absolute stderr path, `%%j` allowed on scheduler targets",
     )
     submit_parser.add_argument(
         "script_args",

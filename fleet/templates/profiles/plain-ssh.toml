@@ -1,0 +1,7 @@
+version = 1
+name = "plain-ssh"
+kind = "direct"
+
+[script]
+interpreter = "/usr/bin/env bash"
+remote_script_root = ".local/state/fleet/scripts"

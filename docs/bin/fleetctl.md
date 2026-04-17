@@ -5,12 +5,16 @@ directory instead of scattering machine definitions across individual repos.
 
 ## Overview
 
-`fleetctl` keeps host metadata, secrets, project bindings, and SSH runtime state
-in XDG paths:
+`fleetctl` keeps generated host metadata, profiles, project bindings, and SSH
+runtime state in XDG paths:
 
-- `~/.config/fleet/` - targets, pools, profiles, project bindings, and secrets
+- `~/.config/fleet/` - targets, pools, profiles, protocols, and project bindings
 - `~/.local/state/fleet/` - `known_hosts` and runtime state
 - `~/.cache/fleet/` - SSH control sockets
+
+In the pass-backed model, the public templates live in the dotfiles repo under
+`fleet/templates/`, private fleet source data lives in `pass`, and
+`~/.config/fleet/` is rendered from those two inputs with `fleetctl deploy-config`.
 
 The dotfiles repo owns the operator interface, documentation, and Codex
 instructions. Sensitive hostnames, IPs, usernames, passwords, and keys stay out
@@ -41,6 +45,33 @@ fleetctl doctor
 
 That creates the base layout, a `protocols.d/` directory, a default
 `plain-ssh` profile, and a starter `slurm-batch` profile.
+
+## Pass-Backed Deploy
+
+The recommended long-term model is:
+
+- public templates and behavior in the dotfiles repo
+- private fleet source data in `pass`
+- generated `~/.config/fleet/`
+
+Seed the current live fleet into `pass`:
+
+```bash
+fleetctl seed-pass --pass-prefix infra/fleet
+```
+
+Rebuild the generated tree at any time:
+
+```bash
+fleetctl deploy-config --pass-prefix infra/fleet --doctor
+```
+
+The usual dotfiles bootstrap now runs that deploy step automatically during
+`./setup.sh` whenever the `infra/fleet` pass prefix exists locally.
+
+When targets use `secret_backend = "pass"`, the generated fleet tree contains
+only references to pass entries such as `infra/fleet/secrets/ampere` rather than
+plaintext secret files.
 
 ## Bringing Hosts In
 
@@ -96,7 +127,9 @@ fleetctl queue list hopper
 
 Scheduler-backed protocols expose queue presets, runtime hints such as
 `job_runtime = "docker"`, and can require compute to flow through
-`fleetctl submit` instead of `fleetctl exec`.
+`fleetctl submit` instead of `fleetctl exec`. If a protocol reports
+`native_batch_required = true`, use `fleetctl submit --native-batch` so the
+site-native scheduler script is submitted unchanged.
 
 ## Daily Workflow
 
@@ -181,18 +214,21 @@ instead of raw `ssh`.
 
 ## Files You Will Actually Touch
 
-- `~/.config/fleet/targets.d/*.toml` - non-sensitive target metadata
+- `fleet/templates/` - public templates for generated fleet config
+- `~/.config/fleet/targets.d/*.toml` - generated target metadata
 - `~/.config/fleet/targets.d/*.toml` may include host-level `workdir`, but not
   repo-specific absolute project paths or sensitive connection material
-- `~/.config/fleet/protocols.d/*.toml` - reusable site rules and queue presets
-- `~/.config/fleet/secrets/*.toml` - private connection material
-- `~/.config/fleet/profiles.d/*.toml` - execution profiles
-- `~/.config/fleet/projects.toml` - local path to remote defaults and any
+- `~/.config/fleet/protocols.d/*.toml` - generated site rules and queue presets
+- `~/.config/fleet/profiles.d/*.toml` - generated execution profiles
+- `~/.config/fleet/projects.toml` - generated local path to remote defaults and any
   exceptional per-target project-root overrides
+- `pass` entries under your chosen prefix - private fleet source data and
+  pass-backed connection secrets
 
 ## Security Notes
 
 - Keep `~/.config/fleet/` private; `fleetctl doctor` checks file modes.
+- Prefer pass-backed secrets over plaintext `~/.config/fleet/secrets/*.toml`.
 - Prefer key auth. Keep password auth only as a temporary fallback.
 - Do not commit `~/.config/fleet/` into any repo.
 - Use `fleetctl show --secret <target>` for a redacted preview; add

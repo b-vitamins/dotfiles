@@ -56,6 +56,13 @@ activate       # Source venv/bin/activate
 ### Research Tools
 - [`harvester`](docs/bin/harvester.md) - Download and organize ArXiv papers
 
+### Remote Operations
+- [`fleetctl`](docs/bin/fleetctl.md) - Private fleet inventory and reliable remote execution/sync
+
+`./setup.sh` now installs the `fleetctl` operator surface from `bin/` and, when
+the `infra/fleet` pass prefix exists locally, regenerates `~/.config/fleet/`
+from the public templates plus pass-backed private fleet data.
+
 See [documentation](docs/) for detailed guides.
 
 ## Key Features
@@ -66,7 +73,7 @@ See [documentation](docs/) for detailed guides.
 - **Tools**: Modern CLI replacements (eza, bat, ripgrep, fd, delta)
 - **Security**: GPG for SSH auth, git commit signing, encrypted backups
 - **Containers**: Docker + OCI services for databases and ML tools
-- **Codex**: Local runtime `~/.codex/config.toml`, managed `instructions.md`, and local skills including strict TeX-first research-paper notes with machine-readable provenance and PDF transcription workflows
+- **Codex**: Local runtime `~/.codex/config.toml`, managed `instructions.md`, local skills, and a global `fleetctl`-based remote workflow for stable host access without repo-local machine secrets
 
 ## Directory Structure
 

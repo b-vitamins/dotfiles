@@ -11,6 +11,9 @@
   `docker`, prepare the submitted job script to launch the containerized
   workload inside the scheduler allocation instead of running the payload on the
   host directly.
+- If `fleetctl protocol show <target>` reports `native_batch_required = true`,
+  use `fleetctl submit --native-batch` and keep the site-native scheduler
+  directives in the submitted script instead of relying on the wrapper path.
 - When a site expects a fully native batch script, use
   `fleetctl submit --native-batch <script> --target <target>` so the staged file
   is handed to the scheduler unchanged.
@@ -24,6 +27,13 @@
   `fleetctl submit`.
 - Keep site policy and queue defaults in private fleet protocol files under
   `~/.config/fleet/protocols.d/`, not in repo code or project-specific hacks.
+- Treat `~/.config/fleet/` as generated state when the user has enabled the
+  pass-backed deploy flow. Use `fleetctl deploy-config` instead of manually
+  editing generated files, and seed or update the private source data in `pass`
+  when persistent fleet metadata changes.
+- The standard dotfiles `./setup.sh` flow deploys the generated fleet config
+  automatically when the `infra/fleet` pass prefix is present, so prefer
+  repairing the pass-backed source data over hand-editing `~/.config/fleet/`.
 - Keep sensitive connection material out of target records. Host-level
   `workdir` values belong on targets, while project-specific remote-path
   overrides belong in `projects.toml` when `workdir/<project-name>` is not the

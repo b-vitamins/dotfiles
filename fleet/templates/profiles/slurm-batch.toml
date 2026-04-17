@@ -1,0 +1,12 @@
+version = 1
+name = "slurm-batch"
+kind = "scheduler"
+job_id_pattern = "Submitted batch job (?P<job_id>\\d+)"
+submit_command = ["sbatch", "{script}"]
+status_command = ["squeue", "--jobs", "{job_id}"]
+cancel_command = ["scancel", "{job_id}"]
+logs_command = ["sacct", "--jobs", "{job_id}", "--format=JobID,State,Elapsed"]
+
+[script]
+interpreter = "/usr/bin/env bash"
+remote_script_root = ".local/state/fleet/scripts"

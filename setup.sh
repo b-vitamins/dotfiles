@@ -38,6 +38,7 @@ PROVISION_ROOT_SECRETS=false
 AUTO_PROVISION_ROOT_SECRETS=false
 readonly DEFAULT_SSH_PASS_ENTRY="keys/ssh/freydis/id_ed25519"
 readonly DEFAULT_SSH_PUBLIC_PASS_ENTRY="keys/ssh/freydis/id_ed25519.pub"
+readonly DEFAULT_FLEET_PASS_PREFIX="infra/fleet"
 declare -a SETUP_BLOCKERS=()
 declare -a SETUP_WARNINGS=()
 declare -a SETUP_NOTES=()
@@ -119,6 +120,9 @@ print_setup_action_report() {
 }
 xdg_data_home() {
 	printf '%s\n' "${XDG_DATA_HOME:-$HOME/.local/share}"
+}
+password_store_root() {
+	printf '%s\n' "${PASSWORD_STORE_DIR:-$HOME/.password-store}"
 }
 confirm() {
 	local prompt="$1"
@@ -1341,7 +1345,18 @@ define_root_secret_specs() {
 }
 password_store_entry_exists() {
 	local entry="$1"
-	[[ -f "$HOME/.password-store/$entry.gpg" ]] || [[ -f "$HOME/.password-store/$entry.age" ]]
+	local store_root
+	store_root="$(password_store_root)"
+	[[ -f "$store_root/$entry.gpg" ]] || [[ -f "$store_root/$entry.age" ]]
+}
+fleet_pass_prefix_exists() {
+	local prefix="$1"
+	local store_root
+	local prefix_root
+	store_root="$(password_store_root)"
+	prefix_root="$store_root/$prefix"
+	[[ -d "$prefix_root" ]] || return 1
+	[[ -n "$(find "$prefix_root" -type f \( -name '*.gpg' -o -name '*.age' \) -print -quit 2>/dev/null)" ]]
 }
 write_first_line_from_pass() {
 	local pass_entry="$1"
@@ -1490,6 +1505,8 @@ provision_root_secret() {
 	log SUCCESS "$action root secret: $target_path"
 }
 provision_machine_root_secrets() {
+	local store_root
+	store_root="$(password_store_root)"
 	if [[ ${#ROOT_SECRET_SPECS[@]} -eq 0 ]]; then
 		return 0
 	fi
@@ -1505,10 +1522,10 @@ provision_machine_root_secrets() {
 			"Install/configure sudo, then rerun ./setup.sh."
 		return 1
 	fi
-	if [[ ! -d "$HOME/.password-store" ]]; then
+	if [[ ! -d "$store_root" ]]; then
 		record_setup_issue SETUP_BLOCKERS \
-			"Password store not found at $HOME/.password-store" \
-			"Populate ~/.password-store and ~/.gnupg, then rerun ./setup.sh."
+			"Password store not found at $store_root" \
+			"Populate $store_root and ~/.gnupg, then rerun ./setup.sh."
 		return 1
 	fi
 	if [[ "$DRY_RUN" == false ]]; then
@@ -1531,6 +1548,54 @@ provision_machine_root_secrets() {
 		fi
 	done
 	return "$status"
+}
+deploy_fleet_config() {
+	local fleetctl_bin="$DOTFILES_DIR/bin/fleetctl"
+	local pass_prefix="${FLEET_PASS_PREFIX:-$DEFAULT_FLEET_PASS_PREFIX}"
+	local store_root
+	local output_file
+	store_root="$(password_store_root)"
+	if [[ "$GUIX_ONLY" == true ]]; then
+		return 0
+	fi
+	if [[ ! -x "$fleetctl_bin" ]]; then
+		record_setup_issue SETUP_BLOCKERS \
+			"fleetctl is missing at $fleetctl_bin" \
+			"Restore bin/fleetctl in the dotfiles repo, then rerun ./setup.sh."
+		return 1
+	fi
+	if ! fleet_pass_prefix_exists "$pass_prefix"; then
+		record_setup_issue SETUP_NOTES \
+			"Fleet config was not rendered because no pass-backed fleet source data was found under $pass_prefix" \
+			"Restore the $pass_prefix prefix in $(password_store_root), or seed it with fleetctl before rerunning ./setup.sh."
+		return 0
+	fi
+	if ! command -v pass >/dev/null 2>&1; then
+		record_setup_issue SETUP_BLOCKERS \
+			"Fleet source data exists under $store_root/$pass_prefix but pass is unavailable" \
+			"Install pass and ensure the $pass_prefix entries decrypt cleanly, then rerun ./setup.sh."
+		return 1
+	fi
+	if [[ "$DRY_RUN" == true ]]; then
+		echo "  Would render fleet config from pass prefix: $pass_prefix"
+		return 0
+	fi
+	output_file="$(mktemp "${TMPDIR:-/tmp}/dotfiles-fleet-deploy.XXXXXX")"
+	if "$fleetctl_bin" deploy-config --pass-prefix "$pass_prefix" --doctor >"$output_file" 2>&1; then
+		log SUCCESS "Rendered fleet config from pass prefix: $pass_prefix"
+		if [[ "$VERBOSE" == true ]]; then
+			cat "$output_file"
+		fi
+		rm -f "$output_file"
+		return 0
+	fi
+	log ERROR "fleetctl deploy-config failed for pass prefix: $pass_prefix"
+	sed -n '1,40p' "$output_file" >&2 || true
+	rm -f "$output_file"
+	record_setup_issue SETUP_BLOCKERS \
+		"Failed to render ~/.config/fleet from pass prefix $pass_prefix" \
+		"Check that pass can decrypt $pass_prefix and rerun: $fleetctl_bin deploy-config --pass-prefix $pass_prefix --doctor"
+	return 1
 }
 check_root_secret_target() {
 	local pass_entry="$1"
@@ -1780,6 +1845,11 @@ main() {
 		if ! provision_machine_root_secrets; then
 			log WARNING "Machine-specific root credential bootstrap was incomplete"
 		fi
+	fi
+	echo
+	log INFO "Rendering fleet configuration..."
+	if ! deploy_fleet_config; then
+		log WARNING "Fleet configuration render was incomplete"
 	fi
 	echo
 	# Install Git hooks if applicable

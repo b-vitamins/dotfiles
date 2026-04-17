@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- `fleetctl`, a private XDG-based fleet inventory and remote execution helper with host-level target workdirs, project bindings, SSH alias import, env migration, sync, script, submit, and doctor flows
+- Global Codex fleet instructions and a `remote-fleet-operator` skill for routing remote work through `fleetctl`
 - Emacs daemon service configuration for mileva and sparck machines
 - Git completions integration from Guix profiles in Zsh configuration
 - FZF productivity helpers in Zsh: ctrl+t/alt+c widgets, `fe`/`fcd`/`rgo`/`fssh`, and git staging helpers (`gaf`/`gap`/`grf`/`grp`)
@@ -31,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Codex `research-paper-notes` skill for strict TeX-first single-paper analysis with arXiv source ingestion, sequential readthrough logging, and note validation
 - Automatic `setup.sh` preflight/bootstrap for SSH identity, mileva OCI root credentials, and actionable post-run setup reporting
 ### Changed
+- `fssh` now includes `fleetctl` targets alongside classic SSH host discovery and routes `fleet:*` selections through `fleetctl ssh`
+- `fleetctl migrate-env` no longer carries a repo-specific default env prefix and now requires an explicit `--prefix`
+- `fleetctl` now treats target `workdir` as the host landing strip and derives default project roots as `workdir/<project-name>`
+- `fleetctl smoke` now reports whether a configured project landing strip exists without treating a missing repo checkout as a transport failure
+- `fleetctl` now renders `~/.config/fleet/` from dotfiles templates plus pass-backed private source data, and `setup.sh` deploys that generated fleet config automatically when the `infra/fleet` pass prefix is present
 - Relaxed global Git SSH key ignore patterns so exact private/public key
   filenames stay ignored without also ignoring encrypted `pass` entries such as
   `id_ed25519.gpg`
@@ -79,6 +86,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Updated `setup.sh` to keep `~/.codex/config.toml` as a local file and stop symlinking it from dotfiles
 - Refined the Codex `research-paper-notes` skill with multi-axis paper coordinates, claim-surface summaries, typed prior-work relation hints, and stronger machine-readable provenance
 ### Fixed
+- Hardened `fleetctl` remote execution across non-POSIX login shells by routing shell-backed commands through `/bin/sh -c`
+- `fleetctl doctor` now flags misplaced repo-specific or sensitive fields in target metadata so stale target `workdir` state does not linger silently
+- Scrubbed `kyma` and `mileva` as baked-in examples from the public `fleetctl` docs so the tool surface stays project-agnostic
+- Fixed `fleetctl exec` so project-default execution works when omitting the selector and added an explicit `--target` form for unambiguous routing
+- Fixed `fleetctl script` uploads for `~/.local/...` remote script roots by normalizing scp paths instead of relying on remote `~` expansion
+- Fixed `fleetctl sync push` so directory sources sync into the intended project root instead of creating nested destination directories
+- Fixed `fleetctl submit --help` output by escaping scheduler `%j` placeholders in argparse help text, and made scheduler wrapper submission fail fast on protocols that require site-native batch scripts
 - Added missing emacs-pgtk package import in Guix configurations
 - Removed restrictive ZSH_EVAL_CONTEXT check preventing shell startup
 - Eliminated Zsh welcome message for cleaner shell initialization

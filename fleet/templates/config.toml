@@ -1,0 +1,10 @@
+version = 1
+
+[defaults]
+redact_sensitive_output = true
+
+[ssh]
+user_known_hosts_file = "~/.local/state/fleet/known_hosts"
+strict_host_key_checking = "accept-new"
+update_host_keys = true
+control_path = "~/.cache/fleet/mux/%C"

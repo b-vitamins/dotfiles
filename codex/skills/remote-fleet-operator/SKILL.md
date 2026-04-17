@@ -20,6 +20,8 @@ Use `fleetctl` as the control plane for remote work.
 - Encode site rules in reusable private protocol files under
   `~/.config/fleet/protocols.d/`, then bind targets to those protocols instead
   of teaching host-specific quirks inline.
+- Prefer pass-backed fleet source data plus `fleetctl deploy-config` over
+  hand-editing the generated `~/.config/fleet/` tree.
 
 ## First checks
 
@@ -48,7 +50,8 @@ fleetctl queue list <target-or-pool>
 2. Inspect protocol.
    Use `fleetctl protocol show` to decide whether the target is direct or
    scheduler-backed, whether the expected job runtime is host-side or Docker,
-   and use `fleetctl queue list` when queue choice matters.
+   whether `native_batch_required` forces site-native batch scripts, and use
+   `fleetctl queue list` when queue choice matters.
 3. Verify transport.
    Run `fleetctl smoke <target-or-pool>` unless the user explicitly wants a
    direct attempt first.
@@ -77,6 +80,11 @@ When the user wants to bring hosts into the fleet:
   `fleetctl migrate-env --env-file <path> --prefix <PREFIX>`.
 - Define reusable protocols in `~/.config/fleet/protocols.d/*.toml` and point
   targets at them with `protocol = "name"`.
+- Seed the current live fleet into pass with `fleetctl seed-pass`, then rebuild
+  the generated tree with `fleetctl deploy-config`.
+- When the dotfiles repo is the source of the operator surface, prefer the
+  usual `./setup.sh` flow to install `fleetctl` and regenerate `~/.config/fleet`
+  automatically when the `infra/fleet` pass prefix is present.
 - Bind a project with `fleetctl project bind <path> --target <name>` or
   `--pool <name>`.
 - When one project needs an absolute path that does not follow
@@ -94,6 +102,9 @@ When the user wants to bring hosts into the fleet:
 - When a protocol reports `job_runtime = "docker"`, make the submitted script
   launch the workload inside the allocated container runtime instead of assuming
   host-side execution is the correct path.
+- When a protocol reports `native_batch_required = true`, use
+  `fleetctl submit --native-batch` so the scheduler sees the site-native script
+  unchanged.
 - Use `--native-batch` when the site expects the scheduler script itself to
   contain the runtime setup or policy-specific directives.
 - Prefer `fleetctl script` or `fleetctl submit` when the command is large enough
