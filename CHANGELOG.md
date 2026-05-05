@@ -89,6 +89,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Updated `setup.sh` to keep `~/.codex/config.toml` as a local file and stop symlinking it from dotfiles
 - Refined the Codex `research-paper-notes` skill with multi-axis paper coordinates, claim-surface summaries, typed prior-work relation hints, and stronger machine-readable provenance
 ### Fixed
+- Enabled `fprintd` on `sparck` and added the CLI package to the shared
+  security bundle for ThinkPad X1 Carbon Gen 12 fingerprint enrollment
+- Forced Intel DPCD backlight control on `sparck` and added `brightnessctl`
+  for ThinkPad X1 Carbon Gen 12 OLED brightness troubleshooting
 - Hardened `fleetctl` remote execution across non-POSIX login shells by routing shell-backed commands through `/bin/sh -c`
 - `fleetctl doctor` now flags misplaced repo-specific or sensitive fields in target metadata so stale target `workdir` state does not linger silently
 - Scrubbed `kyma` and `mileva` as baked-in examples from the public `fleetctl` docs so the tool surface stays project-agnostic

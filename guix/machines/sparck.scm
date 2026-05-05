@@ -74,6 +74,7 @@
              (myguix packages productivity)
              (myguix packages python-pqrs)
              (myguix packages video)
+             (myguix services authentication)
              (myguix services desktop)
              (myguix system install)
              (myguix system linux-initrd)
@@ -447,7 +448,10 @@ allow-preset-passphrase")))
   (locale "en_US.utf8")
 
   (kernel linux)
-  (kernel-arguments %default-kernel-arguments)
+  ;; The Samsung ATNA40YK20 OLED panel on the X1 Carbon Gen 12 needs the
+  ;; Intel eDP AUX backlight path forced for reliable brightness control.
+  (kernel-arguments (append '("i915.enable_dpcd_backlight=3")
+                            %default-kernel-arguments))
   (firmware (list linux-firmware sof-firmware))
   (initrd microcode-initrd)
 
@@ -565,6 +569,9 @@ allow-preset-passphrase")))
                  ;; Printing Services
                  (service cups-service-type
                           (cups-configuration (web-interface? #t)))
+
+                 ;; Fingerprint login and authentication.
+                 (service fprintd-service-type)
 
                  ;; Networking Services
                  (service openssh-service-type)
