@@ -196,7 +196,7 @@ latex-mode org-mode
 (mf "\\mathfrak{" p "}")         ; fraktur
 (bb "\\mathbb{" p "}")           ; blackboard bold
 (sf "\\mathsf{" p "}")           ; sans serif
-(tt "\\mathtt{" p "}")           ; typewriter
+(mtt "\\mathtt{" p "}")           ; typewriter
 (bs "\\boldsymbol{" p "}")       ; bold symbol
 (pmb "\\pmb{" p "}")             ; poor man's bold
 #+END_SRC
@@ -573,7 +573,7 @@ latex-mode org-mode
 (own "\\owns")                   ; ∋ owns (synonym)
 (nin "\\notin")                  ; ∉ notin
 (sub "\\subset")                 ; ⊂ subset
-(sup "\\supset")                 ; ⊃ supset
+(supset "\\supset")                 ; ⊃ supset
 (sube "\\subseteq")              ; ⊆ subseteq
 (supe "\\supseteq")              ; ⊇ supseteq
 (ssub "\\sqsubset")              ; ⊏ sqsubset
@@ -765,7 +765,7 @@ latex-mode org-mode
 (rmo "\\rmoustache")             ; ⎱ rmoustache
 
 ;; Auto-sizing delimiters
-(lr "\\left" p " " r " \\right" p) ; \left...\right pair
+(lrp "\\left" p " " r " \\right" p) ; \left...\right pair
 (big "\\big" p)                   ; \big
 (Bi "\\Big" p)                   ; \Big
 (bg "\\bigg" p)                  ; \bigg
@@ -872,8 +872,8 @@ latex-mode org-mode
 
 ;; Limits
 (lim "\\lim")                    ; lim
-(liminf "\\liminf")              ; liminf
-(limsup "\\limsup")              ; limsup
+(liminf0 "\\liminf")              ; liminf
+(limsup0 "\\limsup")              ; limsup
 (varliminf "\\varliminf")        ; varliminf
 (varlimsup "\\varlimsup")        ; varlimsup
 
@@ -1019,14 +1019,14 @@ latex-mode org-mode
 ;; Custom spacing
 (hsp "\\hspace{" p "}")           ; horizontal space
 (hs* "\\hspace*{" p "}")         ; non-breakable hspace
-(vs "\\vspace{" p "}")           ; vertical space
-(vs* "\\vspace*{" p "}")         ; non-breakable vspace
+(vsp "\\vspace{" p "}")           ; vertical space
+(vsp* "\\vspace*{" p "}")         ; non-breakable vspace
 (msp "\\mspace{" p "mu}")        ; math space in mu units
 
 ;; Phantom spacing
 (phantom "\\phantom{" p "}")          ; full phantom (width + height)
 (hph "\\hphantom{" p "}")        ; horizontal phantom (width only)
-(vph "\\vphantom{" p "}")        ; vertical phantom (height only)
+(vphant "\\vphantom{" p "}")        ; vertical phantom (height only)
 
 ;; Fine-tuning
 (mk "\\mkern" p "mu")            ; math kern
@@ -1654,7 +1654,7 @@ latex-mode org-mode
 (dsub "_{\\displaystyle " p "}")  ; display style subscript
 (dsup "^{\\displaystyle " p "}")  ; display style superscript
 (tssub "_{\\textstyle " p "}")     ; text style subscript
-(tsup "^{\\textstyle " p "}")     ; text style superscript
+(tssup "^{\\textstyle " p "}")     ; text style superscript
 
 ;; Common patterns
 (bigfrac "\\displaystyle\\frac{" p "}{" p "}") ; big fraction

@@ -109,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Restored Tempel `;snippet` expansion on `TAB` for Org/LaTeX buffers and aligned the `im` template with Org-style inline math (`\\( ... \\)`)
 - Cleared Emacs config doctor byte-compile warnings and made display-local font adjustments/reset behavior consistent across frames
 - Cleaned up Tempel LaTeX templates: resolved trigger collisions, added missing aliases, enabled `*`-suffixed triggers (e.g. `eq*`), and made inline-math templates available in `latex-mode`
+- Resolved Tempel math template trigger collisions while syncing generated files with `templates.org`
 - Prevented Org LaTeX auto-refresh and `org-fragtog` from throwing errors during window/buffer changes
 - Stabilized Org clocking: clock-in/out no longer steals windows, clock-in starts on first invocation, and redundant STARTED→STARTED logs are avoided
 - Updated Org capture templates to the new `file+olp+datetree` format to avoid deprecation noise at startup

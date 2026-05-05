@@ -1,8 +1,8 @@
-latex-mode org-mode
+org-mode
 
 ;; Basic inline and display math
-(im "\\(" p "\\)")                                     ; inline math \(...\)
-(M "$" p "$")                                          ; inline math $...$
+(im "$" p "$")                                          ; inline math $...$
+(M "\\(" p "\\)")                                      ; inline math \(...\)
 (dm "\\[" n> r> n> "\\]")                               ; display math \[...\]
 (eq "\\begin{equation}" n> r> n> "\\end{equation}")     ; numbered equation
 (eq* "\\begin{equation*}" n> r> n> "\\end{equation*}")  ; unnumbered equation
@@ -31,7 +31,7 @@ latex-mode org-mode
 ;; Subequations
 (se "\\begin{subequations}" p n> r> n> "\\end{subequations}") ; subequations
 
-latex-mode org-mode
+org-mode
 
 ;; Labels and references
 (lb "\\label{" p "}")                    ; label
