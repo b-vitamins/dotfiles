@@ -723,15 +723,31 @@ if (( $+commands[fzf] )); then
         sed -E 's/^\\[([^]]+)\\]:[0-9]+$/\\1/')}")
     fi
 
-    (( ${#hosts} )) || { echo "No SSH hosts found" >&2; return 1; }
+    if (( $+commands[fleetctl] )); then
+      hosts+=("${(@f)$(fleetctl list --format ssh-hosts 2>/dev/null)}")
+    fi
+
+    (( ${#hosts} )) || { echo "No SSH or fleet hosts found" >&2; return 1; }
 
     local host
-    host="$(print -rl -- ${(u)hosts} | fzf --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='ssh> ' --query="$*" --preview 'ssh -G "{}" 2>/dev/null | (command -v rg >/dev/null && rg -n \"^(hostname|user|port|identityfile) \" || grep -E \"^(hostname|user|port|identityfile) \")' --preview-window 'down,60%,border-top')" || return
+    host="$(print -rl -- ${(u)hosts} | fzf --height "${FZF_TMUX_HEIGHT:-40%}" --reverse --prompt='ssh> ' --query="$*" --preview '
+      if [[ "{}" == fleet:* ]]; then
+        fleetctl show --secret "{}" 2>/dev/null || fleetctl show "{}" 2>/dev/null
+      else
+        ssh -G "{}" 2>/dev/null | (command -v rg >/dev/null && rg -n "^(hostname|user|port|identityfile) " || grep -E "^(hostname|user|port|identityfile) ")
+      fi
+    ' --preview-window 'down,60%,border-top')" || return
 
     case "$mode" in
       copy) _copy_to_clipboard "$host" ;;
       print) print -r -- "$host" ;;
-      ssh) command ssh "$host" ;;
+      ssh)
+        if [[ "$host" == fleet:* ]]; then
+          command fleetctl ssh "${host#fleet:}"
+        else
+          command ssh "$host"
+        fi
+        ;;
     esac
   }
 
