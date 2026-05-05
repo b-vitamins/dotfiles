@@ -912,9 +912,9 @@ ssh $(grep -E '^Host ' ~/.ssh/config | awk '{print $2}' | fzf)
 ```
 Do:
 ```bash
-fssh        # Pick a host and connect
+fssh        # Pick a host from SSH config, known_hosts, or fleetctl and connect
 fssh query  # Prefilter
-fssh -c     # Copy the selected host to clipboard (or print)
+fssh -c     # Copy the selected host or fleet target to clipboard (or print)
 ```
 
 ### Command History
