@@ -513,6 +513,11 @@ allow-preset-passphrase")))
                                 (mount-point "/")
                                 (type "btrfs"))
                               (file-system
+                                (device (file-system-label "my-data"))
+                                (mount-point "/data")
+                                (type "btrfs")
+                                (create-mount-point? #t))
+                              (file-system
                                 (mount-point "/sys/kernel/security")
                                 (device "securityfs")
                                 (type "securityfs")

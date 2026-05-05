@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `fleetctl` now treats target `workdir` as the host landing strip and derives default project roots as `workdir/<project-name>`
 - `fleetctl smoke` now reports whether a configured project landing strip exists without treating a missing repo checkout as a transport failure
 - `fleetctl` now renders `~/.config/fleet/` from dotfiles templates plus pass-backed private source data, and `setup.sh` deploys that generated fleet config automatically when the `infra/fleet` pass prefix is present
+- Mileva now mounts the `my-data` Btrfs filesystem at `/data`
 - Changed the default Emacs org-slipbox notes directory to `~/org/myslipbox`
 - Relaxed global Git SSH key ignore patterns so exact private/public key
   filenames stay ignored without also ignoring encrypted `pass` entries such as
