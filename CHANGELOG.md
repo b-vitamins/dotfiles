@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Jump-anywhere navigation with Avy + Embark dispatch (`bv-avy`)
 - Circadian Alacritty light/dark theming with synced Zsh/FZF/Bat palettes
 - Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
+- ProtonVPN NetworkManager import helper script (`scripts/protonvpn-import.sh`)
 - Org workflow guide documenting the `~/org` command-center system (`docs/emacs/org-workflow.md`)
 - Org gamification tools: metrics scoreboard, focus timer, inbox processor, and citar-driven reading queue
 - Codex `hifi-pdf-ocr` skill with reusable prompts, orchestration agents, and OCR helper scripts
