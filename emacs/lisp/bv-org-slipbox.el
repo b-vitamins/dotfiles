@@ -39,7 +39,7 @@
   :group 'applications
   :prefix "bv-org-slipbox-")
 
-(defcustom bv-org-slipbox-directory "~/documents/slipbox/slips"
+(defcustom bv-org-slipbox-directory "~/org/myslipbox"
   "Directory for org-slipbox notes."
   :type 'directory
   :group 'bv-org-slipbox)

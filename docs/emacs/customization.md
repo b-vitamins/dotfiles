@@ -141,7 +141,7 @@ Location example:
 ### Org-Slipbox (Knowledge Management)
 
 **bv-org-slipbox-directory** (string)
-- Default: "~/documents/slipbox/slips"
+- Default: "~/org/myslipbox"
 - Main directory for slipbox notes
 
 **bv-org-slipbox-show-backlinks** (boolean)

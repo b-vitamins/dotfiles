@@ -133,7 +133,7 @@ M-x esup
 ```elisp
 ;; Set slip box location
 (custom-set-variables
- '(bv-org-slipbox-directory "~/documents/slipbox/slips"))
+ '(bv-org-slipbox-directory "~/org/myslipbox"))
 
 ;; Initialize database
 M-x org-slipbox-sync
