@@ -1,6 +1,6 @@
 ---
 name: hifi-pdf-ocr
-description: High-fidelity manual transcription from PDFs or rendered page images into LaTeX, including mandatory 600 DPI page rendering, logical range planning, and strict page-by-page append workflows. Use when a user asks to transcribe books/papers, preserve equations/figures/captions faithfully, coordinate multiple agents on non-overlapping page ranges, or compile and validate transcription outputs.
+description: High-fidelity manual transcription from PDFs or rendered page images into LaTeX, including mandatory 600 DPI page rendering, logical range planning, strict page-by-page append workflows, and final workspace pruning to minimal handoff artifacts. Use when a user asks to transcribe books/papers, preserve equations/figures/captions faithfully, coordinate multiple agents on non-overlapping page ranges, or compile, validate, and finalize transcription outputs.
 ---
 
 # HiFi PDF OCR
@@ -14,6 +14,9 @@ Execute a deterministic pipeline for manual transcription or verification-repair
 - Target output format (usually LaTeX `.tex`).
 - Logical grouping plan (chapters/sections or explicit page ranges).
 - Optional existing transcription files to audit/fix instead of transcribing from scratch.
+- Artifact retention policy.
+  - Default: after successful signoff, keep only the local source PDF, final `.tex` deliverables, and any non-PDF assets still referenced by those `.tex` files.
+  - Remove rendered pages, plans, audit ledgers, shard residue, temporary helper files, build artefacts, and generated PDFs unless the user explicitly asks to retain them.
 
 ## Required Workflow
 
@@ -27,7 +30,8 @@ Execute a deterministic pipeline for manual transcription or verification-repair
 8. Compile and repair only transcription/LaTeX syntax errors.
 9. Run an independent image-based audit/fix pass for all touched pages when fidelity is high stakes.
 10. Run a fresh acceptance sample before final signoff.
-11. Report structural completeness separately from fidelity completeness and list unresolved diagram TODOs and diagram gaps.
+11. Prune the workspace to minimal handoff artifacts unless the user explicitly asked to retain intermediates.
+12. Report structural completeness separately from fidelity completeness, and report what was pruned vs retained.
 
 ## Step 0: Inspect Current State
 
@@ -40,6 +44,10 @@ Before any rendering or dispatch:
 - If existing transcription files are present, do not treat them as authoritative for touched pages until re-verified from the rendered page images.
 - Distinguish `structurally complete`, `compiled`, `text-audited`, `diagram-complete`, and `fully fidelity-complete` in all progress and final reports. Never collapse these into a single “done” claim.
 - Inventory requested output files and existing rendered pages before spawning agents.
+- Establish the final artifact policy up front.
+  - Default to minimal handoff artifacts.
+  - If the user says they only want the source PDF plus final `.tex` files, plan to delete `pages/`, `plans/`, audit ledgers, helper scripts copied into the workspace, generated PDFs, logs, and other transient residue after acceptance succeeds.
+  - If the user explicitly wants reproducibility residue preserved, keep it and say so in the final report.
 
 ## Step 1: Render Images (Always First)
 
@@ -266,7 +274,37 @@ Then:
 
 Any defect found in the acceptance sample sends the job back to repair plus a new acceptance sample.
 
-## Step 10: Final Report
+## Step 10: Prune Workspace for Final Handoff
+
+After the acceptance sample passes, prune the workspace unless the user explicitly asked to keep intermediates.
+
+Use:
+
+```bash
+python3 scripts/prune-workspace.py --workspace /path/to/workspace --source-rel source/book.pdf --transcriptions-dir transcriptions
+```
+
+Default pruning behavior:
+
+- Keep the canonical local source PDF.
+- Normalize the final LaTeX layout before pruning:
+  - keep one body-only `.tex` file per logical deliverable directly under `transcriptions/`,
+  - keep one `transcriptions/common-preamble.tex` if shared macros/packages are needed,
+  - optionally keep one `transcriptions/book.tex` as the canonical full-book driver,
+  - do not leave duplicate derived include trees such as `book-parts/`, `segments/`, or `shards/` in the final handoff.
+- Keep the final `.tex` deliverables under `transcriptions/`.
+- Keep any `.tex` files transitively referenced by those deliverables via `\input{...}` or `\include{...}` only if they are true shared support files rather than duplicate body-content trees.
+- Keep non-PDF assets only if they are still referenced by the kept `.tex` files (for example via `\includegraphics{...}`).
+- Remove rendered page images, plans, audit ledgers, acceptance samples, legacy draft quarantine, editor residue, copied helper scripts, generated PDFs, and build artefacts.
+
+Important:
+
+- The default handoff target is a minimal deliverable workspace, not a preserved forensic pipeline.
+- The default handoff target is also structurally standardized: direct chapterwise/logical-part `.tex` files under `transcriptions/`, not bespoke nested layouts.
+- If `source/book.pdf` is an external symlink, replace it with a local file before pruning so the final handoff is self-contained.
+- If the user explicitly wants to retain render/audit provenance, skip pruning and say that the workspace was intentionally left non-minimal.
+
+## Step 11: Final Report
 
 Report:
 
@@ -279,6 +317,8 @@ Report:
 - Remaining diagram TODO items.
 - Remaining diagram gaps from `plans/diagram-gaps.csv`.
 - Any unresolved ambiguities that need user confirmation.
+- Whether the workspace was pruned to minimal handoff artifacts or intentionally left with intermediates.
+- Exact retained artifact classes and exact pruned artifact classes.
 
 Before final handoff, run the checklist in `references/transcription-quality-gate.md`.
 
@@ -297,6 +337,7 @@ Definitions:
 - `scripts/assign-groups.py`: Balance chapter/group workloads across agents from a CSV plan.
 - `scripts/verify-page-markers.py`: Verify exact page coverage from `% Page <n>` markers before cleanup.
 - `scripts/cleanup-page-markers.py`: Remove `% Page` markers and stitch likely page-break interruptions.
+- `scripts/prune-workspace.py`: Remove transient render/planning/build residue and reduce a finished workspace to minimal handoff artifacts.
 
 ## Assets
 

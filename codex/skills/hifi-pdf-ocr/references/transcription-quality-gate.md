@@ -64,3 +64,16 @@ Run this checklist before finishing any assigned range.
 - Report `structurally complete`, `compiled`, `text-audited`, `diagram-complete`, and `fully fidelity-complete` separately.
 - Do not claim `diagram-complete` while `plans/diagram-gaps.csv` has unresolved numbered-figure content gaps.
 - Do not claim `fully fidelity-complete` until the independent audit/fix pass has covered all touched pages, the marker-verification artifact exists, and the acceptance sample is clean.
+
+## Handoff Cleanup Checks
+
+- Unless the user explicitly asked to retain intermediates, prune the workspace after the acceptance sample passes.
+- Normalize to the standard final layout before pruning:
+  - one body-only `.tex` file per logical deliverable directly under `transcriptions/`,
+  - optional `transcriptions/book.tex`,
+  - optional `transcriptions/common-preamble.tex`,
+  - no duplicate body-content include trees such as `book-parts/`, `segments/`, or `shards/`.
+- Keep only the canonical local source PDF, final `.tex` deliverables, recursively referenced `.tex` support files, and non-PDF assets still referenced by those `.tex` files.
+- Remove rendered pages, plans, audit ledgers, acceptance samples, helper scripts copied into the workspace, legacy draft quarantine, generated PDFs, and LaTeX build artefacts.
+- If the canonical source PDF is an external symlink, replace it with a local file before pruning.
+- State clearly in the final report whether the workspace was pruned or intentionally left with intermediates.
