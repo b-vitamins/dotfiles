@@ -13,7 +13,7 @@
 (autoload 'graphviz-dot-mode "graphviz-dot-mode")
 
 ;; Declare external functions to satisfy elint
-(declare-function org-redisplay-inline-images "org" (&optional include-linked refresh beg end))
+(declare-function org-link-preview-refresh "ol" ())
 
 ;; Forward declarations
 (declare-function bv-graphviz-display-inline-images "bv-graphviz")
@@ -37,7 +37,7 @@
   (defun bv-graphviz-display-inline-images ()
     "Refresh inline images after graphviz execution."
     (when (derived-mode-p 'org-mode)
-      (org-redisplay-inline-images)))
+      (org-link-preview-refresh)))
 
   (add-hook 'org-babel-after-execute-hook #'bv-graphviz-display-inline-images))
 

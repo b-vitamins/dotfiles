@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Refined BV Emacs light/dark theme palettes for improved contrast and a more polished completion UI
 - Updated BV font stack defaults and Unicode fallbacks (JetBrains Mono, FiraGO, Noto Serif)
 - Switched BV Emacs typography defaults to Iosevka Term, IBM Plex Sans, Source Serif 4, and STIX Two Math, with Nerd Font icons isolated to private-use ranges
+- Replaced obsolete Org inline-preview and source-edit indentation APIs in the Emacs configuration
 - Tweaked BV Emacs dark theme foundation colors for a richer background tint and crisper text contrast
 - Tweaked Alacritty dark palette for richer backgrounds and sharper text contrast
 - Disabled underlines across BV themes (links, comments, diagnostics) in favor of color and subtle background emphasis

@@ -168,7 +168,7 @@ With prefix ARG, pass it through to `org-clock-out'."
 
   ;; Editing preferences.
   (setq org-adapt-indentation nil)
-  (setq org-edit-src-content-indentation 0)
+  (setq org-src-content-indentation 0)
   (setq org-startup-indented t)
   (setq org-hide-emphasis-markers t)
 
