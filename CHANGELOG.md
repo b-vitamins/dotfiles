@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   materialized faces, and gate their coverage during doctor runs
 - Role-based Emacs layout system with shared frame defaults, display-aware frame profiles, buffer spatial roles, and popup window policy
 - Icon-present, width-aware Emacs completion surface policy spanning Vertico, Consult, Marginalia, Embark, Orderless, Cape, Corfu, and Nerd Icons
+- Inline, width-budgeted command annotations that keep Marginalia command docs
+  readable without right-aligning them against the minibuffer edge.
 - Tree-sitter grammar audit command (`bv-treesit-audit`)
 - Project cockpit actions in `project-switch-project` (ripgrep, test, magit, dape)
 - Unified formatting dispatcher (`bv-format` / `bv-format-on-save-mode`) and standardized `C-c C-f` formatting key

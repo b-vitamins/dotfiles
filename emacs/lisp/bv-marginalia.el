@@ -16,6 +16,7 @@
 
 (require 'marginalia)
 (require 'cl-lib)
+(require 'seq)
 (require 'subr-x)
 (require 'bv-completion)
 
@@ -186,6 +187,67 @@
           base)
       base)))
 
+(defun bv-marginalia--low-signal-key-p (key)
+  "Return non-nil when KEY is not useful in a compact annotation."
+  (let ((description (key-description key)))
+    (or (string-prefix-p "<menu-bar>" description)
+        (string-prefix-p "<tool-bar>" description)
+        (string-match-p "\\`<\\(?:mouse\\|down-mouse\\|drag-mouse\\)"
+                        description)
+        (string-match-p "\\`<[^>]+>\\'" description))))
+
+(defun bv-marginalia--command-key (symbol)
+  "Return a concise key binding for command SYMBOL, or nil."
+  (when (commandp symbol)
+    (seq-some
+     (lambda (key)
+       (unless (bv-marginalia--low-signal-key-p key)
+         (let ((description (key-description key)))
+           (when (<= (string-width description) 18)
+             description))))
+     (where-is-internal symbol nil nil))))
+
+(defun bv-marginalia--command-doc (symbol)
+  "Return a one-line documentation summary for command SYMBOL."
+  (when-let ((doc (documentation symbol t)))
+    (let* ((line (car (split-string (string-trim doc) "\n")))
+           (line (replace-regexp-in-string "[[:space:]]+" " " line)))
+      (unless (string-empty-p line)
+        line))))
+
+(defun bv-marginalia--command-row-budget (cand)
+  "Return the annotation budget left after command candidate CAND."
+  (max 0 (- (bv-completion-window-width) (string-width cand) 4)))
+
+(defun bv-marginalia--inline-command-field (text width face)
+  "Return TEXT as an inline command annotation field within WIDTH."
+  (when (and text (> width 4))
+    (propertize (bv-completion-truncate text width " ->") 'face face)))
+
+(defun bv-marginalia-annotate-command (cand)
+  "Width-aware command annotation for CAND.
+Command docs are rendered inline instead of right-aligned.  The row receives a
+simple width budget derived from the visible candidate and completion window;
+anything that does not fit is truncated with a continuation marker."
+  (when-let ((symbol (intern-soft cand)))
+    (let* ((budget (bv-marginalia--command-row-budget cand))
+           (key (bv-marginalia--command-key symbol))
+           (key-field (and key (format "(%s)" key)))
+           (key-width (if key-field (string-width key-field) 0))
+           (doc-width (- budget key-width (if key-field 1 0)))
+           (doc-field (bv-marginalia--inline-command-field
+                       (bv-marginalia--command-doc symbol)
+                       doc-width
+                       'marginalia-documentation))
+           (fields (delq nil
+                         (list (and key-field
+                                    (propertize key-field
+                                                'face 'marginalia-key))
+                               doc-field)))
+           (body (string-join fields " ")))
+      (unless (string-empty-p body)
+        (concat "  " body)))))
+
 ;;; Annotator Registry
 
 (defun bv-marginalia--prepend-annotator (category function)
@@ -202,6 +264,7 @@
   (bv-marginalia--prepend-annotator 'project-file #'bv-marginalia-annotate-file)
   (bv-marginalia--prepend-annotator 'buffer #'bv-marginalia-annotate-buffer)
   (bv-marginalia--prepend-annotator 'project-buffer #'bv-marginalia-annotate-buffer)
+  (bv-marginalia--prepend-annotator 'command #'bv-marginalia-annotate-command)
   (bv-marginalia--prepend-annotator 'symbol #'bv-marginalia-annotate-symbol))
 
 (bv-marginalia-install-annotators)

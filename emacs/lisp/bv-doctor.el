@@ -13,6 +13,7 @@
 ;; - Run the BV theme compiler audit
 ;; - Exercise representative theme workflow probes
 ;; - Generate deterministic visual regression artifacts
+;; - Run completion surface policy tests
 ;; - Run modeline/header-line invariant tests
 ;;
 ;; Designed to run in non-interactive batch mode and from pre-commit hooks.
@@ -137,6 +138,14 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
     (unless (zerop (ert-stats-completed-unexpected stats))
       (error "BV modeline tests failed"))))
 
+(defun bv-doctor-check-completion-tests ()
+  "Run BV completion/minibuffer ERT checks."
+  (require 'ert)
+  (require 'bv-completion-tests)
+  (let ((stats (ert-run-tests-batch '(tag bv-completion))))
+    (unless (zerop (ert-stats-completed-unexpected stats))
+      (error "BV completion tests failed"))))
+
 ;;;###autoload
 (defun bv-doctor-run ()
   "Run the BV config doctor interactively."
@@ -156,6 +165,8 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
   (bv-doctor-check-live-theme-inventory)
   (message "bv-doctor: generating theme regression artifacts…")
   (bv-doctor-check-theme-regression)
+  (message "bv-doctor: testing completion invariants…")
+  (bv-doctor-check-completion-tests)
   (message "bv-doctor: testing modeline invariants…")
   (bv-doctor-check-modeline-tests)
   (message "bv-doctor: OK"))
@@ -172,6 +183,7 @@ Signals an error on failure (causing a non-zero exit in batch mode)."
   (bv-doctor-check-theme-workloads)
   (bv-doctor-check-live-theme-inventory)
   (bv-doctor-check-theme-regression)
+  (bv-doctor-check-completion-tests)
   (bv-doctor-check-modeline-tests)
   (message "bv-doctor: OK"))
 
