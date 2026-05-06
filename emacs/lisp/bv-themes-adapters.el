@@ -143,12 +143,60 @@
   "BV salient header-line face."
   :group 'bv-themes)
 
+(defface bv-ui-header-info '((t :inherit (success header-line)))
+  "BV informational header-line signal face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-warning '((t :inherit (warning header-line)))
+  "BV warning header-line signal face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-error '((t :inherit (error header-line)))
+  "BV error header-line signal face."
+  :group 'bv-themes)
+
 (defface bv-ui-header-popout '((t :inherit mode-line))
   "BV popout header-line face."
   :group 'bv-themes)
 
 (defface bv-ui-header-critical '((t :inherit (error header-line)))
   "BV critical header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-default '((t :inherit mode-line-inactive))
+  "BV inactive default header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-muted '((t :inherit (shadow mode-line-inactive)))
+  "BV inactive muted header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-strong '((t :inherit mode-line-inactive))
+  "BV inactive strong header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-salient '((t :inherit mode-line-inactive))
+  "BV inactive salient header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-info '((t :inherit mode-line-inactive))
+  "BV inactive informational header-line signal face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-warning '((t :inherit mode-line-inactive))
+  "BV inactive warning header-line signal face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-error '((t :inherit mode-line-inactive))
+  "BV inactive error header-line signal face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-popout '((t :inherit mode-line-inactive))
+  "BV inactive popout header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-inactive-critical '((t :inherit mode-line-inactive))
+  "BV inactive critical header-line face."
   :group 'bv-themes)
 
 (defun bv-themes-adapters--indexed (prefix roles &optional start)
@@ -1616,8 +1664,20 @@ When START is non-nil, begin numbering from that value."
      (bv-ui-header-muted header-muted)
      (bv-ui-header-strong header-strong)
      (bv-ui-header-salient header-salient)
+     (bv-ui-header-info header-info)
+     (bv-ui-header-warning header-warning)
+     (bv-ui-header-error header-error)
      (bv-ui-header-popout header-popout)
      (bv-ui-header-critical header-critical)
+     (bv-ui-header-inactive-default header-inactive-default)
+     (bv-ui-header-inactive-muted header-inactive-muted)
+     (bv-ui-header-inactive-strong header-inactive-strong)
+     (bv-ui-header-inactive-salient header-inactive-salient)
+     (bv-ui-header-inactive-info header-inactive-info)
+     (bv-ui-header-inactive-warning header-inactive-warning)
+     (bv-ui-header-inactive-error header-inactive-error)
+     (bv-ui-header-inactive-popout header-inactive-popout)
+     (bv-ui-header-inactive-critical header-inactive-critical)
      (abbrev-table-name heading-4)
      (ansi-color-bold bold)
      (ansi-color-faint dim)

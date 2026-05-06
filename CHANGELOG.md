@@ -67,6 +67,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   width-aware TRAMP and Elfeed rows, theme-derived PDF night colors, semantic
   calendar/modeline/Citar/Vertico/Cape/Corfu faces, and BV-owned icon roles
   including Octicon-family slipbox note icons.
+- Promoted the BV Emacs headerline into a role-aware modeline system with
+  diagnostics, modal task states, smarter project/branch display, hover help,
+  inactive-window treatment, modeline ERT invariants, and theme regression
+  coverage for representative modeline states.
 - Split Emacs doctor validation into a hermetic batch gate and a live full-init
   gate for runtime theme workflow checks.
 - Expanded BV Emacs theme audits for diagnostics, completion, diff, terminal,

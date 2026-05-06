@@ -44,6 +44,24 @@ full model and lets the renderer drop low-priority details as space tightens.
   :type 'integer
   :group 'bv-modeline)
 
+(defcustom bv-modeline-project-name-overrides nil
+  "Canonical display names for projects in the BV header line.
+Each entry is (MATCH . NAME).  MATCH may be a project root path or the raw
+project name returned by `project-name'."
+  :type '(alist :key-type string :value-type string)
+  :group 'bv-modeline)
+
+(defcustom bv-modeline-generic-project-names
+  '("code" "project" "projects" "repo" "repos" "src" "source" "work")
+  "Directory names that are too generic to be useful as project names."
+  :type '(repeat string)
+  :group 'bv-modeline)
+
+(defcustom bv-modeline-show-time t
+  "Whether the BV header line should reserve space for wall-clock time."
+  :type 'boolean
+  :group 'bv-modeline)
+
 (defconst bv-modeline--edge-pad-rise 0.15
   "Display raise used to keep the BV header band optically padded.")
 
@@ -65,10 +83,17 @@ full model and lets the renderer drop low-priority details as space tightens.
 ;; External variables
 (defvar battery-mode-line-string)
 (defvar bv-keycast-mode)
+(defvar bv-format-on-save-mode)
+(defvar compilation-in-progress)
+(defvar defining-kbd-macro)
 (defvar display-time-string)
+(defvar display-time-mode)
 (defvar emms-mode-line-string)
 (defvar emms-player-playing-p)
+(defvar envrc--status)
 (defvar eshell-status-in-modeline)
+(defvar executing-kbd-macro)
+(defvar flymake-mode)
 (defvar Info-current-node)
 (defvar Info-use-header-line)
 (defvar keycast--this-command)
@@ -82,6 +107,11 @@ full model and lets the renderer drop low-priority details as space tightens.
 ;; External functions
 (declare-function bound-and-true-p "subr" (var))
 (declare-function derived-mode-p "subr" (&rest modes))
+(declare-function eglot-managed-p "eglot" ())
+(declare-function flymake-diagnostic-text "flymake" (diag))
+(declare-function flymake-diagnostic-type "flymake" (diag))
+(declare-function flymake-diagnostics "flymake" (&optional beg end))
+(declare-function flymake-running-backends "flymake" ())
 (declare-function mode-line-window-selected-p "bindings")
 (declare-function project-current "project" (&optional maybe-prompt directory))
 (declare-function project-name "project" (project))
@@ -98,19 +128,22 @@ full model and lets the renderer drop low-priority details as space tightens.
   "Buffer modification tick for `bv-modeline--cached-org-title'.")
 
 (defvar-local bv-modeline--cached-project-directory nil
-  "Directory used for `bv-modeline--cached-project-name'.")
+  "Directory used for `bv-modeline--cached-project-info'.")
 
-(defvar-local bv-modeline--cached-project-name nil
-  "Cached project name for the current buffer.")
+(defvar-local bv-modeline--cached-project-info nil
+  "Cached project metadata for the current buffer.")
 
 (defvar bv-modeline-renderers
   '((bv-modeline-message-mode-p . bv-modeline-message-mode)
+    (bv-modeline-dired-mode-p . bv-modeline-dired-mode)
     (bv-modeline-info-mode-p . bv-modeline-info-mode)
+    (bv-modeline-help-mode-p . bv-modeline-help-mode)
     (bv-modeline-calendar-mode-p . bv-modeline-calendar-mode)
     (bv-modeline-org-capture-mode-p . bv-modeline-org-capture-mode)
     (bv-modeline-org-agenda-mode-p . bv-modeline-org-agenda-mode)
     (bv-modeline-term-mode-p . bv-modeline-term-mode)
     (bv-modeline-vterm-mode-p . bv-modeline-term-mode)
+    (bv-modeline-pdf-mode-p . bv-modeline-pdf-mode)
     (bv-modeline-completion-list-mode-p . bv-modeline-completion-list-mode))
   "Predicate/renderer pairs for special BV header-line presentations.")
 
@@ -172,7 +205,19 @@ PROPERTIES is a plist overriding rendering metadata."
 
 (defun bv-modeline--segment-width (segment)
   "Return natural display width for SEGMENT."
-  (string-width (plist-get segment :text)))
+  (or (plist-get segment :fixed-width)
+      (string-width (plist-get segment :text))))
+
+(defun bv-modeline--pad-string (text width align)
+  "Pad TEXT to WIDTH columns using ALIGN."
+  (let ((pad (max 0 (- width (string-width text)))))
+    (pcase align
+      ('right (concat (make-string pad ?\s) text))
+      ('center (let ((left (/ pad 2)))
+                 (concat (make-string left ?\s)
+                         text
+                         (make-string (- pad left) ?\s))))
+      (_ (concat text (make-string pad ?\s))))))
 
 (defun bv-modeline--segment-render (segment)
   "Render SEGMENT."
@@ -181,8 +226,17 @@ PROPERTIES is a plist overriding rendering metadata."
          (text (bv-modeline--truncate-string
                 (plist-get segment :text)
                 width
-                (plist-get segment :truncate))))
-    (propertize text 'face (plist-get segment :face))))
+                (plist-get segment :truncate)))
+         (text (bv-modeline--pad-string
+                text width (plist-get segment :align)))
+         (face (plist-get segment :face))
+         (help (plist-get segment :help-echo))
+         (mouse-face (plist-get segment :mouse-face))
+         (properties (append (list 'face face)
+                             (when help (list 'help-echo help))
+                             (when mouse-face
+                               (list 'mouse-face mouse-face)))))
+    (apply #'propertize text properties)))
 
 (defun bv-modeline--segments-natural-width (segments separator)
   "Return natural display width for SEGMENTS joined by SEPARATOR."
@@ -255,11 +309,42 @@ PROPERTIES is a plist overriding rendering metadata."
      (t
       (bv-modeline--shrink-segments segments width separator)))))
 
-(defun bv-modeline--join-segments (segments separator)
-  "Render SEGMENTS joined with SEPARATOR."
+(defconst bv-modeline--inactive-face-map
+  '((bv-ui-header-default . bv-ui-header-inactive-default)
+    (bv-ui-header-muted . bv-ui-header-inactive-muted)
+    (bv-ui-header-strong . bv-ui-header-inactive-strong)
+    (bv-ui-header-salient . bv-ui-header-inactive-salient)
+    (bv-ui-header-info . bv-ui-header-inactive-info)
+    (bv-ui-header-warning . bv-ui-header-inactive-warning)
+    (bv-ui-header-error . bv-ui-header-inactive-error)
+    (bv-ui-header-popout . bv-ui-header-inactive-popout)
+    (bv-ui-header-critical . bv-ui-header-inactive-critical))
+  "BV header faces used when a window is inactive.")
+
+(defun bv-modeline--window-face (face selected)
+  "Return FACE adjusted for SELECTED window state."
+  (if selected
+      face
+    (or (cdr (assq face bv-modeline--inactive-face-map))
+        face)))
+
+(defun bv-modeline--window-segments (segments selected)
+  "Return SEGMENTS with faces adjusted for SELECTED window state."
+  (mapcar
+   (lambda (segment)
+     (let ((segment (copy-sequence segment)))
+       (plist-put segment :face
+                  (bv-modeline--window-face
+                   (plist-get segment :face)
+                   selected))))
+   segments))
+
+(defun bv-modeline--join-segments (segments separator &optional face)
+  "Render SEGMENTS joined with SEPARATOR.
+When FACE is non-nil, use it for the separator."
   (mapconcat #'bv-modeline--segment-render
              segments
-             (propertize separator 'face 'bv-ui-header-muted)))
+             (propertize separator 'face (or face 'bv-ui-header-muted))))
 
 (defun bv-modeline--selected-window-p ()
   "Return non-nil when rendering the selected window."
@@ -267,44 +352,113 @@ PROPERTIES is a plist overriding rendering metadata."
       (mode-line-window-selected-p)
     t))
 
+(defun bv-modeline--remote-info ()
+  "Return remote metadata for `default-directory', or nil."
+  (when-let ((remote (and default-directory
+                          (ignore-errors (file-remote-p default-directory)))))
+    (list :name remote
+          :method (ignore-errors (file-remote-p default-directory 'method))
+          :user (ignore-errors (file-remote-p default-directory 'user))
+          :host (ignore-errors (file-remote-p default-directory 'host))
+          :localname (ignore-errors
+                       (file-remote-p default-directory 'localname)))))
+
+(defun bv-modeline--elevated-p (&optional remote)
+  "Return non-nil when REMOTE or `default-directory' uses elevated access."
+  (let* ((remote (or remote (bv-modeline--remote-info)))
+         (method (plist-get remote :method))
+         (user (plist-get remote :user)))
+    (or (member method '("sudo" "doas" "su"))
+        (string= user "root"))))
+
+(defun bv-modeline--remote-label (&optional remote)
+  "Return a compact remote label for REMOTE or `default-directory'."
+  (when-let* ((remote (or remote (bv-modeline--remote-info)))
+              (method (or (plist-get remote :method) "tramp")))
+    (if (bv-modeline--elevated-p remote)
+        "ROOT"
+      (upcase method))))
+
+(defun bv-modeline--remote-help (&optional remote)
+  "Return hover help for REMOTE or `default-directory'."
+  (when-let ((remote (or remote (bv-modeline--remote-info))))
+    (string-join
+     (delq nil
+           (list
+            (format "Remote: %s" (plist-get remote :name))
+            (when-let ((method (plist-get remote :method)))
+              (format "Method: %s" method))
+            (when-let ((user (plist-get remote :user)))
+              (format "User: %s" user))
+            (when-let ((host (plist-get remote :host)))
+              (format "Host: %s" host))
+            (when-let ((local (plist-get remote :localname)))
+              (format "Path: %s" local))))
+     "\n")))
+
 (defun bv-modeline-status ()
   "Return buffer/window status: read-only, modified, or read-write."
-  (cond ((window-dedicated-p) "--")
+  (cond ((window-dedicated-p) "DD")
         ((and buffer-file-name (buffer-modified-p)) "**")
         (buffer-read-only "RO")
+        ((bv-modeline--elevated-p) "#@")
+        ((bv-modeline--remote-info) "R@")
         (t "RW")))
 
-(defun bv-modeline--status-face (status)
+(defun bv-modeline--status-face (status &optional selected)
   "Return the header face used for STATUS."
-  (cond ((string= status "**") 'bv-ui-header-critical)
-        ((string= status "RO") 'bv-ui-header-popout)
-        ((string= status "--") 'bv-ui-header-popout)
-        ((string= status ">_") 'bv-ui-header-popout)
-        (t 'bv-ui-header-muted)))
+  (bv-modeline--window-face
+   (cond ((string= status "**") 'bv-ui-header-critical)
+         ((member status '("RO" "DD" ">_" "#@" "R@"))
+          'bv-ui-header-popout)
+         (t 'bv-ui-header-muted))
+   selected))
 
-(defun bv-modeline--status-block (status)
+(defun bv-modeline--status-help (status)
+  "Return hover help for STATUS."
+  (string-join
+   (delq nil
+         (list
+          (pcase status
+            ("**" "Status: modified, unsaved")
+            ("RO" "Status: read-only")
+            ("DD" "Status: dedicated window")
+            ("#@" "Status: elevated remote access")
+            ("R@" "Status: remote buffer")
+            (">_" "Status: terminal")
+            (_ "Status: read-write"))
+          (bv-modeline--remote-help)))
+   "\n"))
+
+(defun bv-modeline--status-block (status &optional selected)
   "Render STATUS as the left status block."
   (let* ((status (bv-modeline--clean status))
          (status (if (> (string-width status) 2)
                      (bv-modeline--truncate-string status 2)
                    status))
          (block (propertize (format " %-2s " status)
-                            'face (bv-modeline--status-face status))))
+                            'face (bv-modeline--status-face status selected)
+                            'help-echo (bv-modeline--status-help status))))
     (add-text-properties 0 1
                          `(display (raise ,bv-modeline--edge-pad-rise))
                          block)
     block))
 
-(defun bv-modeline--status-gutter ()
+(defun bv-modeline--status-gutter (&optional selected)
   "Return the neutral gutter after the status accent block."
-  (propertize bv-modeline--status-gutter 'face 'bv-ui-header-default))
+  (propertize bv-modeline--status-gutter
+              'face (bv-modeline--window-face
+                     'bv-ui-header-default
+                     selected)))
 
-(defun bv-modeline--edge-pad (&optional drop)
+(defun bv-modeline--edge-pad (&optional drop selected)
   "Return a one-column edge pad that contributes vertical header metrics.
 When DROP is non-nil, lower the pad instead of raising it.  The visible text
 size stays unchanged; the paired pads restore the header band's previous
 breathing room after the renderer rewrite."
-  (propertize " " 'face 'bv-ui-header-default
+  (propertize " " 'face (bv-modeline--window-face
+                         'bv-ui-header-default
+                         selected)
               'display `(raise ,(if drop
                                      bv-modeline--edge-pad-drop
                                    bv-modeline--edge-pad-rise))))
@@ -316,38 +470,122 @@ breathing room after the renderer rewrite."
          ((listp mode-name) (format-mode-line mode-name))
          (t mode-name))))
 
-(defun bv-modeline--vc-branch ()
-  "Return the current VC branch as plain text."
+(defconst bv-modeline--role-policies
+  '((code :project t :branch t :diagnostics all :decorative t
+          :position t :mode t)
+    (note :project t :branch nil :diagnostics bad :decorative nil
+          :position t :mode t)
+    (writing :project t :branch nil :diagnostics bad :decorative nil
+             :position t :mode t)
+    (dired :project t :branch nil :diagnostics nil :decorative nil
+           :position t :mode t)
+    (magit :project t :branch nil :diagnostics nil :decorative nil
+           :position nil :mode t)
+    (terminal :project nil :branch nil :diagnostics nil :decorative nil
+              :position nil :mode nil)
+    (completion :project nil :branch nil :diagnostics nil :decorative nil
+                :position nil :mode nil)
+    (help :project nil :branch nil :diagnostics nil :decorative nil
+          :position t :mode t)
+    (pdf :project t :branch nil :diagnostics nil :decorative nil
+         :position t :mode t)
+    (agenda :project nil :branch nil :diagnostics nil :decorative nil
+            :position nil :mode nil)
+    (general :project t :branch t :diagnostics all :decorative t
+             :position t :mode t))
+  "Per-role segment policies for the BV header line.")
+
+(defun bv-modeline--buffer-role ()
+  "Return the display role of the current buffer."
+  (cond
+   ((derived-mode-p 'org-agenda-mode) 'agenda)
+   ((derived-mode-p 'completion-list-mode) 'completion)
+   ((derived-mode-p 'term-mode 'vterm-mode 'eshell-mode 'shell-mode) 'terminal)
+   ((derived-mode-p 'dired-mode) 'dired)
+   ((derived-mode-p 'magit-mode 'magit-status-mode) 'magit)
+   ((derived-mode-p 'help-mode 'helpful-mode 'Info-mode 'Custom-mode) 'help)
+   ((derived-mode-p 'pdf-view-mode 'doc-view-mode) 'pdf)
+   ((derived-mode-p 'org-mode) 'note)
+   ((derived-mode-p 'markdown-mode 'gfm-mode 'text-mode) 'writing)
+   ((derived-mode-p 'prog-mode 'conf-mode) 'code)
+   (t 'general)))
+
+(defun bv-modeline--role-policy (role key &optional fallback)
+  "Return policy KEY for ROLE, or FALLBACK."
+  (let ((policy (cdr (or (assq role bv-modeline--role-policies)
+                         (assq 'general bv-modeline--role-policies)))))
+    (if (plist-member policy key)
+        (plist-get policy key)
+      fallback)))
+
+(defun bv-modeline--vc-branch-info ()
+  "Return cheap VC branch metadata for file-backed buffers."
   (when (and buffer-file-name
              (boundp 'vc-mode)
              vc-mode)
-    (let ((branch (replace-regexp-in-string
-                   "\\`[[:space:]]*[^:]+:" ""
-                   (bv-modeline--clean vc-mode))))
+    (let* ((raw (bv-modeline--clean vc-mode))
+           (backend (when (string-match
+                           "\\`[[:space:]]*\\([^:]+\\):" raw)
+                      (match-string 1 raw)))
+           (branch (replace-regexp-in-string
+                    "\\`[[:space:]]*[^:]+:" "" raw)))
       (unless (string-empty-p branch)
-        branch))))
+        (list :branch branch :backend backend :raw raw)))))
+
+(defun bv-modeline--vc-branch ()
+  "Return the current VC branch as plain text."
+  (plist-get (bv-modeline--vc-branch-info) :branch))
 
 (defun bv-modeline--project-context-p ()
   "Return non-nil when project context belongs in the header line."
   (or buffer-file-name
-      (derived-mode-p 'dired-mode 'vc-dir-mode)))
+      (derived-mode-p 'dired-mode 'vc-dir-mode
+                      'magit-mode 'magit-status-mode)))
 
-(defun bv-modeline--project-name ()
-  "Return current project name when it is cheap and useful."
+(defun bv-modeline--project-alias (name root)
+  "Return configured alias for project NAME at ROOT, or nil."
+  (or (cdr (assoc-string root bv-modeline-project-name-overrides t))
+      (cdr (assoc-string name bv-modeline-project-name-overrides t))))
+
+(defun bv-modeline--canonical-project-name (project root)
+  "Return a short canonical name for PROJECT at ROOT."
+  (let* ((root (file-name-as-directory (expand-file-name root)))
+         (base (file-name-nondirectory (directory-file-name root)))
+         (parent (file-name-nondirectory
+                  (directory-file-name
+                   (file-name-directory (directory-file-name root)))))
+         (raw (bv-modeline--clean
+               (or (and (fboundp 'project-name)
+                        (ignore-errors (project-name project)))
+                   base)))
+         (name (if (member (downcase raw) bv-modeline-generic-project-names)
+                   (format "%s/%s" parent base)
+                 raw)))
+    (or (bv-modeline--project-alias name root) name)))
+
+(defun bv-modeline--project-info ()
+  "Return current project metadata when it is cheap and useful."
   (let ((directory default-directory))
     (unless (or (not (bv-modeline--project-context-p))
                 (file-remote-p directory)
                 (not (fboundp 'project-current)))
       (unless (equal directory bv-modeline--cached-project-directory)
         (setq bv-modeline--cached-project-directory directory
-              bv-modeline--cached-project-name
+              bv-modeline--cached-project-info
               (when-let ((project (ignore-errors (project-current nil))))
-                (bv-modeline--clean
-                 (if (fboundp 'project-name)
-                     (project-name project)
-                   (file-name-nondirectory
-                    (directory-file-name (project-root project))))))))
-      bv-modeline--cached-project-name)))
+                (let ((root (project-root project)))
+                  (list :name (bv-modeline--canonical-project-name
+                               project root)
+                        :root root)))))
+      bv-modeline--cached-project-info)))
+
+(defun bv-modeline--project-name ()
+  "Return current project name when it is cheap and useful."
+  (plist-get (bv-modeline--project-info) :name))
+
+(defun bv-modeline--project-root ()
+  "Return current project root when it is cheap and useful."
+  (plist-get (bv-modeline--project-info) :root))
 
 (defun bv-modeline--right-essential-segment-p (segment)
   "Return non-nil when SEGMENT should survive normal width pressure."
@@ -435,6 +673,18 @@ appears when the whole line can breathe, or when detail level is `full'."
   (or (bv-modeline--org-title)
       (bv-modeline--clean (buffer-name))))
 
+(defun bv-modeline--title-help ()
+  "Return hover help for the current buffer title."
+  (string-join
+   (delq nil
+         (list
+          (when-let ((org-title (bv-modeline--org-title)))
+            (format "Title: %s" org-title))
+          (format "Buffer: %s" (buffer-name))
+          (when buffer-file-name
+            (format "File: %s" (abbreviate-file-name buffer-file-name)))))
+   "\n"))
+
 (defun bv-modeline--title-truncation ()
   "Return preferred truncation style for the current buffer title."
   (if (bv-modeline--org-title) 'right 'middle))
@@ -446,22 +696,41 @@ appears when the whole line can breathe, or when detail level is `full'."
        (string= (downcase (bv-modeline--clean left))
                 (downcase (bv-modeline--clean right)))))
 
-(defun bv-modeline--context-segments ()
-  "Return left-side context segments for the current buffer."
-  (let* ((mode (bv-modeline--mode-name))
-         (project (bv-modeline--project-name))
-         (branch (bv-modeline--vc-branch))
+(defun bv-modeline--context-segments (&optional role)
+  "Return left-side context segments for ROLE in the current buffer."
+  (let* ((role (or role (bv-modeline--buffer-role)))
+         (mode (and (bv-modeline--role-policy role :mode t)
+                    (bv-modeline--mode-name)))
+         (project-info (and (bv-modeline--role-policy role :project t)
+                            (bv-modeline--project-info)))
+         (project (plist-get project-info :name))
+         (project-root (plist-get project-info :root))
+         (branch-info (and (bv-modeline--role-policy role :branch t)
+                           (bv-modeline--vc-branch-info)))
+         (branch (plist-get branch-info :branch))
          (branch (unless (bv-modeline--same-label-p project branch) branch)))
     (delq nil
           (list
            (bv-modeline--segment 'project project 'bv-ui-header-salient
                                  :priority 60
                                  :min-width 4
-                                 :truncate 'middle)
+                                 :truncate 'middle
+                                 :help-echo (when project-root
+                                              (format "Project: %s\nRoot: %s"
+                                                      project project-root)))
            (bv-modeline--segment 'branch branch 'bv-ui-header-muted
                                  :priority 45
                                  :min-width 4
-                                 :truncate 'middle)
+                                 :truncate 'middle
+                                 :help-echo
+                                 (when branch
+                                   (format "Branch: %s%s"
+                                           branch
+                                           (if-let ((backend
+                                                     (plist-get branch-info
+                                                                :backend)))
+                                               (format "\nBackend: %s" backend)
+                                             ""))))
            (bv-modeline--segment 'mode mode 'bv-ui-header-muted
                                  :priority 80
                                  :min-width 3)))))
@@ -478,6 +747,12 @@ appears when the whole line can breathe, or when detail level is `full'."
   "Return point position as line and zero-based column."
   (format "%d:%d" (line-number-at-pos) (current-column)))
 
+(defun bv-modeline--time-text ()
+  "Return wall-clock text for the header line."
+  (when bv-modeline-show-time
+    (or (bv-modeline--plain-bound-string 'display-time-string)
+        (format-time-string "%H:%M"))))
+
 (defun bv-modeline--keycast-text ()
   "Return current keycast text when BV keycast mode is active."
   (when (and (bound-and-true-p bv-keycast-mode)
@@ -489,51 +764,265 @@ appears when the whole line can breathe, or when detail level is `full'."
             (key-description keycast--this-command-keys)
             (symbol-name keycast--this-command))))
 
-(defun bv-modeline--right-segments (&optional extra)
-  "Return right-side segments, optionally preceded by EXTRA."
-  (let ((minimal (eq bv-modeline-detail-level 'minimal))
+(defun bv-modeline--eglot-label ()
+  "Return a compact Eglot label when the current buffer is managed."
+  (when (and (fboundp 'eglot-managed-p)
+             (ignore-errors (eglot-managed-p)))
+    "Eglot"))
+
+(defun bv-modeline--flymake-summary ()
+  "Return Flymake diagnostic summary for the current buffer."
+  (when (and (bound-and-true-p flymake-mode)
+             (fboundp 'flymake-diagnostics))
+    (let ((errors 0)
+          (warnings 0)
+          (infos 0)
+          (checking (and (fboundp 'flymake-running-backends)
+                         (ignore-errors (flymake-running-backends))))
+          (sample nil))
+      (dolist (diag (ignore-errors
+                      (flymake-diagnostics (point-min) (point-max))))
+        (pcase (and (fboundp 'flymake-diagnostic-type)
+                    (flymake-diagnostic-type diag))
+          (:error (cl-incf errors))
+          (:warning (cl-incf warnings))
+          (_ (cl-incf infos)))
+        (unless sample
+          (setq sample (and (fboundp 'flymake-diagnostic-text)
+                            (ignore-errors
+                              (flymake-diagnostic-text diag))))))
+      (list :errors errors
+            :warnings warnings
+            :infos infos
+            :checking checking
+            :eglot (bv-modeline--eglot-label)
+            :sample sample))))
+
+(defun bv-modeline--diagnostics-text (summary)
+  "Return compact diagnostics text for SUMMARY."
+  (let ((parts nil))
+    (when (> (plist-get summary :errors) 0)
+      (push (format "E%d" (plist-get summary :errors)) parts))
+    (when (> (plist-get summary :warnings) 0)
+      (push (format "W%d" (plist-get summary :warnings)) parts))
+    (when (> (plist-get summary :infos) 0)
+      (push (format "I%d" (plist-get summary :infos)) parts))
+    (when (and (null parts) (plist-get summary :checking))
+      (push "CHK" parts))
+    (string-join (nreverse parts) " ")))
+
+(defun bv-modeline--diagnostics-help (summary)
+  "Return hover help for diagnostic SUMMARY."
+  (string-join
+   (delq nil
+         (list
+          (format "Diagnostics: %d error, %d warning, %d info"
+                  (plist-get summary :errors)
+                  (plist-get summary :warnings)
+                  (plist-get summary :infos))
+          (when (plist-get summary :checking)
+            "Flymake is checking")
+          (when-let ((eglot (plist-get summary :eglot)))
+            (format "LSP: %s" eglot))
+          (when-let ((sample (plist-get summary :sample)))
+            (format "First diagnostic: %s" sample))))
+   "\n"))
+
+(defun bv-modeline--diagnostics-face (summary)
+  "Return face for diagnostic SUMMARY."
+  (cond ((> (plist-get summary :errors) 0) 'bv-ui-header-error)
+        ((> (plist-get summary :warnings) 0) 'bv-ui-header-warning)
+        ((> (plist-get summary :infos) 0) 'bv-ui-header-info)
+        (t 'bv-ui-header-muted)))
+
+(defun bv-modeline--diagnostics-segment (&optional role)
+  "Return diagnostics segment for ROLE, when policy allows it."
+  (let* ((role (or role (bv-modeline--buffer-role)))
+         (policy (bv-modeline--role-policy role :diagnostics 'all))
+         (summary (and policy (bv-modeline--flymake-summary)))
+         (errors (and summary (plist-get summary :errors)))
+         (warnings (and summary (plist-get summary :warnings)))
+         (infos (and summary (plist-get summary :infos)))
+         (checking (and summary (plist-get summary :checking)))
+         (bad (or (and errors (> errors 0))
+                  (and warnings (> warnings 0))))
+         (visible (and summary
+                       (not (eq policy nil))
+                       (or bad
+                           (and (not (eq policy 'bad))
+                                (or (and infos (> infos 0))
+                                    checking))))))
+    (when visible
+      (bv-modeline--segment
+       'diagnostics (bv-modeline--diagnostics-text summary)
+       (bv-modeline--diagnostics-face summary)
+       :priority (if bad 98 86)
+       :required bad
+       :min-width 3
+       :fixed-width 4
+       :align 'right
+       :truncate 'right
+       :help-echo (bv-modeline--diagnostics-help summary)))))
+
+(defun bv-modeline--region-state ()
+  "Return active region metadata, or nil."
+  (when (and (bv-modeline--selected-window-p)
+             (use-region-p))
+    (let* ((beg (region-beginning))
+           (end (region-end))
+           (chars (- end beg))
+           (lines (max 1 (count-lines beg end))))
+      (list :label "SEL"
+            :help (format "Active region: %d chars, %d lines"
+                          chars lines)))))
+
+(defun bv-modeline--envrc-state ()
+  "Return envrc state metadata, or nil."
+  (when (and (boundp 'envrc--status)
+             (not (eq envrc--status 'none)))
+    (pcase envrc--status
+      ('on (list :label "ENV" :face 'bv-ui-header-info
+                 :help "envrc: loaded"))
+      (_ (list :label "ENV!" :face 'bv-ui-header-error
+               :help (format "envrc: %s" envrc--status))))))
+
+(defun bv-modeline--task-state-items ()
+  "Return active task/state items for the current buffer."
+  (let ((remote (bv-modeline--remote-info))
+        (items nil))
+    (when defining-kbd-macro
+      (push (list :label "REC" :face 'bv-ui-header-error
+                  :help "Recording keyboard macro")
+            items))
+    (when executing-kbd-macro
+      (push (list :label "MAC" :face 'bv-ui-header-warning
+                  :help "Executing keyboard macro")
+            items))
+    (when (> (recursion-depth) 1)
+      (push (list :label (format "R%d" (recursion-depth))
+                  :face 'bv-ui-header-warning
+                  :help "Recursive edit is active")
+            items))
+    (when (buffer-narrowed-p)
+      (push (list :label "NAR" :face 'bv-ui-header-warning
+                  :help "Buffer is narrowed")
+            items))
+    (when-let ((region (bv-modeline--region-state)))
+      (push (plist-put region :face 'bv-ui-header-info) items))
+    (when remote
+      (push (list :label (or (bv-modeline--remote-label remote) "TRAMP")
+                  :face (if (bv-modeline--elevated-p remote)
+                            'bv-ui-header-error
+                          'bv-ui-header-warning)
+                  :help (bv-modeline--remote-help remote))
+            items))
+    (when (and (bound-and-true-p bv-format-on-save-mode)
+               (buffer-modified-p))
+      (push (list :label "FMT" :face 'bv-ui-header-info
+                  :help "Format on save is pending")
+            items))
+    (when (and (boundp 'compilation-in-progress)
+               compilation-in-progress)
+      (push (list :label "COMP" :face 'bv-ui-header-info
+                  :help "Compilation is running")
+            items))
+    (when-let ((envrc (bv-modeline--envrc-state)))
+      (push envrc items))
+    (nreverse items)))
+
+(defun bv-modeline--task-state-face (items)
+  "Return the highest-signal face for task ITEMS."
+  (cond ((cl-some (lambda (item)
+                    (eq (plist-get item :face) 'bv-ui-header-error))
+                  items)
+         'bv-ui-header-error)
+        ((cl-some (lambda (item)
+                    (eq (plist-get item :face) 'bv-ui-header-warning))
+                  items)
+         'bv-ui-header-warning)
+        (t 'bv-ui-header-info)))
+
+(defun bv-modeline--task-state-segment ()
+  "Return compact active task/state segment."
+  (when-let ((items (bv-modeline--task-state-items)))
+    (bv-modeline--segment
+     'state
+     (string-join (mapcar (lambda (item)
+                            (plist-get item :label))
+                          items)
+                  " ")
+     (bv-modeline--task-state-face items)
+     :priority 96
+     :min-width 3
+     :truncate 'right
+     :help-echo (string-join
+                 (delq nil
+                       (mapcar (lambda (item)
+                                 (plist-get item :help))
+                               items))
+                 "\n"))))
+
+(defun bv-modeline--right-segments (&optional extra role)
+  "Return right-side segments for ROLE, optionally including EXTRA."
+  (let* ((role (or role (bv-modeline--buffer-role)))
+         (minimal (eq bv-modeline-detail-level 'minimal))
+         (decorative (and (not minimal)
+                          (bv-modeline--role-policy role :decorative t)))
+         (show-position (bv-modeline--role-policy role :position t))
         (clock (bv-modeline--plain-bound-string 'org-mode-line-string))
         (keycast (bv-modeline--keycast-text))
         (emms (when (bound-and-true-p emms-player-playing-p)
                 (bv-modeline--plain-bound-string 'emms-mode-line-string)))
         (position (bv-modeline--position))
         (battery (bv-modeline--plain-bound-string 'battery-mode-line-string))
-        (time (when (and (boundp 'display-time-mode)
-                         display-time-mode)
-                (bv-modeline--plain-bound-string 'display-time-string))))
+        (time (bv-modeline--time-text)))
     (delq nil
           (append
+           (list (bv-modeline--task-state-segment)
+                 (bv-modeline--diagnostics-segment role))
            extra
-           (unless minimal
+           (when decorative
              (list
               (bv-modeline--segment 'keycast keycast 'bv-ui-header-salient
                                     :priority 85
                                     :min-width 8
-                                    :truncate 'middle)
+                                    :truncate 'middle
+                                    :help-echo keycast)
               (bv-modeline--segment 'clock clock 'bv-ui-header-salient
                                     :priority 90
                                     :min-width 5
-                                    :truncate 'middle)
+                                    :truncate 'middle
+                                    :help-echo "Org clock")
               (bv-modeline--segment 'emms emms 'bv-ui-header-muted
                                     :priority 25
                                     :min-width 8
-                                    :truncate 'middle)))
+                                    :truncate 'middle
+                                    :help-echo emms)))
+           (when show-position
+             (list
+              (bv-modeline--segment 'position position 'bv-ui-header-default
+                                    :priority 100
+                                    :required t
+                                    :min-width 3
+                                    :fixed-width 7
+                                    :align 'right
+                                    :truncate 'left
+                                    :help-echo "Line:column")))
            (list
-            (bv-modeline--segment 'position position 'bv-ui-header-default
-                                  :priority 100
+            (bv-modeline--segment 'time time 'bv-ui-header-default
+                                  :priority 99
                                   :required t
-                                  :min-width 3
-                                  :truncate 'left))
-           (unless minimal
+                                  :min-width 5
+                                  :fixed-width 5
+                                  :truncate 'right
+                                  :help-echo "Wall-clock time"))
+           (when decorative
              (list
               (bv-modeline--segment 'battery battery 'bv-ui-header-muted
                                     :priority 45
                                     :min-width 5
-                                    :truncate 'right)
-              (bv-modeline--segment 'time time 'bv-ui-header-default
-                                    :priority 92
-                                    :min-width 5
-                                    :truncate 'right)))))))
+                                    :truncate 'right
+                                    :help-echo battery)))))))
 
 (defun bv-modeline--right-budget (content-width)
   "Return the preferred right-side budget within CONTENT-WIDTH."
@@ -550,21 +1039,22 @@ appears when the whole line can breathe, or when detail level is `full'."
                        (- content-width title-reserve))))))))
 
 (defun bv-modeline-compose (status title context-segments right-segments
-                                   &optional title-truncate)
+                                   &optional title-truncate title-help)
   "Compose a responsive BV header line.
 STATUS is rendered as the left accent block.  TITLE is the primary buffer
 identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
-`bv-modeline--segment'.  TITLE-TRUNCATE controls title shortening."
+`bv-modeline--segment'.  TITLE-TRUNCATE controls title shortening, and
+TITLE-HELP is exposed via hover help."
   (let* ((width (max 1 (window-total-width)))
-         (edge-right (bv-modeline--edge-pad t))
+         (selected (bv-modeline--selected-window-p))
+         (edge-right (bv-modeline--edge-pad t selected))
          (edge-width (string-width edge-right))
-         (status-block (bv-modeline--status-block status))
-         (status-gutter (bv-modeline--status-gutter))
+         (status-block (bv-modeline--status-block status selected))
+         (status-gutter (bv-modeline--status-gutter selected))
          (status-width (string-width status-block))
          (status-gutter-width (string-width status-gutter))
          (content-width (max 0 (- width edge-width
                                   status-width status-gutter-width)))
-         (selected (bv-modeline--selected-window-p))
          (title-face (if selected
                          'bv-ui-header-strong
                        'bv-ui-header-muted))
@@ -573,16 +1063,27 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
                          :priority 100
                          :required t
                          :min-width 4
-                         :truncate (or title-truncate 'middle)))
-         (left-segments (delq nil (cons title-segment context-segments)))
+                         :truncate (or title-truncate 'middle)
+                         :help-echo title-help))
+         (left-segments (bv-modeline--window-segments
+                         (delq nil (cons title-segment context-segments))
+                         selected))
+         (right-segments (bv-modeline--window-segments
+                          (delq nil right-segments)
+                          selected))
          (right-separator bv-modeline--right-separator)
          (left-separator bv-modeline--left-separator)
+         (separator-face (bv-modeline--window-face
+                          'bv-ui-header-muted selected))
+         (gap-face (bv-modeline--window-face
+                    'bv-ui-header-default selected))
          (right-budget (bv-modeline--right-render-budget
                         content-width left-segments
                         right-segments right-separator))
          (right-fitted (bv-modeline--fit-segments
                         right-segments right-budget right-separator))
-         (right (bv-modeline--join-segments right-fitted right-separator))
+         (right (bv-modeline--join-segments
+                 right-fitted right-separator separator-face))
          (right-width (string-width right))
          (initial-gap-reserve (if (> right-width 0)
                           bv-modeline--side-gap-min-width
@@ -591,7 +1092,8 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
                                  initial-gap-reserve)))
          (left-fitted (bv-modeline--fit-segments
                        left-segments left-budget left-separator))
-         (left (bv-modeline--join-segments left-fitted left-separator))
+         (left (bv-modeline--join-segments
+                left-fitted left-separator separator-face))
          (left-width (string-width left))
          (gap-width (cond ((and (> left-width 0) (> right-width 0))
                            (max 0 (- content-width left-width right-width)))
@@ -600,16 +1102,18 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
                           (t
                            (max 0 (- content-width left-width)))))
          (gap (propertize (make-string gap-width ?\s)
-                          'face 'bv-ui-header-default)))
+                          'face gap-face)))
     (concat status-block status-gutter left gap right edge-right)))
 
 (defun bv-modeline-default-mode ()
   "Default header line for ordinary editing buffers."
-  (bv-modeline-compose (bv-modeline-status)
-                       (bv-modeline--title)
-                       (bv-modeline--context-segments)
-                       (bv-modeline--right-segments)
-                       (bv-modeline--title-truncation)))
+  (let ((role (bv-modeline--buffer-role)))
+    (bv-modeline-compose (bv-modeline-status)
+                         (bv-modeline--title)
+                         (bv-modeline--context-segments role)
+                         (bv-modeline--right-segments nil role)
+                         (bv-modeline--title-truncation)
+                         (bv-modeline--title-help))))
 
 (defun bv-modeline-org-agenda-mode-p ()
   "Return non-nil if current buffer is in `org-agenda-mode'."
@@ -626,7 +1130,9 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
            'date (format-time-string "%A %-e %B %Y") 'bv-ui-header-muted
            :priority 90
            :min-width 10
-           :truncate 'right)))))
+           :truncate 'right
+           :help-echo "Agenda date"))
+    'agenda)))
 
 (defun bv-modeline-org-capture-mode-p ()
   "Return non-nil if current buffer is in `org-capture-mode'."
@@ -638,7 +1144,7 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
                        "Capture"
                        (list (bv-modeline--segment 'mode "Org" 'bv-ui-header-muted
                                                    :priority 80))
-                       (bv-modeline--right-segments)))
+                       (bv-modeline--right-segments nil 'note)))
 
 (defun bv-modeline-term-mode-p ()
   "Return non-nil if current buffer is in `term-mode'."
@@ -661,14 +1167,17 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
    (list (bv-modeline--segment 'shell shell-file-name 'bv-ui-header-muted
                                :priority 80
                                :min-width 4
-                               :truncate 'middle))
+                               :truncate 'middle
+                               :help-echo shell-file-name))
    (bv-modeline--right-segments
     (list (bv-modeline--segment
            'directory (shorten-directory default-directory 40)
            'bv-ui-header-muted
            :priority 85
            :min-width 8
-           :truncate 'left)))))
+           :truncate 'left
+           :help-echo (abbreviate-file-name default-directory)))
+    'terminal)))
 
 (defun bv-modeline-message-mode-p ()
   "Return non-nil if current buffer is in `message-mode'."
@@ -681,7 +1190,7 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
                        (list (bv-modeline--segment 'state "Draft"
                                                    'bv-ui-header-muted
                                                    :priority 80))
-                       (bv-modeline--right-segments)))
+                       (bv-modeline--right-segments nil 'writing)))
 
 (defun bv-modeline-info-mode-p ()
   "Return non-nil if current buffer is in `Info-mode'."
@@ -696,8 +1205,63 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
                                'bv-ui-header-muted
                                :priority 80
                                :min-width 4
-                               :truncate 'middle))
-   (bv-modeline--right-segments)))
+                               :truncate 'middle
+                               :help-echo Info-current-node))
+   (bv-modeline--right-segments nil 'help)))
+
+(defun bv-modeline-help-mode-p ()
+  "Return non-nil if current buffer is a help buffer."
+  (derived-mode-p 'help-mode 'helpful-mode))
+
+(defun bv-modeline-help-mode ()
+  "Header line for help buffers."
+  (bv-modeline-compose
+   (bv-modeline-status)
+   (bv-modeline--clean (buffer-name))
+   (list (bv-modeline--segment 'mode (bv-modeline--mode-name)
+                               'bv-ui-header-muted
+                               :priority 80
+                               :min-width 4))
+   (bv-modeline--right-segments nil 'help)
+   'middle
+   (bv-modeline--title-help)))
+
+(defun bv-modeline-dired-mode-p ()
+  "Return non-nil if current buffer is in `dired-mode'."
+  (derived-mode-p 'dired-mode))
+
+(defun bv-modeline-dired-mode ()
+  "Header line for `dired-mode'."
+  (bv-modeline-compose
+   (bv-modeline-status)
+   (file-name-nondirectory
+    (directory-file-name (or default-directory "")))
+   (bv-modeline--context-segments 'dired)
+   (bv-modeline--right-segments
+    (list (bv-modeline--segment 'directory
+                                (abbreviate-file-name default-directory)
+                                'bv-ui-header-muted
+                                :priority 90
+                                :min-width 8
+                                :truncate 'left
+                                :help-echo default-directory))
+    'dired)
+   'middle
+   (format "Directory: %s" default-directory)))
+
+(defun bv-modeline-pdf-mode-p ()
+  "Return non-nil if current buffer displays a PDF or document page."
+  (derived-mode-p 'pdf-view-mode 'doc-view-mode))
+
+(defun bv-modeline-pdf-mode ()
+  "Header line for PDF/document buffers."
+  (bv-modeline-compose
+   (bv-modeline-status)
+   (bv-modeline--title)
+   (bv-modeline--context-segments 'pdf)
+   (bv-modeline--right-segments nil 'pdf)
+   (bv-modeline--title-truncation)
+   (bv-modeline--title-help)))
 
 (defun bv-modeline-calendar-mode-p ()
   "Return non-nil if current buffer is in `calendar-mode'."
@@ -716,7 +1280,9 @@ identity.  CONTEXT-SEGMENTS and RIGHT-SEGMENTS are lists made with
   (bv-modeline-compose (bv-modeline-status)
                        (bv-modeline--clean (buffer-name))
                        nil
-                       (bv-modeline--right-segments)))
+                       (bv-modeline--right-segments nil 'completion)
+                       'middle
+                       (format "Buffer: %s" (buffer-name))))
 
 (setq org-mode-line-string nil)
 (with-eval-after-load 'org-clock

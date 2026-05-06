@@ -251,14 +251,43 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
      (bv-themes-regression--text-token
       tokens 414 87 "*Messages*" 'fg-dim 14)
      (bv-themes-regression--rect-token
-      tokens 40 102 980 24 'modeline-bg-active)
-     (bv-themes-regression--text
-      54 119 "  BV  main  Org  L42  Theme:active  UTF-8"
-      fg-modeline 13 "700")
+      tokens 40 102 900 24 'modeline-bg-active)
      (bv-themes-regression--rect-token
-      tokens 1020 102 420 24 'modeline-bg-inactive)
+      tokens 40 102 34 24 'modeline-bg-accent)
+     (bv-themes-regression--text
+      49 119 "RW"
+      accent-fg 13 "700")
+     (bv-themes-regression--text
+      86 119 "Visual regression fixture · myslipbox · Org"
+      fg-modeline 13 "700")
      (bv-themes-regression--text-token
-      tokens 1034 119 "  background worker  batch artifact"
+      tokens 694 119 "11:0 · 01:26" 'modeline-fg-active 13)
+     (bv-themes-regression--rect-token
+      tokens 40 132 900 24 'modeline-bg-active)
+     (bv-themes-regression--rect-token
+      tokens 40 132 34 24 'modeline-bg-critical)
+     (bv-themes-regression--text-token
+      tokens 48 149 "**" 'modeline-fg-critical 13 "700")
+     (bv-themes-regression--text
+      86 149 "Solutions: Deep Learning Foundation and Concepts · Org"
+      fg-modeline 13 "700")
+     (bv-themes-regression--text-runs
+      tokens 676 149
+      '(("NAR" fg-header-muted :weight "700")
+        (" · " fg-header-muted)
+        ("E2 W1" error-strong :weight "700")
+        (" · " fg-header-muted)
+        ("11:0" modeline-fg-active))
+      13)
+     (bv-themes-regression--rect-token
+      tokens 960 102 480 24 'modeline-bg-inactive)
+     (bv-themes-regression--text-token
+      tokens 974 119 "inactive: readonly TRAMP note"
+      'modeline-fg-inactive 13)
+     (bv-themes-regression--rect-token
+      tokens 960 132 480 24 'modeline-bg-inactive)
+     (bv-themes-regression--text-token
+      tokens 974 149 "clean help buffer · quieter but legible"
       'modeline-fg-inactive 13)
      (cl-loop for token in '(accent-0 accent-1 accent-2 accent-3)
               for x from 1264 by 38

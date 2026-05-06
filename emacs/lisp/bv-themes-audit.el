@@ -81,7 +81,13 @@
     bv-diff-added bv-diff-removed bv-diff-changed bv-diff-added-refine
     bv-diff-removed-refine bv-diff-changed-refine bv-ui-header-default
     bv-ui-header-muted bv-ui-header-strong bv-ui-header-salient
-    bv-ui-header-popout bv-ui-header-critical)
+    bv-ui-header-info bv-ui-header-warning bv-ui-header-error
+    bv-ui-header-popout bv-ui-header-critical
+    bv-ui-header-inactive-default bv-ui-header-inactive-muted
+    bv-ui-header-inactive-strong bv-ui-header-inactive-salient
+    bv-ui-header-inactive-info bv-ui-header-inactive-warning
+    bv-ui-header-inactive-error
+    bv-ui-header-inactive-popout bv-ui-header-inactive-critical)
   "Local BV semantic faces that package code may safely target.")
 
 (defconst bv-themes-audit-apca-pairs
@@ -95,6 +101,7 @@
     (search-current fg-search-current bg-search-current 60)
     (prose-block fg-main bg-prose-block-contents 60)
     (modeline-active modeline-fg-active modeline-bg-active 60)
+    (modeline-inactive modeline-fg-inactive modeline-bg-inactive 45)
     (critical critical-fg critical-bg 60))
   "APCA-style contrast pairs checked by BV theme audits.")
 

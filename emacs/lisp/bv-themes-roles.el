@@ -94,9 +94,31 @@
     (header-muted :fg fg-header-muted :bg bg-header :extend t)
     (header-strong :fg fg-header :bg bg-header :weight bold :extend t)
     (header-salient :fg fg-salient :bg bg-header :weight semibold :extend t)
+    (header-info :fg info-strong :bg bg-header :weight semibold :extend t)
+    (header-warning :fg warning-strong :bg bg-header :weight semibold
+                    :extend t)
+    (header-error :fg error-strong :bg bg-header :weight semibold
+                  :extend t)
     (header-popout :fg fg-header-inverse :bg modeline-bg-active :weight bold :extend t)
     (header-critical :fg modeline-fg-critical :bg modeline-bg-critical
                      :weight bold :extend t)
+    (header-inactive-default :fg modeline-fg-inactive :bg modeline-bg-inactive
+                             :extend t)
+    (header-inactive-muted :fg fg-dim :bg modeline-bg-inactive :extend t)
+    (header-inactive-strong :fg modeline-fg-inactive :bg modeline-bg-inactive
+                            :weight semibold :extend t)
+    (header-inactive-salient :fg fg-muted :bg modeline-bg-inactive
+                             :weight semibold :extend t)
+    (header-inactive-info :fg fg-muted :bg modeline-bg-inactive
+                          :weight semibold :extend t)
+    (header-inactive-warning :fg fg-muted :bg modeline-bg-inactive
+                             :weight semibold :extend t)
+    (header-inactive-error :fg fg-muted :bg modeline-bg-inactive
+                           :weight semibold :extend t)
+    (header-inactive-popout :fg modeline-fg-inactive :bg modeline-bg-inactive
+                            :weight semibold :extend t)
+    (header-inactive-critical :fg modeline-fg-critical :bg modeline-bg-inactive
+                              :weight semibold :extend t)
     (mode-line-active :fg modeline-fg-active :bg modeline-bg-active
                       :box (:line-width 1 :color modeline-border-active)
                       :weight semibold)
