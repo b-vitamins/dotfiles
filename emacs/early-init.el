@@ -26,23 +26,16 @@
 ;; Prefer newer source files over stale `.elc' during iteration.
 (setq load-prefer-newer t)
 
+(add-to-list 'load-path
+             (expand-file-name "lisp" (file-name-directory load-file-name)))
+
 ;; Disable file handlers during startup
 (defvar bv--file-name-handler-alist file-name-handler-alist)
 (setq file-name-handler-alist nil)
 
 ;; Basic frame parameters
-(setq default-frame-alist
-      '((min-height . 1)
-        (height . 45)
-        (min-width . 1)
-        (width . 81)
-        (vertical-scroll-bars . nil)
-        (internal-border-width . 24)
-        (left-fringe . 8)
-        (right-fringe . 8)
-        (tool-bar-lines . 0)
-        (menu-bar-lines . 0)
-        (undecorated . t)))
+(require 'bv-layout-core)
+(bv-layout-apply-default-frame-alist)
 
 ;; Prevent unwanted runtime compilation
 (when (boundp 'native-comp-jit-compilation)

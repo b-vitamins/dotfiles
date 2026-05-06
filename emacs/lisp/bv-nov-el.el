@@ -31,7 +31,6 @@
 
   ;; Typography
   (add-hook 'nov-mode-hook #'olivetti-mode)
-  (add-hook 'nov-mode-hook #'visual-line-mode)
   (add-hook 'nov-mode-hook (lambda () (setq-local line-spacing 0.2)))
 
   ;; Face customization

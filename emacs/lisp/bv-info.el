@@ -16,7 +16,6 @@
   (face-remap-add-relative 'Info-quoted :inherit 'fixed-pitch))
 
 (add-hook 'Info-mode-hook #'bv-info-setup-faces)
-(add-hook 'Info-mode-hook #'visual-line-mode)
 
 (with-eval-after-load 'info
   (when (boundp 'Info-mode-map)

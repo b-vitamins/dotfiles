@@ -36,8 +36,6 @@
 (defvar org-return-follows-link)
 (defvar ring-bell-function)
 (defvar visible-bell)
-(defvar temp-buffer-max-height)
-(defvar window-min-height)
 (defvar uniquify-buffer-name-style)
 (defvar uniquify-separator)
 (defvar uniquify-after-kill-buffer-p)
@@ -56,9 +54,8 @@
 (defvar recentf-exclude)
 (defvar savehist-file)
 (defvar read-process-output-max)
-(defvar window-divider-default-bottom-width)
-(defvar window-divider-default-places)
-(defvar window-divider-default-right-width)
+(defvar widget-image-enable)
+(defvar x-underline-at-descent-line)
 
 ;; Keep custom settings in separate file
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -106,10 +103,8 @@
 
 (menu-bar-mode -1)
 
-;; Enable line numbers in programming modes
-(when (fboundp 'display-line-numbers-mode)
-  (add-hook 'prog-mode-hook #'display-line-numbers-mode)
-  (add-hook 'conf-mode-hook #'display-line-numbers-mode))
+(setq widget-image-enable nil
+      x-underline-at-descent-line t)
 
 (setq ring-bell-function 'ignore
       visible-bell nil)
@@ -119,11 +114,6 @@
 (setq-default indent-tabs-mode nil)
 
 (setq-default tab-width 4)
-
-(temp-buffer-resize-mode)
-(setq temp-buffer-max-height 8)
-
-(setq window-min-height 1)
 
 (prefer-coding-system       'utf-8)
 (set-default-coding-systems 'utf-8)
@@ -174,13 +164,6 @@ and MSG is the process message."
 
 ;; Enable line highlighting
 (global-hl-line-mode 1)
-
-;; Subtle window dividers (macOS-like separators)
-(when (fboundp 'window-divider-mode)
-  (setq window-divider-default-right-width 1
-        window-divider-default-bottom-width 0
-        window-divider-default-places 'right-only)
-  (window-divider-mode 1))
 
 ;; Recent files tracking
 (require 'recentf)

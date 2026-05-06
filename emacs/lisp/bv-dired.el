@@ -18,7 +18,6 @@
 (declare-function dired-get-marked-files "dired")
 (declare-function dired-hide-details-mode "dired")
 (declare-function kill-current-buffer "simple")
-(declare-function toggle-truncate-lines "simple")
 (declare-function dired-jump "dired-x")
 
 (defun bv-dired-open-externally ()
@@ -46,8 +45,7 @@
   (define-key dired-mode-map "V" 'bv-dired-open-externally)
   (define-key dired-mode-map (kbd "C-c C-r") 'dired-rsync)
   (define-key dired-mode-map "q" 'kill-current-buffer)
-  (add-hook 'dired-mode-hook 'dired-hide-details-mode)
-  (add-hook 'dired-mode-hook 'toggle-truncate-lines))
+  (add-hook 'dired-mode-hook 'dired-hide-details-mode))
 
 (with-eval-after-load 'dired-rsync
   (when (boundp 'dired-rsync-options)
