@@ -18,6 +18,7 @@
 (require 'seq)
 (require 'subr-x)
 (require 'org-slipbox)
+(require 'bv-completion)
 
 (declare-function consult-org-slipbox-backlinks "consult-org-slipbox" (&optional other-window))
 (declare-function consult-org-slipbox-file-find "consult-org-slipbox" (&optional other-window initial-input))
@@ -25,8 +26,7 @@
 (declare-function consult-org-slipbox-mode "consult-org-slipbox" (&optional arg))
 (declare-function consult-org-slipbox-ref-find "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult-org-slipbox-search "consult-org-slipbox" (&optional other-window initial-input))
-(declare-function nerd-icons-codicon "nerd-icons" (icon-name &rest args))
-(declare-function nerd-icons-mdicon "nerd-icons" (icon-name &rest args))
+(declare-function nerd-icons-octicon "nerd-icons" (icon-name &rest args))
 ;; Autoloaded from `org-slipbox-maintenance'.
 (declare-function org-slipbox-sync "org-slipbox-maintenance" ())
 (autoload 'org-slipbox-sync "org-slipbox-maintenance" nil t)
@@ -68,6 +68,20 @@
 
 (defvar bv-org-slipbox--initial-sync-running nil
   "Non-nil while an initial slipbox bootstrap sync is in progress.")
+
+(defconst bv-org-slipbox--tag-icon-alist
+  '(("physics" . ("nf-oct-beaker" . bv-icon-science))
+    ("experiment" . ("nf-oct-beaker" . bv-icon-science))
+    ("problem" . ("nf-oct-question" . bv-icon-warning))
+    ("concept" . ("nf-oct-light_bulb" . bv-icon-idea))
+    ("idea" . ("nf-oct-light_bulb" . bv-icon-idea))
+    ("algorithm" . ("nf-oct-code" . bv-icon-code))
+    ("theorem" . ("nf-oct-law" . bv-icon-proof))
+    ("proof" . ("nf-oct-law" . bv-icon-proof))
+    ("deeplearn" . ("nf-oct-hubot" . bv-icon-system))
+    ("review" . ("nf-oct-search" . bv-icon-review))
+    ("index" . ("nf-oct-checklist" . bv-icon-index)))
+  "Octicon-family slipbox icons keyed by note tag.")
 
 (defun bv-org-slipbox--sequence (value)
   "Normalize JSON-like VALUE into a plain list."
@@ -162,52 +176,37 @@
 (defun bv-org-slipbox--node-icon (node)
   "Return a nerd icon for NODE based on tags."
   (let ((tags (bv-org-slipbox--sequence (plist-get node :tags))))
-    (if (fboundp 'nerd-icons-mdicon)
-        (cond
-         ((member "physics" tags)
-          (nerd-icons-mdicon "nf-md-atom" :face 'nerd-icons-blue))
-         ((member "problem" tags)
-          (nerd-icons-mdicon "nf-md-puzzle" :face 'nerd-icons-orange))
-         ((member "concept" tags)
-          (nerd-icons-mdicon "nf-md-lightbulb_on" :face 'nerd-icons-yellow))
-         ((member "algorithm" tags)
-          (nerd-icons-codicon "nf-cod-symbol_method" :face 'nerd-icons-purple))
-         ((member "theorem" tags)
-          (nerd-icons-mdicon "nf-md-sigma" :face 'nerd-icons-green))
-         ((member "idea" tags)
-          (nerd-icons-mdicon "nf-md-creation" :face 'nerd-icons-lblue))
-         ((member "deeplearn" tags)
-          (nerd-icons-mdicon "nf-md-brain" :face 'nerd-icons-pink))
-         ((member "review" tags)
-          (nerd-icons-mdicon "nf-md-text_search" :face 'nerd-icons-cyan))
-         ((member "index" tags)
-          (nerd-icons-mdicon "nf-md-format_list_numbered" :face 'nerd-icons-silver))
-         (t
-          (nerd-icons-mdicon "nf-md-note_text_outline" :face 'nerd-icons-dsilver)))
+    (if (and (fboundp 'nerd-icons-octicon)
+             (bv-completion-icons-enabled-p))
+        (pcase-let* ((`(,_ . (,icon . ,face))
+                      (seq-find (lambda (entry)
+                                  (member (car entry) tags))
+                                bv-org-slipbox--tag-icon-alist
+                                '(_ . ("nf-oct-note" . bv-icon-note)))))
+          (nerd-icons-octicon icon :face face))
       "•")))
 
 (defun bv-org-slipbox--column (text width face)
   "Return TEXT padded or truncated to WIDTH using FACE."
-  (propertize (truncate-string-to-width (or text "") width 0 ?\s t)
-              'face face))
+  (bv-completion-format-field text width face))
 
 (defun bv-org-slipbox--completion-width ()
   "Return the active completion window width."
-  (let ((window (or (active-minibuffer-window)
-                    (and (minibufferp) (selected-window))
-                    (frame-selected-window))))
-    (window-width window)))
+  (bv-completion-window-width))
 
 (defun bv-org-slipbox--pad-display (text width)
   "Return TEXT truncated or padded to WIDTH, preserving text properties."
-  (let* ((text (or text ""))
-         (display (truncate-string-to-width text width 0 ?\s t))
-         (padding (max 0 (- width (string-width display)))))
-    (concat display (make-string padding ?\s))))
+  (bv-completion-pad text width))
+
+(defun bv-org-slipbox--node-metadata-width ()
+  "Return the width reserved for node completion metadata."
+  (if bv-org-slipbox-show-backlinks 20 12))
 
 (defun bv-org-slipbox--node-main-width ()
   "Return the width to use for the flexible node column."
-  (max 24 (- (bv-org-slipbox--completion-width) 24)))
+  (max 24 (- (bv-org-slipbox--completion-width)
+             4
+             (bv-org-slipbox--node-metadata-width))))
 
 (defun bv-org-slipbox--node-modtime (node)
   "Return NODE modification time formatted for the node table."
@@ -236,8 +235,7 @@
 
 (defun bv-org-slipbox--node-main-column (node)
   "Return the flexible completion column for NODE."
-  (let* ((title (propertize (or (plist-get node :title) "")
-                            'face 'font-lock-function-name-face))
+  (let* ((title (or (plist-get node :title) ""))
          (tags (bv-org-slipbox--node-tags node))
          (text (if tags
                    (concat title "  " tags)
@@ -246,23 +244,26 @@
 
 (defun bv-org-slipbox-node-display (node)
   "Return the main completion display string for NODE."
-  (let ((icon (bv-org-slipbox--node-icon node))
-        (modtime (bv-org-slipbox--node-modtime node))
-        (backlinks (and bv-org-slipbox-show-backlinks
-                        (bv-org-slipbox--node-backlinks node))))
+  (let ((icon (bv-org-slipbox--node-icon node)))
     (concat
      icon
      " "
-     (bv-org-slipbox--node-main-column node)
-     "  "
-     (bv-org-slipbox--column modtime 12 'marginalia-date)
-     (when backlinks
-       (concat "  "
-               (bv-org-slipbox--column backlinks 6 'marginalia-number))))))
+     (bv-org-slipbox--node-main-column node))))
 
-(defun bv-org-slipbox-node-annotation (_node)
+(defun bv-org-slipbox-node-annotation (node)
   "Return the annotation string for NODE completions."
-  "")
+  (let* ((modtime (or (bv-org-slipbox--node-modtime node) ""))
+         (backlinks (and bv-org-slipbox-show-backlinks
+                         (bv-org-slipbox--node-backlinks node)))
+         (metadata
+          (string-join
+           (delq nil
+                 (list (bv-org-slipbox--column modtime 12 'marginalia-date)
+                       (when backlinks
+                         (bv-org-slipbox--column backlinks 6
+                                                 'marginalia-number))))
+           "  ")))
+    (bv-completion-format-annotation metadata)))
 
 (defun bv-org-slipbox-node-insert-immediate (&optional initial-input filter-fn)
   "Insert a slipbox node immediately.

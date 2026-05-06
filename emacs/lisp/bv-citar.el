@@ -50,13 +50,8 @@
             (preview . "${author editor:%etal} (${year issued date}) ${title}, ${journal journaltitle publisher container-title collection-title}.\n")
             (note . "Notes on ${author editor:%etal}, ${title}")))))
 
-;; Custom faces for better visual distinction
-(with-eval-after-load 'citar
-  ;; Make citation keys stand out
-  (when (facep 'citar-highlight)
-    (set-face-attribute 'citar-highlight nil
-                        :foreground 'unspecified
-                        :inherit 'font-lock-keyword-face)))
+;; Citar faces are owned by the BV theme adapter so citation pickers keep the
+;; same completion-current/metadata language as the rest of the stack.
 
 ;; Additional file extensions for PDFs and common document formats
 (with-eval-after-load 'citar

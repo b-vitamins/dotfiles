@@ -32,6 +32,91 @@
   "Nerd Icons configuration."
   :group 'bv)
 
+(defface bv-icon-default
+  '((t :inherit default))
+  "Default BV icon face."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-muted
+  '((t :inherit shadow))
+  "Muted BV icon face."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-file
+  '((t :inherit bv-icon-default))
+  "BV icon face for plain files."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-directory
+  '((t :inherit font-lock-function-name-face))
+  "BV icon face for directories and project containers."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-note
+  '((t :inherit bv-icon-default))
+  "BV icon face for notes and prose documents."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-code
+  '((t :inherit font-lock-function-name-face))
+  "BV icon face for code."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-science
+  '((t :inherit success))
+  "BV icon face for research/science material."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-idea
+  '((t :inherit font-lock-keyword-face))
+  "BV icon face for ideas and concepts."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-proof
+  '((t :inherit success))
+  "BV icon face for theorems and proofs."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-review
+  '((t :inherit font-lock-doc-face))
+  "BV icon face for review/search surfaces."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-index
+  '((t :inherit shadow))
+  "BV icon face for indexes and lists."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-system
+  '((t :inherit font-lock-builtin-face))
+  "BV icon face for tools, systems, and infrastructure."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-warning
+  '((t :inherit warning))
+  "BV icon face for cautionary or high-attention items."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-success
+  '((t :inherit success))
+  "BV icon face for affirmative status."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-special
+  '((t :inherit font-lock-keyword-face))
+  "BV icon face for special-purpose items."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-info
+  '((t :inherit font-lock-doc-face))
+  "BV icon face for informational surfaces."
+  :group 'bv-nerd-icons)
+
+(defface bv-icon-salient
+  '((t :inherit font-lock-function-name-face))
+  "BV icon face for prominent navigational marks."
+  :group 'bv-nerd-icons)
+
 (defcustom bv-nerd-icons-font-family "Symbols Nerd Font Mono"
   "The Nerd Font family to use for icons."
   :type 'string
@@ -63,61 +148,61 @@ stealing ordinary text, math, CJK, or symbol glyphs from the main font stack."
   "Configure core nerd-icons settings."
   ;; Set the font family for GUI mode
   (setq nerd-icons-font-family bv-nerd-icons-font-family)
-  
+
   ;; Enable colored icons
   (setq nerd-icons-color-icons bv-nerd-icons-color-icons)
-  
+
   ;; Set default scale
   (setq nerd-icons-scale-factor bv-nerd-icons-scale-factor)
-  
+
   ;; Add custom file associations
-  (dolist (ext-icon '(("scm" nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red)
-                      ("rkt" nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red-alt)
-                      ("fnl" nerd-icons-sucicon "nf-seti-lua" :face nerd-icons-lblue)
-                      ("janet" nerd-icons-sucicon "nf-custom-clojure" :face nerd-icons-purple)
-                      ("epub" nerd-icons-faicon "nf-fa-book" :face nerd-icons-green)
-                      ("guix" nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-orange)
-                      ("nix" nerd-icons-mdicon "nf-md-nix" :face nerd-icons-blue)
-                      ("direnv" nerd-icons-octicon "nf-oct-file_directory" :face nerd-icons-yellow)))
+  (dolist (ext-icon '(("scm" nerd-icons-sucicon "nf-custom-scheme" :face bv-icon-code)
+                      ("rkt" nerd-icons-sucicon "nf-custom-scheme" :face bv-icon-code)
+                      ("fnl" nerd-icons-sucicon "nf-seti-lua" :face bv-icon-code)
+                      ("janet" nerd-icons-sucicon "nf-custom-clojure" :face bv-icon-code)
+                      ("epub" nerd-icons-faicon "nf-fa-book" :face bv-icon-note)
+                      ("guix" nerd-icons-sucicon "nf-custom-scheme" :face bv-icon-system)
+                      ("nix" nerd-icons-mdicon "nf-md-nix" :face bv-icon-system)
+                      ("direnv" nerd-icons-octicon "nf-oct-file_directory" :face bv-icon-directory)))
     (add-to-list 'nerd-icons-extension-icon-alist ext-icon))
-  
+
   ;; Add custom regex associations
-  (dolist (regex-icon '(("\\.?guix" nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-orange)
-                        ("Dockerfile" nerd-icons-devicon "nf-dev-docker" :face nerd-icons-cyan)
-                        ("docker-compose" nerd-icons-devicon "nf-dev-docker" :face nerd-icons-cyan)
-                        ("\\.envrc" nerd-icons-octicon "nf-oct-file_directory" :face nerd-icons-yellow)
-                        ("Makefile" nerd-icons-devicon "nf-dev-gnu" :face nerd-icons-dorange)
-                        ("CMakeLists.txt" nerd-icons-devicon "nf-dev-cmake" :face nerd-icons-red)
-                        ("LICENSE" nerd-icons-octicon "nf-oct-law" :face nerd-icons-dsilver)
-                        ("README" nerd-icons-octicon "nf-oct-book" :face nerd-icons-lcyan)))
+  (dolist (regex-icon '(("\\.?guix" nerd-icons-sucicon "nf-custom-scheme" :face bv-icon-system)
+                        ("Dockerfile" nerd-icons-devicon "nf-dev-docker" :face bv-icon-system)
+                        ("docker-compose" nerd-icons-devicon "nf-dev-docker" :face bv-icon-system)
+                        ("\\.envrc" nerd-icons-octicon "nf-oct-file_directory" :face bv-icon-directory)
+                        ("Makefile" nerd-icons-devicon "nf-dev-gnu" :face bv-icon-system)
+                        ("CMakeLists.txt" nerd-icons-devicon "nf-dev-cmake" :face bv-icon-warning)
+                        ("LICENSE" nerd-icons-octicon "nf-oct-law" :face bv-icon-muted)
+                        ("README" nerd-icons-octicon "nf-oct-book" :face bv-icon-note)))
     (add-to-list 'nerd-icons-regexp-icon-alist regex-icon))
-  
+
   ;; Add mode icons
-  (dolist (mode-icon '((emacs-lisp-mode nerd-icons-sucicon "nf-custom-emacs" :face nerd-icons-purple)
-                       (scheme-mode nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red)
-                       (geiser-mode nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red)
-                       (racket-mode nerd-icons-sucicon "nf-custom-scheme" :face nerd-icons-red-alt)
-                       (clojure-mode nerd-icons-devicon "nf-dev-clojure" :face nerd-icons-green)
-                       (fennel-mode nerd-icons-sucicon "nf-seti-lua" :face nerd-icons-lblue)
-                       (python-mode nerd-icons-devicon "nf-dev-python" :face nerd-icons-dblue)
-                       (rust-mode nerd-icons-devicon "nf-dev-rust" :face nerd-icons-maroon)
-                       (go-mode nerd-icons-devicon "nf-dev-go" :face nerd-icons-blue)
-                       (js-mode nerd-icons-devicon "nf-dev-javascript_badge" :face nerd-icons-yellow)
-                       (typescript-mode nerd-icons-devicon "nf-dev-typescript" :face nerd-icons-blue-alt)
-                       (web-mode nerd-icons-devicon "nf-dev-html5" :face nerd-icons-orange)
-                       (org-mode nerd-icons-faicon "nf-fa-file_text_o" :face nerd-icons-lgreen)
-                       (markdown-mode nerd-icons-octicon "nf-oct-markdown" :face nerd-icons-lblue)
-                       (latex-mode nerd-icons-faicon "nf-fa-file_pdf_o" :face nerd-icons-maroon)
-                       (pdf-view-mode nerd-icons-faicon "nf-fa-file_pdf_o" :face nerd-icons-dred)
-                       (image-mode nerd-icons-faicon "nf-fa-file_image_o" :face nerd-icons-orange)
-                       (magit-mode nerd-icons-devicon "nf-dev-git" :face nerd-icons-red)
-                       (dired-mode nerd-icons-octicon "nf-oct-file_directory" :face nerd-icons-dblue)
-                       (ibuffer-mode nerd-icons-faicon "nf-fa-list" :face nerd-icons-cyan)
-                       (help-mode nerd-icons-faicon "nf-fa-question_circle" :face nerd-icons-purple)
-                       (Info-mode nerd-icons-faicon "nf-fa-info_circle" :face nerd-icons-blue)
-                       (eshell-mode nerd-icons-devicon "nf-dev-terminal" :face nerd-icons-purple)
-                       (term-mode nerd-icons-devicon "nf-dev-terminal" :face nerd-icons-purple)
-                       (vterm-mode nerd-icons-devicon "nf-dev-terminal" :face nerd-icons-purple)))
+  (dolist (mode-icon '((emacs-lisp-mode nerd-icons-sucicon "nf-custom-emacs" :face bv-icon-code)
+                       (scheme-mode nerd-icons-sucicon "nf-custom-scheme" :face bv-icon-code)
+                       (geiser-mode nerd-icons-sucicon "nf-custom-scheme" :face bv-icon-code)
+                       (racket-mode nerd-icons-sucicon "nf-custom-scheme" :face bv-icon-code)
+                       (clojure-mode nerd-icons-devicon "nf-dev-clojure" :face bv-icon-code)
+                       (fennel-mode nerd-icons-sucicon "nf-seti-lua" :face bv-icon-code)
+                       (python-mode nerd-icons-devicon "nf-dev-python" :face bv-icon-code)
+                       (rust-mode nerd-icons-devicon "nf-dev-rust" :face bv-icon-code)
+                       (go-mode nerd-icons-devicon "nf-dev-go" :face bv-icon-code)
+                       (js-mode nerd-icons-devicon "nf-dev-javascript_badge" :face bv-icon-code)
+                       (typescript-mode nerd-icons-devicon "nf-dev-typescript" :face bv-icon-code)
+                       (web-mode nerd-icons-devicon "nf-dev-html5" :face bv-icon-code)
+                       (org-mode nerd-icons-octicon "nf-oct-note" :face bv-icon-note)
+                       (markdown-mode nerd-icons-octicon "nf-oct-markdown" :face bv-icon-note)
+                       (latex-mode nerd-icons-faicon "nf-fa-file_pdf_o" :face bv-icon-warning)
+                       (pdf-view-mode nerd-icons-faicon "nf-fa-file_pdf_o" :face bv-icon-warning)
+                       (image-mode nerd-icons-faicon "nf-fa-file_image_o" :face bv-icon-special)
+                       (magit-mode nerd-icons-devicon "nf-dev-git" :face bv-icon-system)
+                       (dired-mode nerd-icons-octicon "nf-oct-file_directory" :face bv-icon-directory)
+                       (ibuffer-mode nerd-icons-faicon "nf-fa-list" :face bv-icon-system)
+                       (help-mode nerd-icons-faicon "nf-fa-question_circle" :face bv-icon-info)
+                       (Info-mode nerd-icons-faicon "nf-fa-info_circle" :face bv-icon-info)
+                       (eshell-mode nerd-icons-devicon "nf-dev-terminal" :face bv-icon-system)
+                       (term-mode nerd-icons-devicon "nf-dev-terminal" :face bv-icon-system)
+                       (vterm-mode nerd-icons-devicon "nf-dev-terminal" :face bv-icon-system)))
     (add-to-list 'nerd-icons-mode-icon-alist mode-icon)))
 
 ;;; Completion configuration
@@ -125,14 +210,14 @@ stealing ordinary text, math, CJK, or symbol glyphs from the main font stack."
   "Configure nerd-icons for completion frameworks."
   ;; Enable nerd-icons-completion globally
   (nerd-icons-completion-mode 1)
-  
+
   ;; Set up marginalia integration
   (with-eval-after-load 'marginalia
     (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup)
     ;; If marginalia-mode is already active, set it up immediately
     (when (bound-and-true-p marginalia-mode)
       (nerd-icons-completion-marginalia-setup)))
-  
+
   ;; Configure completion categories
   (when (boundp 'nerd-icons-completion-mode-hooks)
     (setq nerd-icons-completion-mode-hooks
@@ -157,29 +242,24 @@ stealing ordinary text, math, CJK, or symbol glyphs from the main font stack."
   "Configure nerd-icons for Dired mode."
   ;; Enable nerd-icons in dired
   (add-hook 'dired-mode-hook #'nerd-icons-dired-mode)
-  
+
   ;; Configure dired to work better with icons
   (with-eval-after-load 'dired
-    ;; Ensure proper alignment
-    (setq dired-listing-switches "-alh --group-directories-first")
-    
-    ;; Custom face for directories
-    (when (facep 'nerd-icons-dired-dir-face)
-      (set-face-attribute 'nerd-icons-dired-dir-face nil
-                          :foreground (face-attribute 'dired-directory :foreground)))))
+    ;; Ensure proper alignment.  Icon colors are owned by the BV theme adapter.
+    (setq dired-listing-switches "-alh --group-directories-first")))
 
 ;;; Ibuffer configuration
 (defun bv-nerd-icons-configure-ibuffer ()
   "Configure nerd-icons for ibuffer mode."
   ;; Enable nerd-icons in ibuffer
   (add-hook 'ibuffer-mode-hook #'nerd-icons-ibuffer-mode)
-  
+
   ;; Configure ibuffer settings
   (setq nerd-icons-ibuffer-icon t)
-  (setq nerd-icons-ibuffer-color-icon t)
+  (setq nerd-icons-ibuffer-color-icon bv-nerd-icons-color-icons)
   (setq nerd-icons-ibuffer-icon-size 1.0)
   (setq nerd-icons-ibuffer-human-readable-size t)
-  
+
   ;; Use custom ibuffer formats with icons
   (setq nerd-icons-ibuffer-formats
         '((mark modified read-only nerd-icons-ibuffer-icon
@@ -211,9 +291,9 @@ stealing ordinary text, math, CJK, or symbol glyphs from the main font stack."
   (with-eval-after-load 'which-key
     (when (boundp 'which-key-prefix-prefix)
       (setq which-key-prefix-prefix
-            (concat (nerd-icons-faicon "nf-fa-caret_right"
-                                       :face 'nerd-icons-green)
-                    " ")))))
+	    (concat (nerd-icons-faicon "nf-fa-caret_right"
+	                               :face 'bv-icon-salient)
+	            " ")))))
 
 ;;; Helper functions
 (defun bv-nerd-icons-company-format (candidate)

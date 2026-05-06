@@ -92,11 +92,11 @@
   "Highlight CMD when it names an enabled major or minor mode."
   (let ((sym (intern-soft cmd)))
     (if (and sym
-             (or (eq sym major-mode)
-                 (and (memq sym minor-mode-list)
-                      (boundp sym)
-                      (symbol-value sym))))
-        (propertize cmd 'face 'font-lock-constant-face)
+	     (or (eq sym major-mode)
+	         (and (memq sym minor-mode-list)
+	              (boundp sym)
+	              (symbol-value sym))))
+	(propertize cmd 'face 'bv-face-salient)
       cmd)))
 
 (defvar bv-vertico-transform-functions nil
@@ -157,7 +157,7 @@
     (insert " ")
     (add-text-properties (minibuffer-prompt-end) (point-max)
                          '(invisible t read-only t cursor-intangible t
-                           rear-nonsticky t))))
+				     rear-nonsticky t))))
 
 (defun bv-vertico-kill-region-dwim (&optional count)
   "Kill region or delete a path component.

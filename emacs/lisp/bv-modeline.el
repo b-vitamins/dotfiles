@@ -33,6 +33,12 @@
 (declare-function calendar-setup-header "bv-modeline")
 (declare-function org-capture-turn-off-header-line "bv-modeline")
 
+(defun bv-modeline--apply-face (string face)
+  "Return STRING with FACE added as a low-priority default face."
+  (let ((string (copy-sequence (or string ""))))
+    (add-face-text-property 0 (length string) face 'append string)
+    string))
+
 (defun shorten-directory (dir max-length)
   "Show up to MAX-LENGTH characters of directory name DIR."
   (let ((path (reverse (split-string (abbreviate-file-name dir) "/")))
@@ -72,8 +78,8 @@
                         (propertize (if (window-dedicated-p) " -- " " ** ")
                                     'face 'bv-ui-header-critical))
                        ((string= status "RW")
-                       (propertize (if (window-dedicated-p) " -- " " RW ")
-                                   'face 'bv-ui-header-muted))
+                        (propertize (if (window-dedicated-p) " -- " " RW ")
+                                    'face 'bv-ui-header-muted))
                        (t (propertize status 'face 'bv-ui-header-popout))))
          (left (concat
                 (propertize " " 'face 'bv-ui-header-default
@@ -81,7 +87,7 @@
                 (propertize name 'face 'bv-ui-header-strong)
                 (propertize " " 'face 'bv-ui-header-default
                             'display `(raise ,space-down))
-                (propertize primary 'face 'bv-ui-header-default)))
+                (bv-modeline--apply-face primary 'bv-ui-header-default)))
          (right (concat secondary " "))
          (available-width (- (window-total-width)
                              edge-pad-width edge-pad-width
@@ -93,7 +99,7 @@
             left
             (propertize (make-string available-width ?\ )
                         'face 'bv-ui-header-default)
-            (propertize right 'face 'bv-ui-header-default)
+            (bv-modeline--apply-face right 'bv-ui-header-default)
             edge-pad)))
 
 (defun bv-modeline-status ()
@@ -116,7 +122,7 @@
                          buffer-name
                          (concat "(" mode-name
                                  (if branch (concat ", "
-                                                    (propertize branch 'face 'italic)))
+                                                    (propertize branch 'face 'bv-ui-header-salient)))
                                  ")")
                          (if time-str
                              (concat position " | " time-str)
@@ -226,7 +232,7 @@
                          buffer-name
                          (concat "(" mode-name
                                  (if branch (concat ", "
-                                                    (propertize branch 'face 'italic)))
+                                                    (propertize branch 'face 'bv-ui-header-salient)))
                                  ")")
                          org-mode-line-string)))
 
@@ -271,9 +277,7 @@
   (defun calendar-setup-header ()
     (setq header-line-format "")
     (face-remap-add-relative
-     'header-line `(:overline ,(face-foreground 'default)
-                    :height 0.5
-                    :background ,(face-background 'default))))
+     'header-line '(:inherit bv-ui-header-default :height 0.6)))
   (add-hook 'calendar-initial-window-hook #'calendar-setup-header))
 
 (with-eval-after-load 'org-capture

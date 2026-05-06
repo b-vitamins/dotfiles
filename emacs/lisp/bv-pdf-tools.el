@@ -10,6 +10,8 @@
 
 ;;; Code:
 
+(require 'subr-x)
+
 (autoload 'pdf-view-mode "pdf-view")
 (autoload 'pdf-view-themed-minor-mode "pdf-view")
 (autoload 'pdf-view-midnight-minor-mode "pdf-view")
@@ -63,6 +65,23 @@
   :type 'boolean
   :group 'bv-pdf)
 
+(defun bv-pdf--face-color (face attribute fallback)
+  "Return FACE ATTRIBUTE as a color string, or FALLBACK."
+  (let ((value (face-attribute face attribute nil 'default)))
+    (if (and (stringp value) (not (string-empty-p value)))
+        value
+      fallback)))
+
+(defun bv-pdf-midnight-colors ()
+  "Return PDF midnight colors derived from the active Emacs theme."
+  (cons (bv-pdf--face-color 'default :foreground "white")
+        (bv-pdf--face-color 'default :background "black")))
+
+(defun bv-pdf-apply-midnight-colors ()
+  "Apply theme-derived PDF midnight colors in the current buffer."
+  (when (boundp 'pdf-view-midnight-colors)
+    (setq-local pdf-view-midnight-colors (bv-pdf-midnight-colors))))
+
 ;; Pre-render hook to prepare night mode settings
 (defun bv-pdf-pre-render-setup ()
   "Prepare night mode settings before PDF rendering to prevent flash."
@@ -70,8 +89,7 @@
              (bv-pdf-should-use-night-mode-p))
     ;; Just set the flag and prepare colors, don't activate modes yet
     (setq bv-pdf-night-mode t)
-    (when (boundp 'pdf-view-midnight-colors)
-      (setq-local pdf-view-midnight-colors '("#e8e8e8" . "#181818")))
+    (bv-pdf-apply-midnight-colors)
     (when (boundp 'pdf-view-use-scaling)
       (setq-local pdf-view-use-scaling t))
     (when (boundp 'pdf-view-resolution)
@@ -177,9 +195,7 @@
   (setq bv-pdf-night-mode enable)
   (if enable
       (progn
-        ;; High contrast colors for better text clarity
-        (when (boundp 'pdf-view-midnight-colors)
-          (setq-local pdf-view-midnight-colors '("#e8e8e8" . "#181818")))
+        (bv-pdf-apply-midnight-colors)
         ;; Enable midnight mode with inversion
         (when (fboundp 'pdf-view-midnight-minor-mode)
           (pdf-view-midnight-minor-mode 1))

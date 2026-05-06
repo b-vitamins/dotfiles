@@ -14,6 +14,7 @@
 (require 'tramp)
 (require 'cl-lib)
 (require 'pcase)
+(require 'bv-completion)
 
 ;; Declare external variables and functions to avoid warnings
 (defvar user-emacs-directory)
@@ -93,46 +94,40 @@
 
 ;;; Enhanced host selection
 
-(defun bv-tramp--annotate-host (host)
-  "Annotate HOST with metadata for display."
+(defun bv-tramp--host-annotation (host)
+  "Return a width-aware annotation for HOST."
   (let* ((props (bv-tramp--host-metadata host))
          (hostname (cdr (assoc 'hostname props)))
          (user (cdr (assoc 'user props)))
          (port (cdr (assoc 'port props)))
-         (parts (delq nil
-                      (list
-                       (when user (format "user=%s" user))
-                       (when (and port (not (string= port "22")))
-                         (format "port=%s" port))
-                       (when (and hostname (not (string= hostname host)))
-                         (format "→%s" hostname))))))
-    (if parts
-        (format "%-30s %s" host
-                (propertize (string-join parts " ")
-                            'face 'bv-face-dim))
-      host)))
+         (remote-host (and hostname
+                           (not (string= hostname host))
+                           (format "host=%s" hostname))))
+    (bv-completion-format-annotation
+     (when user (list (format "user=%s" user) 16 'marginalia-file-owner))
+     (when (and port (not (string= port "22")))
+       (list (format "port=%s" port) 10 'marginalia-number))
+     (when remote-host (list remote-host 36 'marginalia-documentation)))))
 
 (defun bv-tramp--read-host ()
   "Read SSH host with enhanced completion."
-  (let* ((hosts (bv-tramp--parse-ssh-hosts))
-         (annotated-hosts (mapcar (lambda (host)
-                                    (cons (bv-tramp--annotate-host host) host))
-                                  hosts)))
+  (let ((hosts (bv-tramp--parse-ssh-hosts)))
     (if (and (fboundp 'consult--read) (boundp 'consult--tofu-char))
         ;; Use consult if available
-        (let ((selected (consult--read annotated-hosts
-                                       :prompt "SSH host: "
-                                       :require-match t
-                                       :sort nil
-                                       :history 'bv-tramp--host-history
-                                       :category 'ssh-host)))
-          (cdr (assoc selected annotated-hosts)))
+        (consult--read hosts
+                       :prompt "SSH host: "
+                       :require-match t
+                       :sort nil
+                       :history 'bv-tramp--host-history
+                       :category 'ssh-host
+                       :annotate #'bv-tramp--host-annotation)
       ;; Fallback to completing-read
-      (let ((selected (completing-read "SSH host: "
-                                       annotated-hosts
-                                       nil t nil
-                                       'bv-tramp--host-history)))
-        (cdr (assoc selected annotated-hosts))))))
+      (let ((completion-extra-properties
+             `(:annotation-function ,#'bv-tramp--host-annotation)))
+        (completing-read "SSH host: "
+                         hosts
+                         nil t nil
+                         'bv-tramp--host-history)))))
 
 ;;; Connection management
 
@@ -270,17 +265,9 @@
   `(:name "SSH Hosts"
     :narrow ?h
     :category ssh-host
-    :face bv-face-salient
     :history ssh-host-history
     :items ,#'bv-tramp--parse-ssh-hosts
-    :annotate ,(lambda (host)
-                 (let* ((props (bv-tramp--host-metadata host))
-                        (hostname (cdr (assoc 'hostname props)))
-                        (user (cdr (assoc 'user props))))
-                   (when (or hostname user)
-                     (format " [%s@%s]"
-                             (or user "")
-                             (or hostname host)))))
+    :annotate ,#'bv-tramp--host-annotation
     :action (lambda (host)
               (find-file (bv-tramp--make-tramp-path host))))
   "Consult source for SSH hosts.")

@@ -22,11 +22,11 @@
 (setq calendar-week-start-day 1
       calendar-date-style 'iso)
 (defface bv-calendar-header
-  '((t :weight bold))
+  '((t :inherit bv-face-strong :weight bold))
   "Face for calendar headers.")
 
 (defface bv-calendar-today
-  '((t :foreground "blue" :weight bold))
+  '((t :inherit bv-face-info :weight bold))
   "Face for today.")
 
 (defface bv-calendar-current
@@ -34,11 +34,11 @@
   "Face for current selected date.")
 
 (defface bv-calendar-weekend
-  '((t :foreground "gray"))
+  '((t :inherit bv-face-dim))
   "Face for weekends.")
 
 (defface bv-calendar-holiday
-  '((t :foreground "red"))
+  '((t :inherit bv-face-warning))
   "Face for holidays.")
 
 (defconst bv-calendar-month-width 23

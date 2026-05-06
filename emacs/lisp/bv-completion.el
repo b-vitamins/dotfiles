@@ -180,6 +180,15 @@ Each field is either a string or a list (TEXT WIDTH FACE)."
           fields))
    "  "))
 
+(defun bv-completion-format-annotation (&rest fields)
+  "Return a width-aware annotation built from completion FIELDS.
+Each field is accepted by `bv-completion-join-fields'.  The returned string
+includes the leading completion annotation gap expected by minibuffer UIs."
+  (let* ((width (bv-completion-annotation-width))
+         (annotation (apply #'bv-completion-join-fields fields)))
+    (unless (string-empty-p annotation)
+      (concat "  " (bv-completion-truncate annotation width "...")))))
+
 ;;; History
 
 (defun bv-completion-sort-by-history (candidates)

@@ -100,7 +100,9 @@
           (when-let ((snippets (gethash mode bv-cape--snippet-cache)))
             `(,start ,end
               ,snippets
-              :annotation-function ,(lambda (_) " Snippet")
+              :annotation-function ,(lambda (_)
+                                      (propertize " Snippet"
+                                                  'face 'marginalia-type))
               :company-kind ,(lambda (_) 'snippet)
               :category cape-yasnippet
               :exclusive no
@@ -136,7 +138,9 @@
           (when files
             `(,(car bounds) ,(cdr bounds)
               ,files
-              :annotation-function ,(lambda (_) " Project")
+              :annotation-function ,(lambda (_)
+                                      (propertize " Project"
+                                                  'face 'marginalia-file-name))
               :company-kind ,(lambda (_) 'file)
               :category project-file
               :exclusive no)))

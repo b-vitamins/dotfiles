@@ -56,6 +56,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   title treatment, neutral minibuffer directory icons, file-permission color
   hierarchy, and visual compliance checks controlled by each theme's policy
   instead of forced on every base theme.
+- Re-grounded the BV Emacs light/dark theme profiles in material pigment:
+  sumi ink, washi paper, indigo/cobalt ceramic, bengara clay, moss/tea greens,
+  oxidized copper, restrained yuzu, and less washed-out completion/modeline
+  surfaces.
+- Aligned org-slipbox node completions with the in-house minibuffer style by
+  keeping node titles neutral and moving modified/backlink metadata into the
+  annotation column.
+- Unified remaining Emacs visual surfaces around the BV in-house style:
+  width-aware TRAMP and Elfeed rows, theme-derived PDF night colors, semantic
+  calendar/modeline/Citar/Vertico/Cape/Corfu faces, and BV-owned icon roles
+  including Octicon-family slipbox note icons.
 - Split Emacs doctor validation into a hermetic batch gate and a live full-init
   gate for runtime theme workflow checks.
 - Expanded BV Emacs theme audits for diagnostics, completion, diff, terminal,

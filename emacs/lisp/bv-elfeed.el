@@ -88,6 +88,7 @@
 (require 'elfeed-score)
 (require 'org-ref)
 (require 'bibtex-completion)
+(require 'bv-completion)
 
 ;; External variable declarations
 (defvar elfeed-score-serde-score-file)
@@ -214,46 +215,82 @@
             (plist-get (nth 1 authors-list) :name)))
    (t (format "%s et al." (plist-get (car authors-list) :name)))))
 
+(defun bv-elfeed--search-layout ()
+  "Return width allocation for the Elfeed search row."
+  (let* ((width (max 50 (window-width)))
+         (class (bv-completion-width-class width))
+         (date-width 10)
+         (score-width 5)
+         (authors-width (pcase class
+                          ('compact 0)
+                          ('wide 40)
+                          (_ 28)))
+         (feed-width (pcase class
+                       ('compact 0)
+                       ('wide 18)
+                       (_ 14))))
+    (cl-labels ((title-width ()
+                  (- width date-width score-width 2
+                     (if (> authors-width 0) (1+ authors-width) 0)
+                     (if (> feed-width 0) (1+ feed-width) 0))))
+      (when (< (title-width) 28)
+        (setq feed-width 0))
+      (when (< (title-width) 28)
+        (setq authors-width 0))
+      (list :date date-width
+            :title (max 24 (min 110 (title-width)))
+            :authors authors-width
+            :score score-width
+            :feed feed-width))))
+
 ;;; Custom search print function with scores
 (defun bv-elfeed-search-print-entry (entry)
   "Print ENTRY to the buffer with enhanced formatting."
-  (let* ((date (elfeed-search-format-date (elfeed-entry-date entry)))
+  (let* ((layout (bv-elfeed--search-layout))
+         (date (elfeed-search-format-date (elfeed-entry-date entry)))
          (title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
          (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
          (entry-authors (bv-elfeed-concatenate-authors
-                        (elfeed-meta entry :authors)))
+                         (elfeed-meta entry :authors)))
          (entry-score (when (fboundp 'elfeed-score-scoring-get-score-from-entry)
-                       (elfeed-score-scoring-get-score-from-entry entry)))
+                        (elfeed-score-scoring-get-score-from-entry entry)))
          (feed (elfeed-entry-feed entry))
          (feed-title (when feed
-                      (or (elfeed-meta feed :title)
-                          (elfeed-feed-title feed))))
-         (title-width (- (window-width) 75))
+                       (or (elfeed-meta feed :title)
+                           (elfeed-feed-title feed))))
+         (title-width (plist-get layout :title))
+         (authors-width (plist-get layout :authors))
+         (feed-width (plist-get layout :feed))
          (title-column (elfeed-format-column
-                       title (min title-width 100) :left))
-         (authors-column (elfeed-format-column
-                         entry-authors 40 :left))
+                        title (min title-width 100) :left))
+         (authors-column (when (> authors-width 0)
+                           (elfeed-format-column
+                            entry-authors authors-width :left)))
          (score-column (if entry-score
-                          (elfeed-format-column
-                           (format "%4d" entry-score) 5 :right)
-                        "     ")))
+                           (elfeed-format-column
+                            (format "%4d" entry-score) 5 :right)
+                         "     ")))
 
     ;; Colorize based on score
     (when (and entry-score (> entry-score 200))
       (add-face-text-property 0 (length title-column)
-                             'bv-elfeed-high-score-face nil title-column))
+                              'bv-elfeed-high-score-face nil title-column))
 
     (insert (propertize date 'face 'elfeed-search-date-face) " ")
-    (insert (propertize title-column 'face title-faces 'kbd-help title) " ")
-    (insert (propertize authors-column 'face 'bv-elfeed-author-face
-                       'kbd-help entry-authors) " ")
+    (insert (propertize title-column 'face title-faces 'kbd-help title))
+    (when authors-column
+      (insert " ")
+      (insert (propertize authors-column 'face 'bv-elfeed-author-face
+                          'kbd-help entry-authors)))
+    (insert " ")
     (insert (propertize score-column 'face
-                       (if (and entry-score (> entry-score 100))
-                           'bv-elfeed-important-face
-                         'elfeed-search-filter-face)) " ")
-    (when feed-title
-      (insert (propertize (elfeed-format-column feed-title 15 :left)
-                         'face 'elfeed-search-feed-face)))))
+                        (if (and entry-score (> entry-score 100))
+                            'bv-elfeed-important-face
+                          'elfeed-search-filter-face)))
+    (when (and feed-title (> feed-width 0))
+      (insert " ")
+      (insert (propertize (elfeed-format-column feed-title feed-width :left)
+                          'face 'elfeed-search-feed-face)))))
 
 ;;; ArXiv paper fetching integration
 (defun bv-elfeed-entry-to-arxiv ()

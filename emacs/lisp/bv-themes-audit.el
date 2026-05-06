@@ -72,7 +72,11 @@
     bv-face-salient bv-face-strong bv-face-critical bv-face-success
     bv-face-warning bv-face-error bv-face-info bv-face-link
     bv-face-prompt bv-face-keybind bv-face-match bv-face-highlight
-    bv-face-secondary bv-face-selection bv-diagnostic-error
+    bv-face-secondary bv-face-selection bv-icon-default bv-icon-muted
+    bv-icon-file bv-icon-directory bv-icon-note bv-icon-code
+    bv-icon-science bv-icon-idea bv-icon-proof bv-icon-review
+    bv-icon-index bv-icon-system bv-icon-warning bv-icon-success
+    bv-icon-special bv-icon-info bv-icon-salient bv-diagnostic-error
     bv-diagnostic-warning bv-diagnostic-info bv-diagnostic-note
     bv-diff-added bv-diff-removed bv-diff-changed bv-diff-added-refine
     bv-diff-removed-refine bv-diff-changed-refine bv-ui-header-default
