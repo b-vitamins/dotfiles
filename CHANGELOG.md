@@ -20,6 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Emacs config doctor (`bv-doctor` / `scripts/emacs-doctor.sh`) for batch validation
 - Explicit per-display font sizing for GUI frames
 - Role-based Emacs typography system with font diagnostics, display heuristics, ligature profiles, and theme synchronization
+- Modular BV Emacs theme compiler with Oklch token profiles, semantic roles,
+  package adapters, runtime inspection commands, strict audit checks, adapter
+  metadata, APCA-style contrast gates, behavioral invariants, and deterministic
+  visual artifacts
+- First-class BV Emacs theme authoring DSL for metadata, variants, anchors,
+  surface/tone controls, semantic token domains, role overrides, face adapters,
+  gallery metadata, policies, samples, and notes
+- Live BV theme face inventory that gates unthemed faces already present in the
+  running Emacs configuration
+- BV theme workflow probes that load representative Emacs surfaces, observe
+  materialized faces, and gate their coverage during doctor runs
 - Role-based Emacs layout system with shared frame defaults, display-aware frame profiles, buffer spatial roles, and popup window policy
 - Icon-present, width-aware Emacs completion surface policy spanning Vertico, Consult, Marginalia, Embark, Orderless, Cape, Corfu, and Nerd Icons
 - Tree-sitter grammar audit command (`bv-treesit-audit`)
@@ -37,6 +48,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Codex `research-paper-notes` skill for strict TeX-first single-paper analysis with arXiv source ingestion, sequential readthrough logging, and note validation
 - Automatic `setup.sh` preflight/bootstrap for SSH identity, mileva OCI root credentials, and actionable post-run setup reporting
 ### Changed
+- Replaced the legacy BV Emacs theme engine with the new `bv-themes.el`
+  compiler; `bv-light` and `bv-dark` are now standalone DSL-authored theme
+  specifications loaded through the standard Custom theme path.
+- Restored the BV Emacs light/dark Ink and Frost visual language as
+  Oklch-authored aesthetic theme profiles, including the header band, Org
+  title treatment, neutral minibuffer directory icons, file-permission color
+  hierarchy, and visual compliance checks controlled by each theme's policy
+  instead of forced on every base theme.
+- Split Emacs doctor validation into a hermetic batch gate and a live full-init
+  gate for runtime theme workflow checks.
+- Expanded BV Emacs theme audits for diagnostics, completion, diff, terminal,
+  prose heading, metadata, and local semantic face invariants.
+- Expanded BV Emacs theme doctor validation to exercise workflow probes before
+  live face inventory checks.
+- Expanded BV Emacs theme regression artifacts into deterministic workflow
+  SVGs covering prose, code, diffs, completion, diagnostics, Dired, terminal
+  colors, modelines, calendar, and feed rows with manifest validation.
+- Updated the Emacs customization guide for the DSL-based BV theme system and
+  removed references to retired theme defcustoms.
 - `fssh` now includes `fleetctl` targets alongside classic SSH host discovery and routes `fleet:*` selections through `fleetctl ssh`
 - `fleetctl migrate-env` no longer carries a repo-specific default env prefix and now requires an explicit `--prefix`
 - `fleetctl` now treats target `workdir` as the host landing strip and derives default project roots as `workdir/<project-name>`
@@ -98,6 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Updated `setup.sh` to keep `~/.codex/config.toml` as a local file and stop symlinking it from dotfiles
 - Refined the Codex `research-paper-notes` skill with multi-axis paper coordinates, claim-surface summaries, typed prior-work relation hints, and stronger machine-readable provenance
 ### Fixed
+- Made BV Emacs theme audit and regression commands load discoverable DSL
+  theme specifications before compiling artifacts from a fresh runtime.
 - Enabled `fprintd` on `sparck` and added the CLI package to the shared
   security bundle for ThinkPad X1 Carbon Gen 12 fingerprint enrollment
 - Forced Intel DPCD backlight control on `sparck` and added `brightnessctl`

@@ -109,7 +109,7 @@
     (if parts
         (format "%-30s %s" host
                 (propertize (string-join parts " ")
-                            'face 'bv-themes-faded))
+                            'face 'bv-face-dim))
       host)))
 
 (defun bv-tramp--read-host ()
@@ -270,7 +270,7 @@
   `(:name "SSH Hosts"
     :narrow ?h
     :category ssh-host
-    :face bv-themes-salient
+    :face bv-face-salient
     :history ssh-host-history
     :items ,#'bv-tramp--parse-ssh-hosts
     :annotate ,(lambda (host)

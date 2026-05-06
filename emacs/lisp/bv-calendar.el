@@ -14,7 +14,7 @@
 
 ;; Declare external functions and variables to avoid elint warnings
 (declare-function special-mode "simple" ())
-(defvar bv-themes-default)
+(defvar bv-face-default)
 
 ;; Silence byte-compiler warning for missing function
 (eval-when-compile (require 'simple))
@@ -141,7 +141,7 @@
                         (propertize (format "%-3s" (substring name 0 2))
                                     'face (if weekend
                                               'bv-calendar-weekend
-                                            'bv-themes-default))))))
+                                            'bv-face-default))))))
       (push day-line lines))
     (let ((current-line (make-string (* 3 first-day) ?\s)))
       (dotimes (day last-day)
@@ -173,7 +173,7 @@
                                              (is-today 'bv-calendar-today)
                                              (holiday 'bv-calendar-holiday)
                                              (weekend 'bv-calendar-weekend)
-                                             (t 'bv-themes-default))
+                                             (t 'bv-face-default))
                                       'mouse-face 'highlight
                                       'help-echo (format-time-string "%A, %B %e, %Y"
                                                                      (encode-time 0 0 0 d month year))

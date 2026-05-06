@@ -67,21 +67,21 @@
          (edge-pad-width (length edge-pad))
          (prefix (cond ((string= status "RO")
                         (propertize (if (window-dedicated-p) " -- " " RO ")
-                                    'face 'bv-themes-header-popout))
+                                    'face 'bv-ui-header-popout))
                        ((string= status "**")
                         (propertize (if (window-dedicated-p) " -- " " ** ")
-                                    'face 'bv-themes-header-critical))
+                                    'face 'bv-ui-header-critical))
                        ((string= status "RW")
                        (propertize (if (window-dedicated-p) " -- " " RW ")
-                                   'face 'bv-themes-header-faded))
-                       (t (propertize status 'face 'bv-themes-header-popout))))
+                                   'face 'bv-ui-header-muted))
+                       (t (propertize status 'face 'bv-ui-header-popout))))
          (left (concat
-                (propertize " " 'face 'bv-themes-header-default
+                (propertize " " 'face 'bv-ui-header-default
                             'display `(raise ,space-up))
-                (propertize name 'face 'bv-themes-header-strong)
-                (propertize " " 'face 'bv-themes-header-default
+                (propertize name 'face 'bv-ui-header-strong)
+                (propertize " " 'face 'bv-ui-header-default
                             'display `(raise ,space-down))
-                (propertize primary 'face 'bv-themes-header-default)))
+                (propertize primary 'face 'bv-ui-header-default)))
          (right (concat secondary " "))
          (available-width (- (window-total-width)
                              edge-pad-width edge-pad-width
@@ -92,8 +92,8 @@
             prefix
             left
             (propertize (make-string available-width ?\ )
-                        'face 'bv-themes-header-default)
-            (propertize right 'face 'bv-themes-header-default)
+                        'face 'bv-ui-header-default)
+            (propertize right 'face 'bv-ui-header-default)
             edge-pad)))
 
 (defun bv-modeline-status ()

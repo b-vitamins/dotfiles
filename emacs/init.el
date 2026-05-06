@@ -16,13 +16,14 @@
 (add-to-list 'load-path
              (expand-file-name "lisp" (file-name-directory load-file-name)))
 
-;; Add themes directory to theme load path
 (add-to-list 'custom-theme-load-path
              (expand-file-name "themes" (file-name-directory load-file-name)))
 
 (require 'bv-layout)
 
 (require 'bv-themes)
+(setq bv-themes-default-theme 'bv-light
+      bv-themes-toggle-themes '(bv-light bv-dark))
 
 ;; Configure typography before theme generation so generated faces use the
 ;; resolved font roles on first paint.

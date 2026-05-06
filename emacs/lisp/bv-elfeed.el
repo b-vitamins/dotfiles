@@ -156,7 +156,7 @@
 (defvar bv-elfeed-db-load-error nil
   "Cached startup error for the Elfeed database, if any.")
 
-;;; Face definitions are now in bv-themes.el for theme-aware colors
+;;; Face definitions live in bv-themes.el for theme-aware colors.
 
 ;;; Feed list embedded directly
 (defvar bv-elfeed-feeds

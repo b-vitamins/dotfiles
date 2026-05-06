@@ -317,7 +317,7 @@
 
 ;; Add hooks for theme changes
 (with-eval-after-load 'bv-themes
-  (add-hook 'bv-themes-after-load-hook #'bv-pdf-sync-all-buffers))
+  (add-hook 'bv-themes-after-load-theme-hook #'bv-pdf-sync-all-buffers))
 
 ;; Add hooks for circadian changes
 (with-eval-after-load 'bv-circadian

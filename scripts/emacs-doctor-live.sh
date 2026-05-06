@@ -4,14 +4,13 @@ set -eu
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 
-emacs_dir="$repo_root/emacs"
-lisp_dir="$emacs_dir/lisp"
+init_file="$repo_root/emacs/init.el"
 
 if ! command -v emacs >/dev/null 2>&1; then
   printf '%s\n' "emacs not found in PATH" >&2
   exit 1
 fi
 
-emacs -q --batch \
-  -L "$lisp_dir" \
-  --eval "(progn (setq load-prefer-newer t) (require 'bv-doctor) (bv-doctor-run-batch))"
+exec emacs --batch \
+  -l "$init_file" \
+  --eval "(progn (require 'bv-doctor) (bv-doctor-run-live-batch))"

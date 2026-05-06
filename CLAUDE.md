@@ -260,7 +260,7 @@ The Guix system configuration uses:
 ### Integration Points
 
 - **Path Management**: Centralized through Guix profiles and bv-core paths
-- **Theme Consistency**: Shared Modus themes across Emacs and terminal
+- **Theme Consistency**: Shared BV themes across Emacs and terminal
 - **Service Discovery**: mDNS for cross-machine communication
 - **Development Environments**: Direnv + Guix for reproducible environments
 

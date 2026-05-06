@@ -12,7 +12,8 @@ Add customizations to your `custom-file` (usually `~/.config/emacs/custom.el`):
 (custom-set-variables
  '(bv-fonts-default-family "JetBrains Mono")
  '(bv-fonts-default-size 140)
- '(bv-themes-syntax 'tinted)
+ '(bv-themes-toggle-themes '(bv-light bv-dark))
+ '(bv-themes-intensity 'balanced)
  '(bv-org-slipbox-directory "~/notes"))
 ```
 
@@ -23,7 +24,7 @@ Reload: `M-x eval-buffer` in custom.el or restart Emacs.
 ### Fonts
 
 **bv-fonts-default-family** (string)
-- Default: "JetBrains Mono"
+- Default: "Iosevka Term"
 - Monospaced font for code editing
 
 **bv-fonts-default-size** (integer)
@@ -31,11 +32,11 @@ Reload: `M-x eval-buffer` in custom.el or restart Emacs.
 - Font size in tenths of points (120 = 12pt)
 
 **bv-fonts-variable-family** (string)
-- Default: "FiraGO"
+- Default: "IBM Plex Sans"
 - Variable-width font for UI elements
 
 **bv-fonts-serif-family** (string)
-- Default: "Noto Serif"
+- Default: "Source Serif 4"
 - Serif font for reading modes
 
 **bv-fonts-enable-ligatures** (boolean)
@@ -56,58 +57,98 @@ Example:
 
 ### Theme System
 
-**bv-themes-syntax** (symbol)
-- Default: nil
-- Options: nil, faint, intense, monochrome, rainbow, tinted, alt
-- Controls syntax highlighting intensity/style
+The current theme system is DSL-authored. Broad runtime behavior is controlled
+with defcustoms; detailed appearance belongs in theme specifications such as
+`emacs/themes/bv-light-theme.el` and `emacs/themes/bv-dark-theme.el`.
 
-**bv-themes-mode-line** (symbol)
+**bv-themes-default-theme** (symbol or nil)
 - Default: nil
-- Options: nil, accented, padded, borderless, gradient, minimal, moody
-- Mode line appearance
+- Theme used by inspection commands when no BV theme is active
 
-**bv-themes-headings** (alist)
+**bv-themes-toggle-themes** (list of symbols)
 - Default: nil
-- Per-heading-level styling. Keys are heading levels (integers), values are
-  plists like `(:height 1.2 :weight bold :overline t :style rainbow)`.
+- Ordered theme pair used by `bv-themes-toggle`
+
+**bv-themes-theme-directories** (list of directories)
+- Default: repository `emacs/themes/`
+- Directories searched for `*-theme.el` BV theme specifications
+
+**bv-themes-intensity** (symbol)
+- Default: balanced
+- Options: faint, balanced, vivid, high-chroma
+- Global chroma scale applied while compiling theme tokens
 
 **bv-themes-bold-constructs** (boolean)
 - Default: t
-- Bold keywords and constructs
+- Allow roles to use stronger weights where the active theme specifies them
 
 **bv-themes-italic-constructs** (boolean)
 - Default: t
-- Italic comments and docstrings
+- Allow italic roles, mainly comments and documentation
 
-**bv-themes-variable-pitch-ui** (boolean)
+**bv-themes-no-underlines** (boolean)
+- Default: t
+- Remove underlines after loading a BV theme
+
+**bv-themes-audit-on-load** (boolean)
 - Default: nil
-- Variable-width fonts in UI
+- Run the policy-aware BV audit whenever a BV theme is enabled
 
-**bv-themes-org-blocks** (symbol)
+**bv-themes-font-family-monospaced** (string or nil)
 - Default: nil
-- Options: nil, tinted, rainbow, zebra, minimal, bordered
-- Org code block styling
+- Monospaced family used when compiling theme typography
 
-**bv-themes-completions** (symbol)
-- Default: 'moderate
-- Options: nil, opinionated, moderate, minimal
-- Completion match highlighting
+**bv-themes-font-family-proportional** (string or nil)
+- Default: nil
+- Proportional family used when compiling theme typography
 
-**bv-themes-paren-match** (symbol)
-- Default: 'intense
-- Options: intense, subtle, bold, underline, intense-foreground
-- Parentheses matching highlight
+**bv-themes-font-size** (integer)
+- Default: 120
+- Default face height in tenths of points used during theme compilation
 
 Theme example:
 ```elisp
 (custom-set-variables
- '(bv-themes-syntax 'tinted)
- '(bv-themes-mode-line 'borderless)
- '(bv-themes-org-blocks 'tinted)
- '(bv-themes-completions 'moderate)
- '(bv-themes-headings
-   ((1 . (:height 1.3 :weight bold))
-    (2 . (:height 1.2 :weight semibold)))))
+ '(bv-themes-toggle-themes '(bv-light bv-dark))
+ '(bv-themes-default-theme 'bv-dark)
+ '(bv-themes-intensity 'balanced)
+ '(bv-themes-no-underlines t))
+```
+
+Theme authoring example:
+
+```elisp
+;; Place a file named bv-custom-theme.el in a directory listed in
+;; `bv-themes-theme-directories`.
+(bv-themes-define-theme bv-custom
+  (metadata
+   :display-name "BV Custom"
+   :summary "Personal BV theme profile."
+   :tags '(dark personal)
+   :family 'personal
+   :version 1)
+  (variant dark :polarity -1 :modes '(gui tty))
+  (anchors
+   (neutral
+    (bg-main (oklch 0.2686 0.0097 268.3))
+    (bg-dim (oklch 0.2478 0.0099 268.3))
+    (fg-main (oklch 0.8296 0.0165 253.9)))
+   (state
+    (red (oklch 0.6709 0.1448 17.0))
+    (orange (oklch 0.5871 0.0679 64.3))
+    (yellow (oklch 0.7653 0.0764 86.6))
+    (green (oklch 0.6179 0.0793 132.8)))
+   (accent
+    (teal (oklch 0.6259 0.0745 218.1))
+    (cyan (oklch 0.6000 0.0694 214.7))
+    (blue (oklch 0.6136 0.0907 244.3))
+    (purple (oklch 0.5624 0.1140 318.3))
+    (magenta (oklch 0.5598 0.1028 348.0))))
+  (policy
+   :underlines nil
+   :contrast-target 'aesthetic
+   :terminal-colors 256
+   :gamut 'srgb))
 ```
 
 ### Circadian (Automatic Theme Switching)
@@ -252,16 +293,16 @@ Location example:
 ```elisp
 (custom-set-variables
  '(bv-fonts-default-size 140)
- '(bv-themes-ui-density 'compact)
- '(bv-org-latex-scale 2.5))
+ '(bv-themes-font-size 140)
+ '(bv-org-latex-default-scale 1.4))
 ```
 
 ### Minimal Appearance
 ```elisp
 (custom-set-variables
- '(bv-themes-mode-line 'borderless)
- '(bv-themes-fringes 'subtle)
- '(bv-themes-syntax nil)
+ '(bv-themes-intensity 'faint)
+ '(bv-themes-bold-constructs nil)
+ '(bv-themes-italic-constructs nil)
  '(bv-nerd-icons-color-icons nil))
 ```
 
@@ -269,19 +310,15 @@ Location example:
 ```elisp
 (custom-set-variables
  '(bv-org-slipbox-directory "~/research/notes")
- '(bv-themes-org-blocks 'tinted)
- '(bv-themes-headings
-   ((1 . (:height 1.35 :weight bold))
-    (2 . (:height 1.2 :weight semibold))
-    (3 . (:height 1.1 :weight semibold))))
- '(bv-fonts-serif-family "Crimson Text"))
+ '(bv-fonts-serif-family "Crimson Text")
+ '(bv-themes-font-family-proportional "Crimson Text"))
 ```
 
 ### Performance Tuning
 ```elisp
 (custom-set-variables
  '(bv-consult-ripgrep-or-line-limit 100000)
- '(bv-themes-syntax nil)
+ '(bv-themes-audit-on-load nil)
  '(bv-nerd-icons-color-icons nil))
 ```
 
@@ -337,7 +374,6 @@ Reset to defaults:
 - bv-circadian-longitude
 - bv-fonts-default-family
 - bv-fonts-default-size
-- bv-themes-syntax
 
 ### Development
 - bv-completion-auto-modes
@@ -366,12 +402,17 @@ Reset to defaults:
 - bv-weather-location
 
 ### Theme Engine
+- bv-themes-audit-on-load
 - bv-themes-bold-constructs
-- bv-themes-completions
-- bv-themes-headings
-- bv-themes-mode-line
-- bv-themes-org-blocks
-- bv-themes-paren-match
-- bv-themes-variable-pitch-ui
+- bv-themes-default-theme
+- bv-themes-font-family-monospaced
+- bv-themes-font-family-proportional
+- bv-themes-font-size
+- bv-themes-intensity
+- bv-themes-italic-constructs
+- bv-themes-no-underlines
+- bv-themes-theme-directories
+- bv-themes-toggle-themes
+- bv-themes-variants
 
 All variables support standard Emacs customization interface via `M-x customize-group RET bv RET`.
