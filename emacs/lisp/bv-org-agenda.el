@@ -16,6 +16,22 @@
 
 (defvar bv-org-directory)
 
+(defcustom bv-org-agenda-category-width 12
+  "Display columns reserved for the agenda category gutter."
+  :type 'integer
+  :group 'org-agenda)
+
+(defcustom bv-org-agenda-time-width 11
+  "Display columns reserved for agenda time ranges."
+  :type 'integer
+  :group 'org-agenda)
+
+(defcustom bv-org-agenda-current-time-string
+  "  now ─────────────────────────────────────"
+  "String used for the agenda current-time marker."
+  :type 'string
+  :group 'org-agenda)
+
 (defun bv-org-agenda--inbox-file ()
   "Return the absolute path of the inbox file."
   (expand-file-name "inbox.org" bv-org-directory))
@@ -35,30 +51,35 @@
   "Skip trees that are not stuck projects.
 
 A stuck project is a PROJ heading without any NEXT/STARTED items in its
-subtree."
+  subtree."
   (let ((subtree-end (save-excursion (org-end-of-subtree t t))))
     (cond
      ((not (equal (org-get-todo-state) "PROJ")) subtree-end)
      ((bv-org-agenda--project-has-next-action-p) subtree-end)
      (t nil))))
 
+(defun bv-org-agenda--prefix-format ()
+  "Return BV agenda prefix formats with deliberate column gutters."
+  `((agenda . ,(format "  %%-%d:c  %%?-%dt  %%s"
+                       bv-org-agenda-category-width
+                       bv-org-agenda-time-width))
+    (todo . ,(format "  %%-%d:c  " bv-org-agenda-category-width))
+    (tags . ,(format "  %%-%d:c  " bv-org-agenda-category-width))
+    (search . ,(format "  %%-%d:c  " bv-org-agenda-category-width))))
+
 (with-eval-after-load 'org-agenda
   (setq org-agenda-block-separator nil)
   (setq org-agenda-compact-blocks t)
   (setq org-agenda-tags-column 0)
   (setq org-agenda-todo-keyword-format "")
-  (setq org-agenda-prefix-format
-        '((agenda . "  %-12:c%?-12t% s")
-          (todo . "  %-12:c ")
-          (tags . "  %-12:c ")
-          (search . "  %-12:c ")))
+  (setq org-agenda-prefix-format (bv-org-agenda--prefix-format))
 
   (setq org-agenda-time-grid
         '((daily today require-timed)
           (800 1000 1200 1400 1600 1800 2000)
-          " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"))
+          "  ┄┄┄┄ " "  ┄┄┄┄┄┄┄┄┄┄┄┄"))
   (setq org-agenda-current-time-string
-        "◀ ─────────────────────────────────────────────── now")
+        bv-org-agenda-current-time-string)
 
   (setq org-agenda-window-setup 'current-window)
   (setq org-agenda-restore-windows-after-quit t)

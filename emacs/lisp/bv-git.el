@@ -27,6 +27,21 @@ as a variable."))
 
 (declare-function magit-add-section-hook "magit" (hook function &optional at append local))
 
+(defcustom bv-git-magit-section-fringe-width 14
+  "Left fringe width used to keep Magit section indicators away from text."
+  :type 'integer
+  :group 'magit)
+
+(defun bv-git--setup-magit-section-gutter ()
+  "Give Magit section indicators a small dedicated left fringe gutter."
+  (setq-local left-fringe-width bv-git-magit-section-fringe-width)
+  (dolist (window (get-buffer-window-list (current-buffer) nil t))
+    (let ((fringes (window-fringes window)))
+      (set-window-fringes window
+                          bv-git-magit-section-fringe-width
+                          (nth 1 fringes)
+                          (nth 2 fringes)))))
+
 (with-eval-after-load 'git-link
   (advice-add 'git-link :around
               (lambda (f remote start end)
@@ -75,6 +90,9 @@ as a variable."))
 (with-eval-after-load 'magit
   (when (boundp 'magit-display-buffer-function)
     (setq magit-display-buffer-function 'magit-display-buffer-traditional))
+
+  (add-hook 'magit-mode-hook #'bv-git--setup-magit-section-gutter)
+  (add-hook 'magit-post-refresh-hook #'bv-git--setup-magit-section-gutter)
 
   (magit-add-section-hook 'magit-status-sections-hook
                           'magit-insert-local-branches

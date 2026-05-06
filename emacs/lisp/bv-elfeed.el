@@ -586,7 +586,7 @@
          (title (elfeed-entry-title entry)))
     (if score
         (message "Score: %d | %s" score
-                (truncate-string-to-width title 60 nil nil "..."))
+                (truncate-string-to-width title 60 nil nil " …"))
       (message "No score available for this entry"))))
 
 (defun bv-elfeed-rescore-all-entries ()

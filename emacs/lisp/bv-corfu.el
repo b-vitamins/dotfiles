@@ -68,6 +68,11 @@
   :type '(alist :key-type symbol :value-type plist)
   :group 'bv-corfu)
 
+(defcustom bv-corfu-kind-label-width 5
+  "Display columns reserved for Corfu kind labels, including a trailing gap."
+  :type 'integer
+  :group 'bv-corfu)
+
 (defun bv-corfu--profile (name key)
   "Return KEY from profile NAME in `bv-corfu-auto-policy'."
   (plist-get (alist-get name bv-corfu-auto-policy) key))
@@ -153,8 +158,10 @@
   (let* ((entry (or (assq kind bv-corfu--kind-labels)
                     (assq t bv-corfu--kind-labels)))
          (label (cadr entry))
-         (face (caddr entry)))
-    (propertize (truncate-string-to-width label 4 0 ?\s t)
+         (face (caddr entry))
+         (text-width (max 1 (1- bv-corfu-kind-label-width))))
+    (propertize (concat (truncate-string-to-width label text-width 0 ?\s t)
+                        " ")
                 'face face)))
 
 (defun bv-corfu-margin-formatter (metadata)

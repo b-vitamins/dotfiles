@@ -23,6 +23,7 @@
 ;;; Declarations
 
 (defvar completion-list-mode-map)
+(defvar bv-completion-truncation-marker "  ->")
 (defvar marginalia-annotators)
 (defvar marginalia-cache-size)
 (defvar marginalia-command-categories)
@@ -112,7 +113,9 @@
 (defun bv-marginalia--field (text width face)
   "Return TEXT truncated to WIDTH and propertized with FACE."
   (when (and text (not (string-empty-p text)))
-    (propertize (bv-completion-truncate text width) 'face face)))
+    (propertize
+     (bv-completion-truncate text width bv-completion-truncation-marker)
+     'face face)))
 
 (defun bv-marginalia--annotation (&rest fields)
   "Build a Marginalia annotation from FIELDS with an alignment marker."
@@ -222,7 +225,9 @@
 (defun bv-marginalia--inline-command-field (text width face)
   "Return TEXT as an inline command annotation field within WIDTH."
   (when (and text (> width 4))
-    (propertize (bv-completion-truncate text width " ->") 'face face)))
+    (propertize
+     (bv-completion-truncate text width bv-completion-truncation-marker)
+     'face face)))
 
 (defun bv-marginalia-annotate-command (cand)
   "Width-aware command annotation for CAND.

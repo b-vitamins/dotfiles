@@ -409,7 +409,8 @@ When FACE is non-nil, use it for the separator."
   "Return the header face used for STATUS."
   (bv-modeline--window-face
    (cond ((string= status "**") 'bv-ui-header-critical)
-         ((member status '("RO" "DD" ">_" "#@" "R@"))
+         ((string= status "RO") 'bv-ui-header-default)
+         ((member status '("DD" ">_" "#@" "R@"))
           'bv-ui-header-popout)
          (t 'bv-ui-header-muted))
    selected))

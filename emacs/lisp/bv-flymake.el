@@ -14,6 +14,16 @@
 
 (declare-function consult-flymake "consult-flymake" (&optional project))
 
+(defgroup bv-flymake nil
+  "BV Flymake presentation policy."
+  :group 'flymake
+  :prefix "bv-flymake-")
+
+(defcustom bv-flymake-diagnostic-fringe-width 14
+  "Right fringe width used for Flymake diagnostic indicators."
+  :type 'integer
+  :group 'bv-flymake)
+
 (defvar-keymap bv-flymake-fix-map
   :doc "Keymap for fast Flymake navigation and fix loop."
   "n" #'bv-flymake-goto-next-error
@@ -64,6 +74,21 @@ With prefix argument PROJECT, show project diagnostics."
   (setq flymake-start-on-save-buffer t))
 (when (boundp 'flymake-fringe-indicator-position)
   (setq flymake-fringe-indicator-position 'right-fringe))
+
+(defun bv-flymake--setup-diagnostic-gutter ()
+  "Give Flymake diagnostics a dedicated right-side gutter."
+  (if (bound-and-true-p flymake-mode)
+      (setq-local right-fringe-width bv-flymake-diagnostic-fringe-width)
+    (kill-local-variable 'right-fringe-width))
+  (dolist (window (get-buffer-window-list (current-buffer) nil t))
+    (let ((fringes (window-fringes window)))
+      (set-window-fringes window
+                          (nth 0 fringes)
+                          (and (bound-and-true-p flymake-mode)
+                               bv-flymake-diagnostic-fringe-width)
+                          (nth 2 fringes)))))
+
+(add-hook 'flymake-mode-hook #'bv-flymake--setup-diagnostic-gutter)
 
 (when (boundp 'flymake-mode-map)
   (let ((map flymake-mode-map))

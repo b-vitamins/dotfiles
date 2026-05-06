@@ -28,7 +28,7 @@
   (when (boundp 'keycast-mode-line-window-predicate)
     (setq keycast-mode-line-window-predicate 'bv-keycast-active-window-p))
   (when (boundp 'keycast-mode-line-format)
-    (setq keycast-mode-line-format "%k%c%r "))
+    (setq keycast-mode-line-format "%k → %c %r "))
   (when (boundp 'keycast-mode-line-insert-after)
     (setq keycast-mode-line-insert-after 'mode-line-misc-info))
   (when (boundp 'keycast-mode-line-remove-tail-elements)

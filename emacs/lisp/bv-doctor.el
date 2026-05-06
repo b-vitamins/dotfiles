@@ -13,6 +13,8 @@
 ;; - Run the BV theme compiler audit
 ;; - Exercise representative theme workflow probes
 ;; - Generate deterministic visual regression artifacts
+;; - Run layout overflow affordance tests
+;; - Run package-local UI polish tests
 ;; - Run completion surface policy tests
 ;; - Run modeline/header-line invariant tests
 ;;
@@ -146,6 +148,22 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
     (unless (zerop (ert-stats-completed-unexpected stats))
       (error "BV completion tests failed"))))
 
+(defun bv-doctor-check-layout-tests ()
+  "Run BV layout ERT checks."
+  (require 'ert)
+  (require 'bv-layout-tests)
+  (let ((stats (ert-run-tests-batch '(tag bv-layout))))
+    (unless (zerop (ert-stats-completed-unexpected stats))
+      (error "BV layout tests failed"))))
+
+(defun bv-doctor-check-ui-polish-tests ()
+  "Run BV package-local UI polish ERT checks."
+  (require 'ert)
+  (require 'bv-ui-polish-tests)
+  (let ((stats (ert-run-tests-batch '(tag bv-ui-polish))))
+    (unless (zerop (ert-stats-completed-unexpected stats))
+      (error "BV UI polish tests failed"))))
+
 ;;;###autoload
 (defun bv-doctor-run ()
   "Run the BV config doctor interactively."
@@ -165,6 +183,10 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
   (bv-doctor-check-live-theme-inventory)
   (message "bv-doctor: generating theme regression artifacts…")
   (bv-doctor-check-theme-regression)
+  (message "bv-doctor: testing layout invariants…")
+  (bv-doctor-check-layout-tests)
+  (message "bv-doctor: testing package-local UI polish…")
+  (bv-doctor-check-ui-polish-tests)
   (message "bv-doctor: testing completion invariants…")
   (bv-doctor-check-completion-tests)
   (message "bv-doctor: testing modeline invariants…")
@@ -183,6 +205,8 @@ Signals an error on failure (causing a non-zero exit in batch mode)."
   (bv-doctor-check-theme-workloads)
   (bv-doctor-check-live-theme-inventory)
   (bv-doctor-check-theme-regression)
+  (bv-doctor-check-layout-tests)
+  (bv-doctor-check-ui-polish-tests)
   (bv-doctor-check-completion-tests)
   (bv-doctor-check-modeline-tests)
   (message "bv-doctor: OK"))

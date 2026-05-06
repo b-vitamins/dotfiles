@@ -103,6 +103,11 @@ row-heavy enough to start in a Vertico buffer display."
   :type 'integer
   :group 'bv-completion)
 
+(defcustom bv-completion-truncation-marker "  ->"
+  "Inline marker used when completion annotation text is truncated."
+  :type 'string
+  :group 'bv-completion)
+
 (defun bv-completion-window-width (&optional window)
   "Return the width of the active completion WINDOW in columns."
   (let ((win (or window
@@ -147,14 +152,18 @@ The return value is one of `compact', `normal', or `wide'."
 
 (defun bv-completion-truncate (text width &optional ellipsis)
   "Truncate TEXT to WIDTH columns, preserving text properties where possible.
-When ELLIPSIS is nil, use Emacs' default visible truncation marker."
+When ELLIPSIS is nil, use the BV completion continuation marker."
   (truncate-string-to-width (or text "") (max 0 width) 0 nil
-                            (if (null ellipsis) t ellipsis)))
+                            (if (null ellipsis)
+                                bv-completion-truncation-marker
+                              ellipsis)))
 
 (defun bv-completion-pad (text width &optional face)
   "Return TEXT padded or truncated to WIDTH columns.
 FACE, when non-nil, is applied to the resulting field."
-  (let ((field (truncate-string-to-width (or text "") (max 0 width) 0 ?\s t)))
+  (let ((field (truncate-string-to-width
+                (or text "") (max 0 width) 0 ?\s
+                bv-completion-truncation-marker)))
     (if face
         (propertize field 'face face)
       field)))
@@ -187,7 +196,8 @@ includes the leading completion annotation gap expected by minibuffer UIs."
   (let* ((width (bv-completion-annotation-width))
          (annotation (apply #'bv-completion-join-fields fields)))
     (unless (string-empty-p annotation)
-      (concat "  " (bv-completion-truncate annotation width "...")))))
+      (concat "  " (bv-completion-truncate
+                    annotation width bv-completion-truncation-marker)))))
 
 ;;; History
 

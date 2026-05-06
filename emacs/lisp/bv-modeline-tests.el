@@ -169,7 +169,11 @@
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)
     (should (equal (bv-modeline-status) "RO"))
+    (should (eq (bv-modeline--status-face "RO" t)
+                'bv-ui-header-default))
     (setq buffer-read-only nil)
+    (should (eq (bv-modeline--status-face "RW" t)
+                'bv-ui-header-muted))
     (cl-letf (((symbol-function 'bv-modeline--remote-info)
                (lambda ()
                  '(:name "/ssh:host:/tmp/" :method "ssh"

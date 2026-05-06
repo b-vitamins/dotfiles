@@ -54,7 +54,22 @@ This should truncate cleanly when horizontal space is tight."
            (annotation (bv-marginalia-annotate-command candidate)))
       (should annotation)
       (should (<= (string-width annotation) (+ budget 2)))
-      (should (string-match-p " ->\\'" annotation)))))
+      (should (string-match-p "  ->\\'" annotation)))))
+
+(ert-deftest bv-completion-default-truncation-marker-has-gap ()
+  "Shared completion truncation should use the BV spaced continuation marker."
+  :tags '(bv-completion)
+  (let ((text (bv-completion-truncate
+               "a deliberately overlong completion annotation" 18)))
+    (should (string-match-p "  ->\\'" text))))
+
+(ert-deftest bv-completion-padded-fields-truncate-with-gap ()
+  "Fixed-width completion fields should not glue continuation markers to text."
+  :tags '(bv-completion)
+  (let ((text (bv-completion-pad
+               "a deliberately overlong fixed-width field" 18)))
+    (should (= (string-width text) 18))
+    (should (string-match-p "  ->\\'" text))))
 
 (provide 'bv-completion-tests)
 ;;; bv-completion-tests.el ends here

@@ -26,8 +26,10 @@
 
 (defvar completion-in-region-function)
 (defvar minor-mode-list)
+(defvar vertico--allow-prompt)
 (defvar vertico--candidates)
 (defvar vertico--index)
+(defvar vertico--total)
 (defvar vertico-map)
 (defvar vertico-mode)
 (defvar vertico-multiform-map)
@@ -61,12 +63,20 @@
 
 ;;; Core Settings
 
+(defcustom bv-vertico-count-field-width 7
+  "Display columns reserved for the Vertico count before the prompt.
+
+Large totals are compacted before rendering so the count remains useful signal
+without stealing attention or horizontal room from the prompt itself."
+  :type 'integer
+  :group 'bv-completion)
+
 (setq vertico-cycle t
       vertico-resize t
       vertico-count 12
       vertico-scroll-margin 4
       vertico-preselect 'directory
-      vertico-count-format '("%-6s " . "%s/%s ")
+      vertico-count-format '("%s" . "%s/%s")
       vertico-sort-function #'vertico-sort-history-length-alpha
       completion-in-region-function
       (lambda (&rest args)
@@ -76,6 +86,42 @@
                args)))
 
 ;;; Visual Transformations
+
+(defun bv-vertico--compact-count-number (value)
+  "Return VALUE as a compact Vertico count component."
+  (cond
+   ((not (integerp value)) (format "%s" value))
+   ((< value 10000) (number-to-string value))
+   ((< value 1000000) (format "%dk" (/ value 1000)))
+   ((< value 1000000000) (format "%dm" (/ value 1000000)))
+   (t (format "%db" (/ value 1000000000)))))
+
+(defun bv-vertico--fit-count-label (label)
+  "Return LABEL fitted to `bv-vertico-count-field-width' plus a gap."
+  (let* ((width (max 1 bv-vertico-count-field-width))
+         (text (if (> (string-width label) width)
+                   (truncate-string-to-width label width 0 nil "…")
+                 label)))
+    (concat text
+            (make-string (max 0 (- width (string-width text))) ?\s)
+            " ")))
+
+(defun bv-vertico--format-count ()
+  "Format a compact, stable Vertico count."
+  (let* ((current (cond
+                   ((and (integerp vertico--index)
+                         (>= vertico--index 0))
+                    (1+ vertico--index))
+                   (vertico--allow-prompt "*")
+                   (t "!")))
+         (label (format "%s/%s"
+                        (if (integerp current)
+                            (bv-vertico--compact-count-number current)
+                          current)
+                        (bv-vertico--compact-count-number vertico--total))))
+    (bv-vertico--fit-count-label label)))
+
+(advice-add 'vertico--format-count :override #'bv-vertico--format-count)
 
 (defun bv-vertico--prepare-header-line ()
   "Move the minibuffer mode line to the header line."

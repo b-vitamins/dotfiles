@@ -73,6 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   diagnostics, modal task states, smarter project/branch display, hover help,
   inactive-window treatment, modeline ERT invariants, and theme regression
   coverage for representative modeline states.
+- Refined BV Emacs read-only header status contrast and Magit section
+  indicator spacing.
+- Added spaced global overflow indicators for truncated/wrapped lines and
+  completion rows so continuation markers do not collide with text.
+- Polished crowded BV Emacs package surfaces across Vertico counts, Which-Key,
+  Org Agenda prefixes, Flymake diagnostic gutters, Ibuffer icon columns, Corfu
+  kind labels, and Keycast fallback rendering.
 - Split Emacs doctor validation into a hermetic batch gate and a live full-init
   gate for runtime theme workflow checks.
 - Expanded BV Emacs theme audits for diagnostics, completion, diff, terminal,

@@ -262,13 +262,14 @@ stealing ordinary text, math, CJK, or symbol glyphs from the main font stack."
 
   ;; Use custom ibuffer formats with icons
   (setq nerd-icons-ibuffer-formats
-        '((mark modified read-only nerd-icons-ibuffer-icon
-                " " (name 30 30 :left :elide)
-                " " (size-h 9 -1 :right)
-                " " (mode+ 16 16 :left :elide)
-                " " filename-and-process+)
-          (mark " " (name 30 -1)
-                " " filename))))
+        '((mark " " modified " " read-only
+                "  " nerd-icons-ibuffer-icon
+                "  " (name 32 32 :left :elide)
+                "  " (size-h 9 -1 :right)
+                "  " (mode+ 16 16 :left :elide)
+                "  " filename-and-process+)
+          (mark "  " (name 32 -1)
+                "  " filename))))
 
 ;;; Additional integrations
 (defun bv-nerd-icons-configure-integrations ()

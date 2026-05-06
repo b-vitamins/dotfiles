@@ -178,10 +178,66 @@ applied on top of `bv-layout-default-frame-parameters'."
   "Fallback face for layout glyphs missing in the primary font."
   :group 'bv-layout)
 
-(set-display-table-slot standard-display-table 'truncation
-                        (make-glyph-code ?… 'bv-layout-fallback))
-(set-display-table-slot standard-display-table 'wrap
-                        (make-glyph-code ?↩ 'bv-layout-fallback))
+(defcustom bv-layout-truncation-display-marker " …"
+  "Display-table marker used when a line is truncated.
+The leading space is intentional: the overflow affordance should breathe
+instead of colliding with the final visible text column."
+  :type 'string
+  :group 'bv-layout)
+
+(defcustom bv-layout-wrap-display-marker " ↩"
+  "Display-table marker used when a line visually wraps."
+  :type 'string
+  :group 'bv-layout)
+
+(defun bv-layout--glyph-vector (text)
+  "Return a display-table glyph vector for TEXT."
+  (vconcat
+   (mapcar (lambda (char)
+             (make-glyph-code char 'bv-layout-fallback))
+           text)))
+
+(defun bv-layout--set-fringe-indicator (indicator bitmaps)
+  "Set logical fringe INDICATOR to BITMAPS."
+  (setf (alist-get indicator fringe-indicator-alist nil nil #'eq)
+        bitmaps))
+
+(defun bv-layout-install-overflow-glyphs ()
+  "Install spaced truncation and wrapping affordances."
+  (set-display-table-slot standard-display-table 'truncation
+                          (bv-layout--glyph-vector
+                           bv-layout-truncation-display-marker))
+  (set-display-table-slot standard-display-table 'wrap
+                          (bv-layout--glyph-vector
+                           bv-layout-wrap-display-marker))
+  (when (fboundp 'define-fringe-bitmap)
+    (define-fringe-bitmap
+      'bv-layout-truncation-left
+      [#b00011000
+       #b00110000
+       #b01100000
+       #b11000000
+       #b01100000
+       #b00110000
+       #b00011000
+       #b00000000]
+      nil 8 'center)
+    (define-fringe-bitmap
+      'bv-layout-truncation-right
+      [#b00011000
+       #b00001100
+       #b00000110
+       #b00000011
+       #b00000110
+       #b00001100
+       #b00011000
+       #b00000000]
+      nil 8 'center)
+    (bv-layout--set-fringe-indicator
+     'truncation
+     '(bv-layout-truncation-left bv-layout-truncation-right))))
+
+(bv-layout-install-overflow-glyphs)
 
 ;;; Buffer roles
 
