@@ -39,6 +39,13 @@ When nil, languages are inferred from `major-mode-remap-alist'."
   :type 'boolean
   :group 'bv-treesit)
 
+(defcustom bv-treesit-extra-load-paths
+  '("/home/b/.guix-home/profile/lib/tree-sitter"
+    "/run/current-system/profile/lib/tree-sitter")
+  "Additional directories searched for tree-sitter grammars."
+  :type '(repeat directory)
+  :group 'bv-treesit)
+
 (defconst bv-treesit--audit-buffer "*BV Treesit Audit*"
   "Name of the treesit audit buffer.")
 
@@ -56,6 +63,7 @@ When nil, languages are inferred from `major-mode-remap-alist'."
   "Enable tree-sitter remaps and sensible defaults."
   (when (bv-treesit--available-p)
     (require 'treesit)
+    (setq treesit-extra-load-path bv-treesit-extra-load-paths)
     (when (boundp 'treesit-font-lock-level)
       (setq treesit-font-lock-level 4))
     ;; Prefer *-ts-mode variants when the grammar is available.

@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Replaced obsolete Org inline-preview and source-edit indentation APIs in the Emacs configuration
 - Consolidated Emacs layout ownership across early init, defaults, and layout modules
 - Reworked the Emacs completion stack around minibuffer-first adaptive annotations, row-heavy Consult buffer displays, deterministic Cape CAPFs, and precision-auto Corfu profiles
+- Reworked Emacs defaults around role-aware focus, cleaner editing/session baselines, predictable scrolling, and dedicated ownership for terminal/tree-sitter setup
 - Tweaked BV Emacs dark theme foundation colors for a richer background tint and crisper text contrast
 - Tweaked Alacritty dark palette for richer backgrounds and sharper text contrast
 - Disabled underlines across BV themes (links, comments, diagnostics) in favor of color and subtle background emphasis

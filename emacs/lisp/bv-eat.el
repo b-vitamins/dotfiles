@@ -13,6 +13,7 @@
 (require 'eat nil t)
 
 (defvar bv-terminal-map)
+(declare-function term-sentinel "term" (proc msg))
 
 (when (featurep 'eat)
   (when (boundp 'eat-line-input-ring-size)
@@ -45,6 +46,21 @@
     (define-key bv-terminal-map (kbd "p") 'bv-eat-project)))
 
 (global-set-key (kbd "s-t") 'bv-eat)
+
+;;; ansi-term fallback
+
+(defun bv-eat--term-sentinel (orig-fun proc msg)
+  "Kill ansi-term buffers when their process exits.
+ORIG-FUN is the original sentinel, PROC is the terminal process, and MSG is
+the process message."
+  (funcall orig-fun proc msg)
+  (when (memq (process-status proc) '(signal exit))
+    (when-let ((buffer (process-buffer proc)))
+      (when (buffer-live-p buffer)
+        (kill-buffer buffer)))))
+
+(with-eval-after-load 'term
+  (advice-add #'term-sentinel :around #'bv-eat--term-sentinel))
 
 (provide 'bv-eat)
 ;;; bv-eat.el ends here
