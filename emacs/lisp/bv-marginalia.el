@@ -1,279 +1,255 @@
-;;; bv-marginalia.el --- Enhanced Marginalia configuration  -*- lexical-binding: t -*-
+;;; bv-marginalia.el --- Width-aware Marginalia configuration -*- lexical-binding: t -*-
+
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
+
 ;;; Commentary:
-;; Enhanced configuration for marginalia - rich, intelligent annotations
-;; in the minibuffer that provide context-aware information exactly when
-;; you need it.
+
+;; Marginalia annotations for the BV completion surface.
+;;
+;; This module keeps the minibuffer primary by making annotations adaptive:
+;; compact surfaces show only high-signal metadata, normal surfaces show useful
+;; context, and wide/buffer surfaces can afford richer file and buffer hints.
+
 ;;; Code:
 
 (require 'marginalia)
 (require 'cl-lib)
+(require 'subr-x)
+(require 'bv-completion)
 
-;; Declare external variables to avoid warnings
-(defvar marginalia-cache-size)
-(defvar marginalia-annotators)
+;;; Declarations
+
 (defvar completion-list-mode-map)
-(defvar vertico-buffer-mode)
+(defvar marginalia-annotators)
+(defvar marginalia-cache-size)
+(defvar marginalia-command-categories)
+(defvar marginalia-field-width)
+(defvar marginalia-mode)
+(defvar marginalia-prompt-categories)
+(defvar marginalia-separator)
 
-;; Declare external functions
-(declare-function marginalia-annotate-file "marginalia")
-(declare-function marginalia-annotate-buffer "marginalia")
-(declare-function marginalia-annotate-symbol "marginalia")
-(declare-function marginalia--affixate "marginalia")
-(declare-function marginalia--remote-file-p "marginalia")
-(declare-function marginalia--full-candidate "marginalia")
-(declare-function customize-save-variable "cus-edit")
+(declare-function marginalia-annotate-buffer "marginalia" (cand))
+(declare-function marginalia-annotate-file "marginalia" (cand))
+(declare-function marginalia-annotate-symbol "marginalia" (cand))
+(declare-function marginalia-cycle "marginalia" ())
+(declare-function marginalia-mode "marginalia" (&optional arg))
+(declare-function marginalia--affixate "marginalia" (metadata annotator cands))
 
-;;; Core Settings - Optimized defaults
+;;; Settings
 
-(setq marginalia-align 'left              ; Left align is cleaner with Vertico
-      marginalia-align-offset 0            ; No additional offset needed
-      marginalia-field-width 80            ; Reasonable field width
-      marginalia-separator "  "            ; Clean separator
-      marginalia-max-relative-age (* 60 60 24 30) ; Show relative age up to 30 days
-      marginalia-cache-size 200)           ; Larger cache for smoother scrolling
+(defcustom bv-marginalia-large-collection-keep-commands
+  '(consult-line consult-outline consult-imenu consult-imenu-multi)
+  "Commands where annotations remain enabled for very large collections."
+  :type '(repeat symbol)
+  :group 'marginalia)
 
-;;; Smart Prompt Categories - More intuitive classification
+(setq marginalia-align 'right
+      marginalia-align-offset 0
+      marginalia-field-width 96
+      marginalia-separator "  "
+      marginalia-max-relative-age (* 60 60 24 30)
+      marginalia-cache-size 240)
 
-(setq marginalia-prompt-categories
-      '(;; Development
-        ("\\<branch\\>" . branch)
-        ("\\<tag\\>" . tag)
-        ("\\<commit\\>" . commit)
+;;; Categories
 
-        ;; Enhanced defaults
-        ("\\<customize group\\>" . customize-group)
-        ("\\<M-x\\>" . command)
-        ("\\<package\\>" . package)
-        ("\\<bookmark\\>" . bookmark)
-        ("\\<color\\>" . color)
-        ("\\<face\\>" . face)
-        ("\\<environment variable\\>" . environment-variable)
-        ("\\<function\\|\\(?:hook\\|advice\\) to remove\\>" . function)
-        ("\\<variable\\>" . variable)
-        ("\\<input method\\>" . input-method)
-        ("\\<charset\\>" . charset)
-        ("\\<coding system\\>" . coding-system)
-        ("\\<minor mode\\>" . minor-mode)
-        ("\\<kill-ring\\>" . kill-ring)
-        ("\\<tab by name\\>" . tab)
-        ("\\<library\\>" . library)
-        ("\\<theme\\>" . theme)
+(defun bv-marginalia--put-category (alist-var key value)
+  "Set KEY to VALUE in ALIST-VAR, preserving unrelated package defaults."
+  (let ((alist (symbol-value alist-var)))
+    (setf (alist-get key alist nil nil #'equal) value)
+    (set alist-var alist)))
 
-        ;; Project/directory related
-        ("\\<director\\(y\\|ies\\)\\>" . file)
-        ("\\<file\\>" . file)
-        ("\\<project\\>" . project-file)))
+(dolist (entry '(("\\<branch\\>" . branch)
+                 ("\\<tag\\>" . tag)
+                 ("\\<commit\\>" . commit)
+                 ("\\<customize group\\>" . customize-group)
+                 ("\\<M-x\\>" . command)
+                 ("\\<package\\>" . package)
+                 ("\\<bookmark\\>" . bookmark)
+                 ("\\<color\\>" . color)
+                 ("\\<face\\>" . face)
+                 ("\\<environment variable\\>" . environment-variable)
+                 ("\\<function\\|\\(?:hook\\|advice\\) to remove\\>" . function)
+                 ("\\<variable\\>" . variable)
+                 ("\\<input method\\>" . input-method)
+                 ("\\<charset\\>" . charset)
+                 ("\\<coding system\\>" . coding-system)
+                 ("\\<minor mode\\>" . minor-mode)
+                 ("\\<kill-ring\\>" . kill-ring)
+                 ("\\<tab by name\\>" . tab)
+                 ("\\<library\\>" . library)
+                 ("\\<theme\\>" . theme)
+                 ("\\<director\\(y\\|ies\\)\\>" . file)
+                 ("\\<file\\>" . file)
+                 ("\\<project\\>" . project-file)))
+  (bv-marginalia--put-category 'marginalia-prompt-categories
+                               (car entry)
+                               (cdr entry)))
 
-;;; Command Categories - Better classification
+(dolist (entry '((imenu . imenu)
+                 (recentf-open . file)
+                 (where-is . command)
+                 (describe-face . face)
+                 (describe-variable . variable)
+                 (describe-function . function)
+                 (describe-command . command)
+                 (describe-symbol . symbol)
+                 (helpful-function . function)
+                 (helpful-macro . function)
+                 (helpful-command . command)
+                 (helpful-variable . variable)
+                 (projectile-find-file . project-file)
+                 (projectile-recentf . project-file)
+                 (projectile-switch-to-buffer . buffer)))
+  (bv-marginalia--put-category 'marginalia-command-categories
+                               (car entry)
+                               (cdr entry)))
 
-(setq marginalia-command-categories
-      '((imenu . imenu)
-        (recentf-open . file)
-        (where-is . command)
-        (describe-face . face)
-        (describe-variable . variable)
-        (describe-function . function)
-        (describe-command . command)
-        (describe-symbol . symbol)
-        (helpful-function . function)
-        (helpful-macro . function)
-        (helpful-command . command)
-        (helpful-variable . variable)
-        (projectile-find-file . project-file)
-        (projectile-recentf . project-file)
-        (projectile-switch-to-buffer . buffer)
-        (projectile-switch-project . project)))
+;;; Formatting
 
-;;; Custom Annotators - Enhanced information display
+(defun bv-marginalia--field (text width face)
+  "Return TEXT truncated to WIDTH and propertized with FACE."
+  (when (and text (not (string-empty-p text)))
+    (propertize (bv-completion-truncate text width) 'face face)))
 
-(defun bv-marginalia-annotate-file (cand)
-  "Enhanced file annotator with git status for CAND."
-  (when-let ((attrs (marginalia-annotate-file cand)))
-    ;; Add git status if in a git repo
-    (when (and (not (marginalia--remote-file-p cand))
-               (executable-find "git")
-               (locate-dominating-file cand ".git"))
-      (let* ((file (expand-file-name (marginalia--full-candidate cand)))
-             (git-status (ignore-errors
-                           (string-trim
-                            (shell-command-to-string
-                             (format "git status --porcelain -- %s 2>/dev/null"
-                                     (shell-quote-argument file)))))))
-        (when (and git-status (not (string-empty-p git-status)))
-          (let ((status-char (substring git-status 0 2)))
-            (setq attrs
-                  (concat
-                   (propertize
-                    (cond
-                     ((string-match-p "^??" status-char) " [?]")
-                     ((string-match-p "^A" status-char) " [+]")
-                     ((string-match-p "^M" status-char) " [*]")
-                     ((string-match-p "^D" status-char) " [-]")
-                     ((string-match-p "^R" status-char) " [→]")
-                     (t (format " [%s]" (string-trim status-char))))
-                    'face (cond
-                           ((string-match-p "^??" status-char) 'marginalia-documentation)
-                           ((string-match-p "^A" status-char) 'marginalia-on)
-                           ((string-match-p "^M" status-char) 'marginalia-modified)
-                           ((string-match-p "^D" status-char) 'marginalia-off)
-                           (t 'marginalia-documentation)))
-                   attrs))))))
-    attrs))
+(defun bv-marginalia--annotation (&rest fields)
+  "Build a Marginalia annotation from FIELDS with an alignment marker."
+  (when-let ((body (string-join (delq nil fields) marginalia-separator)))
+    (unless (string-empty-p body)
+      (concat (propertize " " 'marginalia--align t) body))))
+
+(defun bv-marginalia--buffer-for-candidate (cand)
+  "Return the buffer represented by CAND, if any."
+  (or (and (stringp cand)
+           (get-text-property 0 'uniquify-orig-buffer cand))
+      (and (stringp cand) (get-buffer cand))))
+
+(defun bv-marginalia--buffer-status (buffer)
+  "Return compact status text for BUFFER."
+  (cond
+   ((buffer-modified-p buffer) "*")
+   ((get-buffer-process buffer) "proc")
+   (t "-")))
+
+(defun bv-marginalia--buffer-path (buffer width)
+  "Return BUFFER path context truncated to WIDTH."
+  (when-let ((file (or (buffer-file-name buffer)
+                       (buffer-local-value 'default-directory buffer))))
+    (let ((path (abbreviate-file-name file)))
+      (if (eq (bv-completion-width-class) 'wide)
+          (bv-completion-truncate path width)
+        (file-name-nondirectory
+         (directory-file-name
+          (or (file-name-directory (directory-file-name path)) path)))))))
 
 (defun bv-marginalia-annotate-buffer (cand)
-  "Enhanced buffer annotator with process info and file path for CAND."
-  (let ((base-annotation (marginalia-annotate-buffer cand)))
-    (when base-annotation
-      ;; Add parent directory for file buffers
-      (when-let* ((buffer (get-buffer cand))
-                  (file (buffer-file-name buffer))
-                  (dir (file-name-directory file)))
-        (setq base-annotation
-              (concat base-annotation
-                      (propertize
-                       (format " [%s]"
-                               (file-name-nondirectory
-                                (directory-file-name dir)))
-                       'face 'marginalia-file-name))))
-      base-annotation)))
+  "Width-aware buffer annotation for CAND."
+  (when-let ((buffer (bv-marginalia--buffer-for-candidate cand)))
+    (when (buffer-live-p buffer)
+      (let* ((width (bv-completion-annotation-width))
+             (class (bv-completion-width-class))
+             (mode (string-remove-suffix
+                    "-mode"
+                    (symbol-name (buffer-local-value 'major-mode buffer))))
+             (status (bv-marginalia--buffer-status buffer))
+             (path-width (pcase class
+                           ('compact 0)
+                           ('wide (max 24 (- width 28)))
+                           (_ (max 12 (- width 22)))))
+             (path (and (> path-width 0)
+                        (bv-marginalia--buffer-path buffer path-width))))
+        (bv-marginalia--annotation
+         (bv-marginalia--field status 4
+                               (if (string= status "*")
+                                   'marginalia-modified
+                                 'marginalia-documentation))
+         (bv-marginalia--field mode
+                               (pcase class
+                                 ('compact 12)
+                                 ('wide 24)
+                                 (_ 18))
+                               'marginalia-mode)
+         (bv-marginalia--field path path-width 'marginalia-file-name))))))
+
+(defun bv-marginalia-annotate-file (cand)
+  "File annotation for CAND using Marginalia's native file mechanics."
+  (marginalia-annotate-file cand))
 
 (defun bv-marginalia-annotate-symbol (cand)
-  "Enhanced symbol annotator with better formatting for CAND."
-  (let ((base (marginalia-annotate-symbol cand)))
-    ;; Make the symbol class more readable
-    (when base
-      (setq base (replace-regexp-in-string
-                  "\\`\\(......\\)"
-                  (lambda (match)
-                    (propertize match 'face
-                                '(:weight bold :foreground "#7dcfff")))
-                  base)))
-    base))
+  "Symbol annotation for CAND with theme-friendly emphasis."
+  (when-let ((base (marginalia-annotate-symbol cand)))
+    (if (string-match "\\`[[:space:]]*\\([^[:space:]]+\\)" base)
+        (progn
+          (add-face-text-property (match-beginning 1) (match-end 1)
+                                  'marginalia-key t base)
+          base)
+      base)))
 
-;; Register enhanced annotators
-(setq marginalia-annotators
-      (mapcar
-       (lambda (x)
-         (cond ((eq (car x) 'file)
-                (append x '(bv-marginalia-annotate-file builtin none)))
-               ((eq (car x) 'buffer)
-                (append x '(bv-marginalia-annotate-buffer marginalia-annotate-buffer builtin none)))
-               ((eq (car x) 'symbol)
-                (append x '(bv-marginalia-annotate-symbol marginalia-annotate-symbol builtin none)))
-               (t (append x '(builtin none)))))
-       '((command marginalia-annotate-command marginalia-annotate-binding)
-         (embark-keybinding marginalia-annotate-embark-keybinding)
-         (customize-group marginalia-annotate-customize-group)
-         (variable marginalia-annotate-variable)
-         (function marginalia-annotate-function)
-         (face marginalia-annotate-face)
-         (color marginalia-annotate-color)
-         (unicode-name marginalia-annotate-char)
-         (minor-mode marginalia-annotate-minor-mode)
-         (symbol marginalia-annotate-symbol)
-         (environment-variable marginalia-annotate-environment-variable)
-         (input-method marginalia-annotate-input-method)
-         (coding-system marginalia-annotate-coding-system)
-         (charset marginalia-annotate-charset)
-         (package marginalia-annotate-package)
-         (imenu marginalia-annotate-imenu)
-         (bookmark marginalia-annotate-bookmark)
-         (file marginalia-annotate-file)
-         (project-file marginalia-annotate-project-file)
-         (buffer marginalia-annotate-buffer)
-         (library marginalia-annotate-library)
-         (theme marginalia-annotate-theme)
-         (tab marginalia-annotate-tab)
-         (multi-category marginalia-annotate-multi-category))))
+;;; Annotator Registry
 
-;;; Truncation Settings - Smart truncation for different categories
+(defun bv-marginalia--prepend-annotator (category function)
+  "Add FUNCTION as the first annotator for CATEGORY."
+  (when-let ((entry (assq category marginalia-annotators)))
+    (setcdr entry
+            (cl-remove-duplicates
+             (cons function (cdr entry))
+             :test #'eq))))
 
-(defun bv-marginalia-truncate-file-name (file-name)
-  "Intelligently truncate FILE-NAME to fit available space."
-  (let* ((max-width (/ marginalia-field-width 2))
-         (len (length file-name)))
-    (if (<= len max-width)
-        file-name
-      ;; Smart truncation: show beginning and end
-      (let* ((keep-start (/ max-width 2))
-             (keep-end (- max-width keep-start 3)))
-        (concat (substring file-name 0 keep-start)
-                "..."
-                (substring file-name (- len keep-end)))))))
+(defun bv-marginalia-install-annotators ()
+  "Install BV annotators without replacing Marginalia's registry."
+  (bv-marginalia--prepend-annotator 'file #'bv-marginalia-annotate-file)
+  (bv-marginalia--prepend-annotator 'project-file #'bv-marginalia-annotate-file)
+  (bv-marginalia--prepend-annotator 'buffer #'bv-marginalia-annotate-buffer)
+  (bv-marginalia--prepend-annotator 'project-buffer #'bv-marginalia-annotate-buffer)
+  (bv-marginalia--prepend-annotator 'symbol #'bv-marginalia-annotate-symbol))
 
-;;; Integration Helpers
+(bv-marginalia-install-annotators)
 
-(defun bv-marginalia-in-minibuffer-p ()
-  "Check if we're in a minibuffer."
-  (minibufferp))
+;;; Width and Performance
+
+(defun bv-marginalia--setup-minibuffer-width ()
+  "Make Marginalia annotation width local to this minibuffer."
+  (setq-local marginalia-field-width
+              (bv-completion-annotation-width
+               (bv-completion-window-width))))
+
+(defun bv-marginalia--plain-affixation (cands)
+  "Return CANDS without annotations in affixation shape."
+  (mapcar (lambda (cand) (list cand "" "")) cands))
+
+(defun bv-marginalia-affixate-advice (orig-fun metadata annotator cands)
+  "Apply width policy around Marginalia ORIG-FUN.
+METADATA, ANNOTATOR and CANDS are the arguments to `marginalia--affixate'."
+  (let ((marginalia-field-width
+         (bv-completion-annotation-width
+          (bv-completion-window-width))))
+    (if (and (> (length cands) bv-completion-large-collection-limit)
+             (not (memq this-command
+                        bv-marginalia-large-collection-keep-commands)))
+        (bv-marginalia--plain-affixation cands)
+      (funcall orig-fun metadata annotator cands))))
+
+(advice-add #'marginalia--affixate :around #'bv-marginalia-affixate-advice)
+(add-hook 'minibuffer-setup-hook #'bv-marginalia--setup-minibuffer-width)
+
+;;; Commands and Keys
 
 (defun bv-marginalia-toggle ()
-  "Toggle between all annotators and no annotators."
+  "Toggle Marginalia annotations globally."
   (interactive)
-  (if (cl-some (lambda (x) (eq (cadr x) 'none)) marginalia-annotators)
-      ;; Currently disabled, enable all
-      (progn
-        (mapc (lambda (x)
-                (setcdr x (remq 'none (cdr x))))
-              marginalia-annotators)
-        (message "Marginalia annotations enabled"))
-    ;; Currently enabled, disable all
-    (progn
-      (mapc (lambda (x)
-              (setcdr x (cons 'none (remq 'none (cdr x)))))
-            marginalia-annotators)
-      (message "Marginalia annotations disabled"))))
-
-;;; Keybindings
+  (marginalia-mode (if marginalia-mode -1 1))
+  (message "Marginalia annotations %s"
+           (if marginalia-mode "enabled" "disabled")))
 
 (define-key minibuffer-local-map (kbd "M-A") #'marginalia-cycle)
 (define-key minibuffer-local-map (kbd "M-T") #'bv-marginalia-toggle)
 
-;; Also make available in completion list buffer
 (with-eval-after-load 'simple
   (define-key completion-list-mode-map (kbd "M-A") #'marginalia-cycle)
   (define-key completion-list-mode-map (kbd "M-T") #'bv-marginalia-toggle))
 
-;;; Auto-save preference after cycling
-
-(defun bv-marginalia-save-preferences ()
-  "Save marginalia preferences after cycling."
-  (when (bound-and-true-p marginalia-mode)
-    (let ((inhibit-message t))
-      (customize-save-variable 'marginalia-annotators marginalia-annotators))))
-
-(advice-add #'marginalia-cycle :after #'bv-marginalia-save-preferences)
-
-;;; Performance optimizations for large collections
-
-(defun bv-marginalia-inhibit-for-large-collections (orig-fun &rest args)
-  "Inhibit annotations for very large candidate collections.
-Applies ORIG-FUN to ARGS only if collection is reasonably sized."
-  (if (and (> (length (car args)) 10000)
-           (not (eq this-command 'consult-line))) ; Keep for consult-line
-      nil
-    (apply orig-fun args)))
-
-(advice-add #'marginalia--affixate :around #'bv-marginalia-inhibit-for-large-collections)
-
-;;; Mode activation
-
 (marginalia-mode 1)
-
-;; Ensure marginalia works well with our Vertico enhancements
-(with-eval-after-load 'vertico
-  ;; Adjust field width based on window width when using vertico-buffer
-  (declare-function bv-marginalia-adjust-field-width "bv-marginalia")
-  (defun bv-marginalia-adjust-field-width ()
-    "Adjust marginalia field width for vertico-buffer display."
-    (when (bound-and-true-p vertico-buffer-mode)
-      (setq-local marginalia-field-width
-                  (min 120 (- (window-width) 20)))))
-
-  (add-hook 'vertico-buffer-mode-hook #'bv-marginalia-adjust-field-width))
 
 (provide 'bv-marginalia)
 ;;; bv-marginalia.el ends here

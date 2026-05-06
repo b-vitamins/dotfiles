@@ -1,56 +1,66 @@
-;;; bv-consult.el --- Enhanced Consult configuration (Fixed) -*- lexical-binding: t -*-
+;;; bv-consult.el --- Consult navigation and search configuration -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
-;; Version: 2.1
-;; Package-Requires: ((emacs "28.1") (consult "1.0"))
 
 ;;; Commentary:
 
-;; Fixed version of enhanced Consult configuration.
-;; Main fixes:
-;; - Removed invalid :enabled key from sources
-;; - Fixed uniquification to prevent infinite loops
-;; - Simplified dynamic preview key
-;; - Added error handling for XDG files
-;; - Fixed source ordering
+;; Consult owns high-value navigation commands and source composition.
+;; The default philosophy is minibuffer-first with explicit narrowing and
+;; preview controls; only row-heavy commands are promoted by Vertico policy.
 
 ;;; Code:
 
 (require 'consult)
-(require 'recentf)
+(require 'dom)
 (require 'project)
+(require 'recentf)
+(require 'seq)
+(require 'subr-x)
+(require 'url-util)
+(require 'bv-completion)
+
 (autoload 'consult-compile-error "consult-compile" nil t)
 (autoload 'consult-flymake "consult-flymake" nil t)
+(autoload 'consult-imenu "consult-imenu" nil t)
+(autoload 'consult-imenu-multi "consult-imenu" nil t)
+(autoload 'consult-xref "consult-xref" nil nil)
 
-;; External variable declarations
-(defvar consult--narrow-config)
+;;; Declarations
+
 (defvar consult--narrow)
+(defvar consult--narrow-config)
 (defvar consult--preview-function)
+(defvar consult-buffer-sources)
 (defvar consult-narrow-map)
-(defvar xref-show-xrefs-function)
-(defvar xref-show-definitions-function)
 (defvar isearch-mode-map)
+(defvar recentf-list)
+(defvar search-map)
+(defvar xref-show-definitions-function)
+(defvar xref-show-xrefs-function)
 
-;; External function declarations
-(declare-function orderless-compile "orderless" (pattern &optional style))
-(declare-function orderless--highlight "orderless" (regexps ignore-case str))
-(declare-function dom-by-tag "dom" (dom tag))
-(declare-function dom-attr "dom" (node attribute))
-(declare-function string-remove-prefix "subr-x" (prefix string))
-(declare-function consult-xref "consult-xref" (fetcher &optional alist))
+(declare-function bv-flymake-quickfix "bv-flymake" (&optional project))
+(declare-function consult--convert-regexp "consult" (regexp type))
+(declare-function consult--default-regexp-compiler "consult" (input type &optional ignore-case))
+(declare-function consult--file-action "consult" (file))
+(declare-function consult--file-state "consult" ())
+(declare-function consult--read "consult" (table &rest args))
+(declare-function consult-completion-in-region "consult" (start end collection &optional predicate))
+(declare-function consult-flymake "consult-flymake" (&optional project))
 (declare-function consult-imenu "consult-imenu" (&optional options))
 (declare-function consult-imenu-multi "consult-imenu" (&optional options))
 (declare-function consult-line-multi "consult" (&optional initial))
-(declare-function consult-compile-error "consult-compile" (&optional project))
-(declare-function consult-flymake "consult-flymake" (&optional project))
-(declare-function bv-flymake-quickfix "bv-flymake" (&optional project))
+(declare-function consult-xref "consult-xref" (fetcher &optional alist))
+(declare-function consult--file-preview "consult" ())
+(declare-function consult-narrow "consult" (&optional narrow))
+(declare-function orderless--highlight "orderless" (regexps ignore-case str))
+(declare-function orderless-compile "orderless" (pattern &optional styles dispatchers))
 
-;;;; Custom Variables
+;;; Customization
 
 (defgroup bv-consult nil
-  "Enhanced Consult configuration."
+  "BV Consult configuration."
   :group 'consult
   :prefix "bv-consult-")
 
@@ -61,70 +71,62 @@
 
 (defcustom bv-consult-preview-excluded-modes
   '(exwm-mode image-mode doc-view-mode pdf-view-mode)
-  "Major modes excluded from preview."
+  "Major modes excluded from Consult buffer/file preview."
   :type '(repeat symbol)
   :group 'bv-consult)
 
 (defcustom bv-consult-auto-narrow-modes
   '((consult-imenu . ((prog-mode . ?f))))
-  "Auto-narrowing configuration per command and mode."
+  "Auto-narrowing configuration per command and selected-window mode."
   :type '(alist :key-type symbol
                 :value-type (alist :key-type symbol :value-type character))
   :group 'bv-consult)
 
 (defcustom bv-consult-narrow-cycle-order
-  '(?b ?p ?B ?F ?. ?f ?m ?T ?* ?\s)
-  "Preferred cycle order for consult narrowing keys.
-
-This affects `TAB' and `S-TAB' cycling in Consult minibuffers.
-Keys not listed here are cycled after the preferred keys, in their
-original order."
+  '(?b ?. ?f ?p ?B ?F ?m ?T ?* ?\s)
+  "Preferred Consult narrowing key order for TAB cycling."
   :type '(repeat character)
   :group 'bv-consult)
 
 (defcustom bv-consult-narrow-echo t
-  "Whether to echo the active Consult narrowing source in the echo area."
+  "Whether to echo the active Consult narrowing source."
   :type 'boolean
   :group 'bv-consult)
 
 (defcustom bv-consult-enable-xdg-recent nil
-  "Whether to include XDG recent files in candidates.
-Disabled by default for performance."
+  "Whether to include XDG recent files in `consult-buffer'."
   :type 'boolean
   :group 'bv-consult)
 
 (defcustom bv-consult-max-uniquify-depth 3
-  "Maximum directory depth for file name uniquification."
+  "Maximum parent directory depth used to uniquify file labels."
   :type 'integer
   :group 'bv-consult)
 
-;;;; Narrowing System
+;;; Narrowing
 
 (defun bv-consult--get-narrow-key ()
-  "Get narrow key based on current command and context."
+  "Return the configured initial narrow key for the current command."
   (when-let* ((config (alist-get this-command bv-consult-auto-narrow-modes))
               (window (minibuffer-selected-window))
-              (buffer (and window (window-buffer window)))
-              (mode (and buffer (buffer-local-value 'major-mode buffer))))
+              (buffer (window-buffer window))
+              (mode (buffer-local-value 'major-mode buffer)))
     (or (alist-get mode config)
         (seq-some (pcase-lambda (`(,parent . ,key))
-                   (and (provided-mode-derived-p mode parent) key))
-                 config))))
+                    (and (provided-mode-derived-p mode parent) key))
+                  config))))
 
 (defun bv-consult--narrow-key-valid-p (key)
-  "Return non-nil when KEY is a valid consult narrowing key in this minibuffer."
+  "Return non-nil when KEY is valid in the active Consult minibuffer."
   (and (characterp key)
        (plist-get consult--narrow-config :keys)
        (assq key (plist-get consult--narrow-config :keys))))
 
 (defun bv-consult--narrow-keys-ordered (keys)
-  "Return KEYS ordered according to `bv-consult-narrow-cycle-order'.
-
-KEYS is an alist of (KEY . LABEL) pairs from `consult--narrow-config'."
-  (let ((preferred bv-consult-narrow-cycle-order)
-        (result nil))
-    (dolist (k preferred)
-      (when-let ((pair (assq k keys)))
+  "Return KEYS ordered by `bv-consult-narrow-cycle-order'."
+  (let (result)
+    (dolist (key bv-consult-narrow-cycle-order)
+      (when-let ((pair (assq key keys)))
         (push pair result)))
     (setq result (nreverse result))
     (dolist (pair keys)
@@ -133,12 +135,10 @@ KEYS is an alist of (KEY . LABEL) pairs from `consult--narrow-config'."
     result))
 
 (defvar-local bv-consult--narrow-last-key :unset
-  "Last Consult narrowing key seen in this minibuffer.")
+  "Last echoed Consult narrow key in this minibuffer.")
 
 (defun bv-consult--narrow-echo (&rest _)
-  "Echo current Consult narrowing source.
-
-Intended for use from `consult-narrow' advice."
+  "Echo the active Consult narrowing source."
   (when (and bv-consult-narrow-echo (minibufferp))
     (let ((key consult--narrow))
       (unless (eq key bv-consult--narrow-last-key)
@@ -147,18 +147,19 @@ Intended for use from `consult-narrow' advice."
                (label (and key (alist-get key keys))))
           (message "Narrow: %s"
                    (cond
-                    ((and key label) (format "%s (%s)" label (key-description (vector key))))
+                    ((and key label)
+                     (format "%s (%s)" label (key-description (vector key))))
                     (key (key-description (vector key)))
                     (t "All"))))))))
 
 (defun bv-consult-initial-narrow ()
-  "Auto-narrow based on context."
+  "Apply context-sensitive Consult initial narrowing."
   (when-let ((key (bv-consult--get-narrow-key)))
     (when (bv-consult--narrow-key-valid-p key)
       (consult-narrow key))))
 
 (defun bv-consult-narrow-cycle-forward ()
-  "Cycle forward through narrowing keys."
+  "Cycle forward through Consult narrowing keys."
   (interactive)
   (when-let ((keys (plist-get consult--narrow-config :keys)))
     (setq keys (bv-consult--narrow-keys-ordered keys))
@@ -169,7 +170,7 @@ Intended for use from `consult-narrow' advice."
        (caar keys)))))
 
 (defun bv-consult-narrow-cycle-backward ()
-  "Cycle backward through narrowing keys."
+  "Cycle backward through Consult narrowing keys."
   (interactive)
   (when-let ((keys (plist-get consult--narrow-config :keys)))
     (setq keys (bv-consult--narrow-keys-ordered keys))
@@ -179,86 +180,100 @@ Intended for use from `consult-narrow' advice."
            (car (nth (mod (1- idx) (length keys)) keys)))
        (caar (last keys))))))
 
-;;;; Orderless Integration
+;;; Orderless Search Integration
 
 (defun bv-consult--orderless-regexp-compiler (input type &rest _config)
-  "Orderless regexp compiler for consult.
-INPUT is the search input string.
-TYPE is the compilation type.
-_CONFIG is additional configuration (ignored)."
-  (when (require 'orderless nil t)
-    (setq input (cdr (orderless-compile input)))
-    (cons
-     (mapcar (lambda (r) (consult--convert-regexp r type)) input)
-     (lambda (str) (orderless--highlight input t str)))))
+  "Compile Consult async INPUT using Orderless for regexp TYPE."
+  (if (require 'orderless nil t)
+      (condition-case nil
+          (let ((regexps (cdr (orderless-compile input))))
+            (cons
+             (mapcar (lambda (regexp)
+                       (consult--convert-regexp regexp type))
+                     regexps)
+             (lambda (str) (orderless--highlight regexps t str))))
+        (error (consult--default-regexp-compiler input type)))
+    (consult--default-regexp-compiler input type)))
 
-(defun bv-consult--with-orderless (&rest args)
-  "Use orderless for the current command if available.
-ARGS are passed to the original function."
+(defun bv-consult--with-orderless (orig-fun &rest args)
+  "Run ORIG-FUN with an Orderless Consult regexp compiler."
   (if (require 'orderless nil t)
       (minibuffer-with-setup-hook
           (lambda ()
-            (setq-local consult--regexp-compiler #'bv-consult--orderless-regexp-compiler))
-        (apply args))
-    (apply args)))
+            (setq-local consult--regexp-compiler
+                        #'bv-consult--orderless-regexp-compiler))
+        (apply orig-fun args))
+    (apply orig-fun args)))
 
-;;;; Toggle Preview
+;;; Preview Toggle
 
 (defvar-local bv-consult-toggle-preview-orig nil
-  "Original preview function.")
+  "Original Consult preview function for `bv-consult-toggle-preview'.")
 
 (defun bv-consult-toggle-preview ()
-  "Toggle preview on/off."
+  "Toggle Consult preview in the active minibuffer."
   (interactive)
   (if bv-consult-toggle-preview-orig
       (progn
         (setq consult--preview-function bv-consult-toggle-preview-orig
               bv-consult-toggle-preview-orig nil)
-        (message "Preview enabled"))
+        (message "Consult preview enabled"))
     (setq bv-consult-toggle-preview-orig consult--preview-function
           consult--preview-function #'ignore)
-    (message "Preview disabled")))
+    (message "Consult preview disabled")))
 
-;;;; Recent Files Uniquification (Simplified)
+;;; Consult Buffer Sources
 
 (defun bv-consult--buffer-file-hash ()
-  "Create hash table of all buffer file names."
-  (let ((ht (make-hash-table :test 'equal)))
+  "Return a hash table of live buffer file names."
+  (let ((ht (make-hash-table :test #'equal)))
     (dolist (buffer (buffer-list))
       (when-let ((file (buffer-file-name buffer)))
-        (puthash file t ht)))
+        (puthash (expand-file-name file) t ht)))
     ht))
 
-(defun bv-consult--simple-uniquify (files)
-  "Simple uniquification - add parent dir to duplicates only.
-FILES is a list of file paths to uniquify."
-  (let ((name-count (make-hash-table :test 'equal))
-        (result nil))
-    ;; Count occurrences
-    (dolist (file files)
-      (let ((name (file-name-nondirectory file)))
-        (puthash name (1+ (gethash name name-count 0)) name-count)))
-    ;; Build result with uniquified names
-    (dolist (file files)
-      (let* ((name (file-name-nondirectory file))
-             (count (gethash name name-count)))
-        (push (cons (if (> count 1)
-                        ;; Add parent directory for duplicates
-                        (let ((parent (file-name-nondirectory
-                                      (directory-file-name
-                                       (file-name-directory file)))))
-                          (if (string-empty-p parent)
-                              name
-                            (format "%s (%s)" name parent)))
-                      name)
-                    file)
-              result)))
-    (nreverse result)))
+(defun bv-consult--name-with-parents (file depth)
+  "Return FILE name with DEPTH parent components."
+  (let ((name (file-name-nondirectory file))
+        (dir (file-name-directory (directory-file-name file)))
+        parents)
+    (dotimes (_ depth)
+      (when (and dir (not (string-empty-p dir)))
+        (let ((parent (file-name-nondirectory (directory-file-name dir))))
+          (unless (string-empty-p parent)
+            (push parent parents)))
+        (setq dir (file-name-directory (directory-file-name dir)))))
+    (if parents
+        (format "%s (%s)" name (string-join parents "/"))
+      name)))
 
-;;;; XDG Recent Files (with error handling)
+(defun bv-consult--label-counts (files depth)
+  "Return hash table of label counts for FILES at DEPTH."
+  (let ((counts (make-hash-table :test #'equal)))
+    (dolist (file files)
+      (let ((label (bv-consult--name-with-parents file depth)))
+        (puthash label (1+ (gethash label counts 0)) counts)))
+    counts))
+
+(defun bv-consult--uniquify-files (files)
+  "Return (LABEL . FILE) pairs for FILES with useful unique labels."
+  (let* ((depth 0)
+         (counts (bv-consult--label-counts files depth))
+         labels)
+    (while (and (< depth bv-consult-max-uniquify-depth)
+                (seq-some (lambda (file)
+                            (> (gethash (bv-consult--name-with-parents file depth)
+                                        counts 0)
+                               1))
+                          files))
+      (setq depth (1+ depth)
+            counts (bv-consult--label-counts files depth)))
+    (dolist (file files (nreverse labels))
+      (push (cons (bv-consult--name-with-parents file depth) file)
+            labels))))
 
 (defun bv-consult--xdg-recent-files-safe ()
-  "Get recent files from XDG recently-used.xbel with error handling."
+  "Return XDG recent files when enabled and readable."
   (when (and bv-consult-enable-xdg-recent
              (eq system-type 'gnu/linux))
     (ignore-errors
@@ -272,56 +287,84 @@ FILES is a list of file paths to uniquify."
                   files)
               (dolist (bookmark (dom-by-tag dom 'bookmark))
                 (when-let* ((href (dom-attr bookmark 'href))
-                            (file (url-unhex-string (string-remove-prefix "file://" href))))
+                            (file (url-unhex-string
+                                   (string-remove-prefix "file://" href))))
                   (when (file-exists-p file)
-                    (push file files))))
+                    (push (expand-file-name file) files))))
               (nreverse files))))))))
 
-;;;; Enhanced Buffer Sources
+(defun bv-consult--candidate-file (candidate)
+  "Return the file represented by CANDIDATE."
+  (or (cdr (get-text-property 0 'multi-category candidate))
+      candidate))
 
-(defvar bv-consult--source-recent-file-uniquified
+(defun bv-consult--file-action (candidate)
+  "Open the file represented by CANDIDATE."
+  (consult--file-action (bv-consult--candidate-file candidate)))
+
+(defun bv-consult--file-state ()
+  "Return a file preview state that understands BV virtual labels."
+  (let ((state (consult--file-state)))
+    (lambda (action candidate)
+      (funcall state action
+               (and candidate (bv-consult--candidate-file candidate))))))
+
+(defun bv-consult--file-candidate (label file)
+  "Return a Consult virtual file candidate LABEL for FILE."
+  (propertize label 'multi-category `(file . ,file)))
+
+(defvar bv-consult--source-recent-file
   `(:name "Recent File"
     :narrow ?f
     :category file
     :face consult-file
     :history file-name-history
-    :state ,#'consult--file-state
+    :state ,#'bv-consult--file-state
+    :action ,#'bv-consult--file-action
     :new ,#'consult--file-action
+    :enabled ,(lambda () recentf-mode)
     :items
     ,(lambda ()
-       (when recentf-mode
-         (let* ((ht (bv-consult--buffer-file-hash))
-                (recent-files (seq-filter #'file-exists-p recentf-list))
-                (xdg-files (or (bv-consult--xdg-recent-files-safe) '()))
-                (all-files (seq-uniq (append recent-files xdg-files)))
-                (files (seq-remove (lambda (f) (gethash f ht)) all-files))
-                (unique-files (bv-consult--simple-uniquify files)))
-           (mapcar (lambda (pair)
-                     (propertize (car pair) 'multi-category `(file . ,(cdr pair))))
-                   unique-files)))))
-  "Recent file source with uniquified names.")
+       (let* ((open (bv-consult--buffer-file-hash))
+              (recent (seq-filter #'file-exists-p
+                                  (mapcar #'expand-file-name
+                                          (bound-and-true-p recentf-list))))
+              (xdg (or (bv-consult--xdg-recent-files-safe) nil))
+              (files (seq-remove (lambda (file) (gethash file open))
+                                 (seq-uniq (append recent xdg)))))
+         (mapcar (pcase-lambda (`(,label . ,file))
+                   (bv-consult--file-candidate label file))
+                 (bv-consult--uniquify-files files)))))
+  "Recent file source with unique labels and full-path actions.")
 
 (defvar bv-consult--source-file-in-dir
-  `(:name "File in Dir"
-    :narrow ?.
+  `(:name "Current Dir"
+    :narrow ((?. . "Current Dir"))
+    :hidden t
     :category file
     :face consult-file
     :history file-name-history
-    :state ,#'consult--file-state
+    :state ,#'bv-consult--file-state
+    :action ,#'bv-consult--file-action
     :new ,#'consult--file-action
     :items
     ,(lambda ()
-       (when default-directory
-         (let ((ht (bv-consult--buffer-file-hash)))
-           (mapcar (lambda (f)
-                     (propertize f 'multi-category `(file . ,(expand-file-name f))))
-                   (seq-filter
-                    (lambda (f)
-                      (and (not (string-prefix-p "." f))
-                           (file-regular-p f)
-                           (not (gethash (expand-file-name f) ht))))
-                    (ignore-errors (directory-files default-directory nil nil t))))))))
-  "Files in current directory source.")
+       (when (and default-directory
+                  (file-directory-p default-directory))
+         (let ((open (bv-consult--buffer-file-hash)))
+           (mapcar
+            (lambda (file)
+              (bv-consult--file-candidate
+               (file-name-nondirectory file)
+               file))
+            (seq-filter
+             (lambda (file)
+               (and (file-regular-p file)
+                    (not (string-prefix-p "." (file-name-nondirectory file)))
+                    (not (gethash (expand-file-name file) open))))
+             (ignore-errors
+               (directory-files default-directory t nil t))))))))
+  "Hidden source for regular files in `default-directory'.")
 
 (defvar bv-consult--source-tab
   `(:name "Tab"
@@ -336,12 +379,12 @@ FILES is a list of file paths to uniquify."
                 (mapcar (lambda (tab)
                           (alist-get 'name tab))
                         (tab-bar-tabs)))))
-  "Tab-bar source.")
+  "Tab-bar source for `consult-buffer'.")
 
-;;;; Enhanced Commands
+;;; Commands
 
 (defun bv-consult-ripgrep-or-line ()
-  "Use `consult-line' for small buffers, `consult-ripgrep' for large."
+  "Use `consult-line' in small buffers and `consult-ripgrep' otherwise."
   (interactive)
   (if (or (not buffer-file-name)
           (buffer-narrowed-p)
@@ -352,11 +395,10 @@ FILES is a list of file paths to uniquify."
       (consult-line)
     (when (buffer-modified-p)
       (save-buffer))
-    ;; Default to project root when available; fall back to `default-directory'.
     (consult-ripgrep)))
 
 (defun bv-consult-search ()
-  "DWIM search: project ripgrep when possible, otherwise cross-buffer line search."
+  "DWIM search: project ripgrep when possible, otherwise line search."
   (interactive)
   (cond
    ((or (minibufferp)
@@ -375,13 +417,12 @@ FILES is a list of file paths to uniquify."
     (consult-line-multi))))
 
 (defun bv-consult-line-symbol-at-point ()
-  "Search for symbol at point."
+  "Search the current buffer for the symbol at point."
   (interactive)
   (consult-line (thing-at-point 'symbol)))
 
 (defun bv-consult-ripgrep-at-point (&optional dir)
-  "Ripgrep with thing at point or region.
-DIR is the directory to search in (defaults to project root)."
+  "Ripgrep for the region or symbol at point in DIR."
   (interactive "P")
   (let ((initial (if (use-region-p)
                      (buffer-substring-no-properties
@@ -390,13 +431,8 @@ DIR is the directory to search in (defaults to project root)."
     (consult-ripgrep dir initial)))
 
 (defun bv-consult-find-file-with-preview (prompt &optional dir _default mustmatch initial pred)
-  "Find file with preview support.
-PROMPT is the minibuffer prompt string.
-DIR is the directory to search in.
-DEFAULT is the default file name.
-MUSTMATCH controls whether input must match existing file.
-INITIAL is the initial input.
-PRED is a predicate function to filter files."
+  "Find file with Consult preview support.
+PROMPT, DIR, MUSTMATCH, INITIAL and PRED follow `read-file-name-function'."
   (let ((default-directory (or dir default-directory))
         (minibuffer-completing-file-name t))
     (consult--read #'read-file-name-internal
@@ -408,116 +444,88 @@ PRED is a predicate function to filter files."
                    :category 'file
                    :history 'file-name-history)))
 
-;;;; Setup & Configuration
+;;; Setup
+
+(defun bv-consult--preview-excluded-buffer-p (buffer)
+  "Return non-nil if BUFFER should not be previewed."
+  (with-current-buffer buffer
+    (or (memq major-mode bv-consult-preview-excluded-modes)
+        (and buffer-file-name
+             (file-remote-p buffer-file-name)))))
 
 (defun bv-consult-setup ()
-  "Setup consult configuration."
-  ;; Set narrowing keys
+  "Configure Consult."
   (define-key consult-narrow-map (kbd "TAB") #'bv-consult-narrow-cycle-forward)
   (define-key consult-narrow-map (kbd "<backtab>") #'bv-consult-narrow-cycle-backward)
   (define-key consult-narrow-map (kbd "?") #'consult-narrow-help)
 
-  ;; Setup auto-narrowing
   (add-hook 'minibuffer-setup-hook #'bv-consult-initial-narrow)
 
-  ;; Apply orderless to grep commands if available
   (when (require 'orderless nil t)
     (advice-add #'consult-ripgrep :around #'bv-consult--with-orderless)
     (advice-add #'consult-grep :around #'bv-consult--with-orderless)
     (advice-add #'consult-git-grep :around #'bv-consult--with-orderless))
 
-  ;; Configure buffer sources - start with default and add custom
   (setq consult-buffer-sources
         '(consult-source-buffer
+          bv-consult--source-file-in-dir
           consult-source-project-buffer-hidden
           consult-source-project-recent-file-hidden
-          bv-consult--source-file-in-dir
-          bv-consult--source-recent-file-uniquified
+          bv-consult--source-recent-file
           consult-source-bookmark
           bv-consult--source-tab
           consult-source-modified-buffer
           consult-source-hidden-buffer))
 
-  ;; File reading with preview - only set if you want it globally
-  ;; (setq read-file-name-function #'bv-consult-find-file-with-preview)
-
-  ;; Performance settings
   (setq consult-async-min-input 2
         consult-async-refresh-delay 0.15
         consult-async-input-throttle 0.3
-        consult-async-input-debounce 0.1)
-
-  ;; Grep configuration
-  (setq consult-grep-args
+        consult-async-input-debounce 0.1
+        consult-preview-partial-size (* 1024 1024)
+        consult-preview-max-count 10
+        consult-preview-excluded-buffers #'bv-consult--preview-excluded-buffer-p
+        consult-grep-args
         (concat "grep --null --line-buffered --color=never --ignore-case "
                 "--exclude-dir=.git --exclude-dir=node_modules "
                 "--exclude-dir=.venv --exclude-dir=.cache "
-                "--with-filename --line-number -I -r"))
-
-  (setq consult-ripgrep-args
+                "--with-filename --line-number -I -r")
+        consult-ripgrep-args
         (concat "rg --null --line-buffered --color=never --max-columns=1000 "
                 "--path-separator / --smart-case --no-heading "
                 "--with-filename --line-number --search-zip "
-                "--hidden --glob !.git/ --glob !node_modules/"))
-
-  ;; Project function
-  (setq consult-project-function
+                "--hidden --glob !.git/ --glob !node_modules/")
+        consult-project-function
         (lambda (may-prompt)
-          (when-let ((pr (project-current may-prompt)))
-            (project-root pr))))
-
-  ;; Preview settings
-  (setq consult-preview-partial-size (* 1024 1024)
-        consult-preview-max-count 10)
-
-  ;; Xref integration
-  (setq xref-show-xrefs-function #'consult-xref
+          (when-let ((project (project-current may-prompt)))
+            (project-root project)))
+        xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
 
-  ;; Preview exclusions - simplified
-  (setq consult-preview-excluded-buffers
-        (lambda (buf)
-          (with-current-buffer buf
-            (or (memq major-mode bv-consult-preview-excluded-modes)
-                (and buffer-file-name
-                     (file-remote-p buffer-file-name))))))
-
-  ;; Customizations
   (consult-customize
-   ;; Disable preview for theme selection
    consult-theme :preview-key nil
-
-   ;; Simple preview for buffers
    consult-buffer :preview-key '(:debounce 0.2 any)
-
-   ;; Fast, \"peek\"-style preview for navigation pickers
    consult-imenu consult-imenu-multi consult-xref
    consult-compile-error consult-flymake
    :preview-key '(:debounce 0.15 any)
-
-   ;; Delayed preview for grep commands
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file
    consult-source-bookmark consult-source-file-register
    consult-source-recent-file consult-source-project-recent-file
    :preview-key '(:debounce 0.4 any)
-
-   ;; Configure specific commands
    consult-goto-line :prompt "Go to line: "
    consult-line :prompt "Search: " :inherit-input-method t
    :preview-key '(:debounce 0.15 any)
    consult-outline :prompt "Outline: "
    :preview-key '(:debounce 0.15 any)
-   consult-history :category nil))
+   consult-history :category nil)
 
   (unless (advice-member-p #'bv-consult--narrow-echo #'consult-narrow)
-    (advice-add #'consult-narrow :after #'bv-consult--narrow-echo))
+    (advice-add #'consult-narrow :after #'bv-consult--narrow-echo)))
 
-;;;; Key Bindings
+;;; Keybindings
 
 (defun bv-consult-setup-keybindings ()
-  "Setup consult keybindings."
-  ;; Global bindings
+  "Install Consult keybindings."
   (global-set-key (kbd "C-x b") #'consult-buffer)
   (global-set-key (kbd "C-x 4 b") #'consult-buffer-other-window)
   (global-set-key (kbd "C-x 5 b") #'consult-buffer-other-frame)
@@ -538,11 +546,10 @@ PRED is a predicate function to filter files."
   (global-set-key (kbd "C-M-s") #'bv-consult-search)
   (global-set-key (kbd "C-S-s") #'bv-consult-line-symbol-at-point)
 
-  ;; Minibuffer bindings
   (define-key minibuffer-local-map (kbd "M-s") #'consult-history)
   (define-key minibuffer-local-map (kbd "M-r") #'consult-history)
+  (define-key minibuffer-local-map (kbd "C-c p") #'bv-consult-toggle-preview)
 
-  ;; Search map bindings
   (when (boundp 'search-map)
     (define-key search-map (kbd "d") #'consult-find)
     (define-key search-map (kbd "D") #'consult-fd)
@@ -556,20 +563,16 @@ PRED is a predicate function to filter files."
     (define-key search-map (kbd "u") #'consult-focus-lines)
     (define-key search-map (kbd "e") #'consult-isearch-history))
 
-  ;; Isearch integration
   (with-eval-after-load 'isearch
     (define-key isearch-mode-map (kbd "M-e") #'consult-isearch-history)
     (define-key isearch-mode-map (kbd "M-s e") #'consult-isearch-history)
     (define-key isearch-mode-map (kbd "M-s l") #'consult-line)))
 
-;;;; Initialize
-
 (defun bv-consult-init ()
-  "Initialize bv-consult configuration."
+  "Initialize `bv-consult'."
   (bv-consult-setup)
   (bv-consult-setup-keybindings))
 
-;; Initialize when loaded
 (bv-consult-init)
 
 (provide 'bv-consult)

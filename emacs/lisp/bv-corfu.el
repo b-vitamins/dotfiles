@@ -1,556 +1,321 @@
-;;; bv-corfu.el --- Lightning-fast Corfu with full Cape integration  -*- lexical-binding: t -*-
+;;; bv-corfu.el --- Corfu in-buffer completion UI -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
 ;; URL: https://github.com/b-vitamins/dotfiles/emacs
-;; Version: 2.0.0
-;; Package-Requires: ((emacs "28.1") (corfu "1.0") (cape "2.0"))
 
 ;;; Commentary:
 
-;; Optimized Corfu configuration with full Cape integration, safe caching,
-;; lazy loading, and performance-focused design following documented best practices.
-;;
-;; Features:
-;; - Full Cape integration with icon support
-;; - Bounded caching with periodic cleanup
-;; - Mode-specific settings with Cape awareness
-;; - Smart separator handling for multi-word completions
-;; - Synchronized auto-completion settings
+;; Corfu is the in-buffer completion surface.  It follows a precision-auto
+;; policy: code gets useful automatic completion, prose and shells stay quiet,
+;; and any complex completion can be promoted to the minibuffer via Consult.
 
 ;;; Code:
 
-(require 'corfu)
 (require 'cl-lib)
+(require 'corfu)
+(require 'corfu-history)
+(require 'subr-x)
+(require 'bv-completion)
+(require 'bv-cape)
 
-;;; External Variables
+;;; Declarations
 
-(defvar savehist-additional-variables)
-(defvar completion-at-point-functions)
-(defvar completion-in-region--data)
 (defvar completion-extra-properties)
-(defvar corfu-history--hash)
-(defvar corfu-excluded-modes)
-(defvar corfu-preserve-symlinks)
-(defvar corfu-history-duplicate)
-(defvar corfu-history-decay)
+(defvar completion-in-region--data)
+(defvar corfu--index)
 (defvar corfu-auto-delay)
 (defvar corfu-auto-prefix)
-(defvar corfu-popupinfo-delay)
-(defvar corfu-popupinfo-max-width)
-(defvar corfu-popupinfo-max-height)
-(defvar corfu-popupinfo-min-width)
-(defvar corfu-popupinfo-min-height)
-(defvar corfu-popupinfo-resize)
-(defvar corfu-popupinfo-hide)
-(defvar corfu-popupinfo--frame)
-(defvar corfu-echo-delay)
-(defvar corfu-quick1)
-(defvar corfu-quick2)
+(defvar corfu-excluded-modes)
 (defvar corfu-map)
+(defvar corfu-popupinfo-delay)
+(defvar corfu-popupinfo-hide)
+(defvar corfu-popupinfo-max-height)
+(defvar corfu-popupinfo-max-width)
+(defvar corfu-popupinfo-min-height)
+(defvar corfu-popupinfo-min-width)
+(defvar corfu-popupinfo-resize)
+(defvar corfu-preserve-symlinks)
+(defvar global-corfu-minibuffer)
+(defvar mct--active)
 (defvar read-passwd-map)
-(defvar corfu--index)
+(defvar savehist-additional-variables)
+(defvar vertico--input)
 
-;;; External Functions
-
-(declare-function corfu-history-mode "corfu-history" (&optional arg))
-(declare-function corfu-popupinfo-mode "corfu-popupinfo" (&optional arg))
-(declare-function corfu-echo-mode "corfu-echo" (&optional arg))
+(declare-function consult-completion-in-region "consult" (start end collection &optional predicate))
 (declare-function corfu-info-documentation "corfu-info" ())
 (declare-function corfu-info-location "corfu-info" ())
+(declare-function corfu-insert-separator "corfu" ())
+(declare-function corfu-popupinfo-mode "corfu-popupinfo" (&optional arg))
 (declare-function corfu-quick-complete "corfu-quick" ())
 (declare-function corfu-quick-insert "corfu-quick" ())
-(declare-function consult-completion-in-region "consult" (start end collection &optional predicate))
-(declare-function bv-cape-clear-caches "bv-cape" ())
+(declare-function corfu-send "corfu" ())
 
-;;; Custom Variables
+;;; Policy
 
-(defcustom bv-completion-auto-modes '(prog-mode text-mode)
-  "Modes where auto-completion is enabled."
-  :type '(repeat symbol)
-  :group 'corfu)
+(defgroup bv-corfu nil
+  "BV Corfu configuration."
+  :group 'corfu
+  :prefix "bv-corfu-")
 
-;;; Performance Variables with Bounded Caching
+(defcustom bv-corfu-auto-policy
+  '((eglot . (:auto t :prefix 2 :delay 0.15))
+    (prog . (:auto t :prefix 3 :delay 0.20))
+    (text . (:auto t :prefix 4 :delay 0.35))
+    (manual . (:auto nil :prefix 3 :delay 0.20))
+    (shell . (:auto nil :prefix 3 :delay 0.20)))
+  "Corfu auto-completion profiles."
+  :type '(alist :key-type symbol :value-type plist)
+  :group 'bv-corfu)
 
-(defvar bv-corfu--kind-cache (make-hash-table :test #'equal :size 128)
-  "Bounded cache for kind lookups.")
+(defun bv-corfu--profile (name key)
+  "Return KEY from profile NAME in `bv-corfu-auto-policy'."
+  (plist-get (alist-get name bv-corfu-auto-policy) key))
 
-(defvar bv-corfu--kind-cache-max-size 256
-  "Maximum cache size before cleanup.")
+(defun bv-corfu-apply-profile (name)
+  "Apply Corfu profile NAME to the current buffer."
+  (setq-local corfu-auto (bv-corfu--profile name :auto)
+              corfu-auto-prefix (bv-corfu--profile name :prefix)
+              corfu-auto-delay (bv-corfu--profile name :delay)))
 
-(defvar bv-corfu--separator-char 32  ; Space character code
-  "Cached separator character code for fast lookup.")
+;;; Core Settings
 
-;; History caching
-(defvar bv-corfu--history-update-timer nil
-  "Timer for deferred history hash update.")
-
-;;; Core Settings - Following documented defaults with Cape awareness
-
-(setq corfu-min-width 20
+(setq corfu-min-width 24
       corfu-max-width 100
       corfu-count 10
       corfu-scroll-margin 2
       corfu-cycle t
-      corfu-auto t                    ; Off by default for safety
-      corfu-auto-delay 0.2               ; Recommended delay
-      corfu-auto-prefix 3                ; Documented minimum
+      corfu-auto nil
+      corfu-auto-delay 0.2
+      corfu-auto-prefix 3
       corfu-separator ?\s
       corfu-quit-at-boundary 'separator
       corfu-quit-no-match 'separator
-      corfu-preview-current t
+      corfu-preview-current nil
       corfu-on-exact-match nil
       corfu-preselect 'valid
-      ;; Cape-specific settings
       corfu-excluded-modes '(gud-mode)
-      corfu-preserve-symlinks t)
+      corfu-preserve-symlinks t
+      global-corfu-minibuffer #'bv-corfu-enable-in-minibuffer-p)
 
-;;; Icon Configuration with Cape Support
+;;; Kind Margin
 
-(defconst bv-corfu--icons
-  '(;; Cape-specific icons
-    (cape-abbrev "a" font-lock-string-face)
-    (cape-dabbrev "d" font-lock-comment-face)
-    (cape-dict "w" font-lock-doc-face)
-    (cape-history "h" font-lock-constant-face)
-    (cape-keyword "kw" font-lock-keyword-face)
-    (cape-yasnippet "y" font-lock-preprocessor-face)
-    (project-file "P" font-lock-constant-face)
-    ;; Standard kinds
-    (array "[]" font-lock-type-face)
-    (boolean "◉" font-lock-builtin-face)
-    (class "C" font-lock-type-face)
-    (color "#" success)
-    (constant "π" font-lock-constant-face)
-    (constructor "c" font-lock-function-name-face)
-    (enum "e" font-lock-builtin-face)
-    (enum-member "em" font-lock-builtin-face)
-    (event "E" font-lock-warning-face)
-    (field "f" font-lock-variable-name-face)
-    (file "F" font-lock-string-face)
-    (folder "D" font-lock-doc-face)
-    (function "λ" font-lock-function-name-face)
-    (interface "I" font-lock-type-face)
-    (keyword "k" font-lock-keyword-face)
-    (method "m" font-lock-function-name-face)
-    (module "M" font-lock-type-face)
-    (namespace "N" font-lock-type-face)
-    (null "∅" font-lock-comment-face)
-    (number "n" font-lock-builtin-face)
-    (operator "○" font-lock-comment-delimiter-face)
-    (package "P" font-lock-builtin-face)
-    (property "p" font-lock-variable-name-face)
-    (reference "r" font-lock-doc-face)
-    (snippet "S" font-lock-string-face)
-    (string "s" font-lock-string-face)
-    (struct "%" font-lock-type-face)
-    (text "·" shadow)
-    (type "T" font-lock-type-face)
-    (type-parameter "tp" font-lock-type-face)
-    (unit "u" shadow)
-    (value "v" font-lock-builtin-face)
-    (variable "x" font-lock-variable-name-face)
-    (t "?" shadow))  ; Default fallback
-  "Icon specifications by kind.")
+(defconst bv-corfu--kind-labels
+  '((array . ("[]" font-lock-type-face))
+    (boolean . ("bool" font-lock-builtin-face))
+    (class . ("cls" font-lock-type-face))
+    (color . ("#" success))
+    (constant . ("const" font-lock-constant-face))
+    (constructor . ("ctor" font-lock-function-name-face))
+    (enum . ("enum" font-lock-builtin-face))
+    (enum-member . ("mem" font-lock-builtin-face))
+    (event . ("evt" font-lock-warning-face))
+    (field . ("fld" font-lock-variable-name-face))
+    (file . ("file" font-lock-string-face))
+    (folder . ("dir" font-lock-doc-face))
+    (function . ("fn" font-lock-function-name-face))
+    (interface . ("ifc" font-lock-type-face))
+    (keyword . ("kw" font-lock-keyword-face))
+    (method . ("meth" font-lock-function-name-face))
+    (module . ("mod" font-lock-type-face))
+    (namespace . ("ns" font-lock-type-face))
+    (number . ("num" font-lock-builtin-face))
+    (operator . ("op" font-lock-comment-delimiter-face))
+    (package . ("pkg" font-lock-builtin-face))
+    (property . ("prop" font-lock-variable-name-face))
+    (reference . ("ref" font-lock-doc-face))
+    (snippet . ("snip" font-lock-string-face))
+    (string . ("str" font-lock-string-face))
+    (struct . ("st" font-lock-type-face))
+    (text . ("txt" shadow))
+    (type . ("type" font-lock-type-face))
+    (unit . ("unit" shadow))
+    (value . ("val" font-lock-builtin-face))
+    (variable . ("var" font-lock-variable-name-face))
+    (cape-dabbrev . ("dab" font-lock-comment-face))
+    (cape-dict . ("dict" font-lock-doc-face))
+    (cape-history . ("hist" font-lock-constant-face))
+    (cape-keyword . ("kw" font-lock-keyword-face))
+    (cape-yasnippet . ("snip" font-lock-string-face))
+    (project-file . ("proj" font-lock-constant-face))
+    (t . ("?" shadow)))
+  "Fixed-width labels for Corfu candidate kinds.")
 
-(defun bv-corfu--format-candidate (cand)
-  "Format CAND with icon, using bounded cache and Cape support."
-  (condition-case nil
-      (if (stringp cand)
-          (let* ((cache-key (substring-no-properties cand 0 (min 20 (length cand))))
-                 (cached-kind (gethash cache-key bv-corfu--kind-cache 'miss)))
-            (when (eq cached-kind 'miss)
-              ;; Check cache size and clean if needed
-              (when (> (hash-table-count bv-corfu--kind-cache)
-                       bv-corfu--kind-cache-max-size)
-                (clrhash bv-corfu--kind-cache))
-              ;; Get kind from text properties, including Cape properties
-              (setq cached-kind
-                    (or (get-text-property 0 'corfu-kind cand)
-                        (plist-get (text-properties-at 0 cand) 'cape-capf-super-kind)
-                        (get-text-property 0 'cape-category cand)
-                        (and (get-text-property 0 'category cand)
-                             (get-text-property 0 'category cand))
-                        t))
-              (puthash cache-key cached-kind bv-corfu--kind-cache))
-            ;; Format with icon
-            (let ((icon-spec (or (assq cached-kind bv-corfu--icons)
-                                 (assq t bv-corfu--icons))))
-              (concat (propertize (cadr icon-spec) 'face (caddr icon-spec)) " ")))
-        "   ")
-    (error "   ")))  ; Fallback on any error
+(defun bv-corfu--candidate-kind (metadata candidate)
+  "Return kind for CANDIDATE using completion METADATA."
+  (or (when-let ((kind-fn (completion-metadata-get metadata 'company-kind)))
+        (ignore-errors (funcall kind-fn candidate)))
+      (completion-metadata-get metadata 'category)
+      t))
+
+(defun bv-corfu--format-kind (kind)
+  "Return a fixed-width label for KIND."
+  (let* ((entry (or (assq kind bv-corfu--kind-labels)
+                    (assq t bv-corfu--kind-labels)))
+         (label (cadr entry))
+         (face (caddr entry)))
+    (propertize (truncate-string-to-width label 4 0 ?\s t)
+                'face face)))
 
 (defun bv-corfu-margin-formatter (metadata)
-  "Safe margin formatter with error handling.
-METADATA contains completion metadata used for formatting."
-  (when metadata
-    #'bv-corfu--format-candidate))
+  "Return a Corfu margin formatter for METADATA."
+  (when (bv-completion-icons-enabled-p)
+    (lambda (candidate)
+      (bv-corfu--format-kind
+       (bv-corfu--candidate-kind metadata candidate)))))
 
-;; Install formatter
-(with-eval-after-load 'corfu
-  (add-to-list 'corfu-margin-formatters #'bv-corfu-margin-formatter))
+(add-to-list 'corfu-margin-formatters #'bv-corfu-margin-formatter)
 
-;;; History Support with Deferred Updates
+;;; Popupinfo and Extensions
 
-(defun bv-corfu--invalidate-history-cache ()
-  "Invalidate history cache with debouncing."
-  (when bv-corfu--history-update-timer
-    (cancel-timer bv-corfu--history-update-timer))
-  (setq bv-corfu--history-update-timer
-        (run-with-idle-timer 0.5 nil
-                             (lambda ()
-                               (when (boundp 'corfu-history--hash)
-                                 (setq corfu-history--hash nil))))))
-
-(defun bv-corfu--setup-history ()
-  "Setup history mode with reasonable defaults."
-  (require 'corfu-history)
-
-  ;; Use reasonable settings for performance
+(defun bv-corfu-setup-history ()
+  "Enable Corfu history."
   (setq corfu-history-duplicate 10
         corfu-history-decay 10)
-
-  ;; Setup savehist integration
   (with-eval-after-load 'savehist
-    (cl-pushnew 'corfu-history savehist-additional-variables)
-    ;; Limit history length for performance
+    (add-to-list 'savehist-additional-variables 'corfu-history)
     (put 'corfu-history 'history-length 500))
-
   (corfu-history-mode 1))
 
-;;; Popupinfo Support with Bounded Cache
-
-(defvar bv-corfu--popupinfo-cache (make-hash-table :test #'equal :size 64)
-  "Bounded cache for documentation strings.")
-
-(defvar bv-corfu--popupinfo-cache-max-size 128
-  "Maximum popupinfo cache size.")
-
-(defvar bv-corfu--popupinfo-setup nil
-  "Whether popupinfo has been configured.")
-
-(defun bv-corfu--setup-popupinfo ()
-  "Setup popupinfo mode with caching."
-  (unless bv-corfu--popupinfo-setup
-    (setq bv-corfu--popupinfo-setup t)
-    (require 'corfu-popupinfo)
-
-    (setq corfu-popupinfo-delay '(1.0 . 0.3)  ; Conservative delays
-          corfu-popupinfo-max-width 70
-          corfu-popupinfo-max-height 20
-          corfu-popupinfo-min-width 30
-          corfu-popupinfo-min-height 3
-          corfu-popupinfo-resize t
-          corfu-popupinfo-hide nil)
-
-    ;; Add bounded cache to documentation retrieval
-    (advice-add 'corfu-popupinfo--get-documentation :around
-                #'bv-corfu--popupinfo-doc-cache))
-
-  (corfu-popupinfo-mode 1))
-
-(defun bv-corfu--popupinfo-doc-cache (orig-fun candidate)
-  "Cache documentation with bounds checking.
-ORIG-FUN is the original documentation function.
-CANDIDATE is the completion candidate to get documentation for."
-  (condition-case nil
-      (or (gethash candidate bv-corfu--popupinfo-cache)
-          (when-let ((doc (funcall orig-fun candidate)))
-            ;; Check cache size
-            (when (> (hash-table-count bv-corfu--popupinfo-cache)
-                     bv-corfu--popupinfo-cache-max-size)
-              (clrhash bv-corfu--popupinfo-cache))
-            (puthash candidate doc bv-corfu--popupinfo-cache)
-            doc))
-    (error nil)))  ; Return nil on error
-
-;;; Echo Support with Smart Integration
-
-(defun bv-corfu--setup-echo ()
-  "Setup echo mode with popupinfo awareness."
-  (require 'corfu-echo)
-
-  (setq corfu-echo-delay '(1.0 . 0.3))
-
-  ;; Show echo only when popupinfo is not visible
-  (advice-add 'corfu-echo--exhibit :before-while
-              #'bv-corfu--echo-check-popupinfo)
-
-  (corfu-echo-mode 1))
-
-(defun bv-corfu--setup-terminal ()
-  "Enable a better Corfu UI in terminal frames when available."
-  (when (and (not (display-graphic-p))
-             (require 'corfu-terminal nil t)
-             (fboundp 'corfu-terminal-mode))
-    (corfu-terminal-mode 1)))
-
-(defun bv-corfu--configure-ui-for-frame (&optional frame)
-  "Configure Corfu UI features for FRAME (defaults to selected frame)."
+(defun bv-corfu-setup-popupinfo (&optional frame)
+  "Enable popupinfo on graphical FRAME."
   (with-selected-frame (or frame (selected-frame))
-    ;; Popupinfo relies on child frames, so only enable it for GUI frames.
     (when (display-graphic-p)
-      (bv-corfu--setup-popupinfo))
-    (bv-corfu--setup-terminal)))
+      (require 'corfu-popupinfo)
+      (setq corfu-popupinfo-delay '(1.2 . 0.4)
+            corfu-popupinfo-max-width 72
+            corfu-popupinfo-max-height 16
+            corfu-popupinfo-min-width 30
+            corfu-popupinfo-min-height 3
+            corfu-popupinfo-resize t
+            corfu-popupinfo-hide nil)
+      (corfu-popupinfo-mode 1))))
 
-(defun bv-corfu--echo-check-popupinfo (&rest _)
-  "Only show echo if popupinfo is not visible."
-  (not (and (bound-and-true-p corfu-popupinfo-mode)
-            (bound-and-true-p corfu-popupinfo--frame)
-            (frame-visible-p corfu-popupinfo--frame))))
+(defun bv-corfu-setup-terminal (&optional frame)
+  "Enable terminal Corfu support for FRAME when available."
+  (with-selected-frame (or frame (selected-frame))
+    (when (and (not (display-graphic-p))
+               (require 'corfu-terminal nil t)
+               (fboundp 'corfu-terminal-mode))
+      (corfu-terminal-mode 1))))
 
-;;; Smart Completion Functions with Cape Support
+(defun bv-corfu-configure-frame (&optional frame)
+  "Configure Corfu helpers for FRAME."
+  (bv-corfu-setup-popupinfo frame)
+  (bv-corfu-setup-terminal frame))
 
-(defsubst bv-corfu--at-separator-p ()
-  "Check if at separator character."
+;;; Commands
+
+(defun bv-corfu--at-separator-p ()
+  "Return non-nil if point is after the Corfu separator."
   (and (> (point) (point-min))
-       (= (char-before) bv-corfu--separator-char)))
+       (= (char-before) corfu-separator)))
 
-(defsubst bv-corfu--at-word-end-p ()
-  "Check if at word boundary."
+(defun bv-corfu--at-word-end-p ()
+  "Return non-nil if point is at a natural word boundary."
   (or (eobp)
-      (not (looking-at-p "[[:alnum:]]"))))
-
-(defun bv-corfu--cape-active-p ()
-  "Check if Cape function is active in current completion."
-  (cl-some (lambda (f)
-             (or (memq f '(cape-dabbrev cape-dict cape-keyword cape-line))
-                 (and (symbolp f)
-                      (string-prefix-p "cape-" (symbol-name f)))))
-           completion-at-point-functions))
+      (not (looking-at-p "[[:alnum:]_]"))))
 
 (defun bv-corfu-smart-sep ()
-  "Smart separator insertion with Cape awareness and double-space commit."
+  "Insert an Orderless separator or commit the selected candidate plus space."
   (interactive)
   (cond
-   ;; Double space commits
    ((and (bv-corfu--at-separator-p)
          (or (eobp) (memq (char-after) '(?\s ?\n))))
     (delete-char -1)
     (corfu-insert)
     (insert " "))
-   ;; Cape dict/dabbrev might have multi-word completions
-   ((and (>= corfu--index 0)
-         (not (bv-corfu--at-separator-p))
-         (bv-corfu--at-word-end-p)
-         (bv-corfu--cape-active-p))
-    (corfu-insert)
-    (insert " "))
-   ;; At word boundary with selection
    ((and (>= corfu--index 0)
          (not (bv-corfu--at-separator-p))
          (bv-corfu--at-word-end-p))
     (corfu-insert)
     (insert " "))
-   ;; Normal separator - important for orderless with Cape
-   (t (corfu-insert-separator))))
+   (t
+    (corfu-insert-separator))))
 
 (defun bv-corfu-move-to-minibuffer ()
-  "Move completion to minibuffer for richer interaction."
+  "Move the current in-buffer completion session to Consult."
   (interactive)
   (when-let ((data completion-in-region--data))
     (pcase-let ((`(,beg ,end ,table ,pred ,extras) data))
       (let ((completion-extra-properties extras))
         (consult-completion-in-region beg end table pred)))))
 
-;;; Extension Loading
-
-(defvar bv-corfu--extensions-loaded nil
-  "Whether extensions have been loaded.")
-
-(defun bv-corfu--load-extensions ()
-  "Lazy load extensions on first use."
-  (unless bv-corfu--extensions-loaded
-    (setq bv-corfu--extensions-loaded t)
-
-    ;; Core extensions
-    (bv-corfu--setup-history)
-    (when (display-graphic-p)
-      (bv-corfu--setup-popupinfo))
-    (bv-corfu--setup-echo)
-    (bv-corfu--setup-terminal)
-
-    ;; Quick selection - autoload for performance
-    (autoload 'corfu-quick-complete "corfu-quick" nil t)
-    (autoload 'corfu-quick-insert "corfu-quick" nil t)
-
-    ;; Configure quick keys when loaded
-    (with-eval-after-load 'corfu-quick
-      (setq corfu-quick1 "asdfgh"
-            corfu-quick2 "jkluionm"))))
-
-;;; Mode-specific Settings with Cape Integration
+;;; Mode Profiles
 
 (defun bv-corfu-prog-settings ()
-  "Settings for programming modes with Cape awareness."
-  ;; Ensure Cape setup runs first
-  (run-with-timer 0 nil
-    (lambda ()
-      (setq-local corfu-auto t
-                  corfu-auto-prefix 3
-                  corfu-auto-delay 0.2
-                  ;; Add flex for better Cape integration
-                  completion-styles '(orderless basic flex)
-                  ;; Cape-specific: allow partial completion for files
-                  completion-category-overrides
-                  '((file (styles partial-completion))
-                    (project-file (styles partial-completion orderless)))))))
+  "Apply programming-mode Corfu settings."
+  (bv-corfu-apply-profile 'prog))
 
 (defun bv-corfu-text-settings ()
-  "Settings for text modes with Cape awareness."
-  (run-with-timer 0 nil
-    (lambda ()
-      (setq-local corfu-auto t
-                  corfu-auto-prefix 3
-                  corfu-auto-delay 0.3
-                  completion-styles '(orderless basic flex)))))
-
-(defun bv-corfu-shell-settings ()
-  "Conservative settings for shell modes."
-  (setq-local corfu-auto nil             ; Manual completion
-              corfu-quit-at-boundary t
-              corfu-quit-no-match t
-              completion-styles '(basic partial-completion)))
+  "Apply text-mode Corfu settings."
+  (bv-corfu-apply-profile 'text))
 
 (defun bv-corfu-manual-settings ()
-  "Manual completion settings for buffers where popups are distracting."
-  (setq-local corfu-auto nil
-              corfu-auto-delay nil
-              corfu-auto-prefix 3))
+  "Apply manual Corfu settings."
+  (bv-corfu-apply-profile 'manual))
 
-(defun bv-corfu-git-commit-settings ()
-  "Use manual completion in `git-commit-mode' buffers."
-  (bv-corfu-manual-settings)
-  ;; `bv-corfu-text-settings' applies via `text-mode-hook' using a 0s timer;
-  ;; schedule after it to keep commit buffers quiet.
-  (run-with-timer 0 nil #'bv-corfu-manual-settings))
+(defun bv-corfu-shell-settings ()
+  "Apply shell Corfu settings."
+  (bv-corfu-apply-profile 'shell))
+
+(defun bv-corfu-eglot-settings ()
+  "Apply Eglot Corfu settings."
+  (bv-corfu-apply-profile 'eglot))
 
 (defun bv-corfu-minibuffer-settings ()
-  "Minimal settings for minibuffer."
-  (setq-local corfu-echo-delay nil
-              corfu-popupinfo-delay nil
-              corfu-auto nil))
+  "Apply minibuffer Corfu settings."
+  (setq-local corfu-auto nil
+              corfu-popupinfo-delay nil))
 
-;;; Auto-completion Synchronization
-
-(defun bv-corfu-maybe-enable-auto ()
-  "Enable auto-completion based on major mode."
-  (when (apply #'derived-mode-p bv-completion-auto-modes)
-    (setq-local corfu-auto t)))
-
-;;; Minibuffer Support
-
-(defun bv-corfu--minibuffer-p ()
-  "Check if Corfu should be enabled in minibuffer."
+(defun bv-corfu-enable-in-minibuffer-p ()
+  "Return non-nil if Corfu should be active in this minibuffer."
   (and (not (or (bound-and-true-p vertico--input)
                 (bound-and-true-p mct--active)
                 (eq (current-local-map) read-passwd-map)))
-       (or completion-at-point-functions
-           (where-is-internal #'completion-at-point
-                              (list (current-local-map))))))
-
-(defun bv-corfu-enable-in-minibuffer ()
-  "Enable Corfu in minibuffer when appropriate."
-  (when (bv-corfu--minibuffer-p)
-    (bv-corfu-minibuffer-settings)
-    (corfu-mode 1)))
+       (local-variable-p 'completion-at-point-functions)))
 
 ;;; Keybindings
 
-(with-eval-after-load 'corfu
-  ;; Core bindings
-  (keymap-set corfu-map "TAB" #'corfu-complete)
-  (keymap-set corfu-map "RET" #'corfu-insert)
-  (keymap-set corfu-map "M-m" #'bv-corfu-move-to-minibuffer)
-  (keymap-set corfu-map "SPC" #'bv-corfu-smart-sep)
-  (keymap-set corfu-map "M-TAB" #'corfu-expand)
-  (keymap-set corfu-map "C-n" #'corfu-next)
-  (keymap-set corfu-map "C-p" #'corfu-previous)
+(autoload 'corfu-info-documentation "corfu-info" nil t)
+(autoload 'corfu-info-location "corfu-info" nil t)
+(autoload 'corfu-quick-complete "corfu-quick" nil t)
+(autoload 'corfu-quick-insert "corfu-quick" nil t)
 
-  ;; Documentation
-  (keymap-set corfu-map "M-d" #'corfu-info-documentation)
-  (keymap-set corfu-map "M-l" #'corfu-info-location)
+(keymap-set corfu-map "TAB" #'corfu-complete)
+(keymap-set corfu-map "RET" #'corfu-insert)
+(keymap-set corfu-map "M-m" #'bv-corfu-move-to-minibuffer)
+(keymap-set corfu-map "SPC" #'bv-corfu-smart-sep)
+(keymap-set corfu-map "M-TAB" #'corfu-expand)
+(keymap-set corfu-map "C-n" #'corfu-next)
+(keymap-set corfu-map "C-p" #'corfu-previous)
+(keymap-set corfu-map "M-d" #'corfu-info-documentation)
+(keymap-set corfu-map "M-l" #'corfu-info-location)
+(keymap-set corfu-map "M-q" #'corfu-quick-complete)
+(keymap-set corfu-map "C-q" #'corfu-quick-insert)
 
-  ;; Quick selection
-  (keymap-set corfu-map "M-q" #'corfu-quick-complete)
-  (keymap-set corfu-map "C-q" #'corfu-quick-insert))
+(with-eval-after-load 'eshell
+  (keymap-set corfu-map "RET" #'corfu-send))
 
-;;; Periodic Cleanup with Cape Integration
+(add-to-list 'corfu-continue-commands #'bv-corfu-move-to-minibuffer)
 
-(defun bv-corfu--periodic-cleanup ()
-  "Consolidated cleanup function with Cape awareness."
-  ;; Clean kind cache if too large
-  (when (> (hash-table-count bv-corfu--kind-cache)
-           bv-corfu--kind-cache-max-size)
-    (clrhash bv-corfu--kind-cache))
+;;; Activation
 
-  ;; Clean popupinfo cache if too large
-  (when (and (boundp 'bv-corfu--popupinfo-cache)
-             (> (hash-table-count bv-corfu--popupinfo-cache)
-                bv-corfu--popupinfo-cache-max-size))
-    (clrhash bv-corfu--popupinfo-cache))
+(bv-corfu-setup-history)
+(bv-corfu-configure-frame)
 
-  ;; Trigger Cape cache cleanup if available and needed
-  (when (and (fboundp 'bv-cape-clear-caches)
-             (or (> (hash-table-count bv-corfu--kind-cache) 512)
-                 (> (random 100) 95)))  ; 5% chance each cleanup
-    (bv-cape-clear-caches)))
-
-;; Run cleanup every 5 minutes
-(run-with-timer 300 300 #'bv-corfu--periodic-cleanup)
-
-;;; Hook Setup
-
-(defun bv-corfu--init-hook ()
-  "One-time initialization when Corfu is first activated."
-  (bv-corfu--load-extensions)
-  (bv-corfu--configure-ui-for-frame)
-  (remove-hook 'corfu-mode-hook #'bv-corfu--init-hook))
-
-;; Core hooks
-(add-hook 'corfu-mode-hook #'bv-corfu--init-hook)
-
-;; Ensure mixed GUI/TTY daemon sessions stay sane.
-(add-hook 'after-make-frame-functions #'bv-corfu--configure-ui-for-frame)
-
-;; Mode-specific hooks with Cape coordination
+(add-hook 'after-make-frame-functions #'bv-corfu-configure-frame)
 (add-hook 'prog-mode-hook #'bv-corfu-prog-settings)
 (add-hook 'text-mode-hook #'bv-corfu-text-settings)
 (add-hook 'shell-mode-hook #'bv-corfu-shell-settings)
 (add-hook 'eshell-mode-hook #'bv-corfu-shell-settings)
-(add-hook 'git-commit-mode-hook #'bv-corfu-git-commit-settings)
-(add-hook 'minibuffer-setup-hook #'bv-corfu-enable-in-minibuffer)
+(add-hook 'comint-mode-hook #'bv-corfu-shell-settings)
+(add-hook 'git-commit-mode-hook #'bv-corfu-manual-settings)
+(add-hook 'minibuffer-setup-hook #'bv-corfu-minibuffer-settings)
 
-;; Auto-completion synchronization
-(add-hook 'after-change-major-mode-hook #'bv-corfu-maybe-enable-auto)
+(with-eval-after-load 'eglot
+  (add-hook 'eglot-managed-mode-hook #'bv-corfu-eglot-settings))
 
-;; Shell-specific configuration
-(with-eval-after-load 'eshell
-  (keymap-set corfu-map "RET" #'corfu-send))
-
-;; Add continue commands
-(with-eval-after-load 'corfu
-  (add-to-list 'corfu-continue-commands #'bv-corfu-move-to-minibuffer))
-
-;;; Cape Integration Check
-
-(defun bv-corfu-check-cape-integration ()
-  "Check if Cape is properly integrated."
-  (interactive)
-  (if (featurep 'bv-cape)
-      (message "Cape integration active. %d Capfs available in current buffer."
-               (length completion-at-point-functions))
-    (message "Cape not loaded. Consider loading bv-cape for enhanced completion.")))
-
-;;; Load Order Handling
-
-;; Ensure Cape is loaded first if available
-(when (locate-library "bv-cape")
-  (require 'bv-cape nil t))
-
-;;; Activation
-
-;; Enable global Corfu mode
 (global-corfu-mode 1)
 
 (provide 'bv-corfu)

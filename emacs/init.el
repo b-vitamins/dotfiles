@@ -11,6 +11,8 @@
 
 ;;; Code:
 
+(setq load-prefer-newer t)
+
 (add-to-list 'load-path
              (expand-file-name "lisp" (file-name-directory load-file-name)))
 

@@ -26,6 +26,7 @@
 (declare-function nerd-icons-icon-for-file "nerd-icons" (file))
 (declare-function nerd-icons-install-fonts "nerd-icons")
 (declare-function nerd-icons-faicon "nerd-icons" (icon-name &rest args))
+(declare-function bv-completion-icons-enabled-p "bv-completion" (&optional width))
 
 (defgroup bv-nerd-icons nil
   "Nerd Icons configuration."
@@ -139,9 +140,17 @@ stealing ordinary text, math, CJK, or symbol glyphs from the main font stack."
             selectrum-mode-hook
             icomplete-mode-hook
             vertico-mode-hook)))
-  
-  ;; Ensure icons appear in all completion UIs
-  (advice-add #'completion-metadata-get :around #'nerd-icons-completion-completion-metadata-get))
+
+  (with-eval-after-load 'bv-completion
+    (advice-add #'nerd-icons-completion-get-icon
+                :around #'bv-nerd-icons-completion-get-icon)))
+
+(defun bv-nerd-icons-completion-get-icon (orig-fun cand category)
+  "Return completion icon from ORIG-FUN for CAND and CATEGORY when policy allows."
+  (if (and (fboundp 'bv-completion-icons-enabled-p)
+           (not (bv-completion-icons-enabled-p)))
+      ""
+    (funcall orig-fun cand category)))
 
 ;;; Dired configuration
 (defun bv-nerd-icons-configure-dired ()
