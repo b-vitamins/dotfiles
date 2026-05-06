@@ -16,6 +16,7 @@
 (require 'subr-x)
 (require 'bv-themes-compile)
 (require 'bv-themes-audit)
+(require 'bv-nerd-icons nil t)
 
 (declare-function bv-themes-ensure-theme "bv-themes" (theme))
 (declare-function bv-themes-known-themes "bv-themes" ())
@@ -28,7 +29,7 @@ When nil, use all registered BV theme profiles.")
 (defconst bv-themes-regression-width 1480
   "Width of each deterministic SVG artifact.")
 
-(defconst bv-themes-regression-height 1500
+(defconst bv-themes-regression-height 1660
   "Height of each deterministic SVG artifact.")
 
 (defconst bv-themes-regression-required-sections
@@ -41,7 +42,8 @@ When nil, use all registered BV theme profiles.")
     (dired . "Dired/file listing")
     (terminal . "Terminal ANSI palette")
     (calendar . "Calendar")
-    (feed . "Feed rows"))
+    (feed . "Feed rows")
+    (icons . "Icon roles"))
   "Workflow sections that every visual artifact must include.")
 
 (defconst bv-themes-regression-required-tokens
@@ -73,10 +75,10 @@ When nil, use all registered BV theme profiles.")
 (defconst bv-themes-regression-min-bytes 22000
   "Minimum SVG byte size accepted by artifact validation.")
 
-(defconst bv-themes-regression-min-rects 55
+(defconst bv-themes-regression-min-rects 62
   "Minimum number of rectangle elements accepted by artifact validation.")
 
-(defconst bv-themes-regression-min-texts 90
+(defconst bv-themes-regression-min-texts 104
   "Minimum number of text elements accepted by artifact validation.")
 
 (defun bv-themes-regression--xml-escape (value)
@@ -847,6 +849,69 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
          ("  tag" fg-salient :weight "700"))
        12)))))
 
+(defun bv-themes-regression--icon-glyph (role fallback)
+  "Return the rendered icon glyph for ROLE, or FALLBACK."
+  (if (fboundp 'bv-nerd-icons-icon)
+      (substring-no-properties
+       (condition-case nil
+           (bv-nerd-icons-icon role)
+         (error fallback)))
+    fallback))
+
+(defun bv-themes-regression--icon-role-cell
+    (tokens x y role label token family-label)
+  "Return one icon ROLE cell at X Y."
+  (let ((border (bv-themes-regression--token tokens 'border-subtle)))
+    (concat
+     (bv-themes-regression--rect-token
+      tokens x y 164 58 'bg-main 'border-subtle 4)
+     (bv-themes-regression--text
+      (+ x 14) (+ y 37)
+      (bv-themes-regression--icon-glyph role "*")
+      (bv-themes-regression--token tokens token)
+      24 "700" "Symbols Nerd Font Mono, Iosevka, monospace")
+     (bv-themes-regression--text-token
+      tokens (+ x 52) (+ y 24) label 'fg-main 12 "700")
+     (bv-themes-regression--text-token
+      tokens (+ x 52) (+ y 43) family-label 'fg-dim 10)
+     (bv-themes-regression--line
+      (+ x 42) (+ y 12) (+ x 42) (+ y 46) border 1))))
+
+(defun bv-themes-regression--icons-section (tokens)
+  "Return the icon role SVG section for TOKENS."
+  (let ((x 40)
+        (y 1468)
+        (width 1400)
+        (height 152)
+        (roles '((file "file" fg-main "octicon")
+                 (directory "directory" fg-salient "octicon")
+                 (note "note" fg-muted "octicon")
+                 (code "code" syntax-function "octicon")
+                 (terminal "terminal" fg-header-muted "devicon")
+                 (git "git" fg-changed "devicon")
+                 (pdf "pdf" warning-strong "codicon")
+                 (help "help" info-strong "faicon")
+                 (warning "warning" warning-strong "octicon")
+                 (success "success" success-strong "octicon")
+                 (science "science" info-strong "mdicon")
+                 (navigation-caret "nav" fg-salient "faicon"))))
+    (bv-themes-regression--section
+     tokens 'icons "Icon roles" x y width height
+     (concat
+      (bv-themes-regression--text-token
+       tokens (+ x 24) (+ y 68)
+       "BV role registry: semantic glyphs, theme-owned color"
+       'fg-muted 13)
+      (cl-loop for (role label token family) in roles
+               for index from 0
+               for column = (mod index 6)
+               for row = (/ index 6)
+               concat (bv-themes-regression--icon-role-cell
+                       tokens
+                       (+ x 24 (* column 222))
+                       (+ y 84 (* row 64))
+                       role label token family))))))
+
 (defun bv-themes-regression-svg (theme)
   "Return deterministic SVG artifact for THEME."
   (let* ((artifact (bv-themes-compile theme))
@@ -875,6 +940,7 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
            (bv-themes-regression--terminal-section tokens)
            (bv-themes-regression--calendar-section tokens)
            (bv-themes-regression--feed-section tokens)
+           (bv-themes-regression--icons-section tokens)
            "</svg>\n"))
     (bv-themes-regression-validate-svg svg)
     svg))

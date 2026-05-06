@@ -80,6 +80,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Polished crowded BV Emacs package surfaces across Vertico counts, Which-Key,
   Org Agenda prefixes, Flymake diagnostic gutters, Ibuffer icon columns, Corfu
   kind labels, and Keycast fallback rendering.
+- Rebuilt the BV Emacs icon stack around a semantic Nerd Icons role registry
+  with typography-owned font selection, richer icon style policy,
+  category-aware completion density, doctor coverage, and theme regression
+  gallery coverage.
 - Split Emacs doctor validation into a hermetic batch gate and a live full-init
   gate for runtime theme workflow checks.
 - Expanded BV Emacs theme audits for diagnostics, completion, diff, terminal,

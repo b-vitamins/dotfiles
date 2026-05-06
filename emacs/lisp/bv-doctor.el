@@ -15,6 +15,7 @@
 ;; - Generate deterministic visual regression artifacts
 ;; - Run layout overflow affordance tests
 ;; - Run package-local UI polish tests
+;; - Run role-based icon stack tests
 ;; - Run completion surface policy tests
 ;; - Run modeline/header-line invariant tests
 ;;
@@ -164,6 +165,14 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
     (unless (zerop (ert-stats-completed-unexpected stats))
       (error "BV UI polish tests failed"))))
 
+(defun bv-doctor-check-nerd-icons-tests ()
+  "Run BV Nerd Icons ERT checks."
+  (require 'ert)
+  (require 'bv-nerd-icons-tests)
+  (let ((stats (ert-run-tests-batch '(tag bv-nerd-icons))))
+    (unless (zerop (ert-stats-completed-unexpected stats))
+      (error "BV Nerd Icons tests failed"))))
+
 ;;;###autoload
 (defun bv-doctor-run ()
   "Run the BV config doctor interactively."
@@ -187,6 +196,8 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
   (bv-doctor-check-layout-tests)
   (message "bv-doctor: testing package-local UI polish…")
   (bv-doctor-check-ui-polish-tests)
+  (message "bv-doctor: testing icon stack invariants…")
+  (bv-doctor-check-nerd-icons-tests)
   (message "bv-doctor: testing completion invariants…")
   (bv-doctor-check-completion-tests)
   (message "bv-doctor: testing modeline invariants…")
@@ -207,6 +218,7 @@ Signals an error on failure (causing a non-zero exit in batch mode)."
   (bv-doctor-check-theme-regression)
   (bv-doctor-check-layout-tests)
   (bv-doctor-check-ui-polish-tests)
+  (bv-doctor-check-nerd-icons-tests)
   (bv-doctor-check-completion-tests)
   (bv-doctor-check-modeline-tests)
   (message "bv-doctor: OK"))

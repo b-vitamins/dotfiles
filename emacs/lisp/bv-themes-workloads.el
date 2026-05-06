@@ -26,9 +26,10 @@
   '(ansi-color apropos avy calendar cape citar comint company consult corfu
     cus-edit dape diff-mode dired ediff eldoc elfeed elfeed-search eglot embark
     eshell flycheck flymake flyspell help-mode helpful hi-lock ibuffer info
-    magit markdown-mode marginalia message nov orderless org org-agenda
-    org-modern package pulse rainbow-delimiters shr simple smartparens term
-    tex-mode transient vertico vundo which-key whitespace xref)
+    magit markdown-mode marginalia message nerd-icons nerd-icons-completion
+    nerd-icons-dired nerd-icons-ibuffer nov orderless org org-agenda org-modern
+    package pulse rainbow-delimiters shr simple smartparens term tex-mode
+    transient vertico vundo which-key whitespace xref)
   "Features loaded during workflow probes when available."
   :type '(repeat symbol)
   :group 'bv-themes-workloads)
@@ -106,6 +107,14 @@
      bv-elfeed-high-score-face bv-elfeed-arxiv-face message-header-name
      message-header-subject message-header-to message-header-cc
      message-header-other message-cited-text-1 message-separator)
+    (icons
+     bv-icon-default bv-icon-muted bv-icon-file bv-icon-directory bv-icon-note
+     bv-icon-code bv-icon-science bv-icon-idea bv-icon-proof bv-icon-review
+     bv-icon-index bv-icon-system bv-icon-warning bv-icon-success
+     bv-icon-special bv-icon-info bv-icon-salient nerd-icons-blue
+     nerd-icons-cyan nerd-icons-green nerd-icons-red nerd-icons-yellow
+     nerd-icons-purple nerd-icons-silver nerd-icons-completion-dir-face
+     nerd-icons-dired-dir-face nerd-icons-ibuffer-icon-face)
     (debug
      dape-breakpoint-face dape-expression-face dape-log-face
      dape-repl-prompt-face breakpoint-enabled breakpoint-disabled)

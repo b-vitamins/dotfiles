@@ -275,17 +275,26 @@ Location example:
 
 ### Icons and Visual Elements
 
-**bv-nerd-icons-font-family** (string)
-- Default: "Symbols Nerd Font Mono"
-- Icon font family
+**bv-nerd-icons-font-family** (string or nil)
+- Default: nil
+- Explicit icon font override; nil follows `bv-fonts-icon-family`
 
 **bv-nerd-icons-scale-factor** (float)
 - Default: 1.0
 - Icon size multiplier
 
-**bv-nerd-icons-color-icons** (boolean)
-- Default: t
-- Enable colored icons
+**bv-nerd-icons-style** (symbol)
+- Default: semantic
+- Options: semantic, muted, monochrome, native
+- Color policy for BV-owned icon roles
+
+**bv-nerd-icons-completion-category-policy** (alist)
+- Default: files/projects/notes keep icons; command and symbol surfaces require
+  wide completion windows
+- Controls icon density by completion category
+
+**bv-nerd-icons-role-alist** (alist)
+- Central role registry for BV-owned icon choices
 
 ## Common Customization Scenarios
 
@@ -303,7 +312,7 @@ Location example:
  '(bv-themes-intensity 'faint)
  '(bv-themes-bold-constructs nil)
  '(bv-themes-italic-constructs nil)
- '(bv-nerd-icons-color-icons nil))
+ '(bv-nerd-icons-style 'muted))
 ```
 
 ### Research-Focused
@@ -319,7 +328,7 @@ Location example:
 (custom-set-variables
  '(bv-consult-ripgrep-or-line-limit 100000)
  '(bv-themes-audit-on-load nil)
- '(bv-nerd-icons-color-icons nil))
+ '(bv-nerd-icons-style 'monochrome))
 ```
 
 ### Dark Theme Preference
@@ -397,6 +406,10 @@ Reset to defaults:
 
 ### System
 - bv-nerd-icons-font-family
+- bv-nerd-icons-scale-factor
+- bv-nerd-icons-style
+- bv-nerd-icons-completion-category-policy
+- bv-nerd-icons-role-alist
 - bv-power-loginctl-path
 - bv-pulseaudio-volume-step
 - bv-weather-location
