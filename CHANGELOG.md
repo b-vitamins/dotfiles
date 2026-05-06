@@ -138,6 +138,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Extended `setup.sh` to auto-link repository Codex skills into `~/.codex/skills`
 - Updated `setup.sh` to keep `~/.codex/config.toml` as a local file and stop symlinking it from dotfiles
 - Refined the Codex `research-paper-notes` skill with multi-axis paper coordinates, claim-surface summaries, typed prior-work relation hints, and stronger machine-readable provenance
+- Reworked the BV Emacs header-line modeline as a responsive segment renderer
+  with Org `#+TITLE` display, width-aware truncation, status accents, and
+  priority-based right-side metadata, including BV-owned keycast integration,
+  polished status-block geometry, and quieter scratch-buffer context.
+- Defined BV semantic/header faces before theme compilation so in-house faces
+  receive generated theme styling on first load.
 ### Fixed
 - Sanitized BV modeline/header-line dynamic fields so `display-time-string` and
   other mode-line fragments cannot leak package backgrounds into the header.

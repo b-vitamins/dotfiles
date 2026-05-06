@@ -14,6 +14,143 @@
 (require 'cl-lib)
 (require 'subr-x)
 
+(defface bv-face-default '((t :inherit default))
+  "BV default semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-muted '((t :inherit shadow))
+  "BV muted semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-dim '((t :inherit shadow))
+  "BV dim semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-faint '((t :inherit shadow))
+  "BV faint semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-salient '((t :inherit font-lock-keyword-face))
+  "BV salient semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-strong '((t :inherit bold))
+  "BV strong semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-critical '((t :inherit error))
+  "BV critical semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-success '((t :inherit success))
+  "BV success semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-warning '((t :inherit warning))
+  "BV warning semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-error '((t :inherit error))
+  "BV error semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-info '((t :inherit font-lock-doc-face))
+  "BV informational semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-link '((t :inherit link))
+  "BV link semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-prompt '((t :inherit minibuffer-prompt))
+  "BV prompt semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-keybind '((t :inherit font-lock-constant-face))
+  "BV key binding semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-match '((t :inherit match))
+  "BV match semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-highlight '((t :inherit highlight))
+  "BV highlight semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-secondary '((t :inherit secondary-selection))
+  "BV secondary semantic face."
+  :group 'bv-themes)
+
+(defface bv-face-selection '((t :inherit region))
+  "BV selection semantic face."
+  :group 'bv-themes)
+
+(defface bv-diagnostic-error '((t :inherit error))
+  "BV diagnostic error face."
+  :group 'bv-themes)
+
+(defface bv-diagnostic-warning '((t :inherit warning))
+  "BV diagnostic warning face."
+  :group 'bv-themes)
+
+(defface bv-diagnostic-info '((t :inherit font-lock-doc-face))
+  "BV diagnostic information face."
+  :group 'bv-themes)
+
+(defface bv-diagnostic-note '((t :inherit shadow))
+  "BV diagnostic note face."
+  :group 'bv-themes)
+
+(defface bv-diff-added '((t :inherit diff-added))
+  "BV diff added face."
+  :group 'bv-themes)
+
+(defface bv-diff-removed '((t :inherit diff-removed))
+  "BV diff removed face."
+  :group 'bv-themes)
+
+(defface bv-diff-changed '((t :inherit diff-changed))
+  "BV diff changed face."
+  :group 'bv-themes)
+
+(defface bv-diff-added-refine '((t :inherit diff-refine-added))
+  "BV diff added refinement face."
+  :group 'bv-themes)
+
+(defface bv-diff-removed-refine '((t :inherit diff-refine-removed))
+  "BV diff removed refinement face."
+  :group 'bv-themes)
+
+(defface bv-diff-changed-refine '((t :inherit diff-changed))
+  "BV diff changed refinement face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-default '((t :inherit header-line))
+  "BV default header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-muted '((t :inherit (shadow header-line)))
+  "BV muted header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-strong '((t :inherit (bold header-line)))
+  "BV strong header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-salient
+  '((t :inherit (font-lock-keyword-face header-line)))
+  "BV salient header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-popout '((t :inherit mode-line))
+  "BV popout header-line face."
+  :group 'bv-themes)
+
+(defface bv-ui-header-critical '((t :inherit (error header-line)))
+  "BV critical header-line face."
+  :group 'bv-themes)
+
 (defun bv-themes-adapters--indexed (prefix roles &optional start)
   "Return face adapter specs for PREFIX numbered by ROLES.
 When START is non-nil, begin numbering from that value."

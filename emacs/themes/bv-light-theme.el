@@ -272,6 +272,8 @@
                    :weight medium :extend t)
    (header-popout :fg fg-header-inverse :bg modeline-bg-active
                   :weight medium :extend t)
+   (header-critical :fg modeline-fg-critical :bg modeline-bg-critical
+                    :weight medium :extend t)
    (mode-line-active :fg modeline-fg-active :bg modeline-bg-active)
    (mode-line-inactive :fg modeline-fg-inactive :bg modeline-bg-inactive)
    (mode-line-accent :fg modeline-fg-accent :bg modeline-bg-accent

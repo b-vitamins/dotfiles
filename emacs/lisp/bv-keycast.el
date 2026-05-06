@@ -17,6 +17,8 @@
 ;; Declare external variables from keycast package
 (defvar keycast--this-command-keys)
 (defvar keycast--this-command)
+(declare-function keycast--minibuffer-exit "keycast")
+(declare-function keycast--update "keycast")
 
 (defun bv-keycast-active-window-p ()
   "Return non-nil if current window is active."
@@ -47,6 +49,20 @@
                         'face 'keycast-command)
             " ")))
 
+(defun bv-keycast--enable-updates ()
+  "Enable keycast state updates without letting keycast own the header line."
+  (when (fboundp 'keycast--update)
+    (add-hook 'post-command-hook #'keycast--update t))
+  (when (fboundp 'keycast--minibuffer-exit)
+    (add-hook 'minibuffer-exit-hook #'keycast--minibuffer-exit t)))
+
+(defun bv-keycast--disable-updates ()
+  "Disable keycast state updates installed by `bv-keycast-mode'."
+  (when (fboundp 'keycast--update)
+    (remove-hook 'post-command-hook #'keycast--update))
+  (when (fboundp 'keycast--minibuffer-exit)
+    (remove-hook 'minibuffer-exit-hook #'keycast--minibuffer-exit)))
+
 (define-minor-mode bv-keycast-mode
   "Show current command and key binding in header line."
   :global t
@@ -60,10 +76,14 @@
     (when (fboundp 'keycast-mode-line-mode)
       (keycast-mode-line-mode -1))
     (when (fboundp 'keycast-header-line-mode)
-      (keycast-header-line-mode 1)))
+      (keycast-header-line-mode -1))
+    (bv-keycast--enable-updates)
+    (force-mode-line-update t))
    (t
     (when (fboundp 'keycast-header-line-mode)
-      (keycast-header-line-mode -1)))))
+      (keycast-header-line-mode -1))
+    (bv-keycast--disable-updates)
+    (force-mode-line-update t))))
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-toggle-map)
