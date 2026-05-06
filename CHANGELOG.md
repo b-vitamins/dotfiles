@@ -139,6 +139,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Updated `setup.sh` to keep `~/.codex/config.toml` as a local file and stop symlinking it from dotfiles
 - Refined the Codex `research-paper-notes` skill with multi-axis paper coordinates, claim-surface summaries, typed prior-work relation hints, and stronger machine-readable provenance
 ### Fixed
+- Sanitized BV modeline/header-line dynamic fields so `display-time-string` and
+  other mode-line fragments cannot leak package backgrounds into the header.
 - Made BV Emacs theme audit and regression commands load discoverable DSL
   theme specifications before compiling artifacts from a fresh runtime.
 - Enabled `fprintd` on `sparck` and added the CLI package to the shared

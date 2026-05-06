@@ -33,12 +33,6 @@
 (declare-function calendar-setup-header "bv-modeline")
 (declare-function org-capture-turn-off-header-line "bv-modeline")
 
-(defun bv-modeline--apply-face (string face)
-  "Return STRING with FACE added as a low-priority default face."
-  (let ((string (copy-sequence (or string ""))))
-    (add-face-text-property 0 (length string) face 'append string)
-    string))
-
 (defun shorten-directory (dir max-length)
   "Show up to MAX-LENGTH characters of directory name DIR."
   (let ((path (reverse (split-string (abbreviate-file-name dir) "/")))
@@ -87,7 +81,8 @@
                 (propertize name 'face 'bv-ui-header-strong)
                 (propertize " " 'face 'bv-ui-header-default
                             'display `(raise ,space-down))
-                (bv-modeline--apply-face primary 'bv-ui-header-default)))
+                (propertize (substring-no-properties (or primary ""))
+                            'face 'bv-ui-header-default)))
          (right (concat secondary " "))
          (available-width (- (window-total-width)
                              edge-pad-width edge-pad-width
@@ -99,7 +94,8 @@
             left
             (propertize (make-string available-width ?\ )
                         'face 'bv-ui-header-default)
-            (bv-modeline--apply-face right 'bv-ui-header-default)
+            (propertize (substring-no-properties (or right ""))
+                        'face 'bv-ui-header-default)
             edge-pad)))
 
 (defun bv-modeline-status ()
@@ -121,8 +117,7 @@
     (bv-modeline-compose (bv-modeline-status)
                          buffer-name
                          (concat "(" mode-name
-                                 (if branch (concat ", "
-                                                    (propertize branch 'face 'bv-ui-header-salient)))
+                                 (if branch (concat ", " branch))
                                  ")")
                          (if time-str
                              (concat position " | " time-str)
@@ -231,8 +226,7 @@
     (bv-modeline-compose (bv-modeline-status)
                          buffer-name
                          (concat "(" mode-name
-                                 (if branch (concat ", "
-                                                    (propertize branch 'face 'bv-ui-header-salient)))
+                                 (if branch (concat ", " branch))
                                  ")")
                          org-mode-line-string)))
 
