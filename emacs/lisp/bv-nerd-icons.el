@@ -46,6 +46,17 @@
   :type 'boolean
   :group 'bv-nerd-icons)
 
+(defcustom bv-nerd-icons-font-ranges
+  '((#xe000 . #xf8ff)
+    (#xf0000 . #xffffd)
+    (#x100000 . #x10fffd))
+  "Unicode private-use ranges assigned to the Nerd Font icon family.
+
+Keeping Nerd Fonts inside private-use ranges prevents the icon font from
+stealing ordinary text, math, CJK, or symbol glyphs from the main font stack."
+  :type '(repeat (cons integer integer))
+  :group 'bv-nerd-icons)
+
 ;;; Core nerd-icons configuration
 (defun bv-nerd-icons-configure-core ()
   "Configure core nerd-icons settings."
@@ -221,13 +232,21 @@
   (nerd-icons-install-fonts))
 
 ;;; Font setup
+(defun bv-nerd-icons--font-available-p (family)
+  "Return non-nil when icon font FAMILY is available."
+  (and (stringp family)
+       (> (length family) 0)
+       (find-font (font-spec :family family))))
+
 (defun bv-nerd-icons-setup-fonts ()
   "Ensure nerd fonts are properly configured."
   ;; Set font for icons in GUI
-  (when (display-graphic-p)
-    (set-fontset-font t 'unicode
-                      (font-spec :family bv-nerd-icons-font-family)
-                      nil 'prepend)))
+  (when (and (display-graphic-p)
+             (bv-nerd-icons--font-available-p bv-nerd-icons-font-family))
+    (dolist (range bv-nerd-icons-font-ranges)
+      (set-fontset-font t range
+                        (font-spec :family bv-nerd-icons-font-family)
+                        nil 'prepend))))
 
 ;;; Main initialization
 (defun bv-nerd-icons-init ()

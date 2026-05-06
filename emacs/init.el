@@ -22,6 +22,11 @@
 
 (require 'bv-themes)
 
+;; Configure typography before theme generation so generated faces use the
+;; resolved font roles on first paint.
+(require 'bv-fonts)
+(bv-fonts-sync-theme)
+
 ;; Apply default theme (light)
 (bv-themes-load-theme 'bv-light)
 
@@ -34,15 +39,8 @@
 (require 'bv-undo)
 (require 'bv-envrc)
 
-;; Configure fonts for sharp, crystal-clear rendering
-(require 'bv-fonts)
-
 ;; Tree-sitter ergonomics helpers (audit, config introspection)
 (require 'bv-treesit)
-
-;; Set theme engine to use our configured fonts
-(setq bv-themes-font-family-monospaced bv-fonts-default-family)
-(setq bv-themes-font-family-proportional bv-fonts-variable-family)
 
 ;; Load time and battery before modeline so they're available
 (require 'bv-time)         ; Time display

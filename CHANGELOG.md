@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Emacs cursor pulse for easier point tracking during navigation
 - Emacs config doctor (`bv-doctor` / `scripts/emacs-doctor.sh`) for batch validation
 - Explicit per-display font sizing for GUI frames
+- Role-based Emacs typography system with font diagnostics, display heuristics, ligature profiles, and theme synchronization
 - Tree-sitter grammar audit command (`bv-treesit-audit`)
 - Project cockpit actions in `project-switch-project` (ripgrep, test, magit, dape)
 - Unified formatting dispatcher (`bv-format` / `bv-format-on-save-mode`) and standardized `C-c C-f` formatting key
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Switched Org LaTeX previews to `org-fast-latex-preview` with Org-native auto state detection, explicit per-display scaling, and OFLP-backed refresh behavior
 - Refined BV Emacs light/dark theme palettes for improved contrast and a more polished completion UI
 - Updated BV font stack defaults and Unicode fallbacks (JetBrains Mono, FiraGO, Noto Serif)
+- Switched BV Emacs typography defaults to Iosevka Term, IBM Plex Sans, Source Serif 4, and STIX Two Math, with Nerd Font icons isolated to private-use ranges
 - Tweaked BV Emacs dark theme foundation colors for a richer background tint and crisper text contrast
 - Tweaked Alacritty dark palette for richer backgrounds and sharper text contrast
 - Disabled underlines across BV themes (links, comments, diagnostics) in favor of color and subtle background emphasis
