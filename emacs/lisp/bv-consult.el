@@ -381,6 +381,116 @@
                         (tab-bar-tabs)))))
   "Tab-bar source for `consult-buffer'.")
 
+;;; Source Hardening
+
+(defun bv-consult--source-name (source source-plist)
+  "Return a readable name for SOURCE backed by SOURCE-PLIST."
+  (or (plist-get source-plist :name)
+      (and (symbolp source) (symbol-name source))
+      "unnamed"))
+
+(defun bv-consult--resolve-source (source)
+  "Return SOURCE as a plist, or nil if it is unusable."
+  (condition-case err
+      (cond
+       ((null source) nil)
+       ((symbolp source)
+        (if (boundp source)
+            (symbol-value source)
+          (message "consult-buffer source %S is unbound" source)
+          nil))
+       ((consp source) source)
+       (t
+        (message "consult-buffer source %S is not a plist" source)
+        nil))
+    (error
+     (message "consult-buffer source %S failed to resolve: %s"
+              source (error-message-string err))
+     nil)))
+
+(defun bv-consult--safe-source-function (source-name slot function)
+  "Return FUNCTION wrapped for SOURCE-NAME SLOT failures."
+  (lambda (&rest args)
+    (condition-case err
+        (apply function args)
+      (error
+       (message "consult-buffer source %s %s failed: %s"
+                source-name slot (error-message-string err))
+       nil))))
+
+(defun bv-consult--safe-state (source-name state)
+  "Return STATE wrapped so preview failures do not break Vertico."
+  (lambda ()
+    (let ((state-fn
+           (condition-case err
+               (funcall state)
+             (error
+              (message "consult-buffer source %s state setup failed: %s"
+                       source-name (error-message-string err))
+              nil))))
+      (lambda (action cand)
+        (when state-fn
+          (condition-case err
+              (funcall state-fn action cand)
+            (error
+             (message "consult-buffer source %s state %s failed: %s"
+                      source-name action (error-message-string err))
+             nil)))))))
+
+(defun bv-consult--safe-buffer-source (source)
+  "Return a defensive copy of Consult buffer SOURCE."
+  (when-let ((source-plist (bv-consult--resolve-source source)))
+    (if (not (and (listp source-plist)
+                  (zerop (mod (length source-plist) 2))))
+        (progn
+          (message "consult-buffer source %S is malformed" source)
+          nil)
+      (let* ((copy (copy-sequence source-plist))
+             (name (bv-consult--source-name source source-plist))
+             (enabled (plist-get copy :enabled))
+             (items (plist-get copy :items))
+             (annotate (plist-get copy :annotate))
+             (action (plist-get copy :action))
+             (new (plist-get copy :new))
+             (state (plist-get copy :state)))
+        (cond
+         ((plist-member copy :items)
+          (when (functionp items)
+            (plist-put copy :items
+                       (bv-consult--safe-source-function name :items items))))
+         ((plist-member copy :async)
+          nil)
+         (t
+          (message "consult-buffer source %s has neither :items nor :async" name)
+          (setq copy nil)))
+        (when copy
+          (when (functionp enabled)
+            (plist-put copy :enabled
+                       (bv-consult--safe-source-function name :enabled enabled)))
+          (when (functionp annotate)
+            (plist-put copy :annotate
+                       (bv-consult--safe-source-function name :annotate annotate)))
+          (when (functionp action)
+            (plist-put copy :action
+                       (bv-consult--safe-source-function name :action action)))
+          (when (functionp new)
+            (plist-put copy :new
+                       (bv-consult--safe-source-function name :new new)))
+          (when (functionp state)
+            (plist-put copy :state (bv-consult--safe-state name state))))
+        copy))))
+
+(defun bv-consult--safe-buffer-sources (&optional sources)
+  "Return SOURCES normalized for resilient `consult-buffer' sessions."
+  (delq nil
+        (mapcar #'bv-consult--safe-buffer-source
+                (or sources consult-buffer-sources))))
+
+(defun bv-consult--buffer-with-safe-sources (orig-fun &optional sources)
+  "Call ORIG-FUN with defensive `consult-buffer' SOURCES."
+  (funcall orig-fun (bv-consult--safe-buffer-sources
+                     (or sources consult-buffer-sources))))
+
 ;;; Commands
 
 (defun bv-consult-ripgrep-or-line ()
@@ -460,6 +570,11 @@ PROMPT, DIR, MUSTMATCH, INITIAL and PRED follow `read-file-name-function'."
   (define-key consult-narrow-map (kbd "?") #'consult-narrow-help)
 
   (add-hook 'minibuffer-setup-hook #'bv-consult-initial-narrow)
+
+  (unless (advice-member-p #'bv-consult--buffer-with-safe-sources
+                           #'consult-buffer)
+    (advice-add #'consult-buffer :around
+                #'bv-consult--buffer-with-safe-sources))
 
   (when (require 'orderless nil t)
     (advice-add #'consult-ripgrep :around #'bv-consult--with-orderless)

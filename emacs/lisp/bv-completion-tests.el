@@ -13,6 +13,9 @@
 
 (require 'cl-lib)
 (require 'ert)
+(require 'seq)
+(require 'bv-comint)
+(require 'bv-consult)
 (require 'bv-marginalia)
 
 (defmacro bv-completion-tests--with-width (width &rest body)
@@ -70,6 +73,46 @@ This should truncate cleanly when horizontal space is tight."
                "a deliberately overlong fixed-width field" 18)))
     (should (= (string-width text) 18))
     (should (string-match-p "  ->\\'" text))))
+
+(ert-deftest bv-completion-consult-buffer-drops-malformed-sources ()
+  "Consult buffer source normalization should ignore unusable entries."
+  :tags '(bv-completion)
+  (let* ((inhibit-message t)
+         (message-log-max nil)
+         (sources (bv-consult--safe-buffer-sources
+                   '(consult-source-buffer bv-missing-consult-source)))
+         (names (mapcar (lambda (source) (plist-get source :name)) sources)))
+    (should (member "Buffer" names))
+    (should-not (member "bv-missing-consult-source" names))))
+
+(ert-deftest bv-completion-consult-buffer-source-errors-stay-contained ()
+  "Broken source item functions should not take down Vertico."
+  :tags '(bv-completion)
+  (let* ((inhibit-message t)
+         (message-log-max nil)
+         (broken (list :name "Broken"
+                       :category 'buffer
+                       :items (lambda () (error "boom"))))
+         (source (car (bv-consult--safe-buffer-sources (list broken)))))
+    (should source)
+    (should-not (funcall (plist-get source :items)))))
+
+(ert-deftest bv-completion-comint-source-uses-buffer-pairs ()
+  "Comint source items should keep Consult's native buffer candidate shape."
+  :tags '(bv-completion)
+  (let ((buffer (get-buffer-create "*bv-comint-test*")))
+    (unwind-protect
+        (with-current-buffer buffer
+          (comint-mode)
+          (let ((items (bv-comint--buffer-list)))
+            (should (seq-some
+                     (lambda (item)
+                       (and (consp item)
+                            (string= (car item) (buffer-name buffer))
+                            (eq (cdr item) buffer)))
+                     items))))
+      (when (buffer-live-p buffer)
+        (kill-buffer buffer)))))
 
 (provide 'bv-completion-tests)
 ;;; bv-completion-tests.el ends here

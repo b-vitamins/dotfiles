@@ -24,8 +24,12 @@
 (declare-function consult-org-slipbox-file-find "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult-org-slipbox-forward-links "consult-org-slipbox" (&optional other-window))
 (declare-function consult-org-slipbox-mode "consult-org-slipbox" (&optional arg))
+(declare-function consult-org-slipbox--note-buffer-p "consult-org-slipbox" (buffer))
 (declare-function consult-org-slipbox-ref-find "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult-org-slipbox-search "consult-org-slipbox" (&optional other-window initial-input))
+(declare-function consult--buffer-pair "consult" (buffer))
+(declare-function consult--buffer-query "consult" (&rest args))
+(declare-function consult--customize-put "consult" (cmds prop form))
 (declare-function nerd-icons-octicon "nerd-icons" (icon-name &rest args))
 ;; Autoloaded from `org-slipbox-maintenance'.
 (declare-function org-slipbox-sync "org-slipbox-maintenance" ())
@@ -300,6 +304,17 @@ With OTHER-WINDOW, visit the node in another window."
      (member tag (bv-org-slipbox--sequence (plist-get node :tags))))
    other-window))
 
+(defun bv-org-slipbox--consult-non-slipbox-buffer-items ()
+  "Return ordinary `consult-buffer' candidates as proper buffer pairs.
+`consult-org-slipbox' separates slipbox buffers into its own source; the
+default buffer source should still preserve Consult's native
+(NAME . BUFFER) shape."
+  (consult--buffer-query
+   :sort 'visibility
+   :as #'consult--buffer-pair
+   :predicate (lambda (buffer)
+                (not (consult-org-slipbox--note-buffer-p buffer)))))
+
 (setq org-slipbox-directory (expand-file-name bv-org-slipbox-directory)
       org-slipbox-database-file
       (expand-file-name "emacs/org-slipbox.sqlite"
@@ -349,7 +364,12 @@ With OTHER-WINDOW, visit the node in another window."
                      consult-org-slipbox-backlinks
                      consult-org-slipbox-forward-links))
     (advice-add command :around #'bv-org-slipbox--with-initial-index))
-  (consult-org-slipbox-mode 1))
+  (consult-org-slipbox-mode 1)
+  (when (fboundp 'consult--customize-put)
+    (consult--customize-put
+     '(consult-source-buffer)
+     :items
+     '(function bv-org-slipbox--consult-non-slipbox-buffer-items))))
 
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "C-c n i") #'org-slipbox-node-insert))

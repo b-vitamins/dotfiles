@@ -79,6 +79,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   bitmaps, clearer fringe contrast, and more substantial git-gutter markers.
 - Added spaced global overflow indicators for truncated/wrapped lines and
   completion rows so continuation markers do not collide with text.
+- Hardened `consult-buffer` source handling so optional buffer sources cannot
+  surface as Vertico errors, and normalized Comint/slipbox buffer sources to
+  Consult's native buffer-pair shape.
 - Polished crowded BV Emacs package surfaces across Vertico counts, Which-Key,
   Org Agenda prefixes, Flymake diagnostic gutters, Ibuffer icon columns, Corfu
   kind labels, and Keycast fallback rendering.

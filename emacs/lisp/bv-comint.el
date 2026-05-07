@@ -12,27 +12,34 @@
 
 (require 'comint)
 (require 'ansi-color)
+(require 'seq)
+(declare-function consult--buffer-action "consult" (buffer &optional norecord))
+(declare-function consult--buffer-pair "consult" (buffer))
 (declare-function consult--buffer-state "consult")
 
 (defun bv-comint--buffer-list ()
-  "Return list of comint buffer names."
-  (mapcar #'buffer-name
-          (seq-filter (lambda (buf)
-                        (with-current-buffer buf
-                          (derived-mode-p 'comint-mode)))
-                      (buffer-list))))
+  "Return Consult buffer pairs for live Comint buffers."
+  (mapcar #'consult--buffer-pair
+          (seq-filter
+           (lambda (buffer)
+             (with-current-buffer buffer
+               (derived-mode-p 'comint-mode)))
+           (buffer-list))))
+
+(defvar bv-comint-consult-source
+  `(:name "Comint"
+    :narrow ?c
+    :category buffer
+    :face consult-buffer
+    :history buffer-name-history
+    :state ,#'consult--buffer-state
+    :action ,#'consult--buffer-action
+    :items bv-comint--buffer-list)
+  "Consult source for live Comint buffers.")
 
 (with-eval-after-load 'consult
   (when (boundp 'consult-buffer-sources)
-    (add-to-list 'consult-buffer-sources
-                 `(:name "Comint"
-                   :narrow ?c
-                   :category buffer
-                   :face consult-buffer
-                   :history buffer-name-history
-                   :state ,#'consult--buffer-state
-                   :items bv-comint--buffer-list)
-                 'append)))
+    (add-to-list 'consult-buffer-sources 'bv-comint-consult-source 'append)))
 
 (when (boundp 'comint-prompt-read-only)
   (setq comint-prompt-read-only t))
