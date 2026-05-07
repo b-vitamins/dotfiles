@@ -17,6 +17,7 @@
 (declare-function tempel--templates "tempel")
 (defvar user-emacs-directory)
 (defvar completion-at-point-functions)
+(defvar bv-completion-map)
 
 (defgroup bv-tempel nil
   "Template expansion helpers."
@@ -68,9 +69,9 @@
   )
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "t") #'tempel-insert)
-    (define-key bv-app-map (kbd "T") #'tempel-expand)))
+  (when (boundp 'bv-completion-map)
+    (define-key bv-completion-map (kbd "i") #'tempel-insert)
+    (define-key bv-completion-map (kbd "e") #'tempel-expand)))
 
 ;;;; Trigger expansion via TAB
 

@@ -41,8 +41,8 @@
     (bv-eat)))
 
 (with-eval-after-load 'bv-bindings
-  (when (and (boundp 'bv-app-map) (boundp 'bv-terminal-map))
-    (define-key bv-app-map (kbd "e") 'bv-eat)
+  (when (boundp 'bv-terminal-map)
+    (define-key bv-terminal-map (kbd "t") 'bv-eat)
     (define-key bv-terminal-map (kbd "p") 'bv-eat-project)))
 
 (global-set-key (kbd "s-t") 'bv-eat)

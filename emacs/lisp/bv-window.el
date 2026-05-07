@@ -19,6 +19,7 @@
 (defvar aw-ignore-current)
 (defvar aw-display-mode-overlay)
 (defvar aw-leading-char-style)
+(defvar bv-window-map)
 
 ;; Declare external functions
 (declare-function ace-window "ace-window" (&optional arg))
@@ -38,6 +39,10 @@
 
 
 (global-set-key (kbd "M-o") 'ace-window)
+
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-window-map)
+    (define-key bv-window-map (kbd "w") 'ace-window)))
 
 (provide 'bv-window)
 ;;; bv-window.el ends here

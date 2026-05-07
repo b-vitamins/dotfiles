@@ -11,6 +11,7 @@
 ;;; Code:
 
 (require 'time)
+(defvar bv-system-map)
 
 (when (boundp 'display-time-format)
   (setq display-time-format "%H:%M"))
@@ -45,8 +46,8 @@
 
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "C") 'world-clock)))
+  (when (boundp 'bv-system-map)
+    (define-key bv-system-map (kbd "c") 'world-clock)))
 
 (when (fboundp 'display-time-mode)
   (display-time-mode 1))

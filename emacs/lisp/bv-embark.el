@@ -26,6 +26,7 @@
 (defvar embark-file-map)
 (defvar embark-general-map)
 (defvar embark-indicators)
+(defvar bv-action-map)
 (defvar embark-keymap-alist)
 (defvar embark-mixed-indicator-delay)
 (defvar embark-symbol-map)
@@ -159,9 +160,12 @@
 (define-key minibuffer-local-map (kbd "C-c C-.") #'embark-act-all)
 (define-key minibuffer-local-map (kbd "s-g") #'embark-become)
 
-(global-set-key (kbd "C-c e c") #'embark-collect)
-(global-set-key (kbd "C-c e l") #'embark-live)
-(global-set-key (kbd "C-c e e") #'embark-export)
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-action-map)
+    (define-key bv-action-map (kbd "a") #'embark-act-all)
+    (define-key bv-action-map (kbd "c") #'embark-collect)
+    (define-key bv-action-map (kbd "l") #'embark-live)
+    (define-key bv-action-map (kbd "e") #'embark-export)))
 
 ;;; Collect Buffers
 

@@ -89,6 +89,10 @@
 
 ;; Variables
 (defvar bv-power-loginctl-path)
+(defvar bv-ai-map)
+(defvar bv-dev-map)
+(defvar bv-system-map)
+(defvar bv-media-map)
 
 (defgroup bv-transient nil
   "Centralized transient menu settings."
@@ -301,17 +305,22 @@
   (bv-ytdl-transient-menu))
 
 ;;; Keybindings
-(global-set-key (kbd "C-c g") 'bv-gptel-transient)
-(global-set-key (kbd "C-c G") 'bv-guix-transient)
-(global-set-key (kbd "C-c S") 'bv-geiser-transient)
-(global-set-key (kbd "C-c m") 'bv-emms-transient)
-(global-set-key (kbd "C-c e") 'bv-ellama-transient)
-(global-set-key (kbd "C-c b") 'bv-ebdb-transient-menu)
-(global-set-key (kbd "C-c N") 'bv-ednc-transient)
-(global-set-key (kbd "C-x q") 'bv-power-transient)
-(global-set-key (kbd "C-c v") 'bv-audio-transient)
-(global-set-key (kbd "C-c P") 'bv-webpaste-transient)
-(global-set-key (kbd "C-c y") 'bv-ytdl-transient)
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-ai-map)
+    (define-key bv-ai-map (kbd "g") #'bv-gptel-transient)
+    (define-key bv-ai-map (kbd "e") #'bv-ellama-transient))
+  (when (boundp 'bv-dev-map)
+    (define-key bv-dev-map (kbd "G") #'bv-guix-transient)
+    (define-key bv-dev-map (kbd "S") #'bv-geiser-transient))
+  (when (boundp 'bv-system-map)
+    (define-key bv-system-map (kbd "b") #'bv-ebdb-transient-menu)
+    (define-key bv-system-map (kbd "n") #'bv-ednc-transient)
+    (define-key bv-system-map (kbd "q") #'bv-power-transient)
+    (define-key bv-system-map (kbd "v") #'bv-audio-transient)
+    (define-key bv-system-map (kbd "p") #'bv-webpaste-transient))
+  (when (boundp 'bv-media-map)
+    (define-key bv-media-map (kbd "e") #'bv-emms-transient)
+    (define-key bv-media-map (kbd "y") #'bv-ytdl-transient)))
 
 (provide 'bv-transient)
 ;;; bv-transient.el ends here

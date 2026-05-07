@@ -25,7 +25,7 @@
 (declare-function persp-mode "perspective")
 (declare-function consult-customize "consult")
 (defvar user-emacs-directory)
-(defvar bv-app-map)
+(defvar bv-window-map)
 (defvar project-switch-commands)
 
 (when (boundp 'persp-mode-prefix-key)
@@ -48,17 +48,17 @@
 
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "s") 'persp-switch)
-    (define-key bv-app-map (kbd "S") 'bv-persp-switch-project)
-    (define-key bv-app-map (kbd "k") 'persp-kill)
-    (define-key bv-app-map (kbd "r") 'persp-rename)
-    (define-key bv-app-map (kbd "a") 'persp-add-buffer)
-    (define-key bv-app-map (kbd "A") 'persp-set-buffer)
-    (define-key bv-app-map (kbd "b") 'persp-switch-to-buffer)
-    (define-key bv-app-map (kbd "i") 'persp-import)
-    (define-key bv-app-map (kbd "n") 'persp-next)
-    (define-key bv-app-map (kbd "p") 'persp-prev)))
+  (when (boundp 'bv-window-map)
+    (define-key bv-window-map (kbd "s") 'persp-switch)
+    (define-key bv-window-map (kbd "S") 'bv-persp-switch-project)
+    (define-key bv-window-map (kbd "k") 'persp-kill)
+    (define-key bv-window-map (kbd "r") 'persp-rename)
+    (define-key bv-window-map (kbd "a") 'persp-add-buffer)
+    (define-key bv-window-map (kbd "A") 'persp-set-buffer)
+    (define-key bv-window-map (kbd "b") 'persp-switch-to-buffer)
+    (define-key bv-window-map (kbd "i") 'persp-import)
+    (define-key bv-window-map (kbd "n") 'persp-next)
+    (define-key bv-window-map (kbd "p") 'persp-prev)))
 
 (with-eval-after-load 'project
   (when (and (boundp 'project-switch-commands)

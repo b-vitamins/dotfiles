@@ -17,7 +17,7 @@
 (defvar flyspell-issue-welcome-flag)
 (defvar flyspell-issue-message-flag)
 (defvar dictionary-server)
-(defvar bv-app-map)
+(defvar bv-search-map)
 
 ;; Enable spell checking in text modes
 (add-hook 'text-mode-hook #'flyspell-mode)
@@ -59,10 +59,10 @@
 
 ;; Keybindings
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "s") 'flyspell-mode)
-    (define-key bv-app-map (kbd "S") 'ispell-word)
-    (define-key bv-app-map (kbd "D") 'dictionary-search)))
+  (when (boundp 'bv-search-map)
+    (define-key bv-search-map (kbd "s") 'flyspell-mode)
+    (define-key bv-search-map (kbd "w") 'ispell-word)
+    (define-key bv-search-map (kbd "d") 'dictionary-search)))
 
 (provide 'bv-spelling)
 ;;; bv-spelling.el ends here

@@ -21,6 +21,7 @@
 (declare-function magit-status "magit" (&optional directory))
 (declare-function dape "dape")
 (defvar user-emacs-directory)
+(defvar bv-project-map)
 
 (defvar bv-project-dominating-files
   '(".project.el"
@@ -194,9 +195,21 @@ With prefix argument PROMPT, edit the suggested command."
     (define-key project-prefix-map "z" 'bv-project-dape))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "p") 'project-switch-project)
-    (define-key bv-app-map (kbd "P") 'bv-project-org-capture)))
+  (when (boundp 'bv-project-map)
+    (define-key bv-project-map (kbd "p") 'project-switch-project)
+    (define-key bv-project-map (kbd "b") 'consult-project-buffer)
+    (define-key bv-project-map (kbd "f") 'project-find-file)
+    (define-key bv-project-map (kbd "F") 'bv-project-consult-find)
+    (define-key bv-project-map (kbd "s") 'project-shell)
+    (define-key bv-project-map (kbd "e") 'project-eshell)
+    (define-key bv-project-map (kbd "d") 'project-dired)
+    (define-key bv-project-map (kbd "g") 'project-find-regexp)
+    (define-key bv-project-map (kbd "r") 'project-query-replace-regexp)
+    (define-key bv-project-map (kbd "c") 'project-compile)
+    (define-key bv-project-map (kbd "t") 'bv-project-test)
+    (define-key bv-project-map (kbd "m") 'bv-project-magit-status)
+    (define-key bv-project-map (kbd "z") 'bv-project-dape)
+    (define-key bv-project-map (kbd "o") 'bv-project-org-capture)))
 
 (provide 'bv-project)
 ;;; bv-project.el ends here

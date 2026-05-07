@@ -53,6 +53,7 @@
 (bv-modeline)
 
 (require 'bv-bindings)
+(require 'bv-keylog)
 
 (let ((inhibit-message t))
   (message "Welcome to Emacs")

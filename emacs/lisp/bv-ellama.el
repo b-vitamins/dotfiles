@@ -42,7 +42,7 @@
                      (lambda ()
                        (require 'ellama nil t)))
 
-(setq ellama-keymap-prefix "C-c e"
+(setq ellama-keymap-prefix "C-c a E"
       ellama-long-lines-length 80
       llm-warn-on-nonfree nil)
 

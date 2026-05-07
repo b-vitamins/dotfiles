@@ -9,8 +9,8 @@
 
 ;; Slipbox configuration built on org-slipbox.
 ;;
-;; The goal is to preserve the long-lived `C-c n' workflow on top of the
-;; org-slipbox daemon-backed index.
+;; The slipbox owns the hot `C-c n' notes domain on top of the org-slipbox
+;; daemon-backed index.
 
 ;;; Code:
 
@@ -60,7 +60,12 @@
     "review" "summary" "index" "reference" "question")
   "Common tags for slipbox notes.")
 
-(defvar bv-org-slipbox-map (make-sparse-keymap)
+(defvar bv-notes-map)
+
+(defvar bv-org-slipbox-map
+  (if (boundp 'bv-notes-map)
+      bv-notes-map
+    (make-sparse-keymap))
   "Keymap for BV slipbox commands.")
 
 (defconst bv-org-slipbox--capture-types

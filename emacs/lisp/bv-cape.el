@@ -22,6 +22,7 @@
 (defvar completion-at-point-functions)
 (defvar cape-tex-prefix-required)
 (defvar yas-minor-mode)
+(defvar bv-completion-map)
 
 (declare-function eglot-completion-at-point "eglot" ())
 (declare-function project-current "project" (&optional maybe-prompt directory))
@@ -383,8 +384,10 @@
   "Initialize Cape integration."
   (bv-cape-setup-global)
   (bv-cape--setup-hooks)
-  (global-set-key (kbd "C-c p") bv-cape-map)
-  (global-set-key (kbd "M-p") bv-cape-map))
+  (with-eval-after-load 'bv-bindings
+    (when (boundp 'bv-completion-map)
+      (define-key bv-completion-map (kbd "c") bv-cape-map)
+      (define-key bv-completion-map (kbd "TAB") #'completion-at-point))))
 
 (bv-cape-initialize)
 

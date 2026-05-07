@@ -24,6 +24,7 @@
 (defvar marginalia-mode)
 (defvar nerd-icons-completion-mode-hooks)
 (defvar which-key-prefix-prefix)
+(defvar bv-system-map)
 
 (declare-function bv-completion-icons-enabled-p "bv-completion" (&optional width))
 (declare-function bv-completion-width-class "bv-completion" (&optional width))
@@ -609,8 +610,10 @@ OVERRIDES are Nerd Icons plist arguments such as `:face' or `:height'."
   (bv-nerd-icons-configure-ibuffer)
   (bv-nerd-icons-configure-integrations)
   (bv-nerd-icons-setup-fonts)
-  (global-set-key (kbd "C-c i i") #'bv-nerd-icons-insert-icon)
-  (global-set-key (kbd "C-c i f") #'bv-nerd-icons-insert-icon-for-file)
+  (with-eval-after-load 'bv-bindings
+    (when (boundp 'bv-system-map)
+      (define-key bv-system-map (kbd "i") #'bv-nerd-icons-insert-icon)
+      (define-key bv-system-map (kbd "I") #'bv-nerd-icons-insert-icon-for-file)))
   (setq inhibit-compacting-font-caches t))
 
 (bv-nerd-icons-init)

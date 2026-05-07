@@ -46,6 +46,7 @@
 (declare-function ytdl--get-download-type "ytdl")
 (declare-function ytdl--download-async "ytdl")
 (declare-function ytdl--eval-field "ytdl")
+(defvar bv-media-map)
 (declare-function ytdl--eval-list "ytdl")
 
 (defvar mpv-seek-step)
@@ -137,9 +138,9 @@ PLAYLIST when non-nil adds to playlist instead of playing directly."
                    (cons 'mpv-file map))))
 )
 
-(with-eval-after-load 'bv-keymaps
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "m") 'bv-mpv-map)))
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-media-map)
+    (define-key bv-media-map (kbd "p") 'bv-mpv-map)))
 
 (with-eval-after-load 'mpv
   (setq mpv-seek-step bv-mpv-seek-step))

@@ -27,6 +27,8 @@ as a variable.")
 (autoload 'git-link--relative-filename "git-link")
 
 (declare-function magit-add-section-hook "magit" (hook function &optional at append local))
+(defvar bv-git-map)
+(defvar bv-toggle-map)
 
 (defcustom bv-git-magit-section-fringe-width 16
   "Left fringe width used to keep Magit section indicators away from text."
@@ -87,7 +89,10 @@ leading space so collapsed-section ellipses do not touch heading text."
           (call-interactively 'git-link)
         (call-interactively 'git-link-commit)))))
 
-(with-eval-after-load 'bv-keymaps
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-git-map)
+    (define-key bv-git-map (kbd "g") 'magit-status)
+    (define-key bv-git-map (kbd "l") 'bv-git-link))
   (when (boundp 'bv-toggle-map)
     (define-key bv-toggle-map (kbd "g") 'git-gutter-mode)
     (define-key bv-toggle-map (kbd "G") 'global-git-gutter-mode)))

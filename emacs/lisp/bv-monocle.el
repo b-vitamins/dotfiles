@@ -15,6 +15,8 @@
 (autoload 'hide-mode-line-mode "hide-mode-line" nil t)
 (autoload 'global-hide-mode-line-mode "hide-mode-line" nil t)
 
+(defvar bv-window-map)
+(defvar bv-toggle-map)
 
 (defvar bv--monocle-previous-window-configuration nil
   "Window configuration before entering monocle mode.")
@@ -83,6 +85,8 @@ Without ARG, toggle single window configuration."
 (global-set-key (kbd "s-f") 'bv-monocle-toggle)
 
 (with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-window-map)
+    (define-key bv-window-map (kbd "f") 'bv-monocle-toggle))
   (when (boundp 'bv-toggle-map)
     (define-key bv-toggle-map (kbd "o") 'olivetti-mode)
     (define-key bv-toggle-map (kbd "O") 'global-olivetti-mode)

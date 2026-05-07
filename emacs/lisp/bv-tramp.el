@@ -26,6 +26,7 @@
 (declare-function consult--directory-prompt "consult")
 (declare-function consult--file-prompt "consult")
 (declare-function vterm "vterm")
+(defvar bv-remote-map)
 
 (defgroup bv-tramp nil
   "TRAMP configuration for BV."
@@ -295,16 +296,16 @@
 ;;; Keybindings
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "R f") 'bv-tramp-find-file)
-    (define-key bv-app-map (kbd "R d") 'bv-tramp-dired)
-    (define-key bv-app-map (kbd "R s") 'bv-tramp-shell)
-    (define-key bv-app-map (kbd "R e") 'bv-tramp-eshell)
-    (define-key bv-app-map (kbd "R v") 'bv-tramp-vterm)
-    (define-key bv-app-map (kbd "R r") 'bv-tramp-sudo-find-file)
-    (define-key bv-app-map (kbd "R l") 'bv-tramp-list-connections)
-    (define-key bv-app-map (kbd "R c") 'bv-tramp-cleanup)
-    (define-key bv-app-map (kbd "R C") 'bv-tramp-cleanup-host)))
+  (when (boundp 'bv-remote-map)
+    (define-key bv-remote-map (kbd "f") 'bv-tramp-find-file)
+    (define-key bv-remote-map (kbd "d") 'bv-tramp-dired)
+    (define-key bv-remote-map (kbd "s") 'bv-tramp-shell)
+    (define-key bv-remote-map (kbd "e") 'bv-tramp-eshell)
+    (define-key bv-remote-map (kbd "v") 'bv-tramp-vterm)
+    (define-key bv-remote-map (kbd "r") 'bv-tramp-sudo-find-file)
+    (define-key bv-remote-map (kbd "l") 'bv-tramp-list-connections)
+    (define-key bv-remote-map (kbd "c") 'bv-tramp-cleanup)
+    (define-key bv-remote-map (kbd "C") 'bv-tramp-cleanup-host)))
 
 (provide 'bv-tramp)
 ;;; bv-tramp.el ends here

@@ -639,6 +639,8 @@ PROMPT, DIR, MUSTMATCH, INITIAL and PRED follow `read-file-name-function'."
 
 ;;; Keybindings
 
+(defvar bv-search-map)
+
 (defun bv-consult-setup-keybindings ()
   "Install Consult keybindings."
   (global-set-key (kbd "C-x b") #'consult-buffer)
@@ -677,6 +679,20 @@ PROMPT, DIR, MUSTMATCH, INITIAL and PRED follow `read-file-name-function'."
     (define-key search-map (kbd "k") #'consult-keep-lines)
     (define-key search-map (kbd "u") #'consult-focus-lines)
     (define-key search-map (kbd "e") #'consult-isearch-history))
+
+  (with-eval-after-load 'bv-bindings
+    (when (boundp 'bv-search-map)
+      (define-key bv-search-map (kbd "f") #'consult-find)
+      (define-key bv-search-map (kbd "F") #'consult-fd)
+      (define-key bv-search-map (kbd "g") #'consult-grep)
+      (define-key bv-search-map (kbd "G") #'consult-git-grep)
+      (define-key bv-search-map (kbd "r") #'consult-ripgrep)
+      (define-key bv-search-map (kbd "R") #'bv-consult-ripgrep-at-point)
+      (define-key bv-search-map (kbd "l") #'consult-line)
+      (define-key bv-search-map (kbd "L") #'consult-line-multi)
+      (define-key bv-search-map (kbd "k") #'consult-keep-lines)
+      (define-key bv-search-map (kbd "u") #'consult-focus-lines)
+      (define-key bv-search-map (kbd "e") #'consult-isearch-history)))
 
   (with-eval-after-load 'isearch
     (define-key isearch-mode-map (kbd "M-e") #'consult-isearch-history)

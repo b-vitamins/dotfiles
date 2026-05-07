@@ -17,6 +17,7 @@
 ;; - Run package-local UI polish tests
 ;; - Run role-based icon stack tests
 ;; - Run completion surface policy tests
+;; - Run semantic keybinding surface tests
 ;; - Run modeline/header-line invariant tests
 ;;
 ;; Designed to run in non-interactive batch mode and from pre-commit hooks.
@@ -173,6 +174,14 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
     (unless (zerop (ert-stats-completed-unexpected stats))
       (error "BV Nerd Icons tests failed"))))
 
+(defun bv-doctor-check-keybinding-tests ()
+  "Run BV keybinding/keylog ERT checks."
+  (require 'ert)
+  (require 'bv-keybindings-tests)
+  (let ((stats (ert-run-tests-batch '(tag bv-keybindings))))
+    (unless (zerop (ert-stats-completed-unexpected stats))
+      (error "BV keybinding tests failed"))))
+
 ;;;###autoload
 (defun bv-doctor-run ()
   "Run the BV config doctor interactively."
@@ -198,6 +207,8 @@ When FILES is nil, compiles all `.el' files under `emacs/lisp/'."
   (bv-doctor-check-ui-polish-tests)
   (message "bv-doctor: testing icon stack invariants…")
   (bv-doctor-check-nerd-icons-tests)
+  (message "bv-doctor: testing keybinding invariants…")
+  (bv-doctor-check-keybinding-tests)
   (message "bv-doctor: testing completion invariants…")
   (bv-doctor-check-completion-tests)
   (message "bv-doctor: testing modeline invariants…")
@@ -219,6 +230,7 @@ Signals an error on failure (causing a non-zero exit in batch mode)."
   (bv-doctor-check-layout-tests)
   (bv-doctor-check-ui-polish-tests)
   (bv-doctor-check-nerd-icons-tests)
+  (bv-doctor-check-keybinding-tests)
   (bv-doctor-check-completion-tests)
   (bv-doctor-check-modeline-tests)
   (message "bv-doctor: OK"))

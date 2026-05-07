@@ -18,6 +18,7 @@
 (declare-function project-files "project" (project &optional dirs))
 (declare-function project-current "project" (&optional maybe-prompt directory))
 (declare-function org-agenda-files "org" (&optional unrestricted archives))
+(defvar bv-org-map)
 
 (with-eval-after-load 'org-ql
   ;; Predefined searches
@@ -65,9 +66,9 @@
                  :sort '(date priority)))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "q") 'org-ql-search)
-    (define-key bv-app-map (kbd "Q") 'org-ql-view)))
+  (when (boundp 'bv-org-map)
+    (define-key bv-org-map (kbd "q") 'org-ql-search)
+    (define-key bv-org-map (kbd "Q") 'org-ql-view)))
 
 (provide 'bv-org-ql)
 ;;; bv-org-ql.el ends here

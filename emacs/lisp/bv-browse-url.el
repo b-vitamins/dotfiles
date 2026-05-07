@@ -11,6 +11,7 @@
 ;;; Code:
 
 (require 'browse-url)
+(defvar bv-system-map)
 
 ;; Default browser
 (when (boundp 'browse-url-browser-function)
@@ -46,9 +47,9 @@ URL is the URL to process, with additional ARGS passed through."
     (browse-url-generic url)))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "u") 'browse-url)
-    (define-key bv-app-map (kbd "U") 'browse-url-at-point)))
+  (when (boundp 'bv-system-map)
+    (define-key bv-system-map (kbd "u") 'browse-url)
+    (define-key bv-system-map (kbd "U") 'browse-url-at-point)))
 
 (provide 'bv-browse-url)
 ;;; bv-browse-url.el ends here

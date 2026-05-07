@@ -33,7 +33,7 @@
 (defvar eglot-report-progress)
 (defvar eglot-send-changes-idle-time)
 (defvar eglot-mode-map)
-(defvar bv-app-map)
+(defvar bv-dev-map)
 
 ;; External functions
 (declare-function eglot-ensure "eglot")
@@ -142,9 +142,9 @@ With prefix argument PROJECT, show project diagnostics."
     (define-key eglot-mode-map (kbd "C-c l F") 'eglot-format-buffer)))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "l") 'eglot)
-    (define-key bv-app-map (kbd "L") 'eglot-shutdown)))
+  (when (boundp 'bv-dev-map)
+    (define-key bv-dev-map (kbd "l") 'eglot)
+    (define-key bv-dev-map (kbd "L") 'eglot-shutdown)))
 
 (provide 'bv-eglot)
 ;;; bv-eglot.el ends here

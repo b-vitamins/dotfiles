@@ -30,7 +30,7 @@
 ;;   # Keep ~/.config/emacs/elfeed.score (your scoring rules)
 ;;
 ;; ESSENTIAL KEYBINDINGS:
-;;   C-x w    - Open Elfeed
+;;   C-c x r  - Open Elfeed
 ;;   g        - Update all feeds
 ;;   d        - Download ArXiv paper (creates PDF + BibTeX entry)
 ;;   m        - Toggle star
@@ -736,7 +736,10 @@
   (quit-window))
 
 ;; Global keybinding
-(global-set-key (kbd "C-x w") 'elfeed)
+(defvar bv-system-map)
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-system-map)
+    (define-key bv-system-map (kbd "r") 'elfeed)))
 
 ;; Save on exit
 (add-hook 'kill-emacs-hook #'bv-elfeed-save-db-if-loaded)

@@ -15,6 +15,7 @@
 (autoload 'embark-open-externally "embark" nil t)
 
 (defvar dired-mode-map)
+(defvar bv-file-map)
 (declare-function dired-get-marked-files "dired")
 (declare-function dired-hide-details-mode "dired")
 (declare-function kill-current-buffer "simple")
@@ -56,6 +57,10 @@
     (setq ls-lisp-use-insert-directory-program nil)))
 
 (global-set-key (kbd "s-d") 'dired-jump)
+
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-file-map)
+    (define-key bv-file-map (kbd "d") 'dired-jump)))
 
 (provide 'bv-dired)
 ;;; bv-dired.el ends here

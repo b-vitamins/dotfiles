@@ -15,6 +15,7 @@
 ;; Declare external functions and variables to avoid elint warnings
 (declare-function special-mode "simple" ())
 (defvar bv-face-default)
+(defvar bv-org-map)
 
 ;; Silence byte-compiler warning for missing function
 (eval-when-compile (require 'simple))
@@ -355,8 +356,8 @@
     (bv-calendar-refresh)))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "c") 'bv-calendar)))
+  (when (boundp 'bv-org-map)
+    (define-key bv-org-map (kbd "d") 'bv-calendar)))
 
 (provide 'bv-calendar)
 ;;; bv-calendar.el ends here

@@ -76,8 +76,8 @@ With prefix ARG, prompt for project selection."
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-terminal-map)
-    (define-key bv-terminal-map (kbd "s") 'eshell)
-    (define-key bv-terminal-map (kbd "P") 'bv-eshell-project)))
+    (define-key bv-terminal-map (kbd "e") 'eshell)
+    (define-key bv-terminal-map (kbd "E") 'bv-eshell-project)))
 
 (provide 'bv-eshell)
 ;;; bv-eshell.el ends here

@@ -20,7 +20,7 @@
 (defvar calc-currency-exchange-rates-file)
 (defvar calc-currency-base-currency)
 (defvar calc-currency-update-interval)
-(defvar bv-app-map)
+(defvar bv-system-map)
 
 ;; External function declarations
 (declare-function calc-eval "calc" (str &optional separator &rest args))
@@ -53,10 +53,10 @@
 (global-set-key (kbd "C-x *") 'calc-dispatch)
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "*") 'calc)
-    (define-key bv-app-map (kbd "=") 'quick-calc)
-    (define-key bv-app-map (kbd "+") 'bv-calc-eval)))
+  (when (boundp 'bv-system-map)
+    (define-key bv-system-map (kbd "*") 'calc)
+    (define-key bv-system-map (kbd "=") 'quick-calc)
+    (define-key bv-system-map (kbd "+") 'bv-calc-eval)))
 
 (provide 'bv-calc)
 ;;; bv-calc.el ends here

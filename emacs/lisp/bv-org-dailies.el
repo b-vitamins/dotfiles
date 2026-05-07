@@ -17,7 +17,7 @@
 (defvar org-slipbox-dailies-directory)
 (defvar org-slipbox-dailies-capture-templates)
 (defvar mode-specific-map)
-(defvar bv-app-map)
+(defvar bv-notes-map)
 
 (autoload 'org-slipbox-dailies-map "org-slipbox-dailies" "Keymap for org-slipbox dailies commands." nil 'keymap)
 (autoload 'org-slipbox-dailies-goto-today "org-slipbox-dailies" "Go to today's daily note.")
@@ -49,8 +49,8 @@
   (define-key mode-specific-map (kbd "d") 'org-slipbox-dailies-map))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "j") 'org-slipbox-dailies-goto-today)))
+  (when (boundp 'bv-notes-map)
+    (define-key bv-notes-map (kbd "j") 'org-slipbox-dailies-goto-today)))
 
 (provide 'bv-org-dailies)
 ;;; bv-org-dailies.el ends here

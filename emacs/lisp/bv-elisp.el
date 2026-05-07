@@ -14,6 +14,7 @@
 (autoload 'pp-eval-last-sexp "pp")
 (autoload 'pp-eval-expression "pp")
 (autoload 'pp-macroexpand-last-sexp "pp")
+(defvar bv-dev-map)
 
 (add-hook 'emacs-lisp-mode-hook 'flymake-mode)
 
@@ -27,8 +28,8 @@
 (global-set-key (kbd "M-:") 'pp-eval-expression)
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "i") 'ielm)))
+  (when (boundp 'bv-dev-map)
+    (define-key bv-dev-map (kbd "i") 'ielm)))
 
 (with-eval-after-load 'ielm
   (when (boundp 'ielm-header)

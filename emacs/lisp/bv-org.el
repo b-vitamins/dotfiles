@@ -19,7 +19,9 @@
 ;; Load LaTeX preview configuration early.
 (require 'bv-org-latex nil t)
 
-(define-prefix-command 'bv-org-map)
+(unless (boundp 'bv-org-map)
+  (defvar bv-org-map (make-sparse-keymap)
+    "BV Org, agenda, capture, and clocking commands."))
 
 (defgroup bv-org nil
   "Lightweight Org configuration."
@@ -203,9 +205,7 @@ With prefix ARG, pass it through to `org-clock-out'."
            :empty-lines 1))))
 
 (with-eval-after-load 'bv-bindings
-  (defvar bv-app-map)
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "o") bv-org-map)
+  (when (boundp 'bv-org-map)
     (define-key bv-org-map (kbd "a") #'org-agenda)
     (define-key bv-org-map (kbd "c") #'org-capture)
     (define-key bv-org-map (kbd "i")

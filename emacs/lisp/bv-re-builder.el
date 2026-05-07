@@ -11,6 +11,7 @@
 ;;; Code:
 
 (autoload 're-builder "re-builder")
+(defvar bv-search-map)
 
 (with-eval-after-load 're-builder
   (when (boundp 'reb-re-syntax)
@@ -19,8 +20,8 @@
     (setq reb-blink-delay 0.5)))
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "x") 're-builder)))
+  (when (boundp 'bv-search-map)
+    (define-key bv-search-map (kbd "x") 're-builder)))
 
 (provide 'bv-re-builder)
 ;;; bv-re-builder.el ends here

@@ -14,6 +14,7 @@
 (autoload 'devdocs-install "devdocs")
 (autoload 'devdocs-peruse "devdocs")
 (autoload 'devdocs-search "devdocs")
+(defvar bv-help-map)
 
 (with-eval-after-load 'devdocs
   (when (boundp 'devdocs-data-dir)
@@ -25,9 +26,9 @@
 (global-set-key (kbd "C-h D") 'devdocs-lookup)
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "h") 'devdocs-lookup)
-    (define-key bv-app-map (kbd "H") 'devdocs-search)))
+  (when (boundp 'bv-help-map)
+    (define-key bv-help-map (kbd "d") 'devdocs-lookup)
+    (define-key bv-help-map (kbd "D") 'devdocs-search)))
 
 (provide 'bv-devdocs)
 ;;; bv-devdocs.el ends here

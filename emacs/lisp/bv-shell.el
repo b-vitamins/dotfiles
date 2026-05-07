@@ -49,8 +49,8 @@
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-terminal-map)
-    (define-key bv-terminal-map (kbd "t") 'bv-shell)
-    (define-key bv-terminal-map (kbd "T") 'bv-shell-project)))
+    (define-key bv-terminal-map (kbd "s") 'bv-shell)
+    (define-key bv-terminal-map (kbd "S") 'bv-shell-project)))
 
 (with-eval-after-load 'shell
   (when (boundp 'shell-mode-map)

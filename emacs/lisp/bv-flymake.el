@@ -13,6 +13,7 @@
 (require 'flymake)
 
 (declare-function consult-flymake "consult-flymake" (&optional project))
+(defvar bv-dev-map)
 
 (defgroup bv-flymake nil
   "BV Flymake presentation policy."
@@ -98,9 +99,10 @@ With prefix argument PROJECT, show project diagnostics."
 
 
 (with-eval-after-load 'bv-bindings
-  (when (boundp 'bv-app-map)
-    (define-key bv-app-map (kbd "f") 'flymake-mode)
-    (define-key bv-app-map (kbd "F") 'flymake-show-project-diagnostics)))
+  (when (boundp 'bv-dev-map)
+    (define-key bv-dev-map (kbd "!") bv-flymake-fix-map)
+    (define-key bv-dev-map (kbd "f") 'flymake-mode)
+    (define-key bv-dev-map (kbd "F") 'flymake-show-project-diagnostics)))
 
 (provide 'bv-flymake)
 ;;; bv-flymake.el ends here

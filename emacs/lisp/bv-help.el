@@ -11,6 +11,7 @@
 ;;; Code:
 
 (require 'help)
+(defvar bv-help-map)
 
 ;; Better help defaults
 (when (boundp 'help-window-select)
@@ -62,7 +63,16 @@
 ;; Keybindings
 (global-set-key (kbd "C-h C-h") 'bv-help-transient)
 (global-set-key (kbd "C-h .") 'bv-describe-symbol-at-point)
-(global-set-key (kbd "M-p") 'bv-quick-help)
+
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-help-map)
+    (define-key bv-help-map (kbd "h") 'bv-help-transient)
+    (define-key bv-help-map (kbd ".") 'bv-describe-symbol-at-point)
+    (define-key bv-help-map (kbd "q") 'bv-quick-help)
+    (define-key bv-help-map (kbd "f") 'describe-function)
+    (define-key bv-help-map (kbd "v") 'describe-variable)
+    (define-key bv-help-map (kbd "m") 'describe-mode)
+    (define-key bv-help-map (kbd "i") 'info)))
 
 (provide 'bv-help)
 ;;; bv-help.el ends here

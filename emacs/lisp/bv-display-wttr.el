@@ -16,6 +16,7 @@
 (defvar display-wttr-locations)
 (defvar display-wttr-interval)
 (defvar display-wttr-mode)
+(defvar bv-system-map)
 
 (defgroup bv-weather nil
   "Weather display settings."
@@ -83,7 +84,9 @@
 (with-eval-after-load 'display-wttr
   (display-wttr-mode 1))
 
-(global-set-key (kbd "C-c W") 'bv-weather-show)
+(with-eval-after-load 'bv-bindings
+  (when (boundp 'bv-system-map)
+    (define-key bv-system-map (kbd "w") 'bv-weather-show)))
 
 (provide 'bv-display-wttr)
 ;;; bv-display-wttr.el ends here
