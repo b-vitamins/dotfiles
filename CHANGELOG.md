@@ -75,6 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   coverage for representative modeline states.
 - Refined BV Emacs read-only header status contrast and Magit section
   indicator spacing.
+- Strengthened BV Emacs fringe/gutter affordances with heavier Magit disclosure
+  bitmaps, clearer fringe contrast, and more substantial git-gutter markers.
 - Added spaced global overflow indicators for truncated/wrapped lines and
   completion rows so continuation markers do not collide with text.
 - Polished crowded BV Emacs package surfaces across Vertico counts, Which-Key,

@@ -18,6 +18,7 @@
 (require 'bv-org-agenda)
 (require 'bv-flymake)
 (require 'bv-corfu)
+(require 'bv-git)
 (require 'bv-keycast)
 (require 'bv-nerd-icons)
 
@@ -82,6 +83,23 @@
                    '(mark " " modified " " read-only "  "
                           nerd-icons-ibuffer-icon)))
     (should (member "  " format))))
+
+(ert-deftest bv-ui-polish-magit-section-indicators-have-weight ()
+  "Magit section indicators should be deliberate, not faint hairlines."
+  :tags '(bv-ui-polish)
+  (require 'magit-section)
+  (should (>= bv-git-magit-section-fringe-width 16))
+  (should (equal (car magit-section-visibility-indicators)
+                 '(magit-fringe-bitmap-bold> . magit-fringe-bitmap-boldv)))
+  (should (string-prefix-p
+           " "
+           (car (cadr magit-section-visibility-indicators)))))
+
+(ert-deftest bv-ui-polish-git-gutter-bitmaps-have-substance ()
+  "Git gutter bitmaps should be visible without becoming blocks."
+  :tags '(bv-ui-polish)
+  (should (equal bv-git--fringe-bar-bitmap [#b00011000]))
+  (should (>= (length bv-git--fringe-deleted-bitmap) 4)))
 
 (provide 'bv-ui-polish-tests)
 ;;; bv-ui-polish-tests.el ends here

@@ -18,7 +18,8 @@
 
 Magit-Section 4.5.0 repurposed `magit-section-visibility-indicator' from a
 variable to a function, but older native-compiled artifacts may still treat it
-as a variable."))
+as a variable.")
+  (defvar magit-section-visibility-indicators nil))
 
 (autoload 'git-link--exec "git-link")
 (autoload 'git-link--branch "git-link")
@@ -27,10 +28,30 @@ as a variable."))
 
 (declare-function magit-add-section-hook "magit" (hook function &optional at append local))
 
-(defcustom bv-git-magit-section-fringe-width 14
+(defcustom bv-git-magit-section-fringe-width 16
   "Left fringe width used to keep Magit section indicators away from text."
   :type 'integer
   :group 'magit)
+
+(defcustom bv-git-magit-section-visibility-indicators
+  '((magit-fringe-bitmap-bold> . magit-fringe-bitmap-boldv)
+    (" …" . t))
+  "Magit section visibility indicators for graphical and terminal frames.
+The graphical pair uses Magit's heavier chevrons; the terminal fallback keeps a
+leading space so collapsed-section ellipses do not touch heading text."
+  :type 'sexp
+  :group 'magit)
+
+(defconst bv-git--fringe-bar-bitmap
+  [#b00011000]
+  "Two-pixel vertical bar used for changed-line gutter markers.")
+
+(defconst bv-git--fringe-deleted-bitmap
+  [#b00011000
+   #b00111100
+   #b01111110
+   #b00111100]
+  "Weighted wedge used for deleted-line gutter markers.")
 
 (defun bv-git--setup-magit-section-gutter ()
   "Give Magit section indicators a small dedicated left fringe gutter."
@@ -80,9 +101,10 @@ as a variable."))
                   "/emacs/transient/history.el"))))
 
 (with-eval-after-load 'magit-section
+  (setq magit-section-visibility-indicators
+        (copy-tree bv-git-magit-section-visibility-indicators))
   (with-no-warnings
-    (when (and (null magit-section-visibility-indicator)
-               (boundp 'magit-section-visibility-indicators)
+    (when (and (boundp 'magit-section-visibility-indicator)
                (fboundp 'magit-section-visibility-indicator))
       (setq magit-section-visibility-indicator
             (magit-section-visibility-indicator)))))
@@ -135,10 +157,11 @@ as a variable."))
                   (apply orig-fun args))))
 
   (dolist (fringe '(git-gutter-fr:added git-gutter-fr:modified))
-    (define-fringe-bitmap fringe (vector 8) nil nil '(top repeat)))
+    (define-fringe-bitmap fringe bv-git--fringe-bar-bitmap nil nil
+                          '(top repeat)))
 
   (define-fringe-bitmap 'git-gutter-fr:deleted
-                        (vector 8 12 14 15) nil nil 'bottom))
+                        bv-git--fringe-deleted-bitmap nil nil 'bottom))
 
 (provide 'bv-git)
 ;;; bv-git.el ends here

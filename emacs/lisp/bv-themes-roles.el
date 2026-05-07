@@ -37,7 +37,7 @@
     (critical :fg error-strong :weight bold)
     (critical-block :fg critical-fg :bg critical-bg :weight bold :extend t)
     (cursor :bg cursor)
-    (fringe :fg fg-faint :bg bg-main)
+    (fringe :fg fg-dim :bg bg-main)
     (border :fg border)
     (border-subtle :fg border-subtle)
     (border-strong :fg border-strong)
