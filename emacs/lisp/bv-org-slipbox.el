@@ -24,7 +24,10 @@
 (declare-function consult-org-slipbox-file-find "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult-org-slipbox-forward-links "consult-org-slipbox" (&optional other-window))
 (declare-function consult-org-slipbox-mode "consult-org-slipbox" (&optional arg))
+(declare-function consult-org-slipbox--buffer-visible-name "consult-org-slipbox" (buffer))
+(declare-function consult-org-slipbox--candidate-buffer "consult-org-slipbox" (candidate))
 (declare-function consult-org-slipbox--note-buffer-p "consult-org-slipbox" (buffer))
+(declare-function consult-org-slipbox--refresh-buffer-source "consult-org-slipbox" ())
 (declare-function consult-org-slipbox-ref-find "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult-org-slipbox-search "consult-org-slipbox" (&optional other-window initial-input))
 (declare-function consult--buffer-pair "consult" (buffer))
@@ -61,6 +64,9 @@
   "Common tags for slipbox notes.")
 
 (defvar bv-notes-map)
+
+(defvar consult-org-slipbox--buffer-alist)
+(defvar consult-org-slipbox-buffer-source)
 
 (defvar bv-org-slipbox-map
   (if (boundp 'bv-notes-map)
@@ -320,6 +326,48 @@ default buffer source should still preserve Consult's native
    :predicate (lambda (buffer)
                 (not (consult-org-slipbox--note-buffer-p buffer)))))
 
+(defun bv-org-slipbox--consult-slipbox-buffer-items ()
+  "Return slipbox note buffers as Consult-native (LABEL . BUFFER) pairs."
+  (let ((items
+         (mapcar (lambda (buffer)
+                   (cons (consult-org-slipbox--buffer-visible-name buffer)
+                         buffer))
+                 (seq-filter #'consult-org-slipbox--note-buffer-p
+                             (buffer-list)))))
+    ;; Preserve the upstream label lookup table for commands or older source
+    ;; functions that still ask `consult-org-slipbox--candidate-buffer' by name.
+    (when (boundp 'consult-org-slipbox--buffer-alist)
+      (setq consult-org-slipbox--buffer-alist items))
+    items))
+
+(defun bv-org-slipbox--consult-slipbox-candidate-buffer (candidate)
+  "Return the live slipbox buffer represented by CANDIDATE."
+  (cond
+   ((and (bufferp candidate) (buffer-live-p candidate)) candidate)
+   ((stringp candidate) (consult-org-slipbox--candidate-buffer candidate))))
+
+(defun bv-org-slipbox--consult-slipbox-buffer-annotation (candidate)
+  "Return annotation for a slipbox buffer CANDIDATE."
+  (when-let* ((buffer (bv-org-slipbox--consult-slipbox-candidate-buffer
+                       candidate)))
+    (string-join
+     (delq nil
+           (list (when (buffer-modified-p buffer) "modified")
+                 (buffer-name buffer)))
+     "  ")))
+
+(defun bv-org-slipbox--consult-normalize-buffer-source (&rest _)
+  "Keep the slipbox `consult-buffer' source on Consult's buffer contract."
+  (when (and (boundp 'consult-org-slipbox-buffer-source)
+             consult-org-slipbox-buffer-source)
+    (let ((source (copy-sequence consult-org-slipbox-buffer-source)))
+      (setq source (plist-put source :category 'buffer))
+      (setq source (plist-put source :items
+                              #'bv-org-slipbox--consult-slipbox-buffer-items))
+      (setq source (plist-put source :annotate
+                              #'bv-org-slipbox--consult-slipbox-buffer-annotation))
+      (setq consult-org-slipbox-buffer-source source))))
+
 (setq org-slipbox-directory (expand-file-name bv-org-slipbox-directory)
       org-slipbox-database-file
       (expand-file-name "emacs/org-slipbox.sqlite"
@@ -369,7 +417,10 @@ default buffer source should still preserve Consult's native
                      consult-org-slipbox-backlinks
                      consult-org-slipbox-forward-links))
     (advice-add command :around #'bv-org-slipbox--with-initial-index))
+  (advice-add #'consult-org-slipbox--refresh-buffer-source
+              :after #'bv-org-slipbox--consult-normalize-buffer-source)
   (consult-org-slipbox-mode 1)
+  (bv-org-slipbox--consult-normalize-buffer-source)
   (when (fboundp 'consult--customize-put)
     (consult--customize-put
      '(consult-source-buffer)

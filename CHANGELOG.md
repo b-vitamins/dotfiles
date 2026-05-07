@@ -91,6 +91,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   with typography-owned font selection, richer icon style policy,
   category-aware completion density, doctor coverage, and theme regression
   gallery coverage.
+- Hardened BV Emacs completion icons and slipbox buffer sources so file-backed
+  buffers preserve file icon semantics while malformed virtual candidates cannot
+  break Vertico.
 - Split Emacs doctor validation into a hermetic batch gate and a live full-init
   gate for runtime theme workflow checks.
 - Expanded BV Emacs theme audits for diagnostics, completion, diff, terminal,

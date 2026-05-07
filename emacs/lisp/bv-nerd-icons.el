@@ -467,11 +467,49 @@ OVERRIDES are Nerd Icons plist arguments such as `:face' or `:height'."
          t))
       (_ t))))
 
+(defun bv-nerd-icons-completion--candidate-buffer (cand)
+  "Return the live buffer represented by CAND, if any."
+  (cond
+   ((and (bufferp cand) (buffer-live-p cand)) cand)
+   ((stringp cand) (get-buffer cand))))
+
+(defun bv-nerd-icons-completion--buffer-file (cand)
+  "Return CAND's file when it represents a live file-backed buffer."
+  (when-let* ((buffer (bv-nerd-icons-completion--candidate-buffer cand)))
+    (buffer-file-name buffer)))
+
+(defun bv-nerd-icons-completion--fallback-icon (category cand)
+  "Return a conservative fallback icon for CATEGORY and CAND."
+  (ignore cand)
+  (let ((role (pcase category
+                ((or 'file 'project-file) 'file)
+                ('buffer 'ibuffer)
+                ('bookmark 'book)
+                ('org-slipbox-node 'note)
+                (_ nil))))
+    (if role
+        (condition-case nil
+            (concat (bv-nerd-icons-icon role) " ")
+          (error ""))
+      "")))
+
 (defun bv-nerd-icons-completion-get-icon (orig-fun cand category)
   "Return completion icon from ORIG-FUN for CAND and CATEGORY when policy allows."
   (if (not (bv-nerd-icons-completion-category-enabled-p category))
       ""
-    (funcall orig-fun cand category)))
+    (condition-case nil
+        (let ((file (and (eq category 'buffer)
+                         (bv-nerd-icons-completion--buffer-file cand))))
+          (cond
+           (file
+            (funcall orig-fun file 'file))
+           ((and (eq category 'buffer)
+                 (not (bv-nerd-icons-completion--candidate-buffer cand)))
+            (bv-nerd-icons-completion--fallback-icon category cand))
+           (t
+            (funcall orig-fun cand category))))
+      (error
+       (bv-nerd-icons-completion--fallback-icon category cand)))))
 
 (defun bv-nerd-icons-configure-completion ()
   "Configure Nerd Icons for completion frameworks."
