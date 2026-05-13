@@ -58,9 +58,11 @@
      marginalia-file-name marginalia-date marginalia-size
      orderless-match-face-0 orderless-match-face-1 orderless-match-face-2
      orderless-match-face-3 corfu-current corfu-default corfu-bar
-     corfu-border corfu-annotations company-tooltip
+     corfu-border corfu-annotations corfu-popupinfo
+     corfu-popupinfo-scrollbar child-frame-border company-tooltip
      company-tooltip-selection company-tooltip-common company-scrollbar-bg
-     company-scrollbar-fg company-preview company-preview-common)
+     company-scrollbar-fg company-tooltip-scrollbar-track
+     company-tooltip-scrollbar-thumb company-preview company-preview-common)
     (transient
      transient-heading transient-key transient-argument transient-value
      transient-inactive-argument transient-enabled-suffix

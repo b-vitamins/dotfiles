@@ -153,13 +153,25 @@ of this list so a logical paragraph is not painted as one large block."
   :type 'directory
   :group 'bv-defaults)
 
+(defcustom bv-defaults-load-custom-faces nil
+  "When non-nil, load face customizations from `custom-file'.
+
+BV themes own the visual system.  Local Customize variables are fine, but
+saved package faces can silently override the house theme and make one surface
+look like it came from a different editor."
+  :type 'boolean
+  :group 'bv-defaults)
+
 ;;; Custom file
 
 (defun bv-defaults-setup-custom-file ()
   "Keep Customize state outside the checked-in init files."
   (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
   (when (file-exists-p custom-file)
-    (load custom-file 'noerror 'nomessage)))
+    (if bv-defaults-load-custom-faces
+        (load custom-file 'noerror 'nomessage)
+      (cl-letf (((symbol-function 'custom-set-faces) #'ignore))
+        (load custom-file 'noerror 'nomessage)))))
 
 ;;; Quiet startup and chrome
 

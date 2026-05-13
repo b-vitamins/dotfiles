@@ -194,7 +194,7 @@
    (bg-header-strong bg-active)
    (bg-tooltip bg-main)
    (bg-completion (oklch 0.9460 0.0115 94.0))
-   (bg-completion-current (mix blue bg-main 0.185))
+   (bg-completion-current (mix cyan bg-main 0.255))
    (bg-popup bg-dim)
    (bg-prose-block bg-alt)
    (bg-prose-block-contents bg-dim)

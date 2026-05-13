@@ -213,33 +213,6 @@
 
 ;;; Commands
 
-(defun bv-corfu--at-separator-p ()
-  "Return non-nil if point is after the Corfu separator."
-  (and (> (point) (point-min))
-       (= (char-before) corfu-separator)))
-
-(defun bv-corfu--at-word-end-p ()
-  "Return non-nil if point is at a natural word boundary."
-  (or (eobp)
-      (not (looking-at-p "[[:alnum:]_]"))))
-
-(defun bv-corfu-smart-sep ()
-  "Insert an Orderless separator or commit the selected candidate plus space."
-  (interactive)
-  (cond
-   ((and (bv-corfu--at-separator-p)
-         (or (eobp) (memq (char-after) '(?\s ?\n))))
-    (delete-char -1)
-    (corfu-insert)
-    (insert " "))
-   ((and (>= corfu--index 0)
-         (not (bv-corfu--at-separator-p))
-         (bv-corfu--at-word-end-p))
-    (corfu-insert)
-    (insert " "))
-   (t
-    (corfu-insert-separator))))
-
 (defun bv-corfu-move-to-minibuffer ()
   "Move the current in-buffer completion session to Consult."
   (interactive)
@@ -292,7 +265,7 @@
 (keymap-set corfu-map "TAB" #'corfu-complete)
 (keymap-set corfu-map "RET" #'corfu-insert)
 (keymap-set corfu-map "M-m" #'bv-corfu-move-to-minibuffer)
-(keymap-set corfu-map "SPC" #'bv-corfu-smart-sep)
+(keymap-set corfu-map "SPC" #'corfu-insert-separator)
 (keymap-set corfu-map "M-TAB" #'corfu-expand)
 (keymap-set corfu-map "C-n" #'corfu-next)
 (keymap-set corfu-map "C-p" #'corfu-previous)

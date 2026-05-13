@@ -140,6 +140,15 @@
                         :weight semibold :extend t)
     (completion-annotation :fg fg-dim)
     (completion-match :fg fg-salient :weight bold)
+    (completion-match-0 :fg fg-salient :weight bold)
+    (completion-match-1 :fg fg-special :weight bold)
+    (completion-match-2 :fg info-strong :weight semibold)
+    (completion-match-3 :fg warning-strong :weight semibold)
+    (completion-border :fg bg-completion :bg bg-completion)
+    (completion-scrollbar-track :fg bg-completion :bg bg-completion)
+    (completion-scrollbar-thumb :fg border :bg border)
+    (completion-popup :fg fg-main :bg bg-popup
+                      :box (:line-width 1 :color bg-completion))
     (button :fg fg-link :bg bg-hover
             :box (:line-width 1 :color border-subtle)
             :weight semibold)

@@ -195,7 +195,7 @@
    (bg-header-strong bg-active)
    (bg-tooltip bg-active)
    (bg-completion bg-alt)
-   (bg-completion-current (mix blue bg-main 0.300))
+   (bg-completion-current (mix cyan bg-main 0.320))
    (bg-popup bg-alt)
    (bg-prose-block bg-alt)
    (bg-prose-block-contents bg-dim)

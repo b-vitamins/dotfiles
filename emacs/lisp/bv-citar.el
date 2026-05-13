@@ -10,6 +10,8 @@
 
 ;;; Code:
 
+(require 'bibtex)
+
 (eval-when-compile
   (require 'citar))
 
@@ -17,8 +19,13 @@
 (autoload 'citar-indicator-create "citar")
 (autoload 'citar-has-files "citar")
 (autoload 'citar-has-links "citar")
+(autoload 'citar-has-notes "citar")
 (autoload 'citar-is-cited "citar")
 (autoload 'citar-insert-preset "citar")
+(autoload 'embark-act "embark" nil t)
+(autoload 'nerd-icons-faicon "nerd-icons")
+(autoload 'nerd-icons-mdicon "nerd-icons")
+(autoload 'nerd-icons-octicon "nerd-icons")
 
 ;; Declare external variables to avoid warnings
 (defvar org-cite-global-bibliography)
@@ -29,6 +36,60 @@
 (defvar citar-file-parser-functions)
 (defvar citar-at-point-function)
 (defvar citar-at-point-fallback)
+(defvar citar-ellipsis)
+(defvar bv-completion-truncation-marker)
+
+;;; Rich UI
+
+(defun bv-citar--templates ()
+  "Return Citar templates following its documented rich UI segments."
+  '((main . "${author editor:30%sn}     ${date year issued:4}     ${title:48}")
+    (suffix . "          ${=key= id:15}    ${=type=:12}    ${tags keywords:*}")
+    (preview . "${author editor:%etal} (${year issued date}) ${title}, ${journal journaltitle publisher container-title collection-title}.\n")
+    (note . "Notes on ${author editor:%etal}, ${title}")))
+
+(defun bv-citar--indicator (function icon fallback face &optional v-adjust)
+  "Return a Citar indicator glyph from FUNCTION, or FALLBACK.
+ICON is passed to FUNCTION and FACE colors the glyph."
+  (if (fboundp function)
+      (condition-case nil
+          (funcall function icon :face face :v-adjust (or v-adjust -0.1))
+        (error (propertize fallback 'face face)))
+    (propertize fallback 'face face)))
+
+(defun bv-citar--indicators ()
+  "Return BV-styled Citar resource indicators."
+  (list
+   (citar-indicator-create
+    :symbol (bv-citar--indicator #'nerd-icons-faicon "nf-fa-file_pdf_o"
+                                 "F" 'bv-icon-warning)
+    :function #'citar-has-files
+    :padding "  "
+    :tag "has:files")
+   (citar-indicator-create
+    :symbol (bv-citar--indicator #'nerd-icons-mdicon "nf-md-notebook"
+                                 "N" 'bv-icon-note -0.3)
+    :function #'citar-has-notes
+    :padding "  "
+    :tag "has:notes")
+   (citar-indicator-create
+    :symbol (bv-citar--indicator #'nerd-icons-octicon "nf-oct-link"
+                                 "L" 'bv-icon-info)
+    :function #'citar-has-links
+    :padding "  "
+    :tag "has:links")
+   (citar-indicator-create
+    :symbol (bv-citar--indicator #'nerd-icons-octicon "nf-oct-check_circle"
+                                 "C" 'bv-icon-success)
+    :function #'citar-is-cited
+    :padding "  "
+    :tag "is:cited")))
+
+(defun bv-citar--ellipsis ()
+  "Return the Citar truncation marker."
+  (if (boundp 'bv-completion-truncation-marker)
+      bv-completion-truncation-marker
+    "  ->"))
 
 (with-eval-after-load 'citar
   (when (boundp 'citar-library-paths)
@@ -44,11 +105,11 @@
 ;; Customize templates for better display
 (with-eval-after-load 'citar
   (when (boundp 'citar-templates)
-    (setq citar-templates
-          '((main . "${author editor:20%sn}   ${date year issued:4}   ${title:60}")
-            (suffix . "  ${=key= id:20}  ${=type=:12}  ${tags keywords:*}")
-            (preview . "${author editor:%etal} (${year issued date}) ${title}, ${journal journaltitle publisher container-title collection-title}.\n")
-            (note . "Notes on ${author editor:%etal}, ${title}")))))
+    (setq citar-templates (bv-citar--templates)))
+  (when (boundp 'citar-indicators)
+    (setq citar-indicators (bv-citar--indicators)))
+  (when (boundp 'citar-ellipsis)
+    (setq citar-ellipsis (bv-citar--ellipsis))))
 
 ;; Citar faces are owned by the BV theme adapter so citation pickers keep the
 ;; same completion-current/metadata language as the rest of the stack.
@@ -80,7 +141,7 @@
 ;; Configure at-point behavior
 (with-eval-after-load 'citar
   (when (boundp 'citar-at-point-function)
-    (setq citar-at-point-function 'citar-open))
+    (setq citar-at-point-function 'embark-act))
   (when (boundp 'citar-at-point-fallback)
     (setq citar-at-point-fallback t)))
 

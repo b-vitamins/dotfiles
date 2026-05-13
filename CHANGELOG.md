@@ -37,6 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   readable without right-aligning them against the minibuffer edge.
 - Semantic BV Emacs keybinding surface with `C-c` leader domains, live keymap
   audits, command-level key telemetry, and doctor-gated keybinding invariants
+- Citar-rich bibliography completion using documented main/suffix templates,
+  semantic resource indicators, Embark at-point actions, and theme-owned Citar
+  faces that no longer paint bibliographic rows as selected candidates
+- Completion-surface theme polish for Corfu, popupinfo, Orderless, and Company,
+  plus defaults that ignore stale Custom face overrides so the house light/dark
+  surface, match, annotation, and scrollbar roles stay in control
 - Tree-sitter grammar audit command (`bv-treesit-audit`)
 - Project cockpit actions in `project-switch-project` (ripgrep, test, magit, dape)
 - Unified formatting dispatcher (`bv-format` / `bv-format-on-save-mode`) and standardized `C-c C-f` formatting key
