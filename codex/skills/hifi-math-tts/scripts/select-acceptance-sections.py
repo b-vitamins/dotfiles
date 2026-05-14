@@ -13,6 +13,8 @@ def load_csv(path: Path) -> list[dict[str, str]]:
 
 
 def recommended_sample_count(total_sections: int, total_equations: int) -> int:
+    if total_sections <= 10:
+        return total_sections
     count = 6
     if total_sections >= 12 or total_equations >= 40:
         count += 2
@@ -38,9 +40,6 @@ def main() -> int:
         checkpoint_counts[row["section_seq"]][row["kind"]] += 1
         if row["kind"] == "equation" and row.get("notes", "").startswith("tag:"):
             checkpoint_counts[row["section_seq"]]["tagged-equation"] += 1
-        render_hints = set(row.get("render_hints", "").split("|"))
-        for hint in {"fraction", "multiline", "integral", "sum", "cases"} & render_hints:
-            checkpoint_counts[row["section_seq"]][f"render-{hint}"] += 1
 
     enriched = []
     for row in plan_rows:
@@ -53,8 +52,6 @@ def main() -> int:
             + counts.get("exercise", 0)
             + counts.get("prose-anchor", 0)
             + 3 * counts.get("tagged-equation", 0)
-            + 2 * counts.get("render-fraction", 0)
-            + 2 * counts.get("render-multiline", 0)
         )
         enriched.append(
             {
@@ -66,11 +63,6 @@ def main() -> int:
                 "exercise_count": counts.get("exercise", 0),
                 "prose_anchor_count": counts.get("prose-anchor", 0),
                 "tagged_equation_count": counts.get("tagged-equation", 0),
-                "fraction_count": counts.get("render-fraction", 0),
-                "multiline_count": counts.get("render-multiline", 0),
-                "integral_count": counts.get("render-integral", 0),
-                "sum_count": counts.get("render-sum", 0),
-                "cases_count": counts.get("render-cases", 0),
             }
         )
 
@@ -93,11 +85,6 @@ def main() -> int:
         add(enriched[-1], "last-section")
         add(max(enriched, key=lambda row: row["equation_count"]), "most-equations")
         add(max(enriched, key=lambda row: row["tagged_equation_count"]), "most-tagged-equations")
-        add(max(enriched, key=lambda row: row["fraction_count"]), "most-fractions")
-        add(max(enriched, key=lambda row: row["multiline_count"]), "most-multiline-equations")
-        add(max(enriched, key=lambda row: row["integral_count"]), "most-integrals")
-        add(max(enriched, key=lambda row: row["sum_count"]), "most-sums")
-        add(max(enriched, key=lambda row: row["cases_count"]), "most-cases")
         add(max(enriched, key=lambda row: row["figure_count"]), "most-figure-captions")
         add(max(enriched, key=lambda row: row["algorithm_count"]), "most-algorithms")
         add(max(enriched, key=lambda row: row["exercise_count"]), "most-exercises")
@@ -126,11 +113,6 @@ def main() -> int:
                 "exercise_count",
                 "prose_anchor_count",
                 "tagged_equation_count",
-                "fraction_count",
-                "multiline_count",
-                "integral_count",
-                "sum_count",
-                "cases_count",
             ],
             lineterminator="\n",
         )
@@ -149,11 +131,6 @@ def main() -> int:
                     "exercise_count": row["exercise_count"],
                     "prose_anchor_count": row["prose_anchor_count"],
                     "tagged_equation_count": row["tagged_equation_count"],
-                    "fraction_count": row["fraction_count"],
-                    "multiline_count": row["multiline_count"],
-                    "integral_count": row["integral_count"],
-                    "sum_count": row["sum_count"],
-                    "cases_count": row["cases_count"],
                 }
             )
     return 0

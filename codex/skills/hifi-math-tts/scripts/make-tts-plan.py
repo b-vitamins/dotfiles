@@ -20,11 +20,24 @@ TAG_PATTERN = re.compile(r"\\tag\{([A-Za-z0-9.]+)\}")
 END_DOCUMENT_PATTERN = re.compile(r"^\s*\\end\{document\}\s*$")
 BEGIN_DOCUMENT_PATTERN = re.compile(r"^\s*\\begin\{document\}\s*$")
 COMMENT_PATTERN = re.compile(r"^\s*%")
-PREAMBLE_ONLY_PATTERN = re.compile(r"^\s*\\(?:documentclass|usepackage|input)\b")
+PREAMBLE_ONLY_PATTERN = re.compile(r"^\s*\\(?:documentclass|usepackage|input|numberwithin|counterwithin|setcounter)\b")
 LAYOUT_ONLY_PATTERN = re.compile(
     r"^\s*\\(?:thispagestyle|clearpage|newpage|null|vfill|bigskip|smallskip|medskip|noindent|frontmatter|mainmatter|backmatter)\b"
 )
 ENVIRONMENT_ONLY_PATTERN = re.compile(r"^\s*\\(?:begin|end)\{(?:center|minipage|titlepage)\}")
+OUT_OF_SCOPE_TRAILING_TITLE_PATTERN = re.compile(
+    r"^(?:"
+    r"problems?(?:\s+for\b.*)?"
+    r"|exercises?(?:\s+for\b.*)?"
+    r"|selected\s+problems?"
+    r"|answers?(?:\s+(?:to\s+)?(?:selected\s+)?(?:problems?|exercises?))?"
+    r"|solutions?(?:\s+(?:to\s+)?(?:selected\s+)?(?:problems?|exercises?))?"
+    r"|bibliography"
+    r"|references"
+    r"|index"
+    r")$",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -38,17 +51,24 @@ class Heading:
 
 def infer_chapter_label(tex_path: Path, lines: list[str], override: str | None) -> str:
     if override:
-        return override
+        return normalize_chapter_label(override)
     match = FILENAME_CHAPTER_PATTERN.search(tex_path.stem)
     if match:
-        return match.group(2).upper()
+        return normalize_chapter_label(match.group(2))
     for line in lines:
         tag_match = TAG_PATTERN.search(line)
         if tag_match:
             identifier = tag_match.group(1)
             if "." in identifier:
-                return identifier.split(".", 1)[0]
+                return normalize_chapter_label(identifier.split(".", 1)[0])
     return tex_path.stem
+
+
+def normalize_chapter_label(label: str) -> str:
+    value = label.strip()
+    if value.isdigit():
+        return str(int(value))
+    return value.upper()
 
 
 def detect_chapter_title(lines: list[str]) -> tuple[int, str]:
@@ -150,6 +170,19 @@ def build_headings(lines: list[str], chapter_label: str, max_line: int, include_
     return headings
 
 
+def detect_out_of_scope_tail_line(lines: list[str], start_line: int, end_line: int) -> int | None:
+    for idx in range(start_line, end_line + 1):
+        line = lines[idx - 1]
+        for _kind, pattern in HEADING_PATTERNS:
+            match = pattern.match(line)
+            if not match:
+                continue
+            title = strip_latex_text(match.group(2).strip())
+            if OUT_OF_SCOPE_TRAILING_TITLE_PATTERN.match(title):
+                return idx
+    return None
+
+
 def make_spoken_label(kind: str, number: str, starred: bool, chapter_label: str) -> str:
     if kind == "intro":
         return f"Chapter {chapter_label}"
@@ -226,6 +259,11 @@ def main() -> int:
     parser.add_argument("--script-dir", required=True, help="Directory for generated TTS text files.")
     parser.add_argument("--out", required=True, help="Output CSV path.")
     parser.add_argument("--chapter-label", help="Optional override for chapter label, e.g. 20 or A.")
+    parser.add_argument(
+        "--include-out-of-scope",
+        action="store_true",
+        help="Include default-out-of-scope trailing blocks such as Problems, Exercises, References, or Index.",
+    )
     args = parser.parse_args()
 
     tex_path = Path(args.tex)
@@ -238,6 +276,9 @@ def main() -> int:
     include_pre_chapter_content = has_pre_chapter_content(lines, body_start_line, chapter_line)
     content_start_line = body_start_line if include_pre_chapter_content else chapter_line
     content_end_line = detect_content_end_line(lines, chapter_line)
+    out_of_scope_tail_line = None if args.include_out_of_scope else detect_out_of_scope_tail_line(lines, content_start_line, content_end_line)
+    if out_of_scope_tail_line is not None:
+        content_end_line = out_of_scope_tail_line - 1
     if not chapter_title:
         chapter_title = tex_path.stem.replace("-", " ").title()
     if include_pre_chapter_content:

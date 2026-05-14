@@ -1,88 +1,61 @@
-You are converting `{source_tex}` lines {start_line} through {end_line} into the spoken script `{target_txt}`.
+You are converting `{source_tex}` lines {start_line} through {end_line} into `{target_txt}`.
 
-Work only on this assigned section.
+Write the script a technically competent voice actor would read for an audiobook version of the source. Preserve the mathematics completely, but make it sound like spoken English rather than LaTeX.
 
-Chapter-wide spoken notation lexicon:
+Read before writing:
 
-`{lexicon_file}`
+- Source-local narration brief: `{source_brief_file}`
+- Assigned source lines from `{source_tex}`
 
-Required output:
+Work only on this assigned section and write only `{target_txt}`.
 
-- Plain text only.
-- No Markdown bullets unless the source genuinely requires list structure.
-- No raw LaTeX commands in the final script.
+Core contract:
 
-Required workflow:
+- Generate from the source lines, not from checkpoints, validation hints, or memory.
+- Preserve the source's informational order and ordinary prose with minimal touch.
+- Preserve all mathematical content, indices, conditioning bars, limits, measures, cases, captions, algorithms, tables, and lists in planned source spans.
+- Follow source-brief boundary notes when LaTeX placement separates a figure, table, algorithm, display, or caption from the prose that introduces it. The concatenated audiobook flow matters more than mechanically starting with a heading when the brief says an attached artifact should be narrated first.
+- End-of-chapter problems or exercises, front matter, answers or solutions, bibliography or references, and index are out of scope unless the parent explicitly included them in the section plan.
+- Use natural spoken math. Stage dense expressions with phrases like `the numerator is`, `all over`, `the quantity`, `the first case is`, and `equivalently`.
+- When a fraction is followed by a separate factor, make the boundary explicit so the listener can tell what is in the denominator and what is multiplied afterward.
+- Resolve and speak real cross-references such as equations and figures. Omit only standalone navigation or drill callouts that the brief marks as non-content.
+- If the source brief identifies stale hard-coded cross-references, speak the
+  corrected target number for the equation, theorem, figure, or table that the
+  prose actually refers to. Do not preserve an obsolete source numeral when it
+  would point to a different item in the final script.
+- For every numbered displayed equation, attach the spoken equation number to
+  the exact source equation content. Do not shift neighboring equation numbers,
+  and do not let theorem, remark, definition, proposition, example, exercise,
+  or problem numbers advance the equation counter.
+- Preserve printed letter suffixes on subequations, such as `Equation twelve
+  point four point four a`; do not collapse them into the bare base equation.
+- Spell out numbers unless the parent explicitly allowed Arabic numerals.
+- Do not emit raw LaTeX, labels, planning metadata, checkpoint metadata, or compact notation.
+- Do not run scripts, pandoc, regex converters, or local generators to create the final text.
 
-1. Read the assigned source lines from `{source_tex}`.
-2. Rewrite them into spoken technical prose optimized for TTS.
-3. Write only to `{target_txt}`.
-4. Preserve all checkpointed items in scope.
-5. Use checkpoints only as coverage targets; never narrate checkpoint metadata, signature hints, render hints, or compact notation hints.
+Important style target:
 
-Hard constraints:
+The result should sound like a careful human narrator who understands the source. Do not optimize for a validator. Do not add explanatory filler that is not in the source. If an equation is hard to say, improve grouping and pacing rather than inventing commentary.
 
-- Preserve ordinary English prose with minimal touch by default.
-- Do not summarize away technical content.
-- Do not silently omit equations, figures, algorithms, or exercises that are in scope.
-- Preserve numbering in speakable form.
-- Spell out all numbers in the final script. Do not leave Arabic numerals in the output unless the parent explicitly allows them.
-- Preserve symbol meaning, indices, and conditioning structure.
-- Follow the notation lexicon exactly. Do not invent alternate spoken names for the same symbol.
-- If the parent expanded the lexicon from the audit suggestions, treat those entries as authoritative rather than optional.
-- Do not write or use local helper scripts, pandoc, or bulk mechanical transforms to generate this section. The final text in `{target_txt}` must be written by you from the source lines.
-- For every numbered displayed equation in scope, explicitly introduce it as `Equation ...` before speaking it.
-- If the source has an explicit `\tag{...}`, use that printed tag as the spoken equation identifier. Do not invent a chapter-global ordinal and do not say `source tag`.
-- Resolve `\eqref{...}` and `\ref{...}` against the source labels when needed so prose cross-references use the printed equation, figure, definition, or problem number.
-- For dense displayed equations, use explicit grouping phrases such as `the quantity`, `all over`, `inside the norm`, `the first line is`, and `equivalently` so the result sounds narrated rather than flattened.
-- If an equation contains a fraction, make the denominator audible with phrases like `all over`, `the numerator is`, or `the denominator is`.
-- If a denominator contains a product, sum, power, factorial, norm, or absolute value, use `the numerator is ...; the denominator is ...` or `one all over the product of ...` rather than a flat `over ... times ...` phrase.
-- If a power applies to a parenthesized expression or function value, make the base audible: say `the quantity D minus alpha, squared`, `the quantity two pi, cubed`, and `the quantity natural log of a, squared`.
-- If a factorial applies to a compound expression, say `the factorial of the quantity ...`.
-- If a function argument contains an assignment such as `x=0`, say `evaluated at x equals zero`, not `of x equals zero`.
-- If an equation contains a norm, say `norm` explicitly and mark its scope with `the quantity` when needed.
-- If an equation is multiline, narrate it as `the first line is ...` and then `equivalently ...` or `the second line is ...`.
-- Do not summarize a mathematical row as `paired with the preceding line`, `companion relation`, or similar shorthand. If the source row has content, speak that row.
-- If an equation is a matrix or column-vector relation, narrate rows or entries explicitly rather than flattening the matrix into token soup.
-- If an equation has cases, read it as cases with explicit `if` / `otherwise` phrasing.
-- If an equation uses a nontrivial measure, limit, trace, or constrained sum/product, make that structure audible.
-- If the source uses hats, underlines, fraktur, or similar decorations meaningfully, keep one stable spoken form for each.
-- If the source uses dotless `\imath` or `\jmath`, do not speak the command names. Use `i hat`, `j hat`, `vector i`, `vector j`, or a context-specific semantic phrase.
-- Preserve indexed symbols exactly. Do not let `sub one`, `sub t`, or `sub t minus one` drift.
-- For adjacent-letter indices, separate the letters in speech: use `sigma sub x y`, `R sub i a`, and `A sub n m`, not `sigma sub xy`, `R sub ia`, or `A sub nm`.
-- If the source contains a figure caption with teaching content, narrate it explicitly.
-- If the source contains an algorithm, narrate its title, inputs/outputs, and steps clearly.
-- If the source contains an exercise, include it unless the parent explicitly excluded exercises.
-- If the source appears internally inconsistent, typoed, or self-contradictory, do not silently repair it. Preserve it conservatively in speech and report it to the parent.
-- Do not narrate LaTeX housekeeping or layout commands such as `\begin{document}`, `\end{document}`, `\nonumber`, `\label`, or environment delimiters.
-- Do not narrate planning or validation metadata such as `source signature`, `checkpoint notation`, `render hint`, or `compact notation`.
-- Do not narrate `source tag`; the tag itself is the equation number.
-- If the source wording is awkward for speech, improve pacing and sentence breaks without changing meaning.
-- For paragraphs that are mostly English with only mild inline math, keep the wording recognizably close to the source and prefer sentence splitting over paraphrase.
-- If the prose already says `vector`, `matrix`, `operator`, or another object noun before a symbol, do not duplicate it mechanically. Say `the position vector r of t`, not `the position vector vector r of t`.
-- If the source is a notation table or glossary, convert rows into short spoken entries and preserve the row order.
-- If the parent specified a model or reasoning requirement, do not silently downgrade. Stop and report the blocker instead.
+Common high-risk math idioms:
 
-Style target:
-
-- Sounds like a careful technical narrator, not a parser.
-- Keeps equations speakable.
-- Keeps prose faithful.
-- Adds breathing room where needed.
+- Bra-kets such as `\langle f|U|i\rangle` are matrix elements between states with an operator in the middle; avoid token-order artifacts like `tensor final state`.
+- Placeholder notation such as `\langle \bullet\rangle` means the average of the argument or quantity; do not literally narrate the bullet unless the source discusses the symbol.
+- Absolute-value powers such as `|\phi|^2` should preserve scope, for example `absolute value squared of phi` or `the squared absolute value of phi`.
+- Connected or cumulant expectations such as `\langle A\rangle_c` attach `connected` or `cumulant` to the expectation, not to `A`.
+- Functional measures such as `\mathcal{D}\phi(x)` preserve both the measure and the field, for example `the functional measure D phi of x`.
+- Volume measures such as `\mathrm{d}^d x`, `\mathrm{d}^d q/(2\pi)^d`, and `\mathrm{d}^{d-1}\mathbf{x}` should sound like measures over dimensional variables, for example `d-dimensional x`, `d-dimensional q over the quantity two pi raised to d`, and `d minus one-dimensional vector x`; avoid `d to the d x` when this natural form is available.
+- Braced indices such as `z_{t-1}` are just grouping; say `z sub t minus one`, not `sub parenthesized`.
+- Adjacent-letter indices should be separated in speech, such as `sigma sub x y`, not `sigma sub xy`.
+- Avoid mechanical expansion artifacts. If the prose already supplies the mathematical object type, do not repeat that type just because the symbol is bold, decorated, or semantic in the source brief.
+- For negative or multi-token bases with fractional powers, keep the whole base in scope, for example `the whole quantity negative two t, raised to negative one half`.
 
 Before finishing:
 
-1. Check that the section heading and title are present in the script.
-2. Check that all obvious numbered artifacts in the assigned span were preserved.
-3. Check that ordinary prose paragraphs were not rewritten more than necessary.
-4. Check that notation names match the lexicon and stay stable.
-5. Check that the output does not contain raw LaTeX commands.
-6. Check that the output does not contain Arabic numerals.
-7. Check that equation indices did not drift, especially `one` versus `t` and `t minus one`.
-8. Check that every numbered displayed equation in the span is explicitly introduced as `Equation ...`.
-9. Check that dense equations use audible grouping rather than flat token soup.
-10. Check that no stripped structural tokens such as `enddocument` or `nonumber` leaked into the output.
-11. Check that no mechanical command names such as `imath` or `jmath` leaked into the output.
-12. Check that adjacent-letter indices are separated and multiline rows are not compressed by reference to another line.
-13. Check that planning metadata such as `compact checkpoint notation`, `compact source signature`, or `render hint` did not leak into the output.
-14. Report any ambiguity or source-local issue that may need parent review.
+1. Read the source span and your script side by side.
+2. Confirm every paragraph, display, caption, table row, algorithm step, and list item in scope is represented or intentionally omitted under the brief.
+3. Confirm equations preserve symbol identity, index identity, and structure.
+4. Confirm section-boundary attachments from the brief will sound coherent when this file is concatenated with neighboring section files.
+5. Confirm the prose still sounds like the source, not a summary.
+6. Remove any validator-appeasement phrases such as detached `with denominator ...`, `over the denominator ...`, or commentary about grouping that a human narrator would not say.
+7. Report any source ambiguity or internal inconsistency to the parent.

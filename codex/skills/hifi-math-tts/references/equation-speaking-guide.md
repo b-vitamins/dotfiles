@@ -22,6 +22,8 @@ Examples of forbidden drift:
 - `z sub t minus one` becoming `z sub t`
 - dropping a conditioning bar
 - flattening a denominator into surrounding prose
+- attaching a cumulant or connected-average subscript to the variable rather than to the expectation
+- deleting adjacent notation when applying a pronunciation note inside a larger expression
 
 ## Recommended Speaking Pattern
 
@@ -83,6 +85,11 @@ If the fraction is very long, narrate it in two stages:
 - `the numerator is ...`
 - `all over ...`
 
+If a fraction is followed by an external multiplicative factor, make the
+boundary audible. Say `the fraction whose numerator is ... and denominator is
+..., then multiplied by ...` or `all over ..., times ...` only when the listener
+cannot mistake the final factor as part of the denominator.
+
 ## Powers and Scope
 
 When a power applies to a parenthesized expression or a function value, make the base audible.
@@ -91,12 +98,17 @@ When a power applies to a parenthesized expression or a function value, make the
 - `(2\pi)^3` -> `the quantity two pi, cubed`
 - `(\ln a)^2` -> `the quantity natural log of a, squared`
 - `(2n+1)!` -> `the factorial of the quantity two n plus one`
+- `(-2t)^{-1/2}` -> `the whole quantity negative two t, raised to negative one half`
 
 Do not say `D minus alpha squared`, `two pi cubed`, `natural log of a squared`, or `two n plus one factorial` for these forms.
 
 For exponentials with grouped exponents, speak the sign and scope:
 
 - `e^{-(n\pi/L)^2t}` -> `e to the negative of the quantity n pi over L, squared, times t`
+
+For negative or multi-token bases with fractional exponents, prefer `the whole
+quantity ... raised to ...` over a flat phrase that lets the TTS listener attach
+the exponent only to the final symbol.
 
 ## Norms
 
@@ -148,7 +160,11 @@ Always say indexed symbols in full.
 
 Do not rely on nearby context to repair an index mentally for the listener.
 
-Do not alternate naming styles across equations. If the chapter lexicon says `vector x`, do not say `bold x` in a later section.
+Do not alternate naming styles across equations. If the source brief says `vector x`, do not say `bold x` in a later section.
+
+For simple braced indices such as `z_{t-1}` or `z_{\tau-1}`, speak the index directly as `z sub t minus one` or `z sub tau minus one`. Do not say `z sub parenthesized t minus one`; the braces are LaTeX grouping, not mathematical parentheses.
+
+For standard Gaussian notation, prefer semantic speech. Read `\mathcal{N}(x\mid \mu,\Sigma)` as a normal distribution or as `x is normally distributed with mean ... and covariance ...`; do not say `script n of ...`. Read `\mathbf{I}` as `identity matrix` when it denotes the identity.
 
 ## Functions and Conditionals
 
@@ -184,9 +200,16 @@ Do not alternate among multiple spoken variants within the same chapter.
 
 If the measure is nontrivial, say it explicitly:
 
-- `d to the d q over two pi to the d`
+- `d-dimensional q over the quantity two pi raised to d`
+- `d-dimensional x`
+- `d minus one-dimensional vector x`
 - `with respect to phi`
 - `with respect to the Gaussian measure D u`
+
+Avoid mechanical measure readings such as `d to the d x` or `d to the d
+minus one vector x` when the source clearly means a volume measure over a
+coordinate or momentum variable. These are faithful enough to parse, but they
+sound like TeX rather than a technical narrator.
 
 If the sum or product is constrained, narrate the condition:
 
@@ -222,3 +245,77 @@ Add a one-line orientation only when it helps comprehension:
 - `This is the same expression, but now written in terms of the predicted noise.`
 
 Do not add conceptual commentary inside the equation reading itself.
+
+## Cross-References
+
+When the prose includes a meaningful cross-reference, keep it in the narration.
+
+- `see Eq.~\eqref{...}` -> `see Equation ...`
+- `from Eq.~\eqref{...}` -> `from Equation ...`
+- `as shown in Fig.~\ref{...}` -> `as shown in Figure ...`
+
+Omit only standalone navigation or drill markers that the source brief explicitly treats as non-content.
+
+## Bra-Ket Notation
+
+Bra-ket expressions should sound like matrix elements, not like raw delimiters.
+
+- `\langle f|U|i\rangle` -> `the matrix element of U between final state f and initial state i`
+- `\langle \psi|A|\psi\rangle` -> `the expectation value of A in state psi`, when the source context supports that meaning
+
+Avoid token-order artifacts such as `tensor final state`, `bar final state`, or `ket final state acted on by`. If the source context is unclear, preserve the states and operator explicitly: `the bra f, operator U, ket i matrix element`.
+
+## Placeholder Arguments
+
+When a placeholder symbol appears inside notation, describe its role rather than its glyph.
+
+- `\langle \bullet \rangle` -> `angle brackets denote the thermal average of the argument`
+- `f(\cdot)` -> `the function f of its argument`
+
+Say `bullet` or `dot` only when the source is explicitly discussing the symbol itself.
+
+## Absolute Values
+
+Make the scope of absolute values and powers audible.
+
+- `|\phi|^2` -> `absolute value squared of phi`
+- `|\Psi(\mathbf{x})|^4` -> `absolute value of Psi of position vector x, raised to the fourth power`
+- `|x-y|^{d+\sigma}` -> `the absolute value of x minus y, raised to d plus sigma`
+
+Avoid ambiguous forms such as `absolute value of phi squared` when the source means the square of the absolute value.
+
+## Cumulants and Connected Averages
+
+For expectation notation with a subscript, attach the subscript to the expectation.
+
+- `\langle A\rangle_c` -> `the connected average of A` or `the cumulant average of A`
+- `\langle A^2\rangle_c` -> `the connected average of A squared`
+- `\langle \phi_i\phi_j\rangle_c` -> `the connected correlation of phi sub i and phi sub j`
+
+Do not say `A sub c`, `A squared sub c`, or imply that the random variable itself carries the `c` subscript.
+
+## Functional Measures
+
+Preserve the measure and the field together.
+
+- `\int \mathcal{D}\phi(x)` -> `the integral over the functional measure D phi of x`
+- `\mathcal{D}\phi_{\ell}(x)` -> `functional measure D phi sub ell of x`
+
+Do not apply a `\mathcal{D}` pronunciation note as a blind substitution that deletes the `D`, the field, or the argument. Avoid `functional measure phi of x` when the source contains `\mathcal{D}\phi(x)`.
+
+## No Invented Equation Commentary
+
+Use grouping words to make equations audible, but do not add unsupported interpretation.
+
+Allowed:
+
+- `the numerator is ... and the denominator is ...`
+- `the first case is ...; the second case is ...`
+- `the whole expression is multiplied by ...`
+
+Not allowed unless the source says it:
+
+- `this denominator keeps the powers grouped`
+- `this is a squared Gaussian form`
+- `the final term is a squared source contribution`
+- `the second case is the squared fluctuation quantity`

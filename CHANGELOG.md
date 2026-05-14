@@ -37,6 +37,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   readable without right-aligning them against the minibuffer edge.
 - Semantic BV Emacs keybinding surface with `C-c` leader domains, live keymap
   audits, command-level key telemetry, and doctor-gated keybinding invariants
+- PhD-grade Org cockpit in `bv-org.el` with stable commitment files, task state
+  grammar, artifact-oriented capture routing, project scaffolding, agenda
+  refresh, metrics updates, clock policy, and doctor-gated Org invariants
+- Org Super Agenda-backed dashboard/review grouping with semantic TODO/tag/date/
+  property selectors and PhD-specific section policies
 - Citar-rich bibliography completion using documented main/suffix templates,
   semantic resource indicators, Embark at-point actions, and theme-owned Citar
   faces that no longer paint bibliographic rows as selected candidates
@@ -58,6 +63,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Codex `research-paper-notes` skill for strict TeX-first single-paper analysis with arXiv source ingestion, sequential readthrough logging, and note validation
 - Automatic `setup.sh` preflight/bootstrap for SSH identity, mileva OCI root credentials, and actionable post-run setup reporting
 ### Changed
+- Reworked the Codex `hifi-math-tts` skill around a model-first voice-actor
+  script contract: agents read the source and write spoken English with
+  complete mathematical fidelity, while deterministic scripts are limited to
+  section planning, source evidence packets, coverage checks, coarse residue
+  validation, acceptance sampling, and cleanup.
+- Removed the brittle generated notation substitution stack from
+  `hifi-math-tts`, including generated glossary construction, glossary
+  coverage audits, auto-expansion, and equation hint validation, and added a
+  source-to-script line audit path for quality calibration.
+- Changed `hifi-math-tts` orchestration to require native sub-agent dispatch
+  for multi-section generation instead of serial section drafting.
+- Clarified `hifi-math-tts` scope so chapters and appendices are in scope by
+  default, while front matter, end-of-chapter problems, answers or solutions,
+  bibliography or references, and index are excluded unless explicitly
+  requested.
+- Hardened `hifi-math-tts` validation and review around default-excluded
+  material, TeX-shaped volume-measure readings, and ambiguous fraction
+  boundaries so stale plans and mechanical phrases are caught before readiness
+  is claimed.
+- Narrowed `hifi-math-tts` default-excluded heading detection so legitimate
+  chapter sections such as "Solutions to Rotationally Invariant Problems" are
+  not mistaken for end-of-book answer material.
+- Clarified `hifi-math-tts` worker and review prompts around mechanical
+  expansion artifacts and ambiguous powers on negative or multi-token bases,
+  without turning those quality issues into a growing phrase blacklist.
+- Clarified `hifi-math-tts` spoken-initialism guidance and validation so
+  apostrophe-s plural forms such as `S D E's` are flagged before TTS handoff.
+- Added `hifi-math-tts` boundary-coherence guidance so figures, tables,
+  algorithms, displays, and captions that LaTeX places across section headings
+  stay attached to their introducing prose in the spoken audiobook flow.
+- Reworked `hifi-math-tts` dispatch language to mirror `hifi-pdf-ocr`: native
+  parallel sub-agent orchestration is the required path for multi-section
+  sources, and serial generation is a workflow failure unless sub-agent tooling
+  is genuinely unavailable.
+- Clarified `hifi-math-tts` book-scale execution to use source-local briefs and
+  bounded native sub-agent waves per chapter or appendix, rather than serial
+  section drafting or one unbriefed global queue.
+- Removed the `hifi-math-tts` serial local-generation fallback for multi-section
+  sources; if native sub-agent tooling is genuinely unavailable, the run now
+  records the blocker and stops unless the user explicitly requests a serial
+  fallback.
+- Hardened `hifi-math-tts` readiness checks so duplicate equation identifiers,
+  missing recorded acceptance reviews, and parent/manual serial dispatch in
+  multi-section sources block `ready-for-tts` instead of being hidden behind
+  clean script coverage.
+- Hardened `hifi-math-tts` equation and caption auditing so shifted
+  number-to-content mappings, collapsed lettered subequations, theorem or
+  remark numbers mistaken for equation numbers, and table captions counted as
+  figures are treated as readiness defects.
+- Tightened `hifi-math-tts` cross-reference guidance so source-local numbering
+  repairs propagate into prose references, instead of preserving stale numerals
+  that point to the wrong displayed equation in the final script.
 - Replaced the legacy BV Emacs theme engine with the new `bv-themes.el`
   compiler; `bv-light` and `bv-dark` are now standalone DSL-authored theme
   specifications loaded through the standard Custom theme path.

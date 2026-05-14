@@ -9,6 +9,7 @@ from pathlib import Path
 
 TAG_PATTERN = re.compile(r"\\tag\{([A-Za-z0-9.\-–—]+)\}")
 LABEL_PATTERN = re.compile(r"\\label\{([^}]+)\}")
+NUMERIC_IDENTIFIER_PATTERN = re.compile(r"(?P<id>[0-9]+(?:\.[0-9]+)+(?:[a-z])?)")
 CAPTION_START = r"\caption{"
 ALGORITHM_PATTERN = re.compile(r"\\textbf\{Algorithm\s+([^:}]+):\}\s*(.*)")
 EXERCISE_PATTERN = re.compile(
@@ -24,109 +25,12 @@ EQUATION_END_PATTERN = re.compile(r"^\s*\\end\{(?P<env>[A-Za-z]+)(?P<star>\*?)\}
 BRACKET_DISPLAY_BEGIN_PATTERN = re.compile(r"\\\[")
 BRACKET_DISPLAY_END_PATTERN = re.compile(r"\\\]")
 HEADING_PATTERN = re.compile(r"^\s*\\(chapter|section|subsection|subsubsection)\*?\{")
-DECORATION_PATTERN = re.compile(r"\\(?:mathbf|boldsymbol|bm|mathcal|mathfrak|mathrm|vec|bar|overline|hat|widehat|tilde|widetilde|underline)\b")
-INDEX_TOKEN_PATTERN = re.compile(r"[A-Za-z]+|\d+|[+\-]|'")
-GREEK_INDEX_NAMES = {
-    "alpha",
-    "beta",
-    "gamma",
-    "delta",
-    "epsilon",
-    "varepsilon",
-    "zeta",
-    "eta",
-    "theta",
-    "vartheta",
-    "iota",
-    "kappa",
-    "lambda",
-    "mu",
-    "nu",
-    "xi",
-    "pi",
-    "rho",
-    "sigma",
-    "tau",
-    "upsilon",
-    "phi",
-    "varphi",
-    "chi",
-    "psi",
-    "omega",
-}
-ALLOWED_SIGNATURE_BASES = [
-    "varepsilon",
-    "vartheta",
-    "varphi",
-    "alpha",
-    "beta",
-    "gamma",
-    "delta",
-    "epsilon",
-    "sigma",
-    "lambda",
-    "theta",
-    "phi",
-    "tau",
-    "eta",
-    "nu",
-    "xi",
-    "rho",
-    "psi",
-    "omega",
-    "kappa",
-    "zeta",
-    "mu",
-    "pi",
-    "x",
-    "y",
-    "z",
-    "w",
-    "u",
-    "v",
-    "r",
-    "q",
-    "m",
-    "n",
-    "k",
-    "h",
-    "g",
-    "f",
-    "e",
-    "d",
-    "c",
-    "b",
-    "a",
-    "s",
-    "t",
-    "A",
-    "B",
-    "C",
-    "E",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "Z",
-]
-INDEXED_SYMBOL_PATTERN = re.compile(
-    r"(?<![A-Za-z])("
-    + "|".join(sorted(ALLOWED_SIGNATURE_BASES, key=len, reverse=True))
-    + r")\s*_(?:\{([^{}]+)\}|(\\[A-Za-z]+|[A-Za-z]|\d+)'?)"
+LAYOUT_PROSE_SKIP_PATTERN = re.compile(
+    r"^\s*\\(?:centering|includegraphics|fbox|parbox|minipage|vspace|hspace|rule|captionof)\b"
+    r"|Placeholder for Figure"
+    r"|TODO\(diagrams\):",
+    re.IGNORECASE,
 )
-
-
 def normalize_whitespace(text: str) -> str:
     return " ".join(text.split())
 
@@ -174,144 +78,30 @@ def load_plan(plan_path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def simplify_math_text(text: str) -> str:
-    value = text
-    replacements = {
-        r"\mathbf": "",
-        r"\boldsymbol": "",
-        r"\bm": "",
-        r"\mathcal": "",
-        r"\mathfrak": "",
-        r"\mathrm": "",
-        r"\vec": "",
-        r"\bar": "",
-        r"\overline": "",
-        r"\hat": "",
-        r"\widehat": "",
-        r"\tilde": "",
-        r"\widetilde": "",
-        r"\underline": "",
-        r"\left": "",
-        r"\right": "",
-        r"\lVert": "",
-        r"\rVert": "",
-        r"\mid": "|",
-        r"\langle": " ",
-        r"\rangle": " ",
-        r"\lvert": " ",
-        r"\rvert": " ",
-        r"\qquad": " ",
-        r"\quad": " ",
-    }
-    for src, dst in replacements.items():
-        value = value.replace(src, dst)
-    value = value.replace("{", "{").replace("}", "}")
-    value = re.sub(r"\\([A-Za-z]+)", r" \1 ", value)
-    return value
-
-
 def contains_digits(text: str) -> bool:
     return any(char.isdigit() for char in text)
 
 
-def spoken_index(index: str) -> str:
-    cleaned = DECORATION_PATTERN.sub(" ", index)
-    cleaned = re.sub(r"\\([A-Za-z]+)", r" \1 ", cleaned)
-    cleaned = cleaned.replace("{", " ").replace("}", " ")
-    cleaned = cleaned.replace(",", " ")
-    cleaned = cleaned.replace("_", " ")
-    tokens = INDEX_TOKEN_PATTERN.findall(cleaned)
-    if not tokens:
+def identifier_from_label(label: str) -> str:
+    normalized = label.strip().replace("_", "-").replace(":", "-")
+    match = re.search(r"(?:^|-)([0-9]+(?:[-.][0-9]+)+(?:[a-z])?)(?:$|-)", normalized, re.IGNORECASE)
+    if not match:
         return ""
-
-    spoken_parts: list[str] = []
-    word_map = {
-        "0": "zero",
-        "1": "one",
-        "2": "two",
-        "3": "three",
-        "4": "four",
-        "5": "five",
-        "6": "six",
-        "7": "seven",
-        "8": "eight",
-        "9": "nine",
-        "10": "ten",
-    }
-
-    for token in tokens:
-        if token == "'":
-            if spoken_parts:
-                spoken_parts.append("prime")
-            continue
-        if token in {"+", "-"}:
-            spoken_parts.append("plus" if token == "+" else "minus")
-            continue
-        if token.isdigit():
-            spoken_parts.append(word_map.get(token, token))
-            continue
-        lowered = token.lower()
-        if lowered == "pm":
-            spoken_parts.extend(["plus", "minus"])
-        elif lowered == "mp":
-            spoken_parts.extend(["minus", "plus"])
-        elif lowered in GREEK_INDEX_NAMES:
-            spoken_parts.append(lowered)
-        elif lowered.isalpha() and len(lowered) <= 3:
-            spoken_parts.extend(list(lowered))
-        else:
-            spoken_parts.append(lowered)
-    return " ".join(spoken_parts)
+    return match.group(1).replace("-", ".")
 
 
-def equation_signature_hints(body: str) -> str:
-    simplified = simplify_math_text(body)
-    phrases: list[str] = []
-    for symbol, braced_index, simple_index in INDEXED_SYMBOL_PATTERN.findall(simplified):
-        index = braced_index or simple_index
-        spoken = spoken_index(index)
-        if not spoken:
-            continue
-        phrase = f"{symbol.lower()} sub {spoken}"
-        if phrase not in phrases:
-            phrases.append(phrase)
-    return "|".join(phrases[:6])
+def identifier_prefix(identifier: str) -> str:
+    match = re.match(r"(.+)\.[0-9]+[a-z]?$", identifier)
+    return match.group(1) if match else ""
 
 
-def equation_render_hints(body: str) -> str:
-    hints: list[str] = []
-    has_cases = r"\begin{cases}" in body
-    if r"\frac" in body:
-        hints.append("fraction")
-    if r"\lVert" in body or r"\rVert" in body:
-        hints.append("norm")
-    if r"\sum" in body:
-        hints.append("sum")
-    if r"\prod" in body:
-        hints.append("product")
-    if r"\int" in body:
-        hints.append("integral")
-    if r"\mid" in body:
-        hints.append("conditional")
-    if "\\\\" in body and not has_cases:
-        hints.append("multiline")
-    if has_cases:
-        hints.append("cases")
-    if r"\operatorname{Tr}" in body or r"\Tr" in body:
-        hints.append("trace")
-    if r"\lim" in body:
-        hints.append("limit")
-    if r"\delta" in body:
-        hints.append("delta")
-    if re.search(r"(?:\([^)]{2,}\)|\\left[^\\]*(?:\\right)?|\{[^{}]{2,}\})\s*\^", body):
-        hints.append("grouped-power")
-    if re.search(r"(?:\([^)]*[+\-][^)]*\)|\{[^{}]*[+\-][^{}]*\})\s*!", body):
-        hints.append("factorial-scope")
-    if re.search(r"\\frac\{[^{}]+\}\{[^{}]*(?:[+\-]|\^|!|\\times|\\cdot|\\pi|\\epsilon|\\lvert|\\rvert|\\vec)[^{}]*\}", body):
-        hints.append("compound-denominator")
-    if re.search(r"[A-Za-z\\]+(?:_\{?[^}]+\}?)?\([^)]*=[^)]*\)", body):
-        hints.append("evaluation-assignment")
-    return "|".join(hints)
+def identifier_counter(identifier: str) -> int | None:
+    match = re.search(r"\.([0-9]+)[a-z]?$", identifier)
+    return int(match.group(1)) if match else None
+
+
+def split_number_parts(number: str) -> list[str]:
+    return [part for part in number.split(".") if part]
 
 
 def extract_prose_anchor(paragraph: str, max_words: int = 10, *, tail: bool = False) -> str:
@@ -333,6 +123,8 @@ def paragraph_has_structural_command(paragraph_lines: list[str]) -> bool:
     first = stripped_lines[0]
     if first.startswith("%"):
         return True
+    if any(LAYOUT_PROSE_SKIP_PATTERN.search(line) for line in stripped_lines):
+        return True
     if HEADING_PATTERN.match(first):
         return True
     if EQUATION_BEGIN_PATTERN.match(first) or EQUATION_END_PATTERN.match(first):
@@ -349,10 +141,37 @@ def paragraph_has_structural_command(paragraph_lines: list[str]) -> bool:
     return False
 
 
+def line_is_structural_for_prose(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return False
+    if stripped.startswith("%"):
+        return True
+    if LAYOUT_PROSE_SKIP_PATTERN.search(stripped):
+        return True
+    if HEADING_PATTERN.match(stripped):
+        return True
+    if EQUATION_BEGIN_PATTERN.match(stripped) or EQUATION_END_PATTERN.match(stripped):
+        return True
+    if BRACKET_DISPLAY_BEGIN_PATTERN.search(stripped) or BRACKET_DISPLAY_END_PATTERN.search(stripped):
+        return True
+    if CAPTION_START in stripped:
+        return True
+    if ALGORITHM_PATTERN.search(stripped) or EXERCISE_PATTERN.search(stripped):
+        return True
+    if TAG_PATTERN.search(stripped):
+        return True
+    if stripped.startswith(r"\begin{") or stripped.startswith(r"\end{"):
+        return True
+    return False
+
+
 def collect_prose_anchors(lines: list[str], start_line: int, end_line: int) -> list[tuple[int, str]]:
     anchors: list[tuple[int, str]] = []
     paragraph_lines: list[str] = []
     paragraph_start = start_line
+    in_display = False
+    display_env = ""
 
     def flush() -> None:
         nonlocal paragraph_lines, paragraph_start
@@ -370,7 +189,42 @@ def collect_prose_anchors(lines: list[str], start_line: int, end_line: int) -> l
 
     for idx in range(start_line, end_line + 1):
         line = lines[idx - 1]
+        if in_display:
+            if display_env == "bracket-display":
+                if BRACKET_DISPLAY_END_PATTERN.search(line):
+                    in_display = False
+                    display_env = ""
+            else:
+                end_match = EQUATION_END_PATTERN.match(line)
+                if end_match and end_match.group("env") == display_env:
+                    in_display = False
+                    display_env = ""
+            paragraph_start = idx + 1
+            continue
+
         if not line.strip():
+            flush()
+            paragraph_start = idx + 1
+            continue
+
+        begin_match = EQUATION_BEGIN_PATTERN.match(line)
+        if begin_match and begin_match.group("env") in DISPLAY_EQUATION_ENVIRONMENTS:
+            flush()
+            if not EQUATION_END_PATTERN.match(line):
+                in_display = True
+                display_env = begin_match.group("env")
+            paragraph_start = idx + 1
+            continue
+
+        if BRACKET_DISPLAY_BEGIN_PATTERN.search(line):
+            flush()
+            if not BRACKET_DISPLAY_END_PATTERN.search(line):
+                in_display = True
+                display_env = "bracket-display"
+            paragraph_start = idx + 1
+            continue
+
+        if line_is_structural_for_prose(line):
             flush()
             paragraph_start = idx + 1
             continue
@@ -409,6 +263,15 @@ def item_span(lines: list[str], item_line: int, section_end_line: int) -> tuple[
         if depth == 0 and ITEM_PATTERN.match(line):
             return item_line, idx - 1
     return item_line, section_end_line
+
+
+def clean_item_text_for_anchor(item_text: str) -> str:
+    cleaned_lines: list[str] = []
+    for line in item_text.splitlines():
+        if LIST_BEGIN_PATTERN.match(line) or LIST_END_PATTERN.match(line):
+            continue
+        cleaned_lines.append(ITEM_PATTERN.sub("", line, count=1))
+    return "\n".join(cleaned_lines)
 
 
 def section_is_problem_heavy(row: dict[str, str], lines: list[str]) -> bool:
@@ -510,22 +373,42 @@ def extract_equation_blocks(lines: list[str]) -> list[dict[str, object]]:
     return blocks
 
 
-def local_equation_body(block: dict[str, object], source_line: int) -> str:
-    body_lines = str(block["body"]).splitlines()
-    start_line = int(block["start_line"])
-    rel_line = max(0, min(source_line - start_line, len(body_lines) - 1))
+def extract_subequation_spans(lines: list[str]) -> list[dict[str, object]]:
+    spans: list[dict[str, object]] = []
+    stack: list[dict[str, object]] = []
+    for idx, line in enumerate(lines, start=1):
+        if re.search(r"\\begin\{subequations\}", line):
+            stack.append({"start_line": idx, "end_line": len(lines), "block_starts": []})
+        if re.search(r"\\end\{subequations\}", line) and stack:
+            span = stack.pop()
+            span["end_line"] = idx
+            spans.append(span)
+    return spans
 
-    segment_start = 0
-    for idx in range(rel_line - 1, -1, -1):
-        if (LABEL_PATTERN.search(body_lines[idx]) or TAG_PATTERN.search(body_lines[idx])) and r"\\" in body_lines[idx]:
-            segment_start = idx + 1
-            break
 
-    segment_end = rel_line
+def tagged_continuation_starts_with_equals(block: dict[str, object]) -> bool:
+    body = str(block.get("body", ""))
+    for line in body.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(r"\[") or stripped.startswith(r"\begin"):
+            continue
+        return stripped.startswith("=") or stripped.startswith("&=")
+    return False
 
-    if segment_end < segment_start:
-        return str(block["body"])
-    return "\n".join(body_lines[segment_start : segment_end + 1])
+
+def untagged_blocks_followed_by_tagged_continuation(blocks: list[dict[str, object]]) -> set[int]:
+    skip_starts: set[int] = set()
+    for idx, block in enumerate(blocks[:-1]):
+        if block.get("tags") or block.get("labels"):
+            continue
+        next_block = blocks[idx + 1]
+        if not next_block.get("tags"):
+            continue
+        if int(next_block["start_line"]) - int(block["end_line"]) > 3:
+            continue
+        if tagged_continuation_starts_with_equals(next_block):
+            skip_starts.add(int(block["start_line"]))
+    return skip_starts
 
 
 def section_for_line(plan_rows: list[dict[str, str]], line_no: int) -> dict[str, str] | None:
@@ -533,6 +416,23 @@ def section_for_line(plan_rows: list[dict[str, str]], line_no: int) -> dict[str,
         if int(row["start_line"]) <= line_no <= int(row["end_line"]):
             return row
     return None
+
+
+def top_section_number_for_line(plan_rows: list[dict[str, str]], line_no: int) -> str:
+    current = ""
+    for row in plan_rows:
+        start = int(row["start_line"])
+        if start > line_no:
+            break
+        number = row.get("number", "")
+        if not number:
+            continue
+        parts = split_number_parts(number)
+        if row.get("kind") == "section" and len(parts) >= 2:
+            current = ".".join(parts[:2])
+        elif not current and len(parts) >= 2:
+            current = ".".join(parts[:2])
+    return current
 
 
 def infer_chapter_prefix(plan_rows: list[dict[str, str]]) -> str:
@@ -543,6 +443,69 @@ def infer_chapter_prefix(plan_rows: list[dict[str, str]]) -> str:
     if plan_rows:
         return plan_rows[0].get("number", "")
     return ""
+
+
+def infer_numbering_scope(lines: list[str], plan_rows: list[dict[str, str]], chapter_prefix: str) -> str:
+    identifiers: list[str] = []
+    text = "\n".join(lines)
+    for match in TAG_PATTERN.finditer(text):
+        identifiers.append(match.group(1).replace("–", "-").replace("—", "-"))
+    for match in NUMERIC_IDENTIFIER_PATTERN.finditer(text):
+        identifiers.append(match.group("id"))
+    section_prefixes = {
+        ".".join(split_number_parts(row.get("number", ""))[:2])
+        for row in plan_rows
+        if len(split_number_parts(row.get("number", ""))) >= 2
+    }
+    section_like = 0
+    chapter_like = 0
+    for identifier in identifiers:
+        prefix = identifier_prefix(identifier)
+        if not prefix:
+            continue
+        parts = split_number_parts(identifier)
+        if prefix in section_prefixes and len(parts) >= 3:
+            section_like += 1
+        elif parts and parts[0] == chapter_prefix and len(parts) == 2:
+            chapter_like += 1
+    return "section" if section_like > chapter_like else "chapter"
+
+
+def subequation_span_for_line(spans: list[dict[str, object]], line_no: int) -> dict[str, object] | None:
+    for span in spans:
+        if int(span["start_line"]) <= line_no <= int(span["end_line"]):
+            return span
+    return None
+
+
+def counter_key_for_block(
+    block: dict[str, object],
+    plan_rows: list[dict[str, str]],
+    chapter_prefix: str,
+    numbering_scope: str,
+) -> str:
+    if numbering_scope == "section":
+        return top_section_number_for_line(plan_rows, int(block["start_line"])) or chapter_prefix
+    return chapter_prefix
+
+
+def next_inferred_identifier(
+    block: dict[str, object],
+    plan_rows: list[dict[str, str]],
+    counters: dict[str, int],
+    chapter_prefix: str,
+    numbering_scope: str,
+) -> str:
+    key = counter_key_for_block(block, plan_rows, chapter_prefix, numbering_scope)
+    counters[key] = counters.get(key, 0) + 1
+    return f"{key}.{counters[key]}" if key else str(counters[key])
+
+
+def sync_counter_from_identifier(counters: dict[str, int], identifier: str) -> None:
+    prefix = identifier_prefix(identifier)
+    value = identifier_counter(identifier)
+    if prefix and value is not None:
+        counters[prefix] = max(counters.get(prefix, 0), value)
 
 
 def main() -> int:
@@ -558,23 +521,27 @@ def main() -> int:
     lines = tex_path.read_text(encoding="utf-8").splitlines()
     plan_rows = load_plan(plan_path)
     chapter_prefix = infer_chapter_prefix(plan_rows)
+    numbering_scope = infer_numbering_scope(lines, plan_rows, chapter_prefix)
     equation_blocks = extract_equation_blocks(lines)
+    continuation_skip_starts = untagged_blocks_followed_by_tagged_continuation(equation_blocks)
+    subequation_spans = extract_subequation_spans(lines)
+    counters: dict[str, int] = {}
+    subequation_bases: dict[int, str] = {}
+    subequation_counts: dict[int, int] = {}
 
     checkpoints: list[dict[str, str]] = []
     for row in plan_rows:
         spoken_hint = normalize_whitespace(" ".join(part for part in [row["spoken_label"], row["title"]] if part))
         checkpoints.append(
-                {
-                    "section_seq": row["seq"],
-                    "kind": "heading",
-                    "identifier": row.get("number", "") or row["title"],
-                    "spoken_hint": spoken_hint,
-                    "signature_hints": "",
-                    "render_hints": "",
-                    "source_line": row["start_line"],
-                    "notes": row["title"],
-                }
-            )
+            {
+                "section_seq": row["seq"],
+                "kind": "heading",
+                "identifier": row.get("number", "") or row["title"],
+                "spoken_hint": spoken_hint,
+                "source_line": row["start_line"],
+                "notes": row["title"],
+            }
+        )
         if section_is_problem_heavy(row, lines):
             item_lines = collect_item_lines(lines, int(row["start_line"]), int(row["end_line"]), top_level_only=True)
             for item_idx, source_line in enumerate(item_lines, start=1):
@@ -584,14 +551,12 @@ def main() -> int:
                         "kind": "exercise",
                         "identifier": str(item_idx),
                         "spoken_hint": f"Problem {item_idx}",
-                        "signature_hints": "",
-                        "render_hints": "",
                         "source_line": source_line,
                         "notes": "problem-item",
                     }
                 )
                 item_start, item_end = item_span(lines, source_line, int(row["end_line"]))
-                item_text = "\n".join(lines[item_start - 1 : item_end])
+                item_text = clean_item_text_for_anchor("\n".join(lines[item_start - 1 : item_end]))
                 start_anchor = extract_prose_anchor(item_text)
                 if start_anchor:
                     checkpoints.append(
@@ -600,8 +565,6 @@ def main() -> int:
                             "kind": "prose-anchor",
                             "identifier": f"{row['seq']}-problem-{item_idx}-start",
                             "spoken_hint": start_anchor,
-                            "signature_hints": "",
-                            "render_hints": "",
                             "source_line": source_line,
                             "notes": start_anchor,
                         }
@@ -614,8 +577,6 @@ def main() -> int:
                             "kind": "prose-anchor",
                             "identifier": f"{row['seq']}-problem-{item_idx}-tail",
                             "spoken_hint": tail_anchor,
-                            "signature_hints": "",
-                            "render_hints": "",
                             "source_line": item_end,
                             "notes": tail_anchor,
                         }
@@ -631,15 +592,14 @@ def main() -> int:
                         "kind": "prose-anchor",
                         "identifier": f"{row['seq']}-p{anchor_idx}",
                         "spoken_hint": anchor,
-                        "signature_hints": "",
-                        "render_hints": "",
                         "source_line": source_line,
                         "notes": anchor,
                     }
                 )
 
-    equation_index = 0
     for block in equation_blocks:
+        if int(block["start_line"]) in continuation_skip_starts:
+            continue
         if block["star"] and not block["tags"] and not block["labels"]:
             continue
         row = section_for_line(plan_rows, int(block["start_line"]))
@@ -657,31 +617,86 @@ def main() -> int:
             entries = [(int(block["start_line"]), "", "")]
 
         for source_line, raw_identifier, note in entries:
-            local_body = local_equation_body(block, source_line) if len(entries) > 1 else str(block["body"])
-            equation_index += 1
+            checkpoint_kind = "equation"
             if note.startswith("tag:") and raw_identifier:
                 identifier = raw_identifier
-            elif chapter_prefix:
-                identifier = f"{chapter_prefix}.{equation_index}"
+                sync_counter_from_identifier(counters, identifier)
+            elif note.startswith("label:") and raw_identifier:
+                label_identifier = identifier_from_label(raw_identifier)
+                if label_identifier:
+                    identifier = label_identifier
+                    sync_counter_from_identifier(counters, identifier)
+                else:
+                    span = subequation_span_for_line(subequation_spans, int(block["start_line"]))
+                    if span is not None:
+                        span_id = int(span["start_line"])
+                        if span_id not in subequation_bases:
+                            subequation_bases[span_id] = next_inferred_identifier(
+                                block,
+                                plan_rows,
+                                counters,
+                                chapter_prefix,
+                                numbering_scope,
+                            )
+                            subequation_counts[span_id] = 0
+                        subequation_counts[span_id] += 1
+                        identifier = f"{subequation_bases[span_id]}{chr(ord('a') + subequation_counts[span_id] - 1)}"
+                    else:
+                        identifier = next_inferred_identifier(
+                            block,
+                            plan_rows,
+                            counters,
+                            chapter_prefix,
+                            numbering_scope,
+                        )
+            elif subequation_span_for_line(subequation_spans, int(block["start_line"])) is not None:
+                span = subequation_span_for_line(subequation_spans, int(block["start_line"]))
+                assert span is not None
+                span_id = int(span["start_line"])
+                if span_id not in subequation_bases:
+                    subequation_bases[span_id] = next_inferred_identifier(
+                        block,
+                        plan_rows,
+                        counters,
+                        chapter_prefix,
+                        numbering_scope,
+                    )
+                    subequation_counts[span_id] = 0
+                subequation_counts[span_id] += 1
+                identifier = f"{subequation_bases[span_id]}{chr(ord('a') + subequation_counts[span_id] - 1)}"
             else:
-                identifier = str(equation_index)
+                checkpoint_kind = "display-equation"
+                inferred_display_identifier = next_inferred_identifier(
+                    block,
+                    plan_rows,
+                    counters,
+                    chapter_prefix,
+                    numbering_scope,
+                )
+                identifier = f"display-{inferred_display_identifier}"
             checkpoints.append(
                 {
                     "section_seq": row["seq"],
-                    "kind": "equation",
+                    "kind": checkpoint_kind,
                     "identifier": identifier,
-                    "spoken_hint": f"Equation {identifier}",
-                    "signature_hints": equation_signature_hints(local_body),
-                    "render_hints": equation_render_hints(local_body),
+                    "spoken_hint": f"Equation {identifier}" if checkpoint_kind == "equation" else "Displayed equation",
                     "source_line": source_line,
-                    "notes": note or raw_identifier,
+                    "notes": note or raw_identifier or strip_latex(str(block.get("body", "")))[:240],
                 }
             )
 
     figure_index = 0
+    table_index = 0
+    float_stack: list[str] = []
     for idx, line in enumerate(lines, start=1):
         row = section_for_line(plan_rows, idx)
+        begin_float = re.search(r"\\begin\{(figure|table)\*?\}", line)
+        if begin_float:
+            float_stack.append(begin_float.group(1))
         if row is None:
+            end_float = re.search(r"\\end\{(figure|table)\*?\}", line)
+            if end_float and float_stack:
+                float_stack.pop()
             continue
         alg_match = ALGORITHM_PATTERN.search(line)
         if alg_match:
@@ -693,8 +708,6 @@ def main() -> int:
                     "kind": "algorithm",
                     "identifier": identifier,
                     "spoken_hint": f"Algorithm {identifier}",
-                    "signature_hints": "",
-                    "render_hints": "",
                     "source_line": idx,
                     "notes": title,
                 }
@@ -708,8 +721,6 @@ def main() -> int:
                     "kind": "exercise",
                     "identifier": identifier,
                     "spoken_hint": f"Exercise {identifier}",
-                    "signature_hints": "",
-                    "render_hints": "",
                     "source_line": idx,
                     "notes": "",
                 }
@@ -723,35 +734,43 @@ def main() -> int:
                     "kind": "exercise",
                     "identifier": identifier,
                     "spoken_hint": f"Answer {identifier}",
-                    "signature_hints": "",
-                    "render_hints": "",
                     "source_line": idx,
                     "notes": "answer-entry",
                 }
             )
         if CAPTION_START in line:
-            figure_index += 1
             start_col = line.index(CAPTION_START) + len(CAPTION_START)
             caption = strip_latex(extract_braced_content(lines, idx - 1, start_col))
-            identifier = f"{chapter_prefix}.{figure_index}" if chapter_prefix else f"figure-{figure_index}"
+            current_float = float_stack[-1] if float_stack else "figure"
+            if current_float == "table":
+                table_index += 1
+                kind = "table-caption"
+                identifier = f"{chapter_prefix}.{table_index}" if chapter_prefix else f"table-{table_index}"
+                spoken_hint = f"Table {identifier}"
+            else:
+                figure_index += 1
+                kind = "figure-caption"
+                identifier = f"{chapter_prefix}.{figure_index}" if chapter_prefix else f"figure-{figure_index}"
+                spoken_hint = f"Figure {identifier}"
             checkpoints.append(
                 {
                     "section_seq": row["seq"],
-                    "kind": "figure-caption",
+                    "kind": kind,
                     "identifier": identifier,
-                    "spoken_hint": f"Figure {identifier}",
-                    "signature_hints": "",
-                    "render_hints": "",
+                    "spoken_hint": spoken_hint,
                     "source_line": idx,
                     "notes": caption,
                 }
             )
+        end_float = re.search(r"\\end\{(figure|table)\*?\}", line)
+        if end_float and float_stack:
+            float_stack.pop()
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=["section_seq", "kind", "identifier", "spoken_hint", "signature_hints", "render_hints", "source_line", "notes"],
+            fieldnames=["section_seq", "kind", "identifier", "spoken_hint", "source_line", "notes"],
             lineterminator="\n",
         )
         writer.writeheader()

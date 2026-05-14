@@ -16,6 +16,9 @@ Produce text that a TTS engine can read as a pleasant technical audiobook while 
 - Spell out all numbers in the final script by default. This is the safe default for sensitive TTS engines such as Chatterbox.
 - Preserve ordinary English prose with minimal touch by default.
 - Keep chapter-wide notation naming stable from the first section to the last.
+- Treat the source brief as the local contract for semantics, pronunciation, and style.
+- Preserve meaningful source cross-references in prose unless the source brief marks them as non-content.
+- Do not add conceptual commentary that is not in the source; solve hard math narration with grouping, staging, and pacing.
 
 ## Prose Preservation
 
@@ -44,13 +47,19 @@ Produce text that a TTS engine can read as a pleasant technical audiobook while 
 
 ## Naming Consistency
 
-- Build and follow a chapter-wide spoken notation lexicon.
+- Use the source brief to establish chapter-wide spoken notation and pronunciation decisions.
 - Once a symbol gets a spoken name, keep it stable everywhere in the chapter.
 - Examples:
   - `\mathbf{x}` should not alternate between `vector x`, `bold x`, and `x in bold`
   - `\mathcal{D}` should not alternate between `script d` and `calligraphic d`
   - a matrix should not become a vector later unless the source notation changes
+- Prefer established semantic names when the source-local meaning is clear:
+  - Gaussian `\mathcal{N}` notation should be read as `normal distribution` or as `normally distributed with mean ... and covariance ...`, not as `script n`
+  - `\mathbf{I}` used as the identity matrix should be read as `identity matrix`, not as `matrix i`
 - Prefer source-local consistency over generic habits.
+- Avoid mechanical expansion artifacts. If the prose already supplies the
+  mathematical object type, do not repeat that type just because the symbol is
+  bold, decorated, or semantic in the source brief.
 
 ## Notation-Heavy Chapters and Appendices
 
@@ -81,6 +90,10 @@ Produce text that a TTS engine can read as a pleasant technical audiobook while 
   - `two thousand twenty-one`
   - `sixty-four by sixty-four`
   - `Step two point three`
+- For initialisms spoken letter by letter, avoid apostrophe-s plurals because
+  TTS engines may read them as possessives. Prefer an expanded noun phrase or a
+  form such as `D D P M models` over `D D P M's`, and `stochastic differential
+  equations, abbreviated S D E` over `S D E's`.
 
 ## Headings
 
@@ -124,16 +137,22 @@ Produce text that a TTS engine can read as a pleasant technical audiobook while 
   - mathematical assignments
 - Break long lines into readable spoken steps.
 
-## Exercises
+## End-Of-Chapter Problems
 
-- Include exercises by default unless the user explicitly excludes them.
-- Preserve exercise numbering in speakable form.
-- Keep the problem statement faithful.
+- End-of-chapter problems and exercises are out of scope by default.
+- Include them only when the user explicitly asks for problem/exercise scripts.
+- If explicitly included, preserve numbering, part labels, and mathematical conditions faithfully.
+- Distinguish actual problem statements from standalone italic drill callouts embedded in chapter prose.
+- Omit isolated callouts such as `Exercise 20.1` when they are only navigational markers and contain no problem content.
 
 ## Citations and Cross-References
 
 - Keep citations in speakable form when they matter to the explanation.
 - Keep cross-references such as `Figure 20.8`, `Equation 20.33`, or `Section 14.3`.
+- If the source brief documents a corrected equation-numbering contract, update
+  stale hard-coded prose references so the spoken reference points to the item
+  the prose actually means under the final script numbering.
+- Do not render standalone italic cross-reference callouts such as `Section 11.3` or `Chapter 19` as their own spoken paragraphs. If the reference is useful, integrate it into a real sentence; otherwise omit it.
 
 ## Tables and Lists
 
@@ -147,13 +166,17 @@ Produce text that a TTS engine can read as a pleasant technical audiobook while 
 - Avoid overpacked sentences full of commas and parentheticals.
 - When a formula is dense, prefer one lead-in sentence plus one or more short lines for the verbalized expression.
 - Use repetition sparingly and only when it reduces ambiguity.
+- Prefer dimensional-measure speech over TeX-shaped measure speech. For example, `d-dimensional x` usually sounds better than `d to the d x`, and `d-dimensional q over the quantity two pi raised to d` usually sounds better than `d to the d q over two pi to the d`.
 
 ## What Not to Do
 
 - Do not emit raw LaTeX syntax in the final script.
 - Do not leave Arabic numerals in the final script unless the user explicitly asks for them.
 - Do not paraphrase a difficult equation into a vague explanation.
-- Do not silently drop captions, exercises, or algorithms.
+- Do not append validator-appeasement fragments such as `with denominator ...` or invented commentary about what terms are doing.
+- Do not silently drop captions, algorithms, tables, or in-scope lists.
 - Do not rewrite ordinary prose more than necessary for speech.
 - Do not rename notation casually across sections.
+- Do not produce mechanical expansion artifacts where source-brief wording is
+  applied blindly instead of integrated into the surrounding sentence.
 - Do not overfit to one book's narration style if the current source wants a different local treatment.

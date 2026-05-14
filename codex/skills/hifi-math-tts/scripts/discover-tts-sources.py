@@ -8,19 +8,6 @@ from pathlib import Path
 
 
 SOURCE_PATTERN = re.compile(r"^(?P<kind>chapter|appendix)-(?P<label>[A-Za-z0-9-]+)\.tex$")
-SINGLETON_SOURCE_KINDS = {
-    "frontmatter": "frontmatter",
-    "preface": "frontmatter",
-    "foreword": "frontmatter",
-    "introduction": "frontmatter",
-    "prologue": "frontmatter",
-    "answers": "backmatter",
-    "solutions": "backmatter",
-    "epilogue": "backmatter",
-    "bibliography": "backmatter",
-    "references": "backmatter",
-    "index": "backmatter",
-}
 EXCLUDED_DIRS = {
     ".git",
     "__pycache__",
@@ -54,7 +41,7 @@ def discover_sources(root: Path) -> list[Path]:
     for path in root.rglob("*.tex"):
         if should_skip(path, root):
             continue
-        if SOURCE_PATTERN.match(path.name) or path.stem.lower() in SINGLETON_SOURCE_KINDS:
+        if SOURCE_PATTERN.match(path.name):
             matches.append(path)
     return sorted(
         matches,
@@ -70,7 +57,7 @@ def source_kind(path: Path) -> str:
     match = SOURCE_PATTERN.match(path.name)
     if match:
         return match.group("kind")
-    return SINGLETON_SOURCE_KINDS[path.stem.lower()]
+    return "unknown"
 
 
 def source_label(path: Path) -> list[object]:
@@ -83,12 +70,10 @@ def source_label(path: Path) -> list[object]:
 def source_order(path: Path) -> int:
     kind = source_kind(path)
     order = {
-        "frontmatter": 0,
         "chapter": 1,
         "appendix": 2,
-        "backmatter": 3,
     }
-    return order[kind]
+    return order.get(kind, 99)
 
 
 def main() -> int:
@@ -116,8 +101,7 @@ def main() -> int:
                 "script_dir": str(script_dir),
                 "section_plan": str(plans_dir / "tts-sections.csv"),
                 "checkpoint_ledger": str(plans_dir / "tts-checkpoints.csv"),
-                "lexicon_file": str(plans_dir / "tts-lexicon.csv"),
-                "lexicon_audit_file": str(plans_dir / "tts-lexicon-audit.csv"),
+                "source_brief_file": str(plans_dir / "tts-source-brief.md"),
                 "validation_file": str(plans_dir / "tts-validation.csv"),
                 "acceptance_sample_file": str(plans_dir / "tts-acceptance-sample.csv"),
             }
@@ -136,8 +120,7 @@ def main() -> int:
                 "script_dir",
                 "section_plan",
                 "checkpoint_ledger",
-                "lexicon_file",
-                "lexicon_audit_file",
+                "source_brief_file",
                 "validation_file",
                 "acceptance_sample_file",
             ],

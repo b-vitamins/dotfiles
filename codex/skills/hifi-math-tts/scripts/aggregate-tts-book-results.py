@@ -22,6 +22,22 @@ def resolve(root: Path, raw_path: str) -> Path:
     return path if path.is_absolute() else root / path
 
 
+def find_acceptance_review_file(acceptance_sample_path: Path) -> Path | None:
+    plans_dir = acceptance_sample_path.parent
+    candidates = [
+        "tts-acceptance-review.csv",
+        "tts-acceptance-review.md",
+        "tts-line-by-line-audit.md",
+        "tts-line-by-line-audit.csv",
+        "tts-audit-report.md",
+    ]
+    for name in candidates:
+        candidate = plans_dir / name
+        if candidate.exists() and candidate.read_text(encoding="utf-8").strip():
+            return candidate
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Aggregate whole-book TTS status from a book manifest.")
     parser.add_argument("--root", default=".", help="Book workspace root.")
@@ -37,25 +53,25 @@ def main() -> int:
     for row in manifest_rows:
         plan_rows = load_csv(resolve(root, row["section_plan"]))
         validation_rows = load_csv(resolve(root, row["validation_file"]))
-        lexicon_audit_rows = load_csv(resolve(root, row["lexicon_audit_file"]))
-        acceptance_rows = load_csv(resolve(root, row["acceptance_sample_file"]))
-        lexicon_audit_path = resolve(root, row["lexicon_audit_file"])
+        acceptance_sample_path = resolve(root, row["acceptance_sample_file"])
+        acceptance_rows = load_csv(acceptance_sample_path)
+        acceptance_review_path = find_acceptance_review_file(acceptance_sample_path)
+        source_brief_path = resolve(root, row["source_brief_file"])
 
         source_covered = bool(plan_rows) and all(
             resolve(root, plan_row["target_txt"]).exists()
             and resolve(root, plan_row["target_txt"]).read_text(encoding="utf-8").strip()
             for plan_row in plan_rows
         )
-        validated = bool(validation_rows) and all(validation_row.get("status") == "ok" for validation_row in validation_rows)
-        lexicon_audited = lexicon_audit_path.exists() and all(audit_row.get("covered") == "yes" for audit_row in lexicon_audit_rows)
-        style_audited = bool(acceptance_rows)
-        ready_for_tts = source_covered and validated and lexicon_audited and style_audited
+        validated = bool(validation_rows) and all(validation_row.get("status") in {"ok", "warn"} for validation_row in validation_rows)
+        source_briefed = source_brief_path.exists() and bool(source_brief_path.read_text(encoding="utf-8").strip())
+        style_audited = bool(acceptance_rows) and acceptance_review_path is not None
+        ready_for_tts = source_covered and validated and source_briefed and style_audited
         if ready_for_tts:
             ready_count += 1
 
         validation_failures = sum(1 for validation_row in validation_rows if validation_row.get("status") == "fail")
         validation_warnings = sum(1 for validation_row in validation_rows if validation_row.get("status") == "warn")
-        uncovered_notation = sum(1 for audit_row in lexicon_audit_rows if audit_row.get("covered") != "yes")
 
         out_rows.append(
             {
@@ -65,15 +81,17 @@ def main() -> int:
                 "section_count": str(len(plan_rows)),
                 "source-covered": yes_no(source_covered),
                 "validated": yes_no(validated),
-                "lexicon-audited": yes_no(lexicon_audited),
+                "source-briefed": yes_no(source_briefed),
                 "style-audited": yes_no(style_audited),
                 "ready-for-tts": yes_no(ready_for_tts),
                 "validation_failures": str(validation_failures),
                 "validation_warnings": str(validation_warnings),
-                "uncovered_notation": str(uncovered_notation),
                 "validation_file": row["validation_file"],
-                "lexicon_audit_file": row["lexicon_audit_file"],
+                "source_brief_file": row["source_brief_file"],
                 "acceptance_sample_file": row["acceptance_sample_file"],
+                "acceptance_review_file": (
+                    str(acceptance_review_path.relative_to(root)) if acceptance_review_path else ""
+                ),
             }
         )
 
@@ -89,15 +107,15 @@ def main() -> int:
                 "section_count",
                 "source-covered",
                 "validated",
-                "lexicon-audited",
+                "source-briefed",
                 "style-audited",
                 "ready-for-tts",
                 "validation_failures",
                 "validation_warnings",
-                "uncovered_notation",
                 "validation_file",
-                "lexicon_audit_file",
+                "source_brief_file",
                 "acceptance_sample_file",
+                "acceptance_review_file",
             ],
             lineterminator="\n",
         )
