@@ -315,21 +315,34 @@ When BRIGHT is non-nil, use bright terminal tokens."
              '(term-black term-red term-green term-yellow term-blue
                term-magenta term-cyan term-white)))))
 
+(defun bv-themes-compile--custom-value (value)
+  "Return a Custom theme expression for VALUE."
+  (if (consp value)
+      `',value
+    value))
+
 (defun bv-themes-compile-variable-specs (tokens)
   "Return theme variable specs for TOKENS."
   (let* ((ansi (bv-themes-compile--ansi-vector tokens))
          (bright (bv-themes-compile--ansi-vector tokens t))
          (term16 (vconcat (append (append ansi nil) (append bright nil)))))
-    `((ansi-color-names-vector ,ansi)
-      (ansi-term-color-vector ,(vconcat (vector 'unspecified) ansi))
-      (xterm-color-names ,(append term16 nil))
-      (xterm-color-names-bright ,(append bright nil))
-      (vterm-color-default-foreground ,(bv-themes-tokens-get 'fg-main tokens))
-      (vterm-color-default-background ,(bv-themes-tokens-get 'bg-main tokens))
-      (vterm-color-palette ,term16)
+    `((ansi-color-names-vector ,(bv-themes-compile--custom-value ansi))
+      (ansi-term-color-vector
+       ,(bv-themes-compile--custom-value (vconcat (vector 'unspecified) ansi)))
+      (xterm-color-names ,(bv-themes-compile--custom-value (append term16 nil)))
+      (xterm-color-names-bright
+       ,(bv-themes-compile--custom-value (append bright nil)))
+      (vterm-color-default-foreground
+       ,(bv-themes-compile--custom-value
+         (bv-themes-tokens-get 'fg-main tokens)))
+      (vterm-color-default-background
+       ,(bv-themes-compile--custom-value
+         (bv-themes-tokens-get 'bg-main tokens)))
+      (vterm-color-palette ,(bv-themes-compile--custom-value term16))
       (pdf-view-midnight-colors
-       ,(cons (bv-themes-tokens-get 'fg-main tokens)
-              (bv-themes-tokens-get 'bg-main tokens))))))
+       ,(bv-themes-compile--custom-value
+         (cons (bv-themes-tokens-get 'fg-main tokens)
+               (bv-themes-tokens-get 'bg-main tokens)))))))
 
 (defun bv-themes-compile-options ()
   "Return compiler options from user customizations."
