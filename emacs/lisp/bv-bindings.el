@@ -189,7 +189,6 @@ that a regex scan of the source tree cannot see."
 (bv-bindings--global "C-x C-c" #'bv-delete-frame-or-kill-emacs)
 (bv-bindings--global "M-n" #'new-frame)
 (bv-bindings--global "M-`" #'other-frame)
-(bv-bindings--global "<M-return>" #'toggle-frame-maximized)
 
 ;; Window map keeps discoverable aliases for built-in high-frequency actions.
 (bv-bindings--define bv-window-map "0" #'delete-window)
@@ -199,7 +198,6 @@ that a regex scan of the source tree cannot see."
 (bv-bindings--define bv-window-map "o" #'other-window)
 (bv-bindings--define bv-window-map "n" #'new-frame)
 (bv-bindings--define bv-window-map "`" #'other-frame)
-(bv-bindings--define bv-window-map "RET" #'toggle-frame-maximized)
 
 ;; File map covers global file conveniences; modules add Dired/TRAMP extras.
 (bv-bindings--define bv-file-map "f" #'find-file)
