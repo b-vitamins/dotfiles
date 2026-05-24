@@ -14,10 +14,13 @@
 (defvar ispell-program-name)
 (defvar ispell-personal-dictionary)
 (defvar ispell-dictionary)
+(defvar ispell-silently-savep)
 (defvar flyspell-issue-welcome-flag)
 (defvar flyspell-issue-message-flag)
 (defvar dictionary-server)
 (defvar bv-search-map)
+
+(autoload 'flyspell-correct-at-point "flyspell-correct" nil t)
 
 ;; Enable spell checking in text modes
 (add-hook 'text-mode-hook #'flyspell-mode)
@@ -35,6 +38,8 @@
   (when (boundp 'ispell-personal-dictionary)
     (setq ispell-personal-dictionary
           (expand-file-name "hunspell.personal" "~/documents/")))
+  (when (boundp 'ispell-silently-savep)
+    (setq ispell-silently-savep t))
   (when (boundp 'ispell-dictionary)
     (setq ispell-dictionary "en_US")))
 
@@ -61,7 +66,7 @@
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-search-map)
     (define-key bv-search-map (kbd "s") 'flyspell-mode)
-    (define-key bv-search-map (kbd "w") 'ispell-word)
+    (define-key bv-search-map (kbd "w") 'flyspell-correct-at-point)
     (define-key bv-search-map (kbd "d") 'dictionary-search)))
 
 (provide 'bv-spelling)
