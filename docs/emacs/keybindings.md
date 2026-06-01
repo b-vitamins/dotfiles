@@ -358,13 +358,10 @@ Available through Transient menus and standard Git commands.
 | `E` | bv-terminal-map | Terminal/shell map |
 | `h` | devdocs-lookup | DevDocs lookup |
 | `H` | devdocs-search | DevDocs search |
-| `j` | org-slipbox-dailies-goto-today | Today's daily note |
 | `m` | bv-mpv-map | MPV controls |
 | `o` | bv-org-map | Org command center |
 | `p` | project-switch-project | Switch project |
 | `P` | bv-project-org-capture | Project org capture |
-| `q` | org-ql-search | Org QL search |
-| `Q` | org-ql-view | Org QL view |
 | `s` | flyspell-mode | Spell check |
 | `S` | ispell-word | Check word |
 | `t` | tempel-insert | Insert template |

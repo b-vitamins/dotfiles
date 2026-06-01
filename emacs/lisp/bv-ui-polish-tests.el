@@ -15,7 +15,6 @@
 (require 'subr-x)
 (require 'bv-vertico)
 (require 'bv-which-key)
-(require 'bv-org-agenda)
 (require 'bv-flymake)
 (require 'bv-corfu)
 (require 'bv-git)
@@ -42,14 +41,6 @@
   (should (string-suffix-p " " which-key-prefix-prefix))
   (should (>= which-key-add-column-padding 2))
   (should (floatp which-key-max-description-length)))
-
-(ert-deftest bv-ui-polish-org-agenda-prefixes-have-gutters ()
-  "Org Agenda prefixes should separate category, time, and heading columns."
-  :tags '(bv-ui-polish)
-  (let ((agenda (alist-get 'agenda (bv-org-agenda--prefix-format))))
-    (should (string-match-p (regexp-quote "  %?-11t  %s") agenda))
-    (should (string-prefix-p "  now " bv-org-agenda-current-time-string))
-    (should-not (string-match-p "◀" bv-org-agenda-current-time-string))))
 
 (ert-deftest bv-ui-polish-flymake-uses-diagnostic-gutter ()
   "Flymake should reserve a right fringe gutter while active."

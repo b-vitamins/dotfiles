@@ -63,6 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Codex `research-paper-notes` skill for strict TeX-first single-paper analysis with arXiv source ingestion, sequential readthrough logging, and note validation
 - Automatic `setup.sh` preflight/bootstrap for SSH identity, mileva OCI root credentials, and actionable post-run setup reporting
 ### Changed
+- Simplified the Emacs Org setup around a single `~/org/main.org` file,
+  removing the multi-file inbox/project/metrics/deadline machinery, dynamic
+  agenda discovery and tracking module, idle auto-clockout timer, and related
+  customization variables, plus the low-value org-ql, org-recur, and dailies
+  wrapper modules and the custom Org dashboard/review agenda layer.
 - Reworked the Codex `hifi-math-tts` skill around a model-first voice-actor
   script contract: agents read the source and write spoken English with
   complete mathematical fidelity, while deterministic scripts are limited to

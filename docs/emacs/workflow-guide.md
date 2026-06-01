@@ -681,14 +681,6 @@ Do:
 Unified research workflow in org-mode
 ```
 
-Instead of:
-```
-Manual daily note creation
-```
-Do:
-```
-org-slipbox-dailies  # Automatic daily notes
-```
 
 ### Document Creation
 
@@ -1149,14 +1141,6 @@ Do:
 org-agenda + org-capture + org-slipbox integration
 ```
 
-Instead of:
-```
-Manual daily note creation
-```
-Do:
-```
-org-slipbox-dailies with template automation
-```
 
 Instead of:
 ```
