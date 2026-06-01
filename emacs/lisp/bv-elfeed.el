@@ -86,7 +86,6 @@
 (require 'cl-lib)
 (require 'elfeed)
 (require 'elfeed-score)
-(require 'org-ref)
 (require 'bibtex-completion)
 (require 'bv-completion)
 
@@ -304,7 +303,7 @@
          (arxiv-id (when match-idx (match-string 1 link))))
 
     (if arxiv-id
-        (if (require 'org-ref nil t)
+        (if (require 'org-ref-arxiv nil t)
             (if (fboundp 'arxiv-get-pdf-add-bibtex-entry)
                 (progn
                   (message "Fetching arXiv paper %s..." arxiv-id)
@@ -330,7 +329,7 @@
                      (message "Error downloading arXiv paper %s: %s"
                               arxiv-id (error-message-string err)))))
               (message "org-ref arxiv functions not available"))
-          (message "org-ref package not found. Install emacs-org-ref via Guix"))
+          (message "org-ref arxiv package not found. Install emacs-org-ref via Guix"))
       (message "Not an arXiv entry"))))
 
 (defun bv-elfeed-update-bibtex-file-field (arxiv-id)
