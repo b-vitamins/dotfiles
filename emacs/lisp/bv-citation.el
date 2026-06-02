@@ -6,50 +6,61 @@
 
 ;;; Commentary:
 
-;; Unified citation management system integrating BibTeX, Org-cite, and Citar.
+;; Unified citation management system integrating BibTeX, Org-cite, and Refbox.
 ;; Provides a consistent interface for all citation-related operations.
 ;;
 ;; Usage Guide:
 ;;
-;; Basic Operations:
+;; Insert/Edit:
 ;; - `C-c c i' - Insert citation
-;; - `C-c c o' - Open citation (PDF/URL)
-;; - `C-c c f' - Find citation
+;; - `C-c c m' - Edit citation at point
+;; - `C-c c k' - Insert keys
 ;;
-;; Bibliography Management:
-;; - `C-c c b' - Browse bibliography
-;; - `C-c c r' - Refresh bibliography cache
-;; - `C-c c a' - Add new entry to bibliography
+;; Resources:
+;; - `C-c c o' - Open files, links, or notes
+;; - `C-c c f' - Open files
+;; - `C-c c n' - Open notes
 ;;
-;; Advanced:
-;; - `C-c c s' - Search citations
-;; - `C-c c e' - Export citations
-;; - `C-c c l' - List all citations in buffer
-;; - `C-c c d' - Show citation details
+;; Index:
+;; - `C-c c g' - Sync bibliography roots
+;; - `C-c c G' - Sync current bibliography file
+;; - `C-c c D' - List parse diagnostics
 
 ;;; Code:
 
 (require 'bv-bibtex)
 (require 'bv-org-cite)
-(require 'bv-citar)
+(require 'bv-refbox)
 
 ;; Declare external functions
-(declare-function citar-select-refs "citar" (&optional arg))
-(declare-function citar-insert-preset "citar" (&optional arg))
-(declare-function citar-insert-citation "citar" (&optional arg))
-(declare-function citar-open "citar" (&optional arg))
-(declare-function citar-open-entry "citar" (&optional arg))
-(declare-function citar-add-file-to-library "citar" (&optional arg))
-(declare-function citar-attach-files "citar" (&optional arg))
-(declare-function citar-export-local-bib-file "citar" (&optional arg))
-(declare-function citar-dwim "citar" (&optional arg))
-(declare-function citar-copy-reference "citar" (&optional arg))
-(declare-function citar-insert-bibtex "citar" (&optional arg))
-(declare-function citar-insert-reference "citar" (&optional arg))
-(declare-function citar-open-notes "citar" (&optional arg))
-(declare-function citar-create-note "citar" (&optional arg))
-(declare-function citar-open-links "citar" (&optional arg))
-(declare-function citar-insert-keys "citar" (&optional arg))
+(declare-function refbox-select-references "refbox" (&rest args))
+(declare-function refbox-insert-preset "refbox" ())
+(declare-function refbox-insert-citation "refbox" (&optional references arg))
+(declare-function refbox-insert-edit "refbox" (&optional arg))
+(declare-function refbox-open "refbox" (&optional references))
+(declare-function refbox-open-files "refbox" (&optional references))
+(declare-function refbox-open-entry "refbox" (&optional reference))
+(declare-function refbox-open-source "refbox" (&optional reference))
+(declare-function refbox-add-file-to-library "refbox" (&optional reference))
+(declare-function refbox-attach-files "refbox" (&optional references))
+(declare-function refbox-export-local-bib-file "refbox" (&optional file))
+(declare-function refbox-dwim "refbox" ())
+(declare-function refbox-at-point "refbox" ())
+(declare-function refbox-copy-reference "refbox" (&optional references))
+(declare-function refbox-insert-bibtex "refbox" (&optional references))
+(declare-function refbox-insert-raw-entry "refbox" (&optional references))
+(declare-function refbox-insert-reference "refbox" (&optional references))
+(declare-function refbox-open-notes "refbox" (&optional references))
+(declare-function refbox-create-note "refbox" (&optional key entry))
+(declare-function refbox-open-links "refbox" (&optional references))
+(declare-function refbox-insert-keys "refbox" (&optional references))
+(declare-function refbox-reference-field "refbox" (candidate field))
+(declare-function refbox-sync "refbox" ())
+(declare-function refbox-sync-current-file "refbox" ())
+(declare-function refbox-status "refbox" ())
+(declare-function refbox-ping "refbox" ())
+(declare-function refbox-list-diagnostics "refbox" (&optional limit))
+(declare-function refbox-list-duplicates "refbox" (&optional limit))
 (declare-function org-cite-insert "oc" (&optional arg))
 
 ;; Define citation keymap
@@ -59,68 +70,80 @@
   "Keymap for citation commands.
 This keymap provides bindings for all citation-related operations.")
 
-;; Basic citation operations
-(define-key bv-citation-map (kbd "i") 'citar-insert-citation)
-(define-key bv-citation-map (kbd "o") 'citar-open)
-(define-key bv-citation-map (kbd "f") 'citar-open-entry)
-
-;; Bibliography management
-(define-key bv-citation-map (kbd "a") 'citar-add-file-to-library)
-(define-key bv-citation-map (kbd "A") 'citar-attach-files)
-
-;; Advanced operations
-(define-key bv-citation-map (kbd "s") 'citar-select-refs)
-(define-key bv-citation-map (kbd "e") 'citar-export-local-bib-file)
-(define-key bv-citation-map (kbd "d") 'citar-dwim)
-(define-key bv-citation-map (kbd "p") 'citar-insert-preset)
-(define-key bv-citation-map (kbd "c") 'citar-copy-reference)
-(define-key bv-citation-map (kbd "t") 'citar-insert-bibtex)
-
-;; Org-specific citation commands
-(with-eval-after-load 'org
-  (define-key bv-citation-map (kbd "C") 'org-cite-insert))
-
-;; Bind the keymap to C-c c
-(global-set-key (kbd "C-c c") bv-citation-map)
-
 ;; Additional functions for enhanced citation workflow
 (defun bv-citation-insert-and-open ()
   "Insert a citation and immediately open its PDF.
 This function combines citation insertion with PDF opening for quick access."
   (interactive)
-  (call-interactively 'citar-insert-citation)
+  (call-interactively #'refbox-insert-citation)
   (save-excursion
-    (backward-char)
-    (call-interactively 'citar-open)))
+    (goto-char (max (point-min) (1- (point))))
+    (call-interactively #'refbox-dwim)))
 
-;; Add to citation map
-(define-key bv-citation-map (kbd "I") 'bv-citation-insert-and-open)
-
-;; Additional citation helper functions
-(defun bv-citation-insert-formatted-reference ()
-  "Insert a formatted reference for the selected citation.
-This creates a properly formatted bibliographic reference."
+(defun bv-citation-select-references ()
+  "Select references and echo their keys."
   (interactive)
-  (call-interactively 'citar-insert-reference))
+  (let ((references (refbox-select-references)))
+    (when references
+      (message "Selected: %s"
+               (mapconcat (lambda (reference)
+                            (or (refbox-reference-field reference "key") ""))
+                          references
+                          ", ")))
+    references))
 
-(defun bv-citation-open-notes ()
-  "Open notes for the selected citation.
-This opens existing notes associated with a bibliographic entry."
+(defun bv-citation-refresh ()
+  "Synchronize Refbox and refresh Org-cite's bibliography file cache."
   (interactive)
-  (call-interactively 'citar-open-notes))
+  (refbox-sync)
+  (when (fboundp 'bv-org-cite-refresh-bibliography)
+    (bv-org-cite-refresh-bibliography)))
 
-(defun bv-citation-create-note ()
-  "Create a note for the selected citation.
-This creates a new note file for a bibliographic entry."
-  (interactive)
-  (call-interactively 'citar-create-note))
+;; Insert and edit.
+(define-key bv-citation-map (kbd "i") #'refbox-insert-citation)
+(define-key bv-citation-map (kbd "c") #'refbox-insert-citation)
+(define-key bv-citation-map (kbd "I") #'bv-citation-insert-and-open)
+(define-key bv-citation-map (kbd "m") #'refbox-insert-edit)
+(define-key bv-citation-map (kbd "k") #'refbox-insert-keys)
+(define-key bv-citation-map (kbd "p") #'refbox-insert-preset)
 
-;; Add new functions to keymap
-(define-key bv-citation-map (kbd "n") 'bv-citation-open-notes)
-(define-key bv-citation-map (kbd "N") 'bv-citation-create-note)
-(define-key bv-citation-map (kbd "F") 'bv-citation-insert-formatted-reference)
-(define-key bv-citation-map (kbd "l") 'citar-open-links)
-(define-key bv-citation-map (kbd "k") 'citar-insert-keys)
+;; Open and act at point.
+(define-key bv-citation-map (kbd "o") #'refbox-open)
+(define-key bv-citation-map (kbd "RET") #'refbox-open)
+(define-key bv-citation-map (kbd "f") #'refbox-open-files)
+(define-key bv-citation-map (kbd "l") #'refbox-open-links)
+(define-key bv-citation-map (kbd "n") #'refbox-open-notes)
+(define-key bv-citation-map (kbd "N") #'refbox-create-note)
+(define-key bv-citation-map (kbd "e") #'refbox-open-entry)
+(define-key bv-citation-map (kbd "E") #'refbox-open-source)
+(define-key bv-citation-map (kbd "d") #'refbox-dwim)
+(define-key bv-citation-map (kbd ".") #'refbox-at-point)
+
+;; Transfer and export.
+(define-key bv-citation-map (kbd "r") #'refbox-copy-reference)
+(define-key bv-citation-map (kbd "y") #'refbox-copy-reference)
+(define-key bv-citation-map (kbd "R") #'refbox-insert-reference)
+(define-key bv-citation-map (kbd "b") #'refbox-insert-bibtex)
+(define-key bv-citation-map (kbd "t") #'refbox-insert-bibtex)
+(define-key bv-citation-map (kbd "B") #'refbox-insert-raw-entry)
+(define-key bv-citation-map (kbd "x") #'refbox-export-local-bib-file)
+
+;; Library and index operations.
+(define-key bv-citation-map (kbd "a") #'refbox-add-file-to-library)
+(define-key bv-citation-map (kbd "A") #'refbox-attach-files)
+(define-key bv-citation-map (kbd "s") #'bv-citation-select-references)
+(define-key bv-citation-map (kbd "g") #'bv-citation-refresh)
+(define-key bv-citation-map (kbd "G") #'refbox-sync-current-file)
+(define-key bv-citation-map (kbd "S") #'refbox-status)
+(define-key bv-citation-map (kbd "P") #'refbox-ping)
+(define-key bv-citation-map (kbd "D") #'refbox-list-diagnostics)
+(define-key bv-citation-map (kbd "U") #'refbox-list-duplicates)
+
+;; Org-specific citation commands.
+(with-eval-after-load 'org
+  (define-key bv-citation-map (kbd "C") #'org-cite-insert))
+
+(global-set-key (kbd "C-c c") bv-citation-map)
 
 (provide 'bv-citation)
 ;;; bv-citation.el ends here

@@ -119,7 +119,7 @@
 (require 'bv-org-slipbox)  ; Slipbox notes
 (require 'bv-bibtex)       ; BibTeX configuration
 (require 'bv-org-cite)     ; Org-cite configuration
-(require 'bv-citar)        ; Citar citation UI
+(require 'bv-refbox)       ; Refbox citation UI
 (require 'bv-citation)     ; Unified citation interface
 
 ;; Documentation and help

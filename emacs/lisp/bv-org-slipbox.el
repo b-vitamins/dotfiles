@@ -36,10 +36,15 @@
 (declare-function nerd-icons-octicon "nerd-icons" (icon-name &rest args))
 ;; Autoloaded from `org-slipbox-maintenance'.
 (declare-function org-slipbox-sync "org-slipbox-maintenance" ())
+(declare-function refbox-org-slipbox-ref-add "refbox-org-slipbox" (&optional reference))
+(declare-function refbox-org-slipbox-open-current-refs "refbox-org-slipbox" (&optional prompt))
 (autoload 'org-slipbox-sync "org-slipbox-maintenance" nil t)
+(autoload 'refbox-org-slipbox-ref-add "refbox-org-slipbox" nil t)
+(autoload 'refbox-org-slipbox-open-current-refs "refbox-org-slipbox" nil t)
 
 (defvar consult-org-slipbox-buffer-after-buffers)
 (defvar consult-org-slipbox-buffer-narrow-key)
+(defvar org-slipbox-buffer-sections)
 
 (defgroup bv-org-slipbox nil
   "Slip box configuration for org-slipbox."
@@ -47,8 +52,13 @@
   :prefix "bv-org-slipbox-")
 
 (defcustom bv-org-slipbox-directory "~/org/myslipbox"
-  "Directory for org-slipbox notes."
+  "Root directory for the org-slipbox store."
   :type 'directory
+  :group 'bv-org-slipbox)
+
+(defcustom bv-org-slipbox-notes-directory "notes/"
+  "Relative subdirectory for ordinary slipbox notes."
+  :type 'string
   :group 'bv-org-slipbox)
 
 (defcustom bv-org-slipbox-show-backlinks t
@@ -112,9 +122,25 @@
       (expand-file-name "~/.cache")))
 
 (defun bv-org-slipbox--setup-directory ()
-  "Ensure the slipbox directory exists."
+  "Ensure the slipbox directories exist."
   (unless (file-directory-p org-slipbox-directory)
-    (make-directory org-slipbox-directory t)))
+    (make-directory org-slipbox-directory t))
+  (unless (file-directory-p (bv-org-slipbox--notes-directory))
+    (make-directory (bv-org-slipbox--notes-directory) t)))
+
+(defun bv-org-slipbox--notes-relative-directory ()
+  "Return the ordinary notes directory relative to the slipbox root."
+  (file-name-as-directory bv-org-slipbox-notes-directory))
+
+(defun bv-org-slipbox--notes-directory ()
+  "Return the absolute ordinary notes directory."
+  (expand-file-name (bv-org-slipbox--notes-relative-directory)
+                    org-slipbox-directory))
+
+(defun bv-org-slipbox--note-capture-file ()
+  "Return the ordinary slipbox capture target file template."
+  (concat (bv-org-slipbox--notes-relative-directory)
+          "%<%Y-%m-%d-%H-%M-%S>-${slug}.org"))
 
 (defun bv-org-slipbox--eligible-files ()
   "Return eligible slipbox files under `org-slipbox-directory'."
@@ -383,8 +409,8 @@ default buffer source should still preserve Consult's native
             #'org-slipbox-buffer-reflinks-section)
       org-slipbox-buffer-expensive-sections 'dedicated
       org-slipbox-capture-templates
-      '(("s" "slip" plain "%?"
-         :target (file+head "%<%Y-%m-%d-%H%M%S>-${slug}.org"
+      `(("s" "slip" plain "%?"
+         :target (file+head ,(bv-org-slipbox--note-capture-file)
                             "#+TITLE: ${title}\n#+DATE: %<%Y-%m-%d>\n#+FILETAGS:\n\n")
          :unnarrowed t)))
 
@@ -446,6 +472,10 @@ default buffer source should still preserve Consult's native
 (define-key bv-org-slipbox-map (kbd "l") #'consult-org-slipbox-backlinks)
 (define-key bv-org-slipbox-map (kbd "L") #'consult-org-slipbox-forward-links)
 (define-key bv-org-slipbox-map (kbd "F") #'consult-org-slipbox-file-find)
+
+(with-eval-after-load 'refbox-org-slipbox
+  (define-key bv-org-slipbox-map (kbd "R") #'refbox-org-slipbox-ref-add)
+  (define-key bv-org-slipbox-map (kbd "O") #'refbox-org-slipbox-open-current-refs))
 
 (provide 'bv-org-slipbox)
 ;;; bv-org-slipbox.el ends here

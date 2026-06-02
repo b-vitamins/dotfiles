@@ -72,6 +72,7 @@
 (autoload 'latex-preview-pane-mode "latex-preview-pane" nil t)
 (autoload 'bibtex-mode "bibtex" nil t)
 (autoload 'turn-on-reftex "reftex" nil t)
+(autoload 'refbox-insert-citation "refbox" nil t)
 
 ;; Enable tree-sitter for LaTeX when available
 ;; NOTE: Emacs doesn't include a built-in latex-ts-mode yet,
@@ -181,12 +182,12 @@
 
 ;; Citation management
 (defun bv-latex-insert-citation ()
-  "Insert citation using RefTeX."
+  "Insert a LaTeX citation using Refbox."
   (interactive)
-  (reftex-citation))
+  (call-interactively #'refbox-insert-citation))
 
 (defun bv-latex-insert-reference ()
-  "Insert reference using RefTeX."
+  "Insert a LaTeX cross-reference using RefTeX."
   (interactive)
   (reftex-reference))
 

@@ -15,6 +15,12 @@
 (require 'cl-lib)
 (require 'subr-x)
 (require 'bv-completion)
+
+;; These are package-owned variables, but batch byte-compilation can evaluate
+;; customization before `vertico-multiform' has installed its defcustoms.
+(defvar vertico-multiform-categories nil)
+(defvar vertico-multiform-commands nil)
+
 (require 'vertico)
 (require 'vertico-directory)
 (require 'vertico-multiform)
