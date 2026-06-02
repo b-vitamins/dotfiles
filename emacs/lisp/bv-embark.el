@@ -34,9 +34,53 @@
 (defvar embark-url-map)
 (defvar embark-verbose-indicator-display-action)
 
+(declare-function which-key--hide-popup-ignore-command "which-key" ())
+(declare-function which-key--show-keymap
+                  "which-key"
+                  (keymap-name keymap &optional prior-args all no-paging filter))
+
 (autoload 'helpful-symbol "helpful" nil t)
 (autoload 'magit-file-dispatch "magit" nil t)
 (autoload 'magit-status "magit" nil t)
+
+;;; Indicators
+
+(defun bv-embark--which-key-target-title (targets)
+  "Return a compact which-key title for Embark TARGETS."
+  (let* ((target (car targets))
+         (type (plist-get target :type))
+         (value (substring-no-properties
+                 (format "%s" (plist-get target :target)))))
+    (if (eq type 'embark-become)
+        "Become"
+      (format "Act on %s '%s'"
+              type
+              (truncate-string-to-width value 60 nil nil t)))))
+
+(defun bv-embark-which-key-indicator ()
+  "Return an Embark indicator that displays action maps with which-key."
+  (if (and (require 'which-key nil t)
+           (fboundp 'which-key--show-keymap)
+           (fboundp 'which-key--hide-popup-ignore-command))
+      (lambda (&optional keymap targets prefix)
+        (if (null keymap)
+            (which-key--hide-popup-ignore-command)
+          (let ((map (if prefix
+                         (pcase (lookup-key keymap prefix 'accept-default)
+                           ((and (pred keymapp) km) km)
+                           (_ (key-binding prefix 'accept-default)))
+                       keymap)))
+            (when (keymapp map)
+              (which-key--show-keymap
+               (bv-embark--which-key-target-title targets)
+               map
+               nil
+               nil
+               t
+               (lambda (binding)
+                 (not (string-suffix-p "-argument"
+                                       (or (cdr-safe binding) "")))))))))
+    (embark-mixed-indicator)))
 
 ;;; Core Settings
 
@@ -48,11 +92,11 @@
         (embark-kill-buffer-and-window . t)
         (t . nil))
       embark-indicators
-      '(embark-mixed-indicator
+      '(bv-embark-which-key-indicator
         embark-highlight-indicator
         embark-isearch-highlight-indicator)
       embark-cycle-key "."
-      embark-help-key "?"
+      embark-help-key "C-h"
       embark-confirm-act-all t
       embark-mixed-indicator-delay 0.45
       embark-verbose-indicator-display-action

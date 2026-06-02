@@ -15,6 +15,7 @@
 (require 'subr-x)
 (require 'bv-vertico)
 (require 'bv-which-key)
+(require 'bv-embark)
 (require 'bv-flymake)
 (require 'bv-corfu)
 (require 'bv-git)
@@ -41,6 +42,13 @@
   (should (string-suffix-p " " which-key-prefix-prefix))
   (should (>= which-key-add-column-padding 2))
   (should (floatp which-key-max-description-length)))
+
+(ert-deftest bv-ui-polish-embark-uses-which-key-action-panel ()
+  "Embark actions should use the same which-key panel as key hints."
+  :tags '(bv-ui-polish)
+  (should (memq 'bv-embark-which-key-indicator embark-indicators))
+  (should-not (memq 'embark-mixed-indicator embark-indicators))
+  (should (equal embark-help-key "C-h")))
 
 (ert-deftest bv-ui-polish-flymake-uses-diagnostic-gutter ()
   "Flymake should reserve a right fringe gutter while active."

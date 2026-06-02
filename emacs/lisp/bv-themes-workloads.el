@@ -23,7 +23,7 @@
   :prefix "bv-themes-workloads-")
 
 (defcustom bv-themes-workloads-optional-features
-  '(ansi-color apropos avy calendar cape citar comint company consult corfu
+  '(ansi-color apropos avy calendar cape refbox comint company consult corfu
     cus-edit dape diff-mode dired ediff eldoc elfeed elfeed-search eglot embark
     eshell flycheck flymake flyspell help-mode helpful hi-lock ibuffer info
     magit markdown-mode marginalia message nerd-icons nerd-icons-completion
@@ -109,6 +109,10 @@
      bv-elfeed-high-score-face bv-elfeed-arxiv-face message-header-name
      message-header-subject message-header-to message-header-cc
      message-header-other message-cited-text-1 message-separator)
+    (citation
+     refbox refbox-highlight refbox-title refbox-year refbox-author
+     refbox-journal refbox-tags refbox-note-highlight refbox-org-highlight
+     refbox-org-style-preview refbox-selection org-cite org-cite-key)
     (icons
      bv-icon-default bv-icon-muted bv-icon-file bv-icon-directory bv-icon-note
      bv-icon-code bv-icon-science bv-icon-idea bv-icon-proof bv-icon-review
