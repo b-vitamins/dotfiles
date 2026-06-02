@@ -357,7 +357,7 @@
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-org-map)
-    (define-key bv-org-map (kbd "d") 'bv-calendar)))
+    (define-key bv-org-map (kbd "C") 'bv-calendar)))
 
 (provide 'bv-calendar)
 ;;; bv-calendar.el ends here

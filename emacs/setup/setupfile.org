@@ -1,5 +1,5 @@
 #+OPTIONS: toc:nil num:nil ^:{} H:4
-#+STARTUP: fold latexpreview indent
+#+STARTUP: fold latexpreview indent hideblocks
 #+OPTIONS: todo:nil p:nil pri:nil stat:nil |:nil
 #+OPTIONS: d:(HIDE) tags:not-in-toc
 #+OPTIONS: tex:t LaTeX:t

@@ -1,4 +1,4 @@
-;;; bv-org.el --- Org mode configuration  -*- lexical-binding: t -*-
+;;; bv-org.el --- Minimal Org setup  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 Ayan Das
 ;; Author: Ayan Das <bvits@riseup.net>
@@ -6,25 +6,58 @@
 
 ;;; Commentary:
 
-;; A lightweight Org setup:
-;; - Default TODO keywords (TODO/DONE)
-;; - Stable clock-in/out commands (no window stealing)
-;; - Optional idle auto clock-out
-;; - A single inbox file + minimal capture template
+;; Basic Org mode setup.
 
 ;;; Code:
 
-(require 'seq)
-
-;; Load LaTeX preview configuration early.
+;; Load LaTeX preview configuration early so Org buffers inherit the resolved
+;; preview/font policy on first paint.
 (require 'bv-org-latex nil t)
+
+;;;; Command map and external declarations
 
 (unless (boundp 'bv-org-map)
   (defvar bv-org-map (make-sparse-keymap)
     "BV Org, agenda, capture, and clocking commands."))
 
+(defvar org-adapt-indentation)
+(defvar org-agenda-mode-map)
+(defvar org-agenda-files)
+(defvar org-archive-location)
+(defvar org-blank-before-new-entry)
+(defvar org-capture-templates)
+(defvar org-clock-history-length)
+(defvar org-clock-in-resume)
+(defvar org-clock-in-switch-to-state)
+(defvar org-clock-into-drawer)
+(defvar org-clock-out-remove-zero-time-clocks)
+(defvar org-clock-out-when-done)
+(defvar org-clock-persist)
+(defvar org-clock-report-include-clocking-task)
+(defvar org-default-notes-file)
+(defvar org-directory)
+(defvar org-enforce-todo-dependencies)
+(defvar org-hide-emphasis-markers)
+(defvar org-log-done)
+(defvar org-log-into-drawer)
+(defvar org-mode-map)
+(defvar org-outline-path-complete-in-steps)
+(defvar org-refile-allow-creating-parent-nodes)
+(defvar org-refile-targets)
+(defvar org-refile-use-outline-path)
+(defvar org-src-content-indentation)
+(defvar org-startup-indented)
+
+(declare-function org-agenda-clock-in "org-agenda" (&optional arg))
+(declare-function org-agenda-clock-out "org-agenda" ())
+(declare-function org-clock-in "org-clock" (&optional select start-time))
+(declare-function org-clock-out "org-clock" (&optional switch-to-state fail-quietly at-time))
+(declare-function org-clock-persistence-insinuate "org-clock" ())
+
+;;;; Customization
+
 (defgroup bv-org nil
-  "Lightweight Org configuration."
+  "BV Org configuration."
   :group 'org
   :prefix "bv-org-")
 
@@ -33,90 +66,20 @@
   :type 'directory
   :group 'bv-org)
 
-(defcustom bv-org-agenda-exclude-dirs '("archive" "roam" "slipbox" "daily")
-  "Subdirectories under `bv-org-directory' excluded from agenda discovery."
-  :type '(repeat string)
-  :group 'bv-org)
+;;;; Paths
 
-(defcustom bv-org-clock-idle-minutes 12
-  "Clock out after this many minutes of Emacs idleness.
+(defun bv-org--main-file ()
+  "Return the absolute path to the main Org file."
+  (expand-file-name "main.org" bv-org-directory))
 
-When nil, do not auto clock out."
-  :type '(choice (const :tag "Disable" nil)
-                 (integer :tag "Minutes"))
-  :group 'bv-org)
+;;;; File commands
 
-(defcustom bv-org-clock-idle-check-interval 60
-  "Seconds between idle checks for automatic clock-out."
-  :type 'integer
-  :group 'bv-org)
+(defun bv-org-open-main ()
+  "Open the Org main file."
+  (interactive)
+  (find-file (bv-org--main-file)))
 
-(defconst bv-org--inbox-file "inbox.org")
-
-(defun bv-org--path (relative)
-  "Return absolute path for RELATIVE inside `bv-org-directory'."
-  (expand-file-name relative bv-org-directory))
-
-(defun bv-org--agenda-file-p (file)
-  "Return non-nil when FILE should be included in `org-agenda-files'."
-  (let ((rel (file-relative-name file (file-name-as-directory bv-org-directory))))
-    (and (string-suffix-p ".org" file t)
-         (not (string-prefix-p "." (file-name-nondirectory file)))
-         (not (seq-some (lambda (dir)
-                          (string-prefix-p (file-name-as-directory dir) rel))
-                        bv-org-agenda-exclude-dirs)))))
-
-(defun bv-org--discover-agenda-files ()
-  "Discover agenda files under `bv-org-directory'."
-  (when (file-directory-p bv-org-directory)
-    (let ((files (directory-files-recursively bv-org-directory "\\.org\\'")))
-      (seq-filter #'bv-org--agenda-file-p files))))
-
-(defun bv-org--ensure-file (file initial-contents)
-  "Ensure FILE exists; when missing, create it with INITIAL-CONTENTS."
-  (let ((dir (file-name-directory file)))
-    (unless (file-directory-p dir)
-      (make-directory dir t)))
-  (unless (file-exists-p file)
-    (with-temp-buffer
-      (insert initial-contents)
-      (write-region (point-min) (point-max) file nil 'silent))))
-
-(defun bv-org-ensure-structure ()
-  "Ensure `bv-org-directory' and a minimal inbox file exist."
-  (unless (file-directory-p bv-org-directory)
-    (make-directory bv-org-directory t))
-  (bv-org--ensure-file
-   (bv-org--path bv-org--inbox-file)
-   "#+title: Inbox\n#+startup: overview\n\n* Inbox\n"))
-
-;;;; Clocking: one-task-at-a-time + idle auto clock-out
-
-(defvar bv-org--clock-idle-timer nil
-  "Timer used to enforce idle auto clock-out.")
-
-(defun bv-org--maybe-auto-clock-out ()
-  "Clock out when Emacs has been idle long enough."
-  (when (and (numberp bv-org-clock-idle-minutes)
-             (> bv-org-clock-idle-minutes 0)
-             (fboundp 'org-clocking-p)
-             (org-clocking-p))
-    (when-let ((idle (current-idle-time)))
-      (when (>= (float-time idle) (* 60 bv-org-clock-idle-minutes))
-        (ignore-errors (org-clock-out))
-        (message "Org: clocked out due to %dm idle" bv-org-clock-idle-minutes)))))
-
-(defun bv-org--setup-idle-clockout ()
-  "Start or stop the idle clockout timer based on configuration."
-  (when (timerp bv-org--clock-idle-timer)
-    (cancel-timer bv-org--clock-idle-timer)
-    (setq bv-org--clock-idle-timer nil))
-  (when (and (numberp bv-org-clock-idle-minutes)
-             (> bv-org-clock-idle-minutes 0))
-    (setq bv-org--clock-idle-timer
-          (run-with-timer bv-org-clock-idle-check-interval
-                          bv-org-clock-idle-check-interval
-                          #'bv-org--maybe-auto-clock-out))))
+;;;; Clocking
 
 (defun bv-org-clock-in (arg)
   "Clock in without stealing the current window.
@@ -154,6 +117,8 @@ With prefix ARG, pass it through to `org-clock-out'."
       (org-clock-out arg))))
   (force-mode-line-update t))
 
+;;;; Runtime setup
+
 (with-eval-after-load 'org-id
   (when (boundp 'org-id-locations-file)
     (setq org-id-locations-file
@@ -162,56 +127,66 @@ With prefix ARG, pass it through to `org-clock-out'."
            "/emacs/org-id-locations"))))
 
 (with-eval-after-load 'org
-  (bv-org-ensure-structure)
-
   (setq org-directory bv-org-directory)
-  (setq org-default-notes-file (bv-org--path bv-org--inbox-file))
-  (setq org-agenda-files (bv-org--discover-agenda-files))
+  (setq org-default-notes-file (bv-org--main-file))
+  (setq org-agenda-files (list (bv-org--main-file)))
+
+  (setq org-capture-templates
+        `(("t" "Task" entry
+           (file ,(bv-org--main-file))
+           "* TODO %^{Task}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%a\n"
+           :empty-lines 1)
+          ("n" "Note" entry
+           (file ,(bv-org--main-file))
+           "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n%a\n"
+           :empty-lines 1)))
 
   ;; Editing preferences.
   (setq org-adapt-indentation nil)
   (setq org-src-content-indentation 0)
   (setq org-startup-indented t)
   (setq org-hide-emphasis-markers t)
+  (setq org-blank-before-new-entry '((heading . nil)
+                                     (plain-list-item . auto)))
 
-  ;; Logging.
+  ;; Logging and movement inside the main file.
   (setq org-log-into-drawer t)
   (setq org-log-done 'time)
+  (setq org-enforce-todo-dependencies t)
+  (setq org-refile-targets '((org-agenda-files :maxlevel . 4)))
+  (setq org-outline-path-complete-in-steps nil)
+  (setq org-refile-use-outline-path 'file)
+  (setq org-refile-allow-creating-parent-nodes 'confirm)
+  (setq org-archive-location
+        (concat (bv-org--main-file) "::* Archive"))
 
   ;; Clocking.
   (setq org-clock-into-drawer "LOGBOOK")
   (setq org-clock-persist t)
   (org-clock-persistence-insinuate)
   (setq org-clock-in-resume t)
+  (setq org-clock-in-switch-to-state nil)
   (setq org-clock-out-when-done t)
-  (setq org-clock-history-length 20)
+  (setq org-clock-out-remove-zero-time-clocks t)
+  (setq org-clock-report-include-clocking-task t)
+  (setq org-clock-history-length 40)
 
-  (bv-org--setup-idle-clockout)
-
-  ;; Keep clocking keys stable (don't steal window focus).
+  ;; Keep clocking keys stable (do not steal window focus).
   (define-key org-mode-map (kbd "C-c C-x C-i") #'bv-org-clock-in)
   (define-key org-mode-map (kbd "C-c C-x TAB") #'bv-org-clock-in)
   (define-key org-mode-map (kbd "C-c C-x C-o") #'bv-org-clock-out)
   (with-eval-after-load 'org-agenda
     (define-key org-agenda-mode-map (kbd "C-c C-x C-i") #'bv-org-clock-in)
     (define-key org-agenda-mode-map (kbd "C-c C-x TAB") #'bv-org-clock-in)
-    (define-key org-agenda-mode-map (kbd "C-c C-x C-o") #'bv-org-clock-out))
+    (define-key org-agenda-mode-map (kbd "C-c C-x C-o") #'bv-org-clock-out)))
 
-  ;; Minimal capture: a single TODO entry into the inbox.
-  (setq org-capture-templates
-        `(("t" "Todo" entry
-           (file+headline ,(bv-org--path bv-org--inbox-file) "Inbox")
-           "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%a\n"
-           :empty-lines 1))))
+;;;; Keybindings
 
 (with-eval-after-load 'bv-bindings
   (when (boundp 'bv-org-map)
     (define-key bv-org-map (kbd "a") #'org-agenda)
     (define-key bv-org-map (kbd "c") #'org-capture)
-    (define-key bv-org-map (kbd "i")
-                (lambda ()
-                  (interactive)
-                  (find-file (bv-org--path bv-org--inbox-file))))
+    (define-key bv-org-map (kbd "m") #'bv-org-open-main)
     (define-key bv-org-map (kbd "I") #'bv-org-clock-in)
     (define-key bv-org-map (kbd "O") #'bv-org-clock-out)))
 
