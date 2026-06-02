@@ -36,7 +36,7 @@
   :type 'directory
   :group 'bv-keylog)
 
-(defcustom bv-keylog-enabled-by-default t
+(defcustom bv-keylog-enabled-by-default nil
   "Whether `bv-keylog-mode' should be enabled during startup."
   :type 'boolean
   :group 'bv-keylog)
@@ -123,9 +123,10 @@ Commands that read minibuffer input can leave the prompted text inside
 
 (defun bv-keylog--safe-key-description (command)
   "Return the current COMMAND key sequence without textual payload."
-  (bv-keylog--safe-key-description-from-vector
-   (this-command-keys-vector)
-   command))
+  (when-let ((keys (ignore-errors (this-command-keys-vector))))
+    (condition-case nil
+        (bv-keylog--safe-key-description-from-vector keys command)
+      (error "<unavailable>"))))
 
 (defun bv-keylog--skip-p (command)
   "Return non-nil when COMMAND should not be logged."
@@ -167,12 +168,12 @@ Commands that read minibuffer input can leave the prompted text inside
 
 (defun bv-keylog--post-command ()
   "Persist command usage after the command completes."
-  (let ((command this-command))
-    (unless (bv-keylog--skip-p command)
-      (condition-case err
-          (bv-keylog--write (bv-keylog--event command))
-        (error
-         (message "bv-keylog: %s" (error-message-string err)))))))
+  (condition-case err
+      (let ((command this-command))
+        (unless (bv-keylog--skip-p command)
+          (bv-keylog--write (bv-keylog--event command))))
+    (error
+     (message "bv-keylog: %s" (error-message-string err)))))
 
 ;;;###autoload
 (define-minor-mode bv-keylog-mode

@@ -43,9 +43,15 @@
 (declare-function pdf-view-goto-page "pdf-view" (page))
 (declare-function pdf-view-rotate "pdf-view" (&optional degree))
 
+(defun bv-pdf-view-mode ()
+  "Enter `pdf-view-mode' after loading the full pdf-tools package."
+  (interactive)
+  (require 'pdf-tools)
+  (pdf-view-mode))
+
 ;; Auto mode
-(add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode))
-(add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
+(add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . bv-pdf-view-mode))
+(add-to-list 'magic-mode-alist '("%PDF" . bv-pdf-view-mode))
 
 
 ;; Custom group definition
