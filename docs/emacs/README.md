@@ -29,8 +29,8 @@ M-x eglot-install-server
 | Switch buffer | `C-x b` | Consult-buffer with preview |
 | Search project | `C-c p R` | Ripgrep search in project |
 | Git status | `C-x g` | Open Magit |
-| Org agenda | `C-c a o a` | Open `org-agenda` |
-| Capture task/note | `C-c a o c` | Org capture |
+| Org agenda | `C-c o a` | Open `org-agenda` |
+| Capture task/note | `C-c o c` | Org capture |
 | Capture note | `C-c n c` | Org-roam capture |
 
 ### Key Concepts
@@ -45,7 +45,7 @@ M-x eglot-install-server
 
 ### For New Users
 1. Start with [Workflow Guide](workflow-guide.md) - Learn efficient patterns
-2. Read [Org Basics](org-workflow.md) - TODO/DONE, inbox, capture, clocking
+2. Read [Org Basics](org-workflow.md) - TODO/DONE, main.org, capture, clocking
 3. Review [Keybindings](keybindings.md) - Complete reference
 4. Explore [Customization](customization.md) - Make it yours
 
@@ -99,7 +99,7 @@ M-x eglot-install-server
 
 ### Research Workflow
 - **Org-roam**: Slip-box method for knowledge management
-- **Citations**: Academic reference management with Citar
+- **Citations**: Academic reference management with Refbox
 - **LaTeX**: `org-fast-latex-preview` following native Org preview settings, plus explicit per-display preview scaling and comprehensive export
 
 ### Development Environment

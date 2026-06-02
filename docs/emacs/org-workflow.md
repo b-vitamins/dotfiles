@@ -2,26 +2,25 @@
 
 This configuration intentionally keeps Org tasks minimal:
 - Default TODO keywords only (`TODO` / `DONE`)
-- A single inbox file under `~/org/inbox.org`
+- A single Org file under `~/org/main.org`
 - Stable clock-in/out (doesn’t steal windows)
-- Optional idle auto clock-out
 
-The directory `~/org` (and the inbox file) is created automatically if missing.
+The Org setup points agenda and capture at `~/org/main.org`.
 
 ## Layout (`~/org`)
 
-- `inbox.org`: quick capture + lightweight task list
+- `main.org`: agenda, capture targets, notes, and archived entries
 
 ## Keybindings
 
 This repo uses an application prefix map:
-- `C-c a` → `bv-app-map`
-- `C-c a o` → Org (`bv-org-map`)
+- `C-c` → BV leader
+- `C-c o` → Org (`bv-org-map`)
 
-Org map (`C-c a o …`):
+Org map (`C-c o …`):
 - `a`: `org-agenda`
 - `c`: `org-capture`
-- `i`: open `~/org/inbox.org`
+- `m`: open `~/org/main.org`
 - `I`: clock in (`bv-org-clock-in`)
 - `O`: clock out (`bv-org-clock-out`)
 
@@ -31,13 +30,11 @@ Clocking (in Org buffers):
 
 ## Capture
 
-Open capture with `C-c a o c`, then:
-- `t`: create a `* TODO …` entry under `~/org/inbox.org`
+Open capture with `C-c o c`, then:
+- `t`: append a `* TODO …` entry to `main.org`
+- `n`: append a note to `main.org`
 
 ## Customization
 
 Customize via `M-x customize-group RET bv-org`:
 - `bv-org-directory`
-- `bv-org-agenda-exclude-dirs`
-- `bv-org-clock-idle-minutes`
-- `bv-org-clock-idle-check-interval`

@@ -14,7 +14,7 @@ Add customizations to your `custom-file` (usually `~/.config/emacs/custom.el`):
  '(bv-fonts-default-size 140)
  '(bv-themes-toggle-themes '(bv-light bv-dark))
  '(bv-themes-intensity 'balanced)
- '(bv-org-slipbox-directory "~/notes"))
+ '(bv-org-slipbox-directory "~/org/myslipbox"))
 ```
 
 Reload: `M-x eval-buffer` in custom.el or restart Emacs.
@@ -183,7 +183,11 @@ Location example:
 
 **bv-org-slipbox-directory** (string)
 - Default: "~/org/myslipbox"
-- Main directory for slipbox notes
+- Root directory for the slipbox store
+
+**bv-org-slipbox-notes-directory** (string)
+- Default: "notes/"
+- Relative subdirectory for ordinary slipbox notes
 
 **bv-org-slipbox-show-backlinks** (boolean)
 - Default: t
@@ -318,7 +322,7 @@ Location example:
 ### Research-Focused
 ```elisp
 (custom-set-variables
- '(bv-org-slipbox-directory "~/research/notes")
+ '(bv-org-slipbox-directory "~/research/slipbox")
  '(bv-fonts-serif-family "Crimson Text")
  '(bv-themes-font-family-proportional "Crimson Text"))
 ```
@@ -396,12 +400,10 @@ Reset to defaults:
 - bv-ytdl-downloads-dir
 
 ### Organization
-- bv-org-agenda-exclude-dirs
-- bv-org-clock-idle-check-interval
-- bv-org-clock-idle-minutes
 - bv-org-directory
 - bv-org-latex-display-overrides
 - bv-org-slipbox-directory
+- bv-org-slipbox-notes-directory
 - bv-org-slipbox-show-backlinks
 
 ### System

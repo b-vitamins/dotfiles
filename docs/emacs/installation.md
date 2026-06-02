@@ -135,6 +135,9 @@ M-x esup
 (custom-set-variables
  '(bv-org-slipbox-directory "~/org/myslipbox"))
 
+;; Ordinary notes are captured under ~/org/myslipbox/notes/ by default.
+;; Daily notes are captured under ~/org/myslipbox/daily/.
+
 ;; Initialize database
 M-x org-slipbox-sync
 ```

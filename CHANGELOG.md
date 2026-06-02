@@ -42,8 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   refresh, metrics updates, clock policy, and doctor-gated Org invariants
 - Org Super Agenda-backed dashboard/review grouping with semantic TODO/tag/date/
   property selectors and PhD-specific section policies
-- Citar-rich bibliography completion using documented main/suffix templates,
-  semantic resource indicators, Embark at-point actions, and theme-owned Citar
+- Refbox-rich bibliography completion using documented main/suffix templates,
+  semantic resource indicators, Embark at-point actions, and theme-owned Refbox
   faces that no longer paint bibliographic rows as selected candidates
 - Completion-surface theme polish for Corfu, popupinfo, Orderless, and Company,
   plus defaults that ignore stale Custom face overrides so the house light/dark
@@ -58,16 +58,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fast parallel ClamAV scan helper script with structured reports (`scripts/fast-clamscan.sh`)
 - ProtonVPN NetworkManager import helper script (`scripts/protonvpn-import.sh`)
 - Org workflow guide documenting the `~/org` command-center system (`docs/emacs/org-workflow.md`)
-- Org gamification tools: metrics scoreboard, focus timer, inbox processor, and citar-driven reading queue
+- Org gamification tools: metrics scoreboard, focus timer, inbox processor, and Refbox-driven reading queue
 - Codex `hifi-pdf-ocr` skill with reusable prompts, orchestration agents, and OCR helper scripts
 - Codex `research-paper-notes` skill for strict TeX-first single-paper analysis with arXiv source ingestion, sequential readthrough logging, and note validation
 - Automatic `setup.sh` preflight/bootstrap for SSH identity, mileva OCI root credentials, and actionable post-run setup reporting
+- Brother HL-T4000DW CUPS driver provisioning for mileva and sparck, plus
+  `setup.sh` queue bootstrap when the USB printer is connected.
+- OpenClaw home service autostart for mileva.
 ### Changed
 - Simplified the Emacs Org setup around a single `~/org/main.org` file,
   removing the multi-file inbox/project/metrics/deadline machinery, dynamic
   agenda discovery and tracking module, idle auto-clockout timer, and related
   customization variables, plus the low-value org-ql, org-recur, and dailies
   wrapper modules and the custom Org dashboard/review agenda layer.
+- Removed Refbox development checkout path wiring from the Emacs configuration
+  so Refbox Lisp and daemon resolution come from the provisioned Emacs service.
+- Routed Refbox-created org-slipbox notes through the normal `s` slipbox
+  capture template so they inherit the configured notes directory and slug
+  format.
+- Aligned Org-cite bibliography discovery with Refbox's bibliography exclude
+  paths and delayed Refbox Vertico multiform setup until the multiform feature
+  is loaded.
+- Tuned Refbox minibuffer and CAPF candidate page sizes to the visible Vertico
+  surface so type-ahead completion no longer renders hidden 120-row pages.
+- Switched Embark action display to a which-key panel, moved Embark help to
+  `C-h`, and documented the Refbox-backed org-slipbox reference commands.
+- Disabled Emacs key logging by default and hardened command-key capture when a
+  command's raw key vector is unavailable.
+- Lazily load `pdf-tools` before entering PDF view mode.
+- Removed standalone Docker/containerd services from mileva while retaining OCI
+  provisioning.
 - Reworked the Codex `hifi-math-tts` skill around a model-first voice-actor
   script contract: agents read the source and write spoken English with
   complete mathematical fidelity, while deterministic scripts are limited to
@@ -137,7 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   annotation column.
 - Unified remaining Emacs visual surfaces around the BV in-house style:
   width-aware TRAMP and Elfeed rows, theme-derived PDF night colors, semantic
-  calendar/modeline/Citar/Vertico/Cape/Corfu faces, and BV-owned icon roles
+  calendar/modeline/Refbox/Vertico/Cape/Corfu faces, and BV-owned icon roles
   including Octicon-family slipbox note icons.
 - Promoted the BV Emacs headerline into a role-aware modeline system with
   diagnostics, modal task states, smarter project/branch display, hover help,
@@ -180,7 +200,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `fleetctl` now renders `~/.config/fleet/` from dotfiles templates plus pass-backed private source data, and `setup.sh` deploys that generated fleet config automatically when the `infra/fleet` pass prefix is present
 - Expanded the Codex `hifi-pdf-ocr` skill with final workspace pruning guidance and helper tooling
 - Mileva now mounts the `my-data` Btrfs filesystem at `/data`
-- Changed the default Emacs org-slipbox notes directory to `~/org/myslipbox`
+- Changed the default Emacs org-slipbox store to `~/org/myslipbox`, with
+  ordinary notes captured under `notes/`.
+- Changed Emacs org-slipbox note filenames to use dashed `HH-MM-SS`
+  timestamp components.
 - Relaxed global Git SSH key ignore patterns so exact private/public key
   filenames stay ignored without also ignoring encrypted `pass` entries such as
   `id_ed25519.gpg`
@@ -295,7 +318,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Shell, productivity, communication and multimedia modules.
 - Integration with Minions to declutter Emacs mode line.
 - Extensive enhancements to Org-mode configuration, including expanded TODO keywords, habit tracking, and LaTeX support.
-- Comprehensive research workflow setup using Org Roam and Citar with enhanced PDF and citation management.
+- Comprehensive research workflow setup using Org Roam and Refbox with enhanced PDF and citation management.
 - Org-LaTeX setup file (`setupfile.org`) for consistent document headers and settings across Org documents.
 - Comprehensive test suite for `bv-core.el` with 25+ unit tests covering configuration values, feature system, path utilities, macros, and timer management.
 - Transient-based menu interface (`bv-transient.el`) providing interactive access to configuration management, feature registration, path operations, and developer tools.
@@ -342,7 +365,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Default font updated to "SF Mono" with adjusted sizing for improved readability.
 - Mode line time display reformatted for clarity and frequent updating.
 - Org Roam capture templates expanded to include literature notes, concepts, problems, and timed tasks.
-- Improved bibliographic integration in Citar with custom icon indicators.
+- Improved bibliographic integration in Refbox with custom icon indicators.
 - Enhanced Org Roam node display with backlink counts and directory context.
 - Reorganized idle-time loading sections in `init.el` for clearer module initialization.
 - Expanded `bv-core.el` with comprehensive feature system, XDG compliance, circular dependency detection, and improved path utilities.

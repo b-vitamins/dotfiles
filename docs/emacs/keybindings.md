@@ -7,7 +7,7 @@ Comprehensive keybinding reference for the bv-emacs configuration. Organized by 
 | Key | Action | Description |
 |-----|--------|-------------|
 | `C-c a` | bv-app-map | Application launcher prefix |
-| `C-c a o` | bv-org-map | Org command center |
+| `C-c o` | bv-org-map | Org command center |
 | `C-c a d` | bv-debug-map | Debugger map |
 | `C-c a E` | bv-terminal-map | Terminal/shell map |
 | `C-c n` | bv-org-slipbox-map | Org-slipbox operations |
@@ -198,14 +198,15 @@ Available through Transient menus and standard Git commands.
 
 ## Org Mode
 
-### Org Command Center (`C-c a o`)
+### Org Command Center (`C-c o`)
 | Key | Command | Description |
 |-----|---------|-------------|
-| `C-c a o a` | org-agenda | Agenda dispatcher |
-| `C-c a o c` | org-capture | Capture menu |
-| `C-c a o i` | (open inbox file) | Open `~/org/inbox.org` |
-| `C-c a o I` | bv-org-clock-in | Clock in (stable) |
-| `C-c a o O` | bv-org-clock-out | Clock out (stable) |
+| `C-c o a` | org-agenda | Agenda dispatcher |
+| `C-c o c` | org-capture | Capture menu |
+| `C-c o m` | bv-org-open-main | Open `~/org/main.org` |
+| `C-c o C` | bv-calendar | Calendar |
+| `C-c o I` | bv-org-clock-in | Clock in (stable) |
+| `C-c o O` | bv-org-clock-out | Clock out (stable) |
 
 ### Org Clocking (Org buffers)
 | Key | Command | Description |
@@ -227,7 +228,8 @@ Available through Transient menus and standard Git commands.
 | `s` | bv-org-slipbox-capture-slip | Capture slip (alternate) |
 | `r` | org-slipbox-node-random | Random node |
 | `b` | org-slipbox-buffer-toggle | Toggle buffer |
-| `R` | org-slipbox-ref-add | Add reference |
+| `R` | refbox-org-slipbox-ref-add | Add bibliography reference |
+| `O` | refbox-org-slipbox-open-current-refs | Open bibliography references in current note |
 | `g` | bv-org-slipbox-find-by-tag | Find by tag |
 | `/` | consult-org-slipbox-search | Search content |
 | `l` | consult-org-slipbox-backlinks | Show backlinks |

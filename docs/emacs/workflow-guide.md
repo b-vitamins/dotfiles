@@ -669,7 +669,7 @@ Manual citation management
 ```
 Do:
 ```
-org-cite with citar  # Integrated bibliography
+org-cite with Refbox  # Integrated bibliography
 ```
 
 Instead of:
@@ -680,7 +680,6 @@ Do:
 ```
 Unified research workflow in org-mode
 ```
-
 
 ### Document Creation
 
@@ -1080,7 +1079,7 @@ Separate tools for reading, note-taking, and writing
 ```
 Do:
 ```
-org-slipbox → citar → org-latex → org-export pipeline
+org-slipbox -> Refbox -> org-latex -> org-export pipeline
 ```
 
 Instead of:
@@ -1089,7 +1088,7 @@ Manual citation formatting
 ```
 Do:
 ```
-citar + org-cite for automatic bibliography
+Refbox + org-cite for automatic bibliography
 ```
 
 Instead of:
@@ -1140,7 +1139,6 @@ Do:
 ```
 org-agenda + org-capture + org-slipbox integration
 ```
-
 
 Instead of:
 ```
