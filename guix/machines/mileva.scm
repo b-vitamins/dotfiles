@@ -18,6 +18,7 @@
              (gnu home services syncthing)
              (gnu home services xdg)
              (gnu packages display-managers)
+             (gnu packages cups)
              (gnu packages fonts)
              (gnu packages gnupg)
              (gnu packages linux)
@@ -46,7 +47,6 @@
              (gnu services dbus)
              (gnu services desktop)
              (gnu services containers)
-             (gnu services docker)
              (gnu services file-sharing)
              (gnu services guix)
              (gnu services linux)
@@ -72,10 +72,12 @@
              (myguix home services emacs)
              (myguix home services emacs-daemon)
              (myguix home services nougat)
+             (myguix home services openclaw)
              (myguix packages base)
              (myguix packages fonts)
              (myguix packages linux)
              (myguix packages nvidia)
+             (myguix packages printing)
              (myguix packages productivity)
              (myguix packages python-pqrs)
              (myguix packages video)
@@ -216,6 +218,12 @@ inode/directory=org.gnome.Nautilus.desktop
 "))))
       (service my-home-emacs-service-type)
       (service my-home-emacs-daemon-service-type)
+      (home-openclaw-service #:auto-start? #t
+                             #:bind "loopback"
+                             #:auth-mode "token"
+                             #:tailscale-mode "off"
+                             #:force? #t
+                             #:respawn? #t)
 
       (service home-inputrc-service-type
                (home-inputrc-configuration (key-bindings `(("Control-l" . "clear-screen")
@@ -648,7 +656,20 @@ allow-preset-passphrase")))
                                       (drivers '("nvidia"))))
                  ;; Printing Services
                  (service cups-service-type
-                          (cups-configuration (web-interface? #t)))
+                          (cups-configuration (web-interface? #t)
+                                              (extensions (list brlaser
+                                                           cups-filters/fixed-pdftops
+                                                           epson-inkjet-printer-escpr
+                                                           foomatic-filters
+                                                           hplip-minimal
+                                                           splix))))
+                 (simple-service 'brother-hlt4000dw-cups-driver
+                                 cups-service-type brother-hlt4000dw)
+                 (simple-service 'brother-hlt4000dw-opt-compatibility
+                                 special-files-service-type
+                                 `(("/opt/brother/Printers/hlt4000dw" ,(file-append
+                                                                        brother-hlt4000dw
+                                                                        "/opt/brother/Printers/hlt4000dw"))))
 
                  ;; Networking Services
                  (service openssh-service-type)
@@ -824,8 +845,6 @@ collation-server = utf8mb4_unicode_ci")))
 
                  (service spice-vdagent-service-type)
                  (service inputattach-service-type)
-                 (service containerd-service-type)
-                 (service docker-service-type)
                  (simple-service 'oci-provisioning oci-service-type
                                  (oci-extension (containers (list
                                                              oci-meilisearch-container

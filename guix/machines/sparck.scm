@@ -15,6 +15,7 @@
              (gnu home services pm)
              (gnu home services xdg)
              (gnu packages display-managers)
+             (gnu packages cups)
              (gnu packages fonts)
              (gnu packages gnupg)
              (gnu packages linux)
@@ -71,6 +72,7 @@
              (myguix packages base)
              (myguix packages fonts)
              (myguix packages linux)
+             (myguix packages printing)
              (myguix packages productivity)
              (myguix packages python-pqrs)
              (myguix packages video)
@@ -568,7 +570,20 @@ allow-preset-passphrase")))
                   (xorg-configuration (keyboard-layout keyboard-layout)))
                  ;; Printing Services
                  (service cups-service-type
-                          (cups-configuration (web-interface? #t)))
+                          (cups-configuration (web-interface? #t)
+                                              (extensions (list brlaser
+                                                           cups-filters/fixed-pdftops
+                                                           epson-inkjet-printer-escpr
+                                                           foomatic-filters
+                                                           hplip-minimal
+                                                           splix))))
+                 (simple-service 'brother-hlt4000dw-cups-driver
+                                 cups-service-type brother-hlt4000dw)
+                 (simple-service 'brother-hlt4000dw-opt-compatibility
+                                 special-files-service-type
+                                 `(("/opt/brother/Printers/hlt4000dw" ,(file-append
+                                                                        brother-hlt4000dw
+                                                                        "/opt/brother/Printers/hlt4000dw"))))
 
                  ;; Fingerprint login and authentication.
                  (service fprintd-service-type)

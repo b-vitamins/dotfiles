@@ -39,6 +39,9 @@ AUTO_PROVISION_ROOT_SECRETS=false
 readonly DEFAULT_SSH_PASS_ENTRY="keys/ssh/freydis/id_ed25519"
 readonly DEFAULT_SSH_PUBLIC_PASS_ENTRY="keys/ssh/freydis/id_ed25519.pub"
 readonly DEFAULT_FLEET_PASS_PREFIX="infra/fleet"
+readonly BROTHER_HLT4000DW_QUEUE="Brother_HL_T4000DW"
+readonly BROTHER_HLT4000DW_URI_PREFIX="usb://Brother/HL-T4000DW"
+readonly BROTHER_HLT4000DW_MODEL="Brother/brother_hlt4000dw_printer_en.ppd"
 declare -a SETUP_BLOCKERS=()
 declare -a SETUP_WARNINGS=()
 declare -a SETUP_NOTES=()
@@ -205,6 +208,7 @@ ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     - Claude Code (settings, agents, hooks, instructions, output styles, project templates)
     - qBittorrent configuration (if present)
     - Automatic bootstrap of default SSH identity and machine-specific root credentials when available
+    - Automatic Brother HL-T4000DW CUPS queue bootstrap when that USB printer is connected
     - Git hooks installation
     Managed by Guix home configuration:
     - Shell (zsh configuration)
@@ -1597,6 +1601,176 @@ deploy_fleet_config() {
 		"Check that pass can decrypt $pass_prefix and rerun: $fleetctl_bin deploy-config --pass-prefix $pass_prefix --doctor"
 	return 1
 }
+setup_brother_hlt4000dw_printer() {
+	case "$MACHINE" in
+	mileva | sparck) ;;
+	*) return 0 ;;
+	esac
+
+	if [[ "$(uname -s 2>/dev/null || true)" != "Linux" ]]; then
+		return 0
+	fi
+
+	local cupsd_line
+	local cupsd_path
+	local cups_prefix
+	local cups_files_conf
+	local data_dir=""
+	local model_ppd=""
+	local lpadmin
+	local lpinfo
+	local lpoptions
+	local lpstat
+
+	cupsd_line="$(pgrep -a cupsd 2>/dev/null | head -n 1 || true)"
+	[[ -n "$cupsd_line" ]] || return 0
+
+	cupsd_path="$(awk '{print $2}' <<<"$cupsd_line")"
+	if [[ "$cupsd_path" != */sbin/cupsd ]]; then
+		debug "Could not derive CUPS prefix from running cupsd: $cupsd_line"
+		return 0
+	fi
+
+	cups_prefix="${cupsd_path%/sbin/cupsd}"
+	lpadmin="$cups_prefix/sbin/lpadmin"
+	lpinfo="$cups_prefix/sbin/lpinfo"
+	lpoptions="$cups_prefix/bin/lpoptions"
+	lpstat="$cups_prefix/bin/lpstat"
+
+	if [[ ! -x "$lpadmin" || ! -x "$lpinfo" || ! -x "$lpstat" ]]; then
+		record_setup_issue SETUP_WARNINGS \
+			"CUPS is running, but expected CUPS administration tools are missing under $cups_prefix" \
+			"Reconfigure the Guix system, restart CUPS, and rerun ./setup.sh."
+		return 0
+	fi
+
+	local device_line
+	local device_uri
+	device_line="$("$lpinfo" -v 2>/dev/null | grep -F "$BROTHER_HLT4000DW_URI_PREFIX" | head -n 1 || true)"
+	[[ -n "$device_line" ]] || return 0
+	device_uri="$(awk '{print $2}' <<<"$device_line")"
+	[[ -n "$device_uri" ]] || return 0
+
+	if ! "$lpinfo" -m 2>/dev/null | grep -Fq "$BROTHER_HLT4000DW_MODEL"; then
+		record_setup_issue SETUP_WARNINGS \
+			"Brother HL-T4000DW is connected, but its CUPS PPD model is not registered" \
+			"Run guix system reconfigure for this machine, restart CUPS, and rerun ./setup.sh."
+		return 0
+	fi
+
+	cups_files_conf="$(awk '{for (i = 1; i < NF; i++) if ($i == "-s") { print $(i + 1); exit }}' <<<"$cupsd_line")"
+	if [[ -r "$cups_files_conf" ]]; then
+		data_dir="$(sed -n 's/^DataDir //p' "$cups_files_conf" | head -n 1)"
+	fi
+	if [[ -n "$data_dir" ]]; then
+		model_ppd="$data_dir/model/$BROTHER_HLT4000DW_MODEL"
+	fi
+
+	local current_uri
+	local queue_summary
+	local queue_detail
+	local accepting_summary
+	local current_ppd="/etc/cups/ppd/${BROTHER_HLT4000DW_QUEUE}.ppd"
+	current_uri="$({ "$lpstat" -v "$BROTHER_HLT4000DW_QUEUE" 2>/dev/null || true; } |
+		sed -n "s/^device for ${BROTHER_HLT4000DW_QUEUE}: //p" |
+		head -n 1)"
+	queue_summary="$({ "$lpstat" -p "$BROTHER_HLT4000DW_QUEUE" 2>/dev/null || true; } | head -n 1)"
+	queue_detail="$({ "$lpstat" -p "$BROTHER_HLT4000DW_QUEUE" -l 2>/dev/null || true; })"
+	accepting_summary="$({ "$lpstat" -a "$BROTHER_HLT4000DW_QUEUE" 2>/dev/null || true; } | head -n 1)"
+
+	local needs_update=false
+	if [[ "$current_uri" != "$device_uri" ]]; then
+		needs_update=true
+	fi
+	if [[ "$queue_summary" != *" enabled "* ]]; then
+		needs_update=true
+	fi
+	if [[ "$accepting_summary" != *" accepting requests "* ]]; then
+		needs_update=true
+	fi
+	if grep -Fq "Filter failed" <<<"$queue_detail"; then
+		needs_update=true
+	fi
+
+	if [[ -r "$model_ppd" ]]; then
+		if [[ ! -r "$current_ppd" ]]; then
+			needs_update=true
+		else
+			local key
+			local current_value
+			local model_value
+			for key in FileVersion NickName cupsFilter; do
+				current_value="$(sed -n "s/^\\*${key}: //p" "$current_ppd" | head -n 1)"
+				model_value="$(sed -n "s/^\\*${key}: //p" "$model_ppd" | head -n 1)"
+				if [[ -n "$model_value" && "$current_value" != "$model_value" ]]; then
+					needs_update=true
+					break
+				fi
+			done
+		fi
+	fi
+
+	if [[ "$needs_update" != true ]]; then
+		debug "Brother HL-T4000DW CUPS queue already configured"
+	else
+		log INFO "Ensuring Brother HL-T4000DW CUPS queue: $BROTHER_HLT4000DW_QUEUE"
+		if [[ "$DRY_RUN" == true ]]; then
+			echo "  Would run as root: $lpadmin -p $BROTHER_HLT4000DW_QUEUE -E -v $device_uri -m $BROTHER_HLT4000DW_MODEL"
+		else
+			if ! command -v sudo >/dev/null 2>&1 && [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+				record_setup_issue SETUP_WARNINGS \
+					"Brother HL-T4000DW queue needs root setup, but sudo is unavailable" \
+					"Install/configure sudo, then rerun ./setup.sh while the printer is connected."
+				return 1
+			fi
+
+			if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+				if ! "$lpadmin" -p "$BROTHER_HLT4000DW_QUEUE" -E -v "$device_uri" -m "$BROTHER_HLT4000DW_MODEL"; then
+					record_setup_issue SETUP_WARNINGS \
+						"Failed to create/update Brother HL-T4000DW CUPS queue" \
+						"Inspect /var/log/cups/error_log and rerun ./setup.sh while the printer is connected."
+					return 1
+				fi
+			else
+				if ! sudo "$lpadmin" -p "$BROTHER_HLT4000DW_QUEUE" -E -v "$device_uri" -m "$BROTHER_HLT4000DW_MODEL"; then
+					record_setup_issue SETUP_WARNINGS \
+						"Failed to create/update Brother HL-T4000DW CUPS queue" \
+						"Inspect /var/log/cups/error_log and rerun ./setup.sh while the printer is connected."
+					return 1
+				fi
+			fi
+		fi
+	fi
+
+	if [[ -x "$lpoptions" ]]; then
+		local default_summary
+		default_summary="$("$lpstat" -d 2>/dev/null || true)"
+		if [[ "$default_summary" != *": $BROTHER_HLT4000DW_QUEUE" ]]; then
+			if [[ "$DRY_RUN" == true ]]; then
+				echo "  Would set user default printer: $BROTHER_HLT4000DW_QUEUE"
+			else
+				"$lpoptions" -d "$BROTHER_HLT4000DW_QUEUE" >/dev/null 2>&1 || true
+			fi
+		fi
+	fi
+
+	if [[ "$DRY_RUN" == false ]]; then
+		current_uri="$({ "$lpstat" -v "$BROTHER_HLT4000DW_QUEUE" 2>/dev/null || true; } |
+			sed -n "s/^device for ${BROTHER_HLT4000DW_QUEUE}: //p" |
+			head -n 1)"
+		queue_summary="$({ "$lpstat" -p "$BROTHER_HLT4000DW_QUEUE" 2>/dev/null || true; } | head -n 1)"
+		if [[ "$current_uri" != "$device_uri" || "$queue_summary" != *" enabled "* ]]; then
+			record_setup_issue SETUP_WARNINGS \
+				"Brother HL-T4000DW queue verification failed after setup" \
+				"Inspect CUPS with lpstat and /var/log/cups/error_log."
+			return 1
+		fi
+		if [[ "$needs_update" == true ]]; then
+			log SUCCESS "Brother HL-T4000DW CUPS queue is configured"
+		fi
+	fi
+	return 0
+}
 check_root_secret_target() {
 	local pass_entry="$1"
 	local target_path="$2"
@@ -1850,6 +2024,9 @@ main() {
 	log INFO "Rendering fleet configuration..."
 	if ! deploy_fleet_config; then
 		log WARNING "Fleet configuration render was incomplete"
+	fi
+	if ! setup_brother_hlt4000dw_printer; then
+		log WARNING "Brother HL-T4000DW queue bootstrap was incomplete"
 	fi
 	echo
 	# Install Git hooks if applicable
