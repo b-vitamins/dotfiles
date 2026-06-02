@@ -1,6 +1,4 @@
 ;; -*- mode: scheme; -*-
-(use-modules (guix channels))
-(use-modules (guix ci))
 
 (list (channel
         (name 'guix)
