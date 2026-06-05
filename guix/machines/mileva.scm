@@ -69,6 +69,7 @@
              (guix packages)
              (guix deprecation)
              (guix gexp)
+             (myguix home services desktop)
              (myguix home services emacs)
              (myguix home services emacs-daemon)
              (myguix home services nougat)
@@ -120,6 +121,20 @@
 (define oci-qdrant-container-gpu
   (oci-container-with-extra-arguments oci-qdrant-container
                                       %mileva-nvidia-docker-extra-arguments))
+
+(define %mileva-mimeapps-defaults
+  (append (desktop-mimeapps-defaults #:browser "firefox.desktop"
+                                     #:pdf-viewer "org.gnome.Evince.desktop"
+                                     #:image-viewer "org.gnome.Loupe.desktop"
+                                     #:video-player "mpv.desktop"
+                                     #:text-editor
+                                     "org.gnome.TextEditor.desktop"
+                                     #:file-manager
+                                     "org.gnome.Nautilus.desktop")
+          (mimeapps-associations "mpv.desktop"
+                                 '("audio/mpeg"))
+          (mimeapps-associations "audacious.desktop"
+                                 '("audio/flac" "audio/mp3"))))
 
 ;;; Home configuration
 (define %my-home-config
@@ -189,33 +204,8 @@
                                                          "$HOME/templates")
                                                         (videos "$HOME/videos")))
 
-      ;; Default applications (XDG MIME associations)
-      (simple-service 'default-applications
-                      home-xdg-configuration-files-service-type
-                      `(("mimeapps.list" ,(plain-file "mimeapps.list"
-                                           "[Default Applications]
-text/html=firefox.desktop
-x-scheme-handler/http=firefox.desktop
-x-scheme-handler/https=firefox.desktop
-x-scheme-handler/about=firefox.desktop
-x-scheme-handler/unknown=firefox.desktop
-application/pdf=org.gnome.Evince.desktop
-image/png=org.gnome.Loupe.desktop
-image/jpeg=org.gnome.Loupe.desktop
-image/gif=org.gnome.Loupe.desktop
-image/webp=org.gnome.Loupe.desktop
-video/mp4=mpv.desktop
-video/x-matroska=mpv.desktop
-video/webm=mpv.desktop
-audio/mpeg=mpv.desktop
-audio/flac=audacious.desktop
-audio/mp3=audacious.desktop
-text/plain=org.gnome.TextEditor.desktop
-text/x-c=org.gnome.TextEditor.desktop
-text/x-python=org.gnome.TextEditor.desktop
-application/x-shellscript=org.gnome.TextEditor.desktop
-inode/directory=org.gnome.Nautilus.desktop
-"))))
+      (home-mimeapps-service #:service-name 'default-applications
+                             #:defaults %mileva-mimeapps-defaults)
       (service my-home-emacs-service-type)
       (service my-home-emacs-daemon-service-type)
       (home-openclaw-service #:auto-start? #t
