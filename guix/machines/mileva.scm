@@ -637,7 +637,8 @@ allow-preset-passphrase")))
                                                                             nvda
                                                                             %default-xorg-modules))
                                                                   (drivers '("nvidia"))))))
-                 (service nvidia-service-type)
+                 (service nvidia-service-type
+                          (nvidia-configuration (mutter-primary? #t)))
                  (service nvidia-container-toolkit-service-type)
                  (set-xorg-configuration
                   (xorg-configuration (keyboard-layout keyboard-layout)
@@ -665,9 +666,7 @@ allow-preset-passphrase")))
                  (service openssh-service-type)
                  (service nftables-service-type)
                  (service network-manager-service-type
-                          (network-manager-configuration (vpn-plugins (list
-                                                                       network-manager-openvpn
-                                                                       network-manager-openconnect))))
+                          %my-network-manager-configuration)
 
                  ;; Database Services
                  (service redis-service-type
