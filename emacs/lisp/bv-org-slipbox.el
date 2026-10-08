@@ -411,7 +411,7 @@ default buffer source should still preserve Consult's native
       org-slipbox-capture-templates
       `(("s" "slip" plain "%?"
          :target (file+head ,(bv-org-slipbox--note-capture-file)
-                            "#+TITLE: ${title}\n#+DATE: %<%Y-%m-%d>\n#+FILETAGS:\n\n")
+                            "#+TITLE: ${title}\n#+DATE: %<%Y-%m-%d>\n\n")
          :unnarrowed t)))
 
 (bv-org-slipbox--setup-directory)
