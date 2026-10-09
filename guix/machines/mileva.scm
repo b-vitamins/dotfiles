@@ -594,6 +594,7 @@ allow-preset-passphrase")))
              %network-core
              %network-diagnostics
              %network-performance
+             %remote-access
              ;; File Management
              %filesystem-core
              %filesystem-advanced
