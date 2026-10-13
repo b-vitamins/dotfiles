@@ -172,9 +172,9 @@
                         ("NPM_CONFIG_USERCONFIG" . "$XDG_CONFIG_HOME/npm/npmrc")
                         ("NPM_CONFIG_CACHE" . "$XDG_CACHE_HOME/npm")
                         ;; CUDA (for mileva)
-                        ;; Xorg
-                        ("MOZ_ENABLE_WAYLAND" . "0")
-                        ("QT_QPA_PLATFORM" . "xcb")
+                        ;; Wayland
+                        ("MOZ_ENABLE_WAYLAND" . "1")
+                        ("QT_QPA_PLATFORM" . "wayland;xcb")
                         ("_JAVA_AWT_WM_NONREPARENTING" . #t)))
 
       (service home-xdg-user-directories-service-type
@@ -663,21 +663,18 @@ allow-preset-passphrase")))
                                        (host "::1" "sparck.local"
                                              '("dev.local"))))
 
-                 ;; Environment variables for Xorg preference
-                 (simple-service 'xorg-environment
+                 ;; Environment variables for Wayland preference
+                 (simple-service 'wayland-environment
                                  session-environment-service-type
-                                 '(("MOZ_ENABLE_WAYLAND" . "0") ;Firefox X11
+                                 '(("MOZ_ENABLE_WAYLAND" . "1") ;Firefox Wayland
                                    ("LIBVA_DRIVER_NAME" . "iHD") ;Intel VA-API backend
                                    ("LIBVA_DRIVERS_PATH" . "/run/current-system/profile/lib/dri")
-                                   ("QT_QPA_PLATFORM" . "xcb") ;Qt apps prefer X11
-                                   ("CLUTTER_BACKEND" . "x11") ;Clutter/GTK
-                                   ("SDL_VIDEODRIVER" . "x11") ;SDL applications
+                                   ("QT_QPA_PLATFORM" . "wayland;xcb") ;Qt apps prefer Wayland
+                                   ("CLUTTER_BACKEND" . "wayland") ;Clutter/GTK
+                                   ("SDL_VIDEODRIVER" . "wayland") ;SDL applications
                                    ("_JAVA_AWT_WM_NONREPARENTING" . "1") ;Java apps
-                                   ("GDK_BACKEND" . "x11"))))
+                                   ("GDK_BACKEND" . "wayland,x11"))))
            (modify-services %my-desktop-services
-             (gdm-service-type config =>
-                               (gdm-configuration (inherit config)
-                                                  (wayland? #f)))
              (elogind-service-type config =>
                                    (elogind-configuration (inherit config)
                                                           (handle-lid-switch 'suspend)

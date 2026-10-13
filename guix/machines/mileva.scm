@@ -183,9 +183,9 @@
                         ("NPM_CONFIG_CACHE" . "$XDG_CACHE_HOME/npm")
                         ;; CUDA (for mileva)
                         ("CUDA_CACHE_PATH" . "$XDG_CACHE_HOME/nv")
-                        ;; Xorg
-                        ("MOZ_ENABLE_WAYLAND" . "0")
-                        ("QT_QPA_PLATFORM" . "xcb")
+                        ;; Wayland
+                        ("MOZ_ENABLE_WAYLAND" . "1")
+                        ("QT_QPA_PLATFORM" . "wayland;xcb")
                         ("_JAVA_AWT_WM_NONREPARENTING" . #t)))
 
       (service home-xdg-user-directories-service-type
@@ -629,7 +629,7 @@ allow-preset-passphrase")))
   (services
    (append (list (service gnome-desktop-service-type)
                  (service gdm-service-type
-                          (gdm-configuration (wayland? #f)
+                          (gdm-configuration (wayland? #t)
                                              (debug? #f)
                                              (xorg-configuration (xorg-configuration
                                                                   (keyboard-layout
@@ -823,15 +823,15 @@ collation-server = utf8mb4_unicode_ci")))
                                        (host "::1" "mileva.local"
                                              '("api.local" "dev.local"))))
 
-                 ;; Environment variables for Xorg preference
-                 (simple-service 'xorg-environment
+                 ;; Environment variables for Wayland preference
+                 (simple-service 'wayland-environment
                                  session-environment-service-type
-                                 '(("MOZ_ENABLE_WAYLAND" . "0") ;Firefox X11
-                                   ("QT_QPA_PLATFORM" . "xcb") ;Qt apps prefer X11
-                                   ("CLUTTER_BACKEND" . "x11") ;Clutter/GTK
-                                   ("SDL_VIDEODRIVER" . "x11") ;SDL applications
+                                 '(("MOZ_ENABLE_WAYLAND" . "1") ;Firefox Wayland
+                                   ("QT_QPA_PLATFORM" . "wayland;xcb") ;Qt apps prefer Wayland
+                                   ("CLUTTER_BACKEND" . "wayland") ;Clutter/GTK
+                                   ("SDL_VIDEODRIVER" . "wayland") ;SDL applications
                                    ("_JAVA_AWT_WM_NONREPARENTING" . "1") ;Java apps
-                                   ("GDK_BACKEND" . "x11")))
+                                   ("GDK_BACKEND" . "wayland,x11")))
 
                  (service spice-vdagent-service-type)
                  (service inputattach-service-type)
