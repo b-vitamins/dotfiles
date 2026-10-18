@@ -7,12 +7,18 @@ description: Review and refactor existing CuTe DSL code for correctness, clarity
 
 Review CuTe DSL code like a performance-sensitive compiler-facing codebase, not like generic Python.
 
+Paths: `<skill-dir>` is the directory containing this file, and `<scratch>` is a scratch
+directory outside the project tree (the system temporary directory unless the user names another).
+
 ## Required Rules
 
-- Run every command through `scripts/guix-run`. No intermediate shell after `guix shell --`.
+- Use the project's existing CuTe environment for everything you run, including this skill's
+  scripts. Check it first with `python3 <skill-dir>/scripts/check_env.py`;
+  `references/environment.md` covers requirements and setup options. If the check fails, report
+  what is missing and ask before installing anything.
 - If the user asks for review, findings come first with file references and concrete risks.
 - Preserve behavior unless the user explicitly wants semantic change.
-- Use `/tmp` for one-off reduction scripts or inspection helpers.
+- Use `<scratch>` for one-off reduction scripts or inspection helpers.
 
 ## Review Workflow
 

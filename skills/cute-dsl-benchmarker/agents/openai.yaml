@@ -1,7 +1,7 @@
 interface:
   display_name: "CuTe Benchmarker"
   short_description: "Run repeatable CuTe kernel timing experiments"
-  default_prompt: "Use $cute-dsl-benchmarker to benchmark these CuTe kernel variants and write the timing artifacts under /tmp."
+  default_prompt: "Use $cute-dsl-benchmarker to benchmark these CuTe kernel variants and keep the timing artifacts outside the project tree."
 
 policy:
   allow_implicit_invocation: false

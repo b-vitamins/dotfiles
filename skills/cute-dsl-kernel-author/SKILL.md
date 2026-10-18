@@ -7,11 +7,17 @@ description: Write new CuTe DSL kernels and host JIT launch code from problem sp
 
 Author correct CuTe DSL kernels from minimal but explicit assumptions.
 
+Paths: `<skill-dir>` is the directory containing this file, and `<scratch>` is a scratch
+directory outside the project tree (the system temporary directory unless the user names another).
+
 ## Required Rules
 
-- Run every command through `scripts/guix-run`. Do not hide the real command behind `bash -lc`.
+- Use the project's existing CuTe environment for everything you run, including this skill's
+  scripts. Check it first with `python3 <skill-dir>/scripts/check_env.py`;
+  `references/environment.md` covers requirements and setup options. If the check fails, report
+  what is missing and ask before installing anything.
 - Start from the closest local example in `references/examples/` instead of writing from a blank page when a similar pattern already exists.
-- Use `/tmp` for temporary harnesses, generated repros, and throwaway validation scripts.
+- Use `<scratch>` for temporary harnesses, generated repros, and throwaway validation scripts.
 - Keep compile-time and runtime concerns separate: `@cute.jit` for host orchestration, `@cute.kernel` for device execution.
 
 ## Workflow

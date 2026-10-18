@@ -1,16 +1,22 @@
 ---
 name: cute-dsl-benchmarker
-description: Benchmark CuTe DSL kernels repeatably with CUDA-event timing, controlled warmup and iteration loops, variant sweeps, and machine-readable reports. Use when comparing kernel variants, building autotune experiments, or producing clean timing artifacts under /tmp.
+description: Benchmark CuTe DSL kernels repeatably with CUDA-event timing, controlled warmup and iteration loops, variant sweeps, and machine-readable reports. Use when comparing kernel variants, building autotune experiments, or producing clean timing artifacts outside the project tree.
 ---
 
 # CuTe DSL Benchmarker
 
 Run repeatable performance measurements without polluting the project tree.
 
+Paths: `<skill-dir>` is the directory containing this file, and `<scratch>` is a scratch
+directory outside the project tree (the system temporary directory unless the user names another).
+
 ## Required Rules
 
-- Run every command through `scripts/guix-run`. Never put `bash -lc` between `guix shell --` and the real command.
-- Default all generated benchmark drivers and output directories to `/tmp` unless the user asks otherwise.
+- Use the project's existing CuTe environment for everything you run, including this skill's
+  scripts. Check it first with `python3 <skill-dir>/scripts/check_env.py`;
+  `references/environment.md` covers requirements and setup options. If the check fails, report
+  what is missing and ask before installing anything.
+- Put generated benchmark drivers and reports in `<scratch>` unless the user asks otherwise; the scripts default their output to the system temporary directory.
 - If the driver imports project-local modules, launch the benchmark command from the target project's root so Python import resolution matches the code under test.
 - Label tiny-grid runs as latency microbenches. Do not generalize throughput conclusions from launches that do not produce enough CTAs to keep the device busy.
 - Keep compilation out of the timed loop unless the benchmark is explicitly about compile latency.
@@ -19,27 +25,28 @@ Run repeatable performance measurements without polluting the project tree.
 
 ## Scripts
 
+- `scripts/check_env.py`: Report whether the current environment can run CuTe DSL kernels.
 - `scripts/benchmark_python_callable.py`: Benchmark a Python callable returned by a temporary driver module.
 - `scripts/compare_benchmarks.py`: Compare one or more `benchmark.json` or `matrix.json` reports.
 - `scripts/run_benchmark_matrix.py`: Run a sweep of variants in isolated subprocesses and collect a matrix report.
 
 ## Benchmark Workflow
 
-1. Write a tiny benchmark driver under `/tmp` that exports `build_benchmark(argv)`. See `references/driver_contract.md`.
+1. Write a tiny benchmark driver in `<scratch>` that exports `build_benchmark(argv)`. See `references/driver_contract.md`.
 2. Make the driver return a zero-arg callable plus metadata and sensible warmup/iteration defaults.
 3. Run:
 
 ```bash
-scripts/guix-run python3 scripts/benchmark_python_callable.py /tmp/my_bench.py -- --variant baseline
+python3 <skill-dir>/scripts/benchmark_python_callable.py <scratch>/my_bench.py -- --variant baseline
 ```
 
 4. For multiple variants, either:
    - pass different `-- --variant ...` arguments to the same driver, or
-   - write separate drivers under `/tmp`
+   - write separate drivers in `<scratch>`
 5. Compare reports with:
 
 ```bash
-scripts/guix-run python3 scripts/compare_benchmarks.py /tmp/bench-a/benchmark.json /tmp/bench-b/benchmark.json
+python3 <skill-dir>/scripts/compare_benchmarks.py <scratch>/bench-a/benchmark.json <scratch>/bench-b/benchmark.json
 ```
 
    `compare_benchmarks.py` also accepts `matrix.json`, which is useful when a sweep produces several viable candidates and you want a quick ranking.
@@ -47,7 +54,7 @@ scripts/guix-run python3 scripts/compare_benchmarks.py /tmp/bench-a/benchmark.js
 6. For repeatable sweeps, run the matrix helper:
 
 ```bash
-scripts/guix-run python3 scripts/run_benchmark_matrix.py /tmp/my_bench.py --variant "--variant baseline" --variant "--variant tuned"
+python3 <skill-dir>/scripts/run_benchmark_matrix.py <scratch>/my_bench.py --variant "--variant baseline" --variant "--variant tuned"
 ```
 
 ## Primary References

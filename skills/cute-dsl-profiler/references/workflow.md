@@ -4,11 +4,11 @@ Use this file when building small profiling repros.
 
 ## Nsight Compute
 
-1. Write a tiny driver under `/tmp` that performs one warmup launch and one real launch.
+1. Write a tiny driver in `<scratch>` that performs one warmup launch and one real launch.
 2. Run:
 
 ```bash
-scripts/guix-run python3 scripts/run_ncu.py --label my-kernel -- python3 /tmp/profile_driver.py
+python3 <skill-dir>/scripts/run_ncu.py --label my-kernel -- python3 <scratch>/profile_driver.py
 ```
 
 3. Read `summary.txt` first.
@@ -21,7 +21,7 @@ Use Nsight Systems when timeline behavior matters: kernel overlap, stream orderi
 Run:
 
 ```bash
-scripts/guix-run python3 scripts/run_nsys.py --label my-kernel -- python3 /tmp/profile_driver.py
+python3 <skill-dir>/scripts/run_nsys.py --label my-kernel -- python3 <scratch>/profile_driver.py
 ```
 
 ## Interpretation

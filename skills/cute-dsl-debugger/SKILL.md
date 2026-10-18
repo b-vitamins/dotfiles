@@ -7,10 +7,16 @@ description: Debug broken CuTe DSL programs, including JIT failures, DLPack inte
 
 Debug CuTe failures by reducing them to the smallest reproducible phase and isolating the violated assumption.
 
+Paths: `<skill-dir>` is the directory containing this file, and `<scratch>` is a scratch
+directory outside the project tree (the system temporary directory unless the user names another).
+
 ## Required Rules
 
-- Run every command through `scripts/guix-run`. Do not wrap the real command in `bash -lc`.
-- Reproduce with the smallest possible script, usually under `/tmp`, before making broad edits.
+- Use the project's existing CuTe environment for everything you run, including this skill's
+  scripts. Check it first with `python3 <skill-dir>/scripts/check_env.py`;
+  `references/environment.md` covers requirements and setup options. If the check fails, report
+  what is missing and ask before installing anything.
+- Reproduce with the smallest possible script, usually in `<scratch>`, before making broad edits.
 - Classify the failure before fixing it:
   - import/environment
   - JIT compile
@@ -20,7 +26,7 @@ Debug CuTe failures by reducing them to the smallest reproducible phase and isol
 
 ## Debug Workflow
 
-1. Reproduce the failure in a tiny script under `/tmp` if the original program is large.
+1. Reproduce the failure in a tiny script in `<scratch>` if the original program is large.
 2. Inspect the likely fault class:
    - DLPack conversion and alignment
    - static vs dynamic layout marking

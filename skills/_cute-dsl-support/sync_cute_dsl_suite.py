@@ -1,62 +1,42 @@
 #!/usr/bin/env python3
 """Sync local CuTe DSL docs/examples into the CuTe skill suite.
 
-This script keeps the skills self-contained and version-controlled while still
-using `/home/b/projects/cute-docs` as the canonical source of truth.
+This script keeps the skills self-contained and version-controlled while a
+cute-docs checkout stays the canonical source of truth. By default that is
+`$CUTE_DOCS_ROOT`, or a `cute-docs` checkout next to this repository.
+
+Skills that run kernels also receive the shared environment probe and setup
+reference from this directory; they assume no particular package manager.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 from pathlib import Path
 
-MANIFEST_TEXT = """(specifications->manifest '("python" "python-pytorch-cuda"
-                            "python-einops"
-                            "python-numpy@1"
-                            "python-pytest"
-                            "python-nvidia-cutlass-dsl"
-                            "python-cuda-python"
-                            "python-nvtx"
-                            "python-cupti-python"
-                            "python-ncu-report"
-                            "python-nsight-python"
-                            "cuda-toolkit"
-                            "cutlass-headers"
-                            "cutlass-tools"
-                            "cpp-httplib"
-                            "gcc-toolchain@14"
-                            "ninja"
-                            "cmake"
-                            "pybind11"
-                            "onednn"
-                            "cudnn"
-                            "unzip"
-                            "python-ruff"
-                            "node-pyright"))
-"""
+SUPPORT_DIR = Path(__file__).resolve().parent
+DEFAULT_CUTE_DOCS_ROOT = Path(
+    os.environ.get("CUTE_DOCS_ROOT", SUPPORT_DIR.parents[2] / "cute-docs")
+)
 
-GUIX_RUN_TEXT = """#!/usr/bin/env bash
-set -euo pipefail
+# Skills that only read the corpus and need no GPU environment.
+DOCS_ONLY = {"cute-dsl-doc-navigator"}
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-exec guix shell -m "$ROOT/manifest.scm" -- "$@"
-"""
+# Shared files copied into every skill that builds or runs kernels.
+ENVIRONMENT_FILES = {
+    "scripts/check_env.py": SUPPORT_DIR / "check_env.py",
+    "references/environment.md": SUPPORT_DIR / "environment.md",
+    "assets/guix-manifest.scm": SUPPORT_DIR / "guix-manifest.scm",
+}
 
-DOCS_MANIFEST_TEXT = """(specifications->manifest '("bash"
-                            "coreutils"
-                            "findutils"
-                            "git"
-                            "grep"
-                            "sed"
-                            "ripgrep"
-                            "python"
-                            "python-pyyaml"
-                            "pandoc"
-                            "nss-certs"))
-"""
+# Files from the earlier Guix-only layout, removed on every sync.
+STALE_FILES = ("manifest.scm", "scripts/guix-run")
+
+COVERAGE_REPORT = SUPPORT_DIR / "suite-coverage.json"
 
 ALL = "__all__"
 
@@ -301,6 +281,14 @@ def resolve_selection(root: Path, selection: str | list[str]) -> list[str]:
     return sorted(selection)
 
 
+def display_path(path: Path, docs_root: Path, examples_root: Path) -> str:
+    """Name a corpus path relative to the cute-docs checkout, not this machine."""
+    common = Path(os.path.commonpath([docs_root, examples_root]))
+    if common == Path(common.anchor):
+        return path.name
+    return str(Path(common.name) / path.relative_to(common))
+
+
 def build_catalog(
     skill_name: str,
     docs: list[str],
@@ -311,10 +299,12 @@ def build_catalog(
     lines = [
         f"# {skill_name} coverage",
         "",
-        f"- Generated from `{docs_root}` and `{examples_root}`.",
-        ("- Native host tools are supported; the documentation-only Guix wrapper is optional."
-         if skill_name == "cute-dsl-doc-navigator"
-         else "- All commands in this skill must run through `scripts/guix-run`."),
+        f"- Generated from `{display_path(docs_root, docs_root, examples_root)}` and "
+        f"`{display_path(examples_root, docs_root, examples_root)}`.",
+        ("- Documentation only; no GPU environment is needed."
+         if skill_name in DOCS_ONLY
+         else "- Environment requirements and setup: `references/environment.md`; "
+              "verify with `scripts/check_env.py`."),
         "",
         "## Docs",
         "",
@@ -334,12 +324,13 @@ def sync_skill(skill_dir: Path, docs_root: Path, examples_root: Path) -> dict[st
 
     clean_generated_tree(skill_dir)
 
-    manifest = DOCS_MANIFEST_TEXT if skill_name == "cute-dsl-doc-navigator" else MANIFEST_TEXT
-    (skill_dir / "manifest.scm").write_text(manifest, encoding="utf-8")
-    guix_run = skill_dir / "scripts" / "guix-run"
-    guix_run.parent.mkdir(parents=True, exist_ok=True)
-    guix_run.write_text(GUIX_RUN_TEXT, encoding="utf-8")
-    guix_run.chmod(0o755)
+    for relpath in STALE_FILES:
+        (skill_dir / relpath).unlink(missing_ok=True)
+    if skill_name not in DOCS_ONLY:
+        for relpath, source in ENVIRONMENT_FILES.items():
+            target = skill_dir / relpath
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
 
     docs_dst = skill_dir / "references" / "docs"
     for relpath in docs:
@@ -356,6 +347,8 @@ def sync_skill(skill_dir: Path, docs_root: Path, examples_root: Path) -> dict[st
 
     return {
         "skill": skill_name,
+        "docs_root": display_path(docs_root, docs_root, examples_root),
+        "examples_root": display_path(examples_root, docs_root, examples_root),
         "docs": docs,
         "examples": examples,
     }
@@ -370,16 +363,20 @@ def parse_args() -> argparse.Namespace:
         help="Directory containing the CuTe skill folders.",
     )
     parser.add_argument(
+        "--cute-docs-root",
+        type=Path,
+        default=DEFAULT_CUTE_DOCS_ROOT,
+        help="cute-docs checkout (default: $CUTE_DOCS_ROOT or ../cute-docs next to this repository).",
+    )
+    parser.add_argument(
         "--docs-root",
         type=Path,
-        default=Path("/home/b/projects/cute-docs/docs/cutlass/cute-dsl/latest"),
-        help="Local CuTe docs snapshot root.",
+        help="Local CuTe docs snapshot root (default: <cute-docs>/docs/cutlass/cute-dsl/latest).",
     )
     parser.add_argument(
         "--examples-root",
         type=Path,
-        default=Path("/home/b/projects/cute-docs/examples"),
-        help="Local CuTe examples root.",
+        help="Local CuTe examples root (default: <cute-docs>/examples).",
     )
     parser.add_argument(
         "--skill",
@@ -392,33 +389,30 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    docs_root = args.docs_root.resolve()
-    examples_root = args.examples_root.resolve()
+    cute_docs_root = args.cute_docs_root
+    docs_root = (args.docs_root or cute_docs_root / "docs/cutlass/cute-dsl/latest").resolve()
+    examples_root = (args.examples_root or cute_docs_root / "examples").resolve()
     skills_root = args.skills_root.resolve()
 
-    coverage_report: list[dict[str, object]] = []
+    # Skills can be synced from different snapshots, so the report keeps one
+    # entry per skill and replaces only the entries synced in this run.
+    coverage: dict[str, dict[str, object]] = {}
+    if COVERAGE_REPORT.exists():
+        previous = json.loads(COVERAGE_REPORT.read_text(encoding="utf-8"))
+        coverage = {entry["skill"]: entry for entry in previous.get("skills", [])
+                    if "docs_root" in entry}
     for skill_name in sorted(set(args.skill or SKILL_COVERAGE)):
         skill_dir = skills_root / skill_name
         if not skill_dir.exists():
             raise FileNotFoundError(f"Skill directory not found: {skill_dir}")
-        coverage_report.append(sync_skill(skill_dir, docs_root, examples_root))
+        coverage[skill_name] = sync_skill(skill_dir, docs_root, examples_root)
 
-    report_name = "suite-coverage.json" if not args.skill else "selected-coverage.json"
-    report_path = Path(__file__).resolve().parent / report_name
-    report_path.write_text(
-        json.dumps(
-            {
-                "docs_root": str(docs_root),
-                "examples_root": str(examples_root),
-                "skills": coverage_report,
-            },
-            indent=2,
-            sort_keys=True,
-        )
-        + "\n",
+    COVERAGE_REPORT.write_text(
+        json.dumps({"skills": [coverage[name] for name in sorted(coverage)]},
+                   indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    print(f"Wrote {report_path}")  # noqa: print
+    print(f"Wrote {COVERAGE_REPORT}")  # noqa: print
 
 if __name__ == "__main__":
     main()

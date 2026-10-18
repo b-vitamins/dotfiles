@@ -11,9 +11,8 @@ separately: documentation availability does not establish runtime support.
 
 ## Required Rules
 
-- Use native host tools for documentation work; the user authorized bypassing the
-  broken Guix GPU environment. `scripts/guix-run` is optional and now uses a
-  documentation-only manifest. Never block documentation work on a GPU build.
+- Documentation work needs only file reading and search (`rg` or `grep`). It never needs a
+  GPU or a CuTe installation; route anything that runs kernels to the specialized CuTe skills.
 - Prefer the local copies in `references/docs/` and `references/examples/` over remote browsing.
 - Use `references/catalog.md` first when you need to see the skill's full coverage.
 - Cite exact local file paths when handing off to the user or another skill.
@@ -58,8 +57,6 @@ separately: documentation availability does not establish runtime support.
   NVIDIA CUTLASS tag `v4.8.0`, with commit and per-file hashes in `manifest.json`.
 - `references/catalog.md` lists the exact mirrored files.
 
-Refresh through `/home/b/projects/cute-docs/scripts/update_cute_dsl_docs.py
---expected-version 4.8.0` and `scripts/update_cute_dsl_examples.py --version 4.8.0`,
-then `scripts/sync_to_dotfiles.py --skill cute-dsl-doc-navigator` from that repo.
-Snapshots are immutable by default; use the docs updater's `--force` only for an
-intentional refresh. Keep the canonical corpus and downstream mirror consistent.
+The mirrored files are generated from a pinned cute-docs snapshot by the suite generator
+in `_cute-dsl-support/` next to this skill's source; refresh them there instead of editing
+them by hand.

@@ -71,6 +71,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `setup.sh` queue bootstrap when the USB printer is connected.
 - OpenClaw home service autostart for mileva.
 ### Changed
+- Decoupled the CuTe DSL skills from Guix. A stdlib `scripts/check_env.py` probe
+  and `references/environment.md` (pip/uv, conda, containers, optional Guix
+  manifest) replace `scripts/guix-run` and `manifest.scm`. The suite generator
+  emits them, finds cute-docs through `$CUTE_DOCS_ROOT` or a sibling checkout,
+  records corpus paths relative to it, and keeps one per-skill coverage report.
+  Benchmark and profiler scripts default to the system temp directory.
 - Documented that skill scripts resolve against the skill directory while
   outputs land in the caller's working directory, and stated the `fleetctl`
   prerequisites of `remote-fleet-operator`.

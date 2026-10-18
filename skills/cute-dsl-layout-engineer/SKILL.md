@@ -7,12 +7,18 @@ description: Analyze and design CuTe layouts, tilers, thread-value mappings, ten
 
 Reason about CuTe as a layout and partitioning system first, not just as Python syntax.
 
+Paths: `<skill-dir>` is the directory containing this file, and `<scratch>` is a scratch
+directory outside the project tree (the system temporary directory unless the user names another).
+
 ## Required Rules
 
-- Run every command through `scripts/guix-run`. Do not put `bash -lc` between `guix shell --` and the real command.
+- Use the project's existing CuTe environment for everything you run, including this skill's
+  scripts. Check it first with `python3 <skill-dir>/scripts/check_env.py`;
+  `references/environment.md` covers requirements and setup options. If the check fails, report
+  what is missing and ask before installing anything.
 - Use `references/catalog.md` to see the local subset of docs and examples.
 - When answering or editing code, always state the logical shape, stride, major mode, thread layout, value layout, and predication strategy you are relying on.
-- Use `/tmp` for scratch notebooks, diagrams, and tiny repro drivers unless the user explicitly wants files in the current project.
+- Use `<scratch>` for scratch notebooks, diagrams, and tiny repro drivers unless the user explicitly wants files in the current project.
 
 ## Workflow
 

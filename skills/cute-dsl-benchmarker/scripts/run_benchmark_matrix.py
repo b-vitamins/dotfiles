@@ -9,6 +9,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -46,7 +47,7 @@ def parse_args() -> argparse.Namespace:
         "--out-dir",
         type=Path,
         default=None,
-        help="Output root. Defaults to /tmp/cute-dsl-bench-matrix-<timestamp>.",
+        help="Output root. Defaults to <system temp dir>/cute-dsl-bench-matrix-<timestamp>.",
     )
     parser.add_argument(
         "--stop-on-failure",
@@ -141,7 +142,7 @@ def main() -> None:
     out_dir = args.out_dir
     if out_dir is None:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        out_dir = Path("/tmp") / f"cute-dsl-bench-matrix-{args.label_prefix}-{stamp}"
+        out_dir = Path(tempfile.gettempdir()) / f"cute-dsl-bench-matrix-{args.label_prefix}-{stamp}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     results: list[dict[str, Any]] = []

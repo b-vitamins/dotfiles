@@ -4,7 +4,7 @@ Use this file when creating a temporary benchmark driver for `scripts/benchmark_
 
 ## Required API
 
-Create a Python file under `/tmp` that exports:
+Create a Python file in `<scratch>`, outside the project tree, that exports:
 
 ```python
 def build_benchmark(argv: list[str]) -> dict:

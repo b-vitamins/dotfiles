@@ -1,7 +1,7 @@
 # cute-dsl-doc-navigator coverage
 
-- Generated from `/home/b/projects/cute-docs/docs/cutlass/cute-dsl/4.8.0` and `/home/b/projects/cute-docs/examples`.
-- Native host tools are supported; the documentation-only Guix wrapper is optional.
+- Generated from `cute-docs/docs/cutlass/cute-dsl/4.8.0` and `cute-docs/examples`.
+- Documentation only; no GPU environment is needed.
 
 ## Docs
 

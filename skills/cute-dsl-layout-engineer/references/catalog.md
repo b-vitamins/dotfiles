@@ -1,7 +1,7 @@
 # cute-dsl-layout-engineer coverage
 
-- Generated from `/home/b/projects/cute-docs/docs/cutlass/cute-dsl/4.4.1` and `/home/b/projects/cute-docs/examples`.
-- All commands in this skill must run through `scripts/guix-run`.
+- Generated from `cute-docs/docs/cutlass/cute-dsl/4.4.1` and `cute-docs/examples`.
+- Environment requirements and setup: `references/environment.md`; verify with `scripts/check_env.py`.
 
 ## Docs
 

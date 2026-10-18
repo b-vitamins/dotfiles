@@ -7,13 +7,19 @@ description: Optimize CuTe DSL kernels using layout changes, cpasync or TMA stra
 
 Optimize CuTe kernels as a measured loop: baseline, hypothesis, targeted change, re-measure.
 
+Paths: `<skill-dir>` is the directory containing this file, and `<scratch>` is a scratch
+directory outside the project tree (the system temporary directory unless the user names another).
+
 ## Required Rules
 
-- Run every command through `scripts/guix-run`. Do not place `bash -lc` between `guix shell --` and the actual command.
+- Use the project's existing CuTe environment for everything you run, including this skill's
+  scripts. Check it first with `python3 <skill-dir>/scripts/check_env.py`;
+  `references/environment.md` covers requirements and setup options. If the check fails, report
+  what is missing and ask before installing anything.
 - Start from a correct, benchmarked baseline.
 - Make every candidate variant compile and pass a small correctness check before treating its timing as meaningful.
 - Change one performance family at a time so the result is attributable.
-- Use `/tmp` for scratch variants, temporary benchmark drivers, and profile artifacts unless the user wants persistent files.
+- Use `<scratch>` for scratch variants, temporary benchmark drivers, and profile artifacts unless the user wants persistent files.
 - Treat launch underfill as a workload issue first, not an automatic kernel-design failure.
 - Before invasive source edits, sweep the legal configuration space the kernel already exposes: tile sizes, thread count, rasterization, fast-math toggles, and similar launch-time parameters can close large performance gaps without adding maintenance burden.
 

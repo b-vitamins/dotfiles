@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import subprocess
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -32,7 +33,7 @@ def parse_args() -> argparse.Namespace:
         "--out-dir",
         type=Path,
         default=None,
-        help="Output directory. Defaults to /tmp/cute-dsl-ncu-source-<timestamp>.",
+        help="Output directory. Defaults to <system temp dir>/cute-dsl-ncu-source-<timestamp>.",
     )
     parser.add_argument(
         "--top-k",
@@ -197,7 +198,7 @@ def main() -> None:
     out_dir = args.out_dir
     if out_dir is None:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        out_dir = Path("/tmp") / f"cute-dsl-ncu-source-{args.label}-{stamp}"
+        out_dir = Path(tempfile.gettempdir()) / f"cute-dsl-ncu-source-{args.label}-{stamp}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = [
