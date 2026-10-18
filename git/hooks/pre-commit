@@ -116,7 +116,8 @@ check_large_files() {
 }
 
 check_merge_conflicts() {
-    if git diff --cached | grep -qE '^[+-](<<<<<<<|=======|>>>>>>>)'; then
+    # Match whole marker lines only; long '=' rules in docs are not markers.
+    if git diff --cached | grep -qE '^[+-](<<<<<<<( |$)|=======$|>>>>>>>( |$))'; then
         error "Merge conflict markers detected"
         return 1
     fi

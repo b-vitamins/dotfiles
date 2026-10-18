@@ -264,6 +264,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Defined BV semantic/header faces before theme compilation so in-house faces
   receive generated theme styling on first load.
 ### Fixed
+- Stopped the pre-commit conflict-marker check from flagging long `=` rules,
+  and exempted mirrored skill references from whitespace checks.
 - Corrected the GNOME custom shortcut import path and registered both Alacritty
   and Emacs shortcuts; the setup script now fails on import errors and supports
   applying keybindings without changing theme, power or default applications.

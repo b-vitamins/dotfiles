@@ -11,3 +11,6 @@
 # Ensure that shell scripts are treated as executable
 *.sh eol=lf diff=astextplain
 *.sh linguist-detectable=true
+
+# Mirrored upstream references keep their original bytes
+skills/*/references/** -whitespace
