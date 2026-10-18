@@ -249,9 +249,9 @@ The source brief is a required artifact. It should capture source-local narratio
 Read `references/script-style-guide.md` before drafting prompts.
 Read `references/quality-gate.md` before final signoff.
 
-Codex multi-agent dispatch is handled by Codex, not by these scripts.
+Sub-agent dispatch is handled by the host runtime (Codex or Claude Code), not by these scripts.
 
-Use scripts only to prepare deterministic, non-overlapping section assignments. Then instruct Codex to spawn one sub-agent per assignment row or per safe batch of disjoint rows, wait for all results, and summarize status per agent.
+Use scripts only to prepare deterministic, non-overlapping section assignments. Then spawn one sub-agent per assignment row or per safe batch of disjoint rows with the runtime's native tooling (Codex multi-agent, or the Agent tool in Claude Code), wait for all results, and summarize status per agent.
 
 Use `assets/master-dispatch-prompt-template.md` for the parent prompt and `assets/agent-task-prompt-template.md` for per-agent instructions.
 Record worker assignment and completion status in `plans/tts-worker-assignments.csv`.
@@ -259,7 +259,7 @@ Use `assets/tts-worker-assignments-template.csv` as the reference shape.
 
 Manager-side rules:
 
-- Use native Codex sub-agent orchestration for multi-section chapters, appendices, and book runs.
+- Use the runtime's native sub-agent orchestration for multi-section chapters, appendices, and book runs.
 - Spawn one sub-agent per target `.txt` file by default, unless batching several disjoint targets onto one agent is clearly more appropriate.
 - For sources with more assignment rows than can be active reliably at once,
   dispatch in bounded waves. Keep every pending, active, completed, failed, and
@@ -275,8 +275,8 @@ Manager-side rules:
 - If a worker fails, reassign only the unfinished section files.
 - If the user requires a specific model or reasoning level for sub-agents, pass it explicitly and stop if it cannot be honored exactly.
 - Use the runtime's native agent orchestration tools for sub-agents when they are available.
-- Do not launch worker agents by shelling out to `codex exec`, `openai`, or similar CLI commands.
-- Do not use `--dangerously-bypass-approvals-and-sandbox` or equivalent flags as part of this workflow.
+- Do not launch worker agents by shelling out to `codex exec`, `claude -p`, `openai`, or similar CLI commands.
+- Do not use `--dangerously-bypass-approvals-and-sandbox`, `--dangerously-skip-permissions`, or equivalent flags as part of this workflow.
 - Do not write local helper programs to mass-convert LaTeX into spoken scripts. If such a script appears in the workspace, treat it as a workflow violation and discard that generation path.
 
 ## Step 5: Generate Spoken Scripts

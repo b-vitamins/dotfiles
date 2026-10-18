@@ -71,6 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `setup.sh` queue bootstrap when the USB printer is connected.
 - OpenClaw home service autostart for mileva.
 ### Changed
+- Described sub-agent dispatch in `hifi-pdf-ocr` and `hifi-math-tts` for both
+  Codex and Claude Code.
 - Decoupled the CuTe DSL skills from Guix. A stdlib `scripts/check_env.py` probe
   and `references/environment.md` (pip/uv, conda, containers, optional Guix
   manifest) replace `scripts/guix-run` and `manifest.scm`. The suite generator

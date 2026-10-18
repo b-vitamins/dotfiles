@@ -27,7 +27,7 @@ directory containing this file. Run bundled scripts by that path (for example
 1. Inspect current workspace state and classify the job as fresh transcription, verification-repair, or mixed.
 2. Render page images first.
 3. Build and validate a logical grouping plan.
-4. Dispatch work through native Codex multi-agent orchestration with explicit file-safety and lifecycle controls.
+4. Dispatch work through the host runtime's native sub-agent orchestration (Codex multi-agent or Claude Code subagents) with explicit file-safety and lifecycle controls.
 5. Transcribe or verify with a strict one-page-read, one-page-append loop.
 6. Verify exact `% Page` coverage before cleanup.
 7. Remove `% Page` markers and stitch page-break interruptions.
@@ -88,7 +88,7 @@ When planning groups:
 - Keep ranges non-overlapping and collectively exhaustive for the requested scope.
 
 Read `references/group-plan-format.md` when creating or validating this plan.
-Read `references/codex-multi-agent-notes.md` before spawning sub-agents.
+Read `references/multi-agent-notes.md` before spawning sub-agents.
 
 Before dispatch, validate that:
 
@@ -99,18 +99,14 @@ Before dispatch, validate that:
 
 ## Step 3: Dispatch Parallel Work (Native Multi-agent)
 
-Codex multi-agent dispatch is handled by Codex, not by these scripts.
+Sub-agent dispatch is handled by the host runtime (Codex or Claude Code), not by these scripts.
 
-Use scripts only to prepare deterministic, non-overlapping assignments. Then instruct Codex to spawn one sub-agent per assignment and wait for all results.
+Use scripts only to prepare deterministic, non-overlapping assignments. Then spawn one sub-agent per assignment with the runtime's native tooling and wait for all results.
 
 Before dispatching:
 
-- Ensure multi-agent is enabled (`/experimental` -> `Multi-agents`, then restart), or set:
-```toml
-[features]
-multi_agent = true
-```
-- Assume sub-agents inherit sandbox policy and use non-interactive approvals.
+- Ensure sub-agents are available in the current runtime. `references/multi-agent-notes.md` covers enablement for Codex and Claude Code.
+- Assume sub-agents inherit the parent's sandbox or permission policy and cannot obtain new approvals interactively.
 - Avoid tasks requiring new approvals inside sub-agents unless policy already permits them.
 - If the user requires a specific sub-agent model or reasoning effort, pass it explicitly when spawning. If you cannot honor it exactly, stop and report the blocker instead of silently downgrading.
 
@@ -127,7 +123,7 @@ python3 scripts/split-ranges.py --start 267 --end 400 --agents 3 --out plans/ran
 
 Dispatch prompt pattern:
 
-- Ask Codex explicitly:
+- Make the parent instruction explicit:
   - Spawn one agent per row in the assignment file.
   - Give each agent its exact page range and target output file.
   - Wait for all agents.

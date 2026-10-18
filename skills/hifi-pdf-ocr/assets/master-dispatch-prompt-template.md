@@ -4,7 +4,7 @@ Spawn one sub-agent per assignment row.
 
 For each sub-agent:
 
-- Use the role `{agent_role}` unless a better configured role is available.
+- Use the role (Codex) or sub-agent type (Claude Code) `{agent_role}` unless a better configured one is available.
 - Honor any explicit user-specified model and reasoning requirements. If they cannot be satisfied exactly, stop and report the blocker.
 - Restrict work to the assigned page range only.
 - Write only to the assigned target file.

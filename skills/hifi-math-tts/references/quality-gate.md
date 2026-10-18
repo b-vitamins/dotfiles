@@ -8,7 +8,7 @@ Run this checklist before claiming a script set is ready for TTS.
 - Confirm no output files were written outside the plan without being recorded.
 - Confirm generation came from the canonical source `.tex`, not from memory or an already adapted script.
 - Confirm the final transcript text was not produced by an ad-hoc local generator script, pandoc conversion, or regex-only rewrite pipeline.
-- Confirm worker orchestration did not use shell-launched `codex exec`, `openai`, or approval/sandbox bypass CLI sessions.
+- Confirm worker orchestration did not use shell-launched `codex exec`, `claude -p`, `openai`, or approval/sandbox bypass CLI sessions.
 - Confirm `plans/tts-worker-assignments.csv` records the dispatch mode, source ranges, target files, worker ids when available, and final status.
 - Confirm `plans/tts-source-brief.md` exists and was written before section generation.
 - Confirm notation and pronunciation decisions live in the source brief rather than a generated substitution table.

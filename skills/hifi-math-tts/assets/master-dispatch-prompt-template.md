@@ -1,6 +1,6 @@
 I have prepared a section plan in `{plan_file}`, a checkpoint ledger in `{checkpoint_file}`, and a source brief in `{source_brief_file}`.
 
-Dispatch this generation through native Codex multi-agent orchestration.
+Dispatch this generation through the runtime's native sub-agent orchestration (Codex multi-agent, or the Agent tool in Claude Code).
 
 Use the worker prompt in `assets/agent-task-prompt-template.md`. Spawn one sub-agent per assignment row by default, or batch several disjoint rows onto one agent only when target files do not overlap. Wait for all agents, then consolidate status. Record every assignment in `{worker_assignment_file}` and update the row when it completes, fails, stalls, or is reassigned.
 
@@ -14,7 +14,7 @@ Worker contract:
 
 - Workers generate from the canonical source lines and the source brief.
 - Workers should not write from checkpoint rows or validation artifacts.
-- Workers should not run generator scripts, pandoc, regex translators, `codex exec`, `openai`, or approval/sandbox bypass commands.
+- Workers should not run generator scripts, pandoc, regex translators, `codex exec`, `claude -p`, `openai`, or approval/sandbox bypass commands.
 - Workers should produce scripts that a technically competent voice actor could read directly for an audiobook.
 - Workers should preserve mathematical fidelity completely while using natural spoken English.
 
