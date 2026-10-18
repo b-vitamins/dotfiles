@@ -88,7 +88,8 @@ dotfiles/
 ├── emacs/          # Emacs configuration
 │   ├── init.el     # Entry point
 │   └── lisp/       # Custom modules (bv-*.el)
-├── codex/          # Codex templates, instructions, and skills
+├── codex/          # Codex templates and instructions
+├── skills/         # Agent skills shared by Codex and Claude Code
 ├── zsh/            # Shell configuration
 ├── git/            # Git config and hooks
 ├── keys/           # Public keys (SSH, GPG)

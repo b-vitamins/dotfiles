@@ -860,7 +860,7 @@ setup_codex_config() {
 # Codex skills setup
 # -----------------------------------------------------------------------------
 setup_codex_skills() {
-	local source_skills_dir="$DOTFILES_DIR/codex/skills"
+	local source_skills_dir="$DOTFILES_DIR/skills"
 	local target_skills_dir="$HOME/.codex/skills"
 	local queued=0
 	local skill_dir

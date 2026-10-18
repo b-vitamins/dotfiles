@@ -8,7 +8,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-SKILL_ROOT = Path("/home/b/projects/dotfiles/codex/skills/research-paper-notes")
+SKILL_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = SKILL_ROOT / "scripts"
 
 
