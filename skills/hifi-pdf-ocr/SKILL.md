@@ -55,7 +55,9 @@ Before any rendering or dispatch:
 
 ## Step 1: Render Images (Always First)
 
-Always render images before any transcription work. Use `pdftoppm` via Guix Poppler.
+Always render images before any transcription work. Rendering needs Poppler's `pdftoppm` on `PATH`
+(or named by the `PDFTOPPM` environment variable). If it is missing, ask the user to install Poppler
+or to name the environment that provides it, and run the script inside that environment.
 
 Use:
 
@@ -66,7 +68,7 @@ Use:
 This script runs:
 
 ```bash
-guix shell poppler -- pdftoppm -r 600 -png ...
+pdftoppm -r 600 -png ...
 ```
 
 Render constraints:
@@ -336,7 +338,7 @@ Definitions:
 
 ## Scripts
 
-- `scripts/render-pages.sh`: Render PDF pages to 600 DPI PNG using `guix shell poppler -- pdftoppm`.
+- `scripts/render-pages.sh`: Render PDF pages to 600 DPI PNG with Poppler's `pdftoppm`.
 - `scripts/split-ranges.py`: Split contiguous page ranges across agents.
 - `scripts/assign-groups.py`: Balance chapter/group workloads across agents from a CSV plan.
 - `scripts/verify-page-markers.py`: Verify exact page coverage from `% Page <n>` markers before cleanup.

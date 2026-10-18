@@ -3,7 +3,8 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Render PDF pages to PNG images at high resolution using poppler from Guix.
+Render PDF pages to PNG images at high resolution with Poppler's pdftoppm.
+Requires pdftoppm on PATH, or its path in the PDFTOPPM environment variable.
 
 Usage:
   render-pages.sh --pdf BOOK.pdf [--outdir pages] [--dpi 600] [--prefix page] [--start N] [--end N] [--overwrite]
@@ -97,7 +98,16 @@ fi
 
 mkdir -p "$outdir"
 
-if compgen -G "$outdir/${prefix}-*.png" >/dev/null; then
+# A plain glob instead of compgen, which minimal bash builds lack.
+existing=0
+for file in "$outdir/${prefix}"-*.png; do
+  if [[ -e "$file" ]]; then
+    existing=1
+    break
+  fi
+done
+
+if [[ "$existing" == "1" ]]; then
   if [[ "$overwrite" == "1" ]]; then
     rm -f "$outdir/${prefix}-"*.png
   else
@@ -111,7 +121,15 @@ tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 raw_prefix="$tmpdir/raw-page"
 
-cmd=(guix shell poppler -- pdftoppm -r "$dpi" -png)
+pdftoppm="${PDFTOPPM:-pdftoppm}"
+if ! command -v "$pdftoppm" >/dev/null 2>&1; then
+  echo "pdftoppm not found. Install Poppler (poppler-utils on Debian/Ubuntu, poppler on" >&2
+  echo "Homebrew, conda, or Guix), run this script inside an environment that provides it," >&2
+  echo "or set PDFTOPPM to its path." >&2
+  exit 1
+fi
+
+cmd=("$pdftoppm" -r "$dpi" -png)
 if [[ -n "$start_page" ]]; then
   cmd+=(-f "$start_page")
 fi
@@ -125,7 +143,11 @@ printf '  %q ' "${cmd[@]}"
 printf '\n'
 "${cmd[@]}"
 
-mapfile -t rendered < <(find "$tmpdir" -maxdepth 1 -type f -name 'raw-page-*.png' | sort -V)
+# pdftoppm zero-pads page numbers to one width, so lexical order is page order.
+rendered=()
+while IFS= read -r file; do
+  rendered+=("$file")
+done < <(find "$tmpdir" -maxdepth 1 -type f -name 'raw-page-*.png' | sort)
 if [[ "${#rendered[@]}" -eq 0 ]]; then
   echo "No pages were rendered." >&2
   exit 1

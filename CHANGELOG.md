@@ -281,6 +281,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Defined BV semantic/header faces before theme compilation so in-house faces
   receive generated theme styling on first load.
 ### Fixed
+- Made `hifi-pdf-ocr` page rendering portable: `render-pages.sh` runs `pdftoppm`
+  from `PATH` (or `$PDFTOPPM`) instead of `guix shell`, and its overwrite guard
+  no longer depends on `compgen`, which minimal bash builds lack.
 - Stopped the pre-commit conflict-marker check from flagging long `=` rules,
   and exempted mirrored skill references from whitespace checks.
 - Corrected the GNOME custom shortcut import path and registered both Alacritty
