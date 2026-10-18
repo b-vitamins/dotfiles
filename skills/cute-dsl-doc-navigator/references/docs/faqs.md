@@ -1,9 +1,9 @@
 ---
 title: "FAQs"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/faqs.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # FAQs {#faqs}
@@ -24,7 +24,7 @@ last_updated: "Mar 05, 2026"
 
 **Where will the code live? PIP wheel or GitHub repo? Do I have to build it myself?**
 
-> This is a major change compared to CUTLASS C++ and Python DSLs. Going forward, the GitHub code only exists as a way for users to file issues and pull requests against. While it can be used with the pip wheel, we do not recommend most users do so unless they are hacking on the DSL itself. For all other users, we recommend they simply `pip install nvidia-cutlass-dsl` and use the pip wheel as the single source of truth for the dialect compiler and DSL implementation. CUTLASS GitHub repository will contain a `requirements.txt` file pinning the version of the wheel consistent with the state of the OSS repository (please see [Quick Start Guide](quick_start.md)). This means getting started with CUTLASS is easier than ever: no more CMake command lines to learn and no more builds to kick off. Simply install the pip wheel and start running the examples.
+> This is a major change compared to CUTLASS C++ and Python DSLs. Going forward, the GitHub code only exists as a way for users to file issues and pull requests against. While it can be used with the pip wheel, we do not recommend most users do so unless they are directly using the DSL itself. For all other users, we recommend they simply `pip install nvidia-cutlass-dsl` and use the pip wheel as the single source of truth for the dialect compiler and DSL implementation. CUTLASS GitHub repository will contain a `requirements.txt` file pinning the version of the wheel consistent with the state of the OSS repository (please see [Quick Start Guide](quick_start.md)). This means getting started with CUTLASS is easier than ever: no more CMake command lines to learn and no more builds to kick off. Simply install the pip wheel and start running the examples.
 
 ## Migration
 

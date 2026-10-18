@@ -1,9 +1,9 @@
 ---
 title: "Introduction"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_introduction.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # Introduction
@@ -14,19 +14,19 @@ CuTe DSL is a Python-based domain-specific language (DSL) designed for dynamic c
 
 Its primary goals are:
 
--   **Zero-cost abstraction**, DSL is a zero-cost abstraction thanks to Hybrid DSL approach.
+- **Zero-cost abstraction**, DSL is a zero-cost abstraction thanks to Hybrid DSL approach.
 
--   **Consistent with CuTe C++**, allowing users to express GPU kernels with full control of the hardware.
+- **Consistent with CuTe C++**, allowing users to express GPU kernels with full control of the hardware.
 
--   **JIT compilation** for both host and GPU execution.
+- **JIT compilation** for both host and GPU execution.
 
--   [DLPack](https://github.com/dmlc/dlpack) **integration**, enabling seamless interop with frameworks (e.g., PyTorch, JAX).
+- [DLPack](https://github.com/dmlc/dlpack) **integration**, enabling seamless interop with frameworks (e.g., PyTorch, JAX).
 
--   **JIT caching**, so that repeated calls to the same function benefit from cached IR modules.
+- **JIT caching**, so that repeated calls to the same function benefit from cached IR modules.
 
--   **Native types and type inference** to reduce boilerplate and improve performance.
+- **Native types and type inference** to reduce boilerplate and improve performance.
 
--   **Optional lower-level control**, offering direct access to GPU backends or specialized IR dialects.
+- **Optional lower-level control**, offering direct access to GPU backends or specialized IR dialects.
 
 ## Decorators
 
@@ -44,19 +44,19 @@ Declares JIT-compiled functions that can be invoked from Python or from other Cu
 
 **Decorator Parameters**:
 
--   `preprocessor`:
+- `preprocessor`:
 
-    -   `True` (default) --- Automatically translate Python flow control (e.g., loops, if-statements) into IR operations.
+  - `True` (default) --- Automatically translate Python flow control (e.g., loops, if-statements) into IR operations.
 
-    -   `False` --- No automatic expansion; Python flow control must be handled manually or avoided.
+  - `False` --- No automatic expansion; Python flow control must be handled manually or avoided.
 
 **Call-site Parameters**:
 
--   `no_cache`:
+- `no_cache`:
 
-    -   `True` --- Disables JIT caching, forcing a fresh compilation each call.
+  - `True` --- Disables JIT caching, forcing a fresh compilation each call.
 
-    -   `False` (default) --- Enables caching for faster subsequent calls.
+  - `False` (default) --- Enables caching for faster subsequent calls.
 
 ### `@kernel`
 
@@ -64,21 +64,75 @@ Defines GPU kernel functions, compiled as specialized GPU symbols through dynami
 
 **Decorator Parameters**:
 
--   `preprocessor`:
+- `preprocessor`:
 
-    -   `True` (default) --- Automatically expands Python loops/ifs into GPU-compatible IR operations.
+  - `True` (default) --- Automatically expands Python loops/ifs into GPU-compatible IR operations.
 
-    -   `False` --- Expects manual or simplified kernel implementations.
+  - `False` --- Expects manual or simplified kernel implementations.
 
 **Kernel Launch Parameters**:
 
--   `grid` Specifies the grid size as a list of integers.
+- `grid` Specifies the grid size as a list of integers.
 
--   `block` Specifies the block size as a list of integers.
+- `block` Specifies the block size as a list of integers.
 
--   `cluster` Specifies the cluster size as a list of integers.
+- `cluster` Specifies the cluster size as a list of integers.
 
--   `smem` Specifies the size of shared memory in bytes (integer).
+- `smem` Specifies the size of shared memory in bytes (integer).
+
+  - `None` (default) --- Automatically calculates the kernel's shared memory usage via **cutlass.memory.SmemAllocator**. Recommended unless manual control is required.
+
+  - `int` --- Manually specifies the size of shared memory in bytes.
+
+**Additional Kernel Launch Parameters**:
+
+- `fallback_cluster` Specifies the minimum-guaranteed cluster size. When set, `cluster` becomes the **preferred** size, enabling graceful degradation when hardware cannot satisfy the preferred dimensions.
+
+  - `None` (default) --- No fallback; `cluster` is used directly.
+
+  - `list[int]` --- Three-element list \[x, y, z\].
+
+- `max_number_threads` Specifies the maximum thread count per block (**maxntid**).
+
+  - `[0, 0, 0]` (default) --- Auto-generate **reqntid** from `block`.
+
+  - `list[int]` --- Three-element list \[x, y, z\].
+
+- `min_blocks_per_mp` Specifies the minimum blocks per multiprocessor (**minctasm**).
+
+  - `0` (default) --- No minimum occupancy hint.
+
+  - `int` --- Minimum number of blocks per multiprocessor.
+
+- `use_pdl` Enables Programmatic Dependent Launch (PDL) to overlap dependent kernel launches in the same stream.
+
+  - `False` (default) --- PDL disabled.
+
+  - `True` --- PDL enabled.
+
+- `cooperative` Enables cooperative kernel launch; all thread blocks launch cooperatively with grid-wide synchronization support.
+
+  - `False` (default) --- Standard kernel launch.
+
+  - `True` --- Cooperative kernel launch.
+
+- `smem_merge_branch_allocs` Enables mutually exclusive control flow branches (sequentially executed if-else) to reuse the same shared memory.
+
+  - `False` (default) --- Shared memory is allocated additively across all branches (default CUDA C++ behavior).
+
+  - `True` --- Merge shared-memory allocations across branches (experimental feature, recommended for mega-kernels).
+
+- `preferred_smem_carveout` Set per-kernel hint specifying what percentage of SM on-chip memory to reserve for shared memory vs. L1 cache.
+
+  - `None` (default) --- Auto calculate the percentage using formula `ceil_div(min_blocks_per_mp * smem * 100, max_smem_per_mp)` when **min_blocks_per_mp** is greater than 1
+
+  - `int` --- Override the auto-calculated percentage and manually set hint.
+
+- `hint_smem_base_uniform` (Experimental feature) Set per-kernel hint for compiler to keep the dynamic-SMEM base ptr in a warp-uniform register.
+
+  - `True` (default) --- Hint compiler to keep the dynamic-SMEM base ptr in a warp-uniform register.
+
+  - `False` --- No hint for the dynamic-SMEM base ptr in kernel launch.
 
 ## Calling Conventions
 

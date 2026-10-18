@@ -1,14 +1,14 @@
 ---
-title: "cutlass.utils"
+title: "Utilities"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/utils.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
-# cutlass.utils
+# Utilities
 
-The `cutlass.utils` module contains utilities for developing kernels with CuTe DSL.
+The `cutlass.utils` package contains utilities for developing kernels with CuTe DSL.
 
 ## cutlass.utils.get_smem_capacity_in_bytes
 
@@ -36,55 +36,39 @@ int
 
 **ValueError** -- If the compute capability is not supported
 
+## cutlass.utils.get_kernel_smem_size
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.get_kernel_smem_size(kernel: Callable) → int`
+
+Get the total static shared memory allocation in bytes for a kernel.
+
+Uses `cute.kernel_smem_size` to query the total smem bytes that will be allocated by a kernel. The result is lowered to a compile-time constant by `InferKernelSmemUsagePass`.
+
+Must be called from within a `@cute.jit` body after the kernel's `.launch()` has been called, which triggers tracing and registers the kernel's MLIR symbol.
+
+### Parameters
+
+**kernel** (*Callable*) -- A `@cute.kernel`-decorated function. The MLIR symbol is retrieved automatically from state stored by the DSL after `.launch()`.
+
+### Returns
+
+Total shared memory allocated by the kernel, in bytes.
+
+### Return type
+
+int (i64 MLIR value during tracing)
+
 ## cutlass.utils.SmemAllocator
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.SmemAllocator`
+**Signature:** `cutlass.utils.SmemAllocator(**kwargs)`
 
-Bases: `object`
+Bases: `SmemAllocator`
 
-A helper class for managing shared memory allocation on GPU.
-
-This class manages shared memory and provides APIs for allocation of raw bytes, numeric types, arrays, and tensors with specified layouts and alignments.
-
-> **Note.**
->
-> -   The base pointer is aligned to 1024 bytes upon initialization.
->
-> -   There is no need to explicitly specify shared memory size in kernel launch.
->
-> -   Currently only supports static layouts. Dynamic layouts are not supported.
-
-**Examples**:
-
-    smem = SmemAllocator()
-
-    # Allocate raw bytes
-    buf_ptr = smem.allocate(100)  # 100 bytes
-
-    # Allocate numeric type
-    int8_ptr = smem.allocate(Int8)  # 1 byte
-
-    # Define a struct
-    @cute.struct
-    class SharedStorage:
-        alpha: cutlass.Float32
-        x: cutlass.Int32
-
-    # Allocate struct
-    struct_ptr = smem.allocate(SharedStorage)  # 8 bytes
-
-    # use of struct members
-    struct_ptr.alpha = 1.0
-    struct_ptr.x = 2
-
-    # Allocate array
-    int8_array = smem.allocate_array(Int8, 10)  # 10 bytes
-
-    # Allocate tensor
-    layout = cute.make_layout((16, 16))
-    tensor = smem.allocate_tensor(Int8, layout)  # 256 bytes
+Deprecated alias for cutlass.memory.smem.SmemAllocator.
 
 ### capacity_in_bytes
 
@@ -114,245 +98,41 @@ int
 
 **ValueError** -- If the compute capability is not supported
 
-### \_\_init\_\_
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.SmemAllocator.__init__`
-
-**Signature:** `__init__(*, loc = None, ip = None)`
-
-Initialize a new SmemAllocator instance.
-
-Creates a new shared memory allocator with a base pointer aligned to 1024 bytes. Tracks the allocator instance for memory management.
-
-#### Parameters
-
--   **loc** (*Optional\[ir.Location\]*) -- Source location information for debugging, defaults to None
-
--   **ip** (*Optional\[ir.InsertionPoint\]*) -- Insertion point for MLIR operations, defaults to None
-
-### allocate
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.SmemAllocator.allocate`
-
-**Signature:** `allocate(size_or_type: int, byte_alignment: int, *, loc = None, ip = None) → cutlass.cute.typing.Pointer`
-
-Allocate a block of memory with specified size and alignment.
-
-This method allocates a block of shared memory with the specified size and alignment requirements. It supports allocating raw bytes, numeric types(as scalar value), and struct types.
-
-#### Parameters
-
--   **size_or_type** (*Union\[int,* *Type\[Numeric\],* [*cute.struct*](cute.md#cutlass.cute.struct)*\]*) -- The allocation specification, which can be: - An integer specifying the number of bytes to allocate - A Numeric type (e.g., Int8, Float32) to allocate space for one element - A struct type to allocate space for the entire struct
-
--   **byte_alignment** (*int,* *optional*) -- The minimum byte alignment requirement for the allocation, defaults to 1
-
--   **loc** (*Optional\[ir.Location\]*) -- Source location information for debugging, defaults to None
-
--   **ip** (*Optional\[ir.InsertionPoint\]*) -- Insertion point for MLIR operations, defaults to None
-
-#### Returns
-
-For raw bytes and numeric types, returns a pointer to the allocated memory. For struct types, returns an initialized struct instance at the allocated location.
-
-#### Return type
-
-cute.Pointer
-
-#### Raises
-
--   **ValueError** -- If size is negative or alignment is less than 1
-
--   **TypeError** -- If size_or_type is not an integer, Numeric type, or struct
-
--   **RuntimeError** -- If allocation would exceed available shared memory
-
-### allocate_array
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.SmemAllocator.allocate_array`
-
-**Signature:** `allocate_array(element_type: Type[cutlass.cutlass_dsl.Numeric], num_elems: int = 1, *, loc = None, ip = None)`
-
-Allocate an array of elements in shared memory.
-
-#### Parameters
-
--   **element_type** (*Type\[Numeric\]*) -- The type of elements to allocate
-
--   **num_elems** (*int,* *optional*) -- Number of elements to allocate, defaults to 1
-
-#### Returns
-
-Pointer to the start of the allocated array
-
-#### Return type
-
-cute.Pointer
-
-#### Raises
-
--   **ValueError** -- If num_elems is less than 1
-
--   **TypeError** -- If element_type is not a Numeric type
-
-### allocate_tensor
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.SmemAllocator.allocate_tensor`
-
-**Signature:** `allocate_tensor(element_type: Type[cutlass.cutlass_dsl.Numeric], layout: int | cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout, byte_alignment: int = 1, swizzle: cutlass._mlir.ir.register_value_caster | None = None, *, loc = None, ip = None)`
-
-Allocate a tensor in shared memory.
-
-Note: Currently only supports static layouts. Dynamic layouts are not supported.
-
-#### Parameters
-
--   **element_type** (*Type\[Numeric\]*) -- The type of elements in the tensor
-
--   **layout** (*Union\[int,* *cute.Layout,* *cute.ComposedLayout\]*) -- The layout specification for the tensor. Must be a static layout.
-
--   **byte_alignment** (*int,* *optional*) -- The byte alignment requirement, defaults to 1
-
--   **swizzle** ([*cute.Swizzle*](cute.md#cutlass.cute.Swizzle)*,* *optional*) -- Swizzle for position-dependent swizzling, defaults to None
-
-#### Returns
-
-The allocated tensor with specified properties
-
-#### Return type
-
-cute.Tensor
-
-#### Raises
-
--   **TypeError** -- If element_type is not a Numeric type or if swizzle conflicts with layout
-
--   **ValueError** -- If allocation is not byte-aligned
-
--   **NotImplementedError** -- If dynamic layout is specified
-
 ## cutlass.utils.TmemAllocator
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.TmemAllocator(alloc_result_dst_smem_ptr: cutlass.cute.typing.Pointer, barrier_for_retrieve: NamedBarrier, allocator_warp_id: int = 0, is_two_cta: bool = False, num_allocated_columns: int = 0, two_cta_tmem_dealloc_mbar_ptr: cutlass.cute.typing.Pointer | None = None)`
+**Signature:** `cutlass.utils.TmemAllocator(**kwargs)`
 
-Bases: `object`
+Bases: `TmemAllocator`
 
-A class for managing tensor memory allocation on GPUs.
+Deprecated alias for cutlass.memory.tmem.TmemAllocator.
 
-This class manages allocation/deallocation of tensor memory, including the mbarrier synchronization for two cta use case.
+## cutlass.utils.TmemBufferPool
 
-### Variables
+**Kind:** class
 
--   **\_alloc_result_dst_smem_ptr** -- The smem pointer that holds the base address of allocated tensor memory.
+**Signature:** `cutlass.utils.TmemBufferPool(**kwargs)`
 
--   **\_barrier_for_retrieve** -- The barrier for retrieving tensor memory ptr.
+Bases: `TmemBufferPool`
 
--   **\_allocator_warp_id** -- The warp id of the allocator warp.
-
--   **\_is_two_cta** -- Whether the allocator is for two cta.
-
--   **\_num_allocated_columns** -- The number of columns allocated in the tensor memory.
-
--   **\_two_cta_tmem_dealloc_mbar_ptr** -- The mbarrier pointer required when deallocating tensor memory for two cta.
-
--   **\_arch** -- The architecture of the GPU.
-
-### \_\_init\_\_
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.TmemAllocator.__init__`
-
-**Signature:** `__init__(alloc_result_dst_smem_ptr: cutlass.cute.typing.Pointer, barrier_for_retrieve: NamedBarrier, allocator_warp_id: int = 0, is_two_cta: bool = False, num_allocated_columns: int = 0, two_cta_tmem_dealloc_mbar_ptr: cutlass.cute.typing.Pointer | None = None, *, arch: str = 'sm_100', dealloc_mbarrier_initialized: bool = False, loc = None, ip = None)`
-
-Initialize a TmemAllocator instance for managing tensor memory on Blackwell GPUs.
-
-This initializer sets up the allocator's state, including the shared memory (smem) pointer holding the base address of the allocated tensor memory, barrier synchronization for retrieving the tensor memory pointer, allocator warp ID, whether the allocator is being used for a 2-SM configuration, number of allocated columns in tensor memory, and the optional mbarrier pointer for deallocation in the 2-SM case.
-
-If is_two_cta is set to True, this will initialize the mbarrier pointer required for tensor memory deallocation across two CTAs.
-
-#### Parameters
-
--   **alloc_result_dst_smem_ptr** (*cute.Pointer*) -- The shared memory pointer that holds the base address of allocated tensor memory.
-
--   **barrier_for_retrieve** ([*pipeline.NamedBarrier*](pipeline.md#cutlass.pipeline.NamedBarrier)) -- The named barrier for retrieving the tensor memory pointer.
-
--   **allocator_warp_id** (*int,* *optional*) -- The warp ID of the allocator warp, defaults to 0.
-
--   **is_two_cta** (*bool,* *optional*) -- Whether the allocator should coordinate two CTAs, defaults to False.
-
--   **num_allocated_columns** (*int,* *optional*) -- The number of columns allocated in tensor memory, defaults to 0.
-
--   **two_cta_tmem_dealloc_mbar_ptr** (*cute.Pointer,* *optional*) -- The mbarrier pointer required for two-CTA tensor memory deallocation, optional.
-
--   **loc** (*Any,* *optional*) -- Optional codegen location for debugging and error reporting.
-
--   **ip** (*Any,* *optional*) -- Optional insertion point for codegen.
-
-#### Raises
-
-**AssertionError** -- If two_cta_tmem_dealloc_mbar_ptr is None while is_two_cta is True.
-
-### check_valid_num_columns
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.TmemAllocator.check_valid_num_columns`
-
-**Signature:** `check_valid_num_columns(num_columns: int)`
-
-Check if the number of columns is valid.
-
-This method checks if the number of columns is valid. It checks if the number of columns is larger than 0, smaller than max capacity, a multiple of 32, and a power of two.
-
-### wait_for_alloc
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.TmemAllocator.wait_for_alloc`
-
-**Signature:** `wait_for_alloc(*, loc = None, ip = None)`
-
-Wait for the allocator warp to finish allocation.
-
-This method is used to synchronize the allocator warp with the other warps before retrieving tmem ptr.
-
-### retrieve_ptr
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.TmemAllocator.retrieve_ptr`
-
-**Signature:** `retrieve_ptr(dtype: Type[cutlass.cutlass_dsl.Numeric] = cutlass.cutlass_dsl.Float32, *, loc = None, ip = None) → cutlass.cute.typing.Pointer`
-
-Retrieve the pointer to the allocated tensor memory.
-
-This method can be called by all warps after allocation has been performed by the allocator warp.
+Deprecated alias for cutlass.memory.tmem.TmemBufferPool.
 
 ## cutlass.utils.get_num_tmem_alloc_cols
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.get_num_tmem_alloc_cols(tmem_tensors: cutlass.cute.typing.Tensor | List[cutlass.cute.typing.Tensor], rounding = True, *, arch: str = 'sm_100', loc = None, ip = None) → int`
+**Signature:** `cutlass.utils.get_num_tmem_alloc_cols(tmem_tensors: cutlass.cute.typing.Tensor | List[cutlass.cute.typing.Tensor], rounding: bool = True, *, arch: str = 'sm_100') → int`
 
 Get the total number of TMEM allocation columns for the given TMEM tensors.
 
 ### Parameters
 
--   **tmem_tensors** (*Union\[cute.Tensor,* *List\[cute.Tensor\]\]*) -- The TMEM tensors to get the number of allocation columns for.
+- **tmem_tensors** (*Union\[cute.Tensor,* *List\[cute.Tensor\]\]*) -- The TMEM tensors to get the number of allocation columns for.
 
--   **rounding** (*bool*) -- Whether to round up the number of allocation columns to the nearest power of 2.
+- **rounding** (*bool*) -- Whether to round up the number of allocation columns to the nearest power of 2.
 
--   **arch** (*str*) -- The architecture of the GPU.
+- **arch** (*str*) -- The architecture of the GPU.
 
 ### Returns
 
@@ -366,109 +146,39 @@ int
 
 **ValueError** -- If the number of TMEM allocation columns exceeds the maximum capacity or is less than 32.
 
-## cutlass.utils.LayoutEnum
+## cutlass.utils.compute_tmem_cols_from_layout
 
-**Kind:** class
+**Kind:** function
 
-**Signature:** `cutlass.utils.LayoutEnum(value)`
+**Signature:** `cutlass.utils.compute_tmem_cols_from_layout(layout: cutlass.cute.typing.Layout, dtype: Type[_MockObject]) → int`
 
-Bases: `Enum`
+Compute the number of TMEM columns required for a layout with a given dtype.
 
-An enumeration.
+This function calculates the column offset by recasting the layout to Int32 and computing its cosize, similar to how find_tmem_tensor_col_offset works but without requiring a tensor.
 
-### ROW_MAJOR
+### Parameters
 
-**Kind:** attribute
+- **layout** (*cute.Layout*) -- The TMEM layout to compute columns for.
 
-**Qualified name:** `cutlass.utils.LayoutEnum.ROW_MAJOR`
+- **dtype** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The data type of the elements in the layout.
 
-**Signature:** `ROW_MAJOR = 'row_major'`
+### Returns
 
-### COL_MAJOR
+The number of TMEM columns (always a Python int).
 
-**Kind:** attribute
+### Return type
 
-**Qualified name:** `cutlass.utils.LayoutEnum.COL_MAJOR`
+int
 
-**Signature:** `COL_MAJOR = 'col_major'`
+### Raises
 
-### mma_major_mode
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.mma_major_mode`
-
-**Signature:** `mma_major_mode()`
-
-### sm90_mma_major_mode
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.sm90_mma_major_mode`
-
-**Signature:** `sm90_mma_major_mode()`
-
-### is_k\_major_a
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.is_k_major_a`
-
-**Signature:** `is_k_major_a()`
-
-### is_m\_major_a
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.is_m_major_a`
-
-**Signature:** `is_m_major_a()`
-
-### is_n\_major_b
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.is_n_major_b`
-
-**Signature:** `is_n_major_b()`
-
-### is_k\_major_b
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.is_k_major_b`
-
-**Signature:** `is_k_major_b()`
-
-### is_n\_major_c
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.is_n_major_c`
-
-**Signature:** `is_n_major_c()`
-
-### is_m\_major_c
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.is_m_major_c`
-
-**Signature:** `is_m_major_c()`
-
-### from_tensor
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.LayoutEnum.from_tensor`
-
-**Signature:** `static from_tensor(tensor: cutlass.cute.typing.Tensor) → LayoutEnum`
+**ValueError** -- If the layout size cannot be determined at compile time.
 
 ## cutlass.utils.WorkTileInfo
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.WorkTileInfo(tile_idx: cutlass.cute.typing.Coord, is_valid_tile: cutlass.cutlass_dsl.Boolean)`
+**Signature:** `cutlass.utils.WorkTileInfo(tile_idx: cutlass.cute.typing.Coord, is_valid_tile: _MockObject)`
 
 Bases: `object`
 
@@ -476,9 +186,9 @@ A class to represent information about a work tile.
 
 ### Variables
 
--   **tile_idx** -- The index of the tile.
+- **tile_idx** -- The index of the tile.
 
--   **is_valid_tile** -- Whether the tile is valid.
+- **is_valid_tile** -- Whether the tile is valid.
 
 ### \_\_init\_\_
 
@@ -486,7 +196,7 @@ A class to represent information about a work tile.
 
 **Qualified name:** `cutlass.utils.WorkTileInfo.__init__`
 
-**Signature:** `__init__(tile_idx: cutlass.cute.typing.Coord, is_valid_tile: cutlass.cutlass_dsl.Boolean)`
+**Signature:** `__init__(tile_idx: cutlass.cute.typing.Coord, is_valid_tile: _MockObject)`
 
 ### is_valid_tile
 
@@ -494,7 +204,7 @@ A class to represent information about a work tile.
 
 **Qualified name:** `cutlass.utils.WorkTileInfo.is_valid_tile`
 
-**Signature:** `is_valid_tile: cutlass.cutlass_dsl.Boolean`
+**Signature:** `is_valid_tile: _MockObject`
 
 Check latest tile returned by the scheduler is valid or not. Any scheduling requests after all tasks completed will return an invalid tile.
 
@@ -504,7 +214,7 @@ The validity of the tile.
 
 #### Return type
 
-Boolean
+[Boolean](../basic_data_types.md#cutlass.Boolean)
 
 ### tile_idx
 
@@ -528,9 +238,9 @@ cute.Coord
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.PersistentTileSchedulerParams`
+**Signature:** `cutlass.utils.PersistentTileSchedulerParams(**kwargs)`
 
-Bases: `object`
+Bases: `MixedClusterParamsMixin`
 
 A class to represent parameters for a persistent tile scheduler.
 
@@ -538,9 +248,9 @@ This class is designed to manage and compute the layout of clusters and tiles in
 
 ### Variables
 
--   **cluster_shape_mn** -- Shape of the cluster in (m, n) dimensions (K dimension cta count must be 1).
+- **cluster_shape_mn** -- Shape of the cluster in (m, n) dimensions (K dimension cta count must be 1).
 
--   **problem_layout_ncluster_mnl** -- Layout of the problem in terms of number of clusters in (m, n, l) dimensions.
+- **problem_layout_ncluster_mnl** -- Layout of the problem in terms of number of clusters in (m, n, l) dimensions.
 
 ### \_\_init\_\_
 
@@ -548,23 +258,49 @@ This class is designed to manage and compute the layout of clusters and tiles in
 
 **Qualified name:** `cutlass.utils.PersistentTileSchedulerParams.__init__`
 
-**Signature:** `__init__(problem_shape_ntile_mnl: cutlass.cute.typing.Shape, cluster_shape_mnk: cutlass.cute.typing.Shape, swizzle_size: int = 1, raster_along_m: bool = True, *, loc = None, ip = None)`
+**Signature:** `__init__() → None`
 
 Initializes the PersistentTileSchedulerParams with the given parameters.
 
 #### Parameters
 
--   **problem_shape_ntile_mnl** (*cute.Shape*) -- The shape of the problem in terms of number of CTA (Cooperative Thread Array) in (m, n, l) dimensions.
+- **problem_shape_ntile_mnl** (*cute.Shape*) -- The shape of the problem in terms of number of CTA (Cooperative Thread Array) in (m, n, l) dimensions.
 
--   **cluster_shape_mnk** (*cute.Shape*) -- The shape of the cluster in (m, n) dimensions.
+- **cluster_shape_mnk** (*cute.Shape*) -- The shape of the cluster in (m, n) dimensions.
 
--   **swizzle_size** (*int*) -- Swizzling size in the unit of cluster. 1 means no swizzle
+- **swizzle_size** (*int*) -- Swizzling size in the unit of cluster. 1 means no swizzle
 
--   **raster_along_m** (*bool*) -- Rasterization order of clusters. Only used when swizzle_size \> 1. True means along M, false means along N.
+- **raster_along_m** (*bool*) -- Rasterization order of clusters. Only used when swizzle_size \> 1. True means along M, false means along N.
+
+- **fallback_cluster_shape_mnk** (*Optional\[cute.Shape\]*) -- Optional. When provided and different from cluster_shape_mnk, the kernel runs in mixed-cluster mode.
 
 #### Raises
 
 **ValueError** -- If cluster_shape_k is not 1.
+
+### \_extract_primary_mlir_values
+
+**Kind:** method
+
+**Qualified name:** `cutlass.utils.PersistentTileSchedulerParams._extract_primary_mlir_values`
+
+**Signature:** `_extract_primary_mlir_values() → list[ir.Value]`
+
+### \_primary_values_count
+
+**Kind:** property
+
+**Qualified name:** `cutlass.utils.PersistentTileSchedulerParams._primary_values_count`
+
+**Signature:** `_primary_values_count: int`
+
+### \_new_primary_from_mlir_values
+
+**Kind:** method
+
+**Qualified name:** `cutlass.utils.PersistentTileSchedulerParams._new_primary_from_mlir_values`
+
+**Signature:** `_new_primary_from_mlir_values(values: list[ir.Value]) → PersistentTileSchedulerParams`
 
 ### get_grid_shape
 
@@ -572,13 +308,13 @@ Initializes the PersistentTileSchedulerParams with the given parameters.
 
 **Qualified name:** `cutlass.utils.PersistentTileSchedulerParams.get_grid_shape`
 
-**Signature:** `get_grid_shape(max_active_clusters: cutlass.cutlass_dsl.Int32, *, loc = None, ip = None) → Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer]`
+**Signature:** `get_grid_shape(max_active_clusters: _MockObject) → Tuple[_MockObject, _MockObject, _MockObject]`
 
 Computes the grid shape based on the maximum active clusters allowed.
 
 #### Parameters
 
-**max_active_clusters** (*Int32*) -- The maximum number of active clusters that can run in one wave.
+**max_active_clusters** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The maximum number of active clusters that can run in one wave.
 
 #### Returns
 
@@ -588,7 +324,7 @@ A tuple containing the grid shape in (m, n, persistent_clusters). - m: self.clus
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.StaticPersistentTileScheduler(params: PersistentTileSchedulerParams, num_persistent_clusters: cutlass.cutlass_dsl.Int32, current_work_linear_idx: cutlass.cutlass_dsl.Int32, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: cutlass.cutlass_dsl.Int32)`
+**Signature:** `cutlass.utils.StaticPersistentTileScheduler(params: PersistentTileSchedulerParams, num_persistent_clusters: _MockObject, current_work_linear_idx: _MockObject, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: _MockObject)`
 
 Bases: `object`
 
@@ -596,15 +332,15 @@ A scheduler for static persistent tile execution in CUTLASS/CuTe kernels.
 
 ### Variables
 
--   **params** -- Tile schedule related params, including cluster shape and problem_layout_ncluster_mnl
+- **params** -- Tile schedule related params, including cluster shape and problem_layout_ncluster_mnl
 
--   **num_persistent_clusters** -- Number of persistent clusters that can be launched
+- **num_persistent_clusters** -- Number of persistent clusters that can be launched
 
--   **cta_id_in_cluster** -- ID of the CTA within its cluster
+- **cta_id_in_cluster** -- ID of the CTA within its cluster
 
--   **\_num_tiles_executed** -- Counter for executed tiles
+- **\_num_tiles_executed** -- Counter for executed tiles
 
--   **\_current_work_linear_idx** -- Current cluster index
+- **\_current_work_linear_idx** -- Current cluster index
 
 ### \_\_init\_\_
 
@@ -612,21 +348,21 @@ A scheduler for static persistent tile execution in CUTLASS/CuTe kernels.
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler.__init__`
 
-**Signature:** `__init__(params: PersistentTileSchedulerParams, num_persistent_clusters: cutlass.cutlass_dsl.Int32, current_work_linear_idx: cutlass.cutlass_dsl.Int32, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: cutlass.cutlass_dsl.Int32)`
+**Signature:** `__init__(params: PersistentTileSchedulerParams, num_persistent_clusters: _MockObject, current_work_linear_idx: _MockObject, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: _MockObject)`
 
 Initializes the StaticPersistentTileScheduler with the given parameters.
 
 #### Parameters
 
--   **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Tile schedule related params, including cluster shape and problem_layout_ncluster_mnl.
+- **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Tile schedule related params, including cluster shape and problem_layout_ncluster_mnl.
 
--   **num_persistent_clusters** (*Int32*) -- Number of persistent clusters that can be launched.
+- **num_persistent_clusters** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Number of persistent clusters that can be launched.
 
--   **current_work_linear_idx** (*Int32*) -- Current cluster index.
+- **current_work_linear_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Current cluster index.
 
--   **cta_id_in_cluster** (*cute.Coord*) -- ID of the CTA within its cluster.
+- **cta_id_in_cluster** (*cute.Coord*) -- ID of the CTA within its cluster.
 
--   **num_tiles_executed** (*Int32*) -- Counter for executed tiles.
+- **num_tiles_executed** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Counter for executed tiles.
 
 ### create
 
@@ -634,17 +370,17 @@ Initializes the StaticPersistentTileScheduler with the given parameters.
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler.create`
 
-**Signature:** `static create(params: PersistentTileSchedulerParams, block_idx: Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer], grid_dim: Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer], *, loc = None, ip = None)`
+**Signature:** `static create(params: PersistentTileSchedulerParams, block_idx: Tuple[_MockObject, _MockObject, _MockObject], grid_dim: Tuple[_MockObject, _MockObject, _MockObject]) → StaticPersistentTileScheduler`
 
 Initialize the static persistent tile scheduler.
 
 #### Parameters
 
--   **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Parameters for the persistent tile scheduler.
+- **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Parameters for the persistent tile scheduler.
 
--   **block_idx** (*Tuple\[Integer,* *Integer,* *Integer\]*) -- The 3d block index in the format (bidx, bidy, bidz).
+- **block_idx** (*Tuple\[*[*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*\]*) -- The 3d block index in the format (bidx, bidy, bidz).
 
--   **grid_dim** (*Tuple\[Integer,* *Integer,* *Integer\]*) -- The 3d grid dimensions for kernel launch.
+- **grid_dim** (*Tuple\[*[*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*\]*) -- The 3d grid dimensions for kernel launch.
 
 #### Returns
 
@@ -660,15 +396,15 @@ A StaticPersistentTileScheduler object.
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler.get_grid_shape`
 
-**Signature:** `static get_grid_shape(params: PersistentTileSchedulerParams, max_active_clusters: cutlass.cutlass_dsl.Int32, *, loc = None, ip = None) → Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer]`
+**Signature:** `static get_grid_shape(params: PersistentTileSchedulerParams, max_active_clusters: _MockObject) → Tuple[_MockObject, _MockObject, _MockObject]`
 
 Calculates the grid shape to be launched on GPU using problem shape, threadblock shape, and active cluster size.
 
 #### Parameters
 
--   **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Parameters for grid shape calculation.
+- **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Parameters for grid shape calculation.
 
--   **max_active_clusters** (*Int32*) -- Maximum active clusters allowed.
+- **max_active_clusters** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Maximum active clusters allowed.
 
 #### Returns
 
@@ -676,7 +412,7 @@ The calculated 3d grid shape.
 
 #### Return type
 
-Tuple\[Integer, Integer, Integer\]
+Tuple\[[Integer](../basic_data_types.md#cutlass.Integer), [Integer](../basic_data_types.md#cutlass.Integer), [Integer](../basic_data_types.md#cutlass.Integer)\]
 
 ### \_get_current_work_for_linear_idx
 
@@ -684,13 +420,13 @@ Tuple\[Integer, Integer, Integer\]
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler._get_current_work_for_linear_idx`
 
-**Signature:** `_get_current_work_for_linear_idx(current_work_linear_idx: cutlass.cutlass_dsl.Int32, *, loc = None, ip = None) → WorkTileInfo`
+**Signature:** `_get_current_work_for_linear_idx(current_work_linear_idx: _MockObject) → WorkTileInfo`
 
 Compute current tile coord given current_work_linear_idx and cta_id_in_cluster.
 
 #### Parameters
 
-**current_work_linear_idx** (*Int32*) -- The linear index of the current work.
+**current_work_linear_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The linear index of the current work.
 
 #### Returns
 
@@ -706,7 +442,7 @@ An object containing information about the current tile coordinates and validity
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler._get_cluster_work_idx_with_fastdivmod`
 
-**Signature:** `_get_cluster_work_idx_with_fastdivmod(current_work_linear_idx: cutlass.cutlass_dsl.Int32, *, loc = None, ip = None) → Tuple[cutlass.cutlass_dsl.Int32, cutlass.cutlass_dsl.Int32, cutlass.cutlass_dsl.Int32]`
+**Signature:** `_get_cluster_work_idx_with_fastdivmod(current_work_linear_idx: _MockObject) → Tuple[_MockObject, _MockObject, _MockObject]`
 
 FastDivmod optimized CLUSTER coordinate calculation.
 
@@ -714,7 +450,7 @@ CRITICAL: This should mimic problem_layout_ncluster_mnl.get_hier_coord() which r
 
 #### Parameters
 
-**current_work_linear_idx** (*Int32*) -- Linear index in the work space
+**current_work_linear_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Linear index in the work space
 
 #### Returns
 
@@ -722,7 +458,7 @@ Cluster coordinates (m, n, l) or None if FastDivmod not available
 
 #### Return type
 
-Tuple\[Int32, Int32, Int32\] or None
+Tuple\[[Int32](../basic_data_types.md#cutlass.Int32), [Int32](../basic_data_types.md#cutlass.Int32), [Int32](../basic_data_types.md#cutlass.Int32)\] or None
 
 ### get_current_work
 
@@ -730,7 +466,7 @@ Tuple\[Int32, Int32, Int32\] or None
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler.get_current_work`
 
-**Signature:** `get_current_work(*, loc = None, ip = None) → WorkTileInfo`
+**Signature:** `get_current_work() → WorkTileInfo`
 
 ### initial_work_tile_info
 
@@ -738,7 +474,7 @@ Tuple\[Int32, Int32, Int32\] or None
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler.initial_work_tile_info`
 
-**Signature:** `initial_work_tile_info(*, loc = None, ip = None) → WorkTileInfo`
+**Signature:** `initial_work_tile_info() → WorkTileInfo`
 
 ### advance_to_next_work
 
@@ -746,7 +482,7 @@ Tuple\[Int32, Int32, Int32\] or None
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler.advance_to_next_work`
 
-**Signature:** `advance_to_next_work(*, advance_count: int = 1, loc = None, ip = None)`
+**Signature:** `advance_to_next_work(*, advance_count: int = 1) → None`
 
 ### num_tiles_executed
 
@@ -754,13 +490,13 @@ Tuple\[Int32, Int32, Int32\] or None
 
 **Qualified name:** `cutlass.utils.StaticPersistentTileScheduler.num_tiles_executed`
 
-**Signature:** `num_tiles_executed: cutlass.cutlass_dsl.Int32`
+**Signature:** `num_tiles_executed: _MockObject`
 
 ## cutlass.utils.StaticPersistentRuntimeTileScheduler
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.StaticPersistentRuntimeTileScheduler(params: PersistentTileSchedulerParams, num_persistent_clusters: cutlass.cutlass_dsl.Int32, current_work_linear_idx: cutlass.cutlass_dsl.Int32, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: cutlass.cutlass_dsl.Int32, inner_mode: int = 1)`
+**Signature:** `cutlass.utils.StaticPersistentRuntimeTileScheduler(**kwargs)`
 
 Bases: [`StaticPersistentTileScheduler`](#cutlass.utils.StaticPersistentTileScheduler)
 
@@ -768,15 +504,15 @@ A scheduler for static persistent runtime tile execution in CUTLASS/CuTe kernels
 
 ### Variables
 
--   **params** -- Tile schedule related params, including cluster shape and problem_layout_ncluster_mnl
+- **params** -- Tile schedule related params, including cluster shape and problem_layout_ncluster_mnl
 
--   **num_persistent_clusters** -- Number of persistent clusters that can be launched
+- **num_persistent_clusters** -- Number of persistent clusters that can be launched
 
--   **cta_id_in_cluster** -- ID of the CTA within its cluster
+- **cta_id_in_cluster** -- ID of the CTA within its cluster
 
--   **\_num_tiles_executed** -- Counter for executed tiles
+- **\_num_tiles_executed** -- Counter for executed tiles
 
--   **\_current_work_linear_idx** -- Current cluster index
+- **\_current_work_linear_idx** -- Current cluster index
 
 ### \_\_init\_\_
 
@@ -784,23 +520,23 @@ A scheduler for static persistent runtime tile execution in CUTLASS/CuTe kernels
 
 **Qualified name:** `cutlass.utils.StaticPersistentRuntimeTileScheduler.__init__`
 
-**Signature:** `__init__(params: PersistentTileSchedulerParams, num_persistent_clusters: cutlass.cutlass_dsl.Int32, current_work_linear_idx: cutlass.cutlass_dsl.Int32, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: cutlass.cutlass_dsl.Int32, inner_mode: int = 1)`
+**Signature:** `__init__(params: PersistentTileSchedulerParams, num_persistent_clusters: _MockObject, current_work_linear_idx: _MockObject, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: _MockObject, inner_mode: int = 1)`
 
 Initializes the StaticPersistentTileScheduler with the given parameters.
 
 #### Parameters
 
--   **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Tile schedule related params, including cluster shape and problem_layout_ncluster_mnl.
+- **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Tile schedule related params, including cluster shape and problem_layout_ncluster_mnl.
 
--   **num_persistent_clusters** (*Int32*) -- Number of persistent clusters that can be launched.
+- **num_persistent_clusters** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Number of persistent clusters that can be launched.
 
--   **current_work_linear_idx** (*Int32*) -- Current cluster index.
+- **current_work_linear_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Current cluster index.
 
--   **cta_id_in_cluster** (*cute.Coord*) -- ID of the CTA within its cluster.
+- **cta_id_in_cluster** (*cute.Coord*) -- ID of the CTA within its cluster.
 
--   **num_tiles_executed** (*Int32*) -- Counter for executed tiles.
+- **num_tiles_executed** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Counter for executed tiles.
 
--   **inner_mode** (*int*) -- The inner mode along which the linear index will be decomposed first.
+- **inner_mode** (*int*) -- The inner mode along which the linear index will be decomposed first.
 
 ### create
 
@@ -808,19 +544,19 @@ Initializes the StaticPersistentTileScheduler with the given parameters.
 
 **Qualified name:** `cutlass.utils.StaticPersistentRuntimeTileScheduler.create`
 
-**Signature:** `static create(params: PersistentTileSchedulerParams, block_idx: Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer], grid_dim: Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer], inner_mode: int = 1, *, loc = None, ip = None)`
+**Signature:** `static create(params: PersistentTileSchedulerParams, block_idx: Tuple[_MockObject, _MockObject, _MockObject], grid_dim: Tuple[_MockObject, _MockObject, _MockObject], inner_mode: int = 1) → StaticPersistentRuntimeTileScheduler`
 
 Initialize the static persistent tile scheduler.
 
 #### Parameters
 
--   **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Parameters for the persistent tile scheduler.
+- **params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Parameters for the persistent tile scheduler.
 
--   **block_idx** (*Tuple\[Integer,* *Integer,* *Integer\]*) -- The 3d block index in the format (bidx, bidy, bidz).
+- **block_idx** (*Tuple\[*[*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*\]*) -- The 3d block index in the format (bidx, bidy, bidz).
 
--   **grid_dim** (*Tuple\[Integer,* *Integer,* *Integer\]*) -- The 3d grid dimensions for kernel launch.
+- **grid_dim** (*Tuple\[*[*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*\]*) -- The 3d grid dimensions for kernel launch.
 
--   **inner_mode** (*int*) -- The inner mode along which the linear index will be decomposed first.
+- **inner_mode** (*int*) -- The inner mode along which the linear index will be decomposed first.
 
 #### Returns
 
@@ -836,13 +572,13 @@ A StaticPersistentRuntimeTileScheduler object.
 
 **Qualified name:** `cutlass.utils.StaticPersistentRuntimeTileScheduler._get_current_work_for_linear_idx`
 
-**Signature:** `_get_current_work_for_linear_idx(current_work_linear_idx: cutlass.cutlass_dsl.Int32, *, loc = None, ip = None) → WorkTileInfo`
+**Signature:** `_get_current_work_for_linear_idx(current_work_linear_idx: _MockObject) → WorkTileInfo`
 
 Compute current tile coord given current_work_linear_idx and cta_id_in_cluster.
 
 #### Parameters
 
-**current_work_linear_idx** (*Int32*) -- The linear index of the current work.
+**current_work_linear_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The linear index of the current work.
 
 #### Returns
 
@@ -852,97 +588,21 @@ An object containing information about the current tile coordinates and validity
 
 [WorkTileInfo](#cutlass.utils.WorkTileInfo)
 
-## cutlass.utils.TensorMapUpdateMode
-
-**Kind:** class
-
-**Signature:** `cutlass.utils.TensorMapUpdateMode(value)`
-
-Bases: `Enum`
-
-Enum class defining tensor map update modes.
-
-Modes: GMEM: Update tensormap in global memory SMEM: Load tensormap from global memory to shared memory, update it in shared memory, then store back to global memory
-
-### GMEM
-
-**Kind:** attribute
-
-**Qualified name:** `cutlass.utils.TensorMapUpdateMode.GMEM`
-
-**Signature:** `GMEM = 1`
-
-### SMEM
-
-**Kind:** attribute
-
-**Qualified name:** `cutlass.utils.TensorMapUpdateMode.SMEM`
-
-**Signature:** `SMEM = 2`
-
 ## cutlass.utils.TensorMapManager
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.TensorMapManager(tensormap_update_mode: TensorMapUpdateMode, bytes_per_tensormap: int)`
+**Signature:** `cutlass.utils.TensorMapManager(**kwargs)`
 
-Bases: `object`
+Bases: `TensorMapManager`
 
-Manages TensorMap operations including initialization and updates. Provides utilities to convert tensormap pointer to across different memory spaces.
-
-### tensormap_update_mode
-
-**Kind:** attribute
-
-**Qualified name:** `cutlass.utils.TensorMapManager.tensormap_update_mode`
-
-**Signature:** `tensormap_update_mode: TensorMapUpdateMode`
-
-### bytes_per_tensormap
-
-**Kind:** attribute
-
-**Qualified name:** `cutlass.utils.TensorMapManager.bytes_per_tensormap`
-
-**Signature:** `bytes_per_tensormap: int`
-
-### get_tensormap_ptr
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.TensorMapManager.get_tensormap_ptr`
-
-**Signature:** `get_tensormap_ptr(ptr: cutlass.cute.typing.Pointer, address_space = cutlass._mlir.dialects.cute.AddressSpace.gmem, *, loc = None, ip = None) → cutlass.cute.typing.Pointer`
-
-### fence_tensormap_initialization
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.TensorMapManager.fence_tensormap_initialization`
-
-**Signature:** `fence_tensormap_initialization(*, loc = None, ip = None) → None`
-
-### fence_tensormap_update
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.TensorMapManager.fence_tensormap_update`
-
-**Signature:** `fence_tensormap_update(tensormap_ptr: cutlass.cute.typing.Pointer, *, loc = None, ip = None) → None`
-
-### \_\_init\_\_
-
-**Kind:** method
-
-**Qualified name:** `cutlass.utils.TensorMapManager.__init__`
-
-**Signature:** `__init__(tensormap_update_mode: TensorMapUpdateMode, bytes_per_tensormap: int) → None`
+Deprecated alias for cutlass.tensor_utils.TensorMapManager.
 
 ## cutlass.utils.GroupSearchResult
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.GroupSearchResult(group_idx: cutlass.cutlass_dsl.Int32, cta_tile_idx_m: cutlass.cutlass_dsl.Int32, cta_tile_idx_n: cutlass.cutlass_dsl.Int32, problem_shape_m: cutlass.cutlass_dsl.Int32, problem_shape_n: cutlass.cutlass_dsl.Int32, problem_shape_k: cutlass.cutlass_dsl.Int32, cta_tile_count_k: cutlass.cutlass_dsl.Int32)`
+**Signature:** `cutlass.utils.GroupSearchResult(**kwargs)`
 
 Bases: `object`
 
@@ -950,19 +610,19 @@ The result of the group search for grouped gemm.
 
 ### Parameters
 
--   **group_idx** (*Int32*) -- The result group index
+- **group_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The result group index
 
--   **cta_tile_idx_m** (*Int32*) -- CTA tile index along M dimension after rasterization
+- **cta_tile_idx_m** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- CTA tile index along M dimension after rasterization
 
--   **cta_tile_idx_n** (*Int32*) -- CTA tile index along N dimension after rasterization
+- **cta_tile_idx_n** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- CTA tile index along N dimension after rasterization
 
--   **problem_shape_m** (*Int32*) -- The M dimension of the gemm problem
+- **problem_shape_m** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The M dimension of the gemm problem
 
--   **problem_shape_n** (*Int32*) -- The N dimension of the gemm problem
+- **problem_shape_n** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The N dimension of the gemm problem
 
--   **problem_shape_k** (*Int32*) -- The K dimension of the gemm problem
+- **problem_shape_k** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The K dimension of the gemm problem
 
--   **cta_tile_count_k** (*Int32*) -- Number of tiles along K dimension
+- **cta_tile_count_k** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Number of tiles along K dimension
 
 ### \_\_init\_\_
 
@@ -970,13 +630,13 @@ The result of the group search for grouped gemm.
 
 **Qualified name:** `cutlass.utils.GroupSearchResult.__init__`
 
-**Signature:** `__init__(group_idx: cutlass.cutlass_dsl.Int32, cta_tile_idx_m: cutlass.cutlass_dsl.Int32, cta_tile_idx_n: cutlass.cutlass_dsl.Int32, problem_shape_m: cutlass.cutlass_dsl.Int32, problem_shape_n: cutlass.cutlass_dsl.Int32, problem_shape_k: cutlass.cutlass_dsl.Int32, cta_tile_count_k: cutlass.cutlass_dsl.Int32) → None`
+**Signature:** `__init__(group_idx: _MockObject, cta_tile_idx_m: _MockObject, cta_tile_idx_n: _MockObject, problem_shape_m: _MockObject, problem_shape_n: _MockObject, problem_shape_k: _MockObject, cta_tile_count_k: _MockObject) → None`
 
 ## cutlass.utils.GroupedGemmGroupSearchState
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.GroupedGemmGroupSearchState(start_group_idx: cutlass.cutlass_dsl.Int32, tile_count_prev_group: cutlass.cutlass_dsl.Int32, tile_count_searched: cutlass.cutlass_dsl.Int32, found: cutlass.cutlass_dsl.Boolean)`
+**Signature:** `cutlass.utils.GroupedGemmGroupSearchState(**kwargs)`
 
 Bases: `object`
 
@@ -986,11 +646,11 @@ The state will be initialized once and updated in every round of group index sea
 
 ### Parameters
 
--   **start_group_idx** (*Int32*) -- The group idx to start the search with
+- **start_group_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The group idx to start the search with
 
--   **tile_count_prev_group** (*Int32*) -- Number of tiles before the matched group
+- **tile_count_prev_group** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Number of tiles before the matched group
 
--   **tile_count_searched** (*Int32*) -- Number of tiles we have searched. When the matched group is found, it records the number of tiles including the matched group
+- **tile_count_searched** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Number of tiles we have searched. When the matched group is found, it records the number of tiles including the matched group
 
 ### \_\_init\_\_
 
@@ -998,7 +658,7 @@ The state will be initialized once and updated in every round of group index sea
 
 **Qualified name:** `cutlass.utils.GroupedGemmGroupSearchState.__init__`
 
-**Signature:** `__init__(start_group_idx: cutlass.cutlass_dsl.Int32, tile_count_prev_group: cutlass.cutlass_dsl.Int32, tile_count_searched: cutlass.cutlass_dsl.Int32, found: cutlass.cutlass_dsl.Boolean) → None`
+**Signature:** `__init__(start_group_idx: _MockObject, tile_count_prev_group: _MockObject, tile_count_searched: _MockObject, found: _MockObject) → None`
 
 ## cutlass.utils.create_initial_search_state
 
@@ -1028,13 +688,13 @@ A helper to translate the raw block index (x, y, z) from tile scheduler to real 
 
 ### Parameters
 
--   **group_count** (*int*) -- Number of groups in current grouped gemm problem
+- **group_count** (*int*) -- Number of groups in current grouped gemm problem
 
--   **tile_sched_params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Parameter used to create the tile scheduler this helper works with
+- **tile_sched_params** ([*PersistentTileSchedulerParams*](#cutlass.utils.PersistentTileSchedulerParams)) -- Parameter used to create the tile scheduler this helper works with
 
--   **cluster_tile_shape_mnk** (*tuple\[int,* *int,* *int\]*) -- The shape of cluster tile as (m, n, k)
+- **cluster_tile_shape_mnk** (*tuple\[int,* *int,* *int\]*) -- The shape of cluster tile as (m, n, k)
 
--   **search_state** ([*GroupedGemmGroupSearchState*](#cutlass.utils.GroupedGemmGroupSearchState)) -- The initial search state
+- **search_state** ([*GroupedGemmGroupSearchState*](#cutlass.utils.GroupedGemmGroupSearchState)) -- The initial search state
 
 ### \_\_init\_\_
 
@@ -1058,9 +718,9 @@ This function should be used by warps that need to know the CTA tile index on M 
 
 #### Parameters
 
--   **cta_tile_coord** (*tuple* *of* *Int32*) -- The raw CTA coordinate from tile scheduler
+- **cta_tile_coord** (*tuple* *of* [*Int32*](../basic_data_types.md#cutlass.Int32)) -- The raw CTA coordinate from tile scheduler
 
--   **problem_shape_mnkl** (*cute.Tensor*) -- Tensor containing gemm problem size (M, N, K, L) for each group
+- **problem_shape_mnkl** (*cute.Tensor*) -- Tensor containing gemm problem size (M, N, K, L) for each group
 
 #### Returns
 
@@ -1076,7 +736,7 @@ The search result containing group index and tile coordinates
 
 **Qualified name:** `cutlass.utils.GroupedGemmTileSchedulerHelper.search_cluster_tile_count_k`
 
-**Signature:** `search_cluster_tile_count_k(cta_tile_coord: tuple, problem_shape_mnkl: cutlass.cute.typing.Tensor) → Tuple[cutlass.cutlass_dsl.Int32, cutlass.cutlass_dsl.Int32]`
+**Signature:** `search_cluster_tile_count_k(cta_tile_coord: tuple, problem_shape_mnkl: cutlass.cute.typing.Tensor) → Tuple[_MockObject, _MockObject]`
 
 Search the matched group for given linear index and compute the number of tiles along K dimension for the matched group.
 
@@ -1084,9 +744,9 @@ This function should be used by warps that are only interested in the number of 
 
 #### Parameters
 
--   **cta_tile_coord** (*tuple* *of* *Int32*) -- The raw CTA coordinate from tile scheduler
+- **cta_tile_coord** (*tuple* *of* [*Int32*](../basic_data_types.md#cutlass.Int32)) -- The raw CTA coordinate from tile scheduler
 
--   **problem_shape_mnkl** (*cute.Tensor*) -- Tensor containing gemm problem size (M, N, K, L) for all groups
+- **problem_shape_mnkl** (*cute.Tensor*) -- Tensor containing gemm problem size (M, N, K, L) for all groups
 
 #### Returns
 
@@ -1094,7 +754,7 @@ A tuple containing cluster count along K dimension and the group index
 
 #### Return type
 
-Tuple\[Int32, Int32\]
+Tuple\[[Int32](../basic_data_types.md#cutlass.Int32), [Int32](../basic_data_types.md#cutlass.Int32)\]
 
 ### \_prefix_sum
 
@@ -1102,13 +762,13 @@ Tuple\[Int32, Int32\]
 
 **Qualified name:** `cutlass.utils.GroupedGemmTileSchedulerHelper._prefix_sum`
 
-**Signature:** `_prefix_sum(value_per_thread: cutlass.cutlass_dsl.Int32) → cutlass.cutlass_dsl.Int32`
+**Signature:** `_prefix_sum(value_per_thread: _MockObject) → _MockObject`
 
 Perform prefix sum within a full warp.
 
 #### Parameters
 
-**value_per_thread** (*Int32*) -- The value for this thread to contribute to the prefix sum
+**value_per_thread** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The value for this thread to contribute to the prefix sum
 
 #### Returns
 
@@ -1116,7 +776,7 @@ The prefix sum result for this thread
 
 #### Return type
 
-Int32
+[Int32](../basic_data_types.md#cutlass.Int32)
 
 ### \_get_problem_for_group
 
@@ -1124,15 +784,15 @@ Int32
 
 **Qualified name:** `cutlass.utils.GroupedGemmTileSchedulerHelper._get_problem_for_group`
 
-**Signature:** `_get_problem_for_group(problem_shape_mnkl: cutlass.cute.typing.Tensor, group_idx: cutlass.cutlass_dsl.Int32) → cutlass.cute.typing.Tensor`
+**Signature:** `_get_problem_for_group(problem_shape_mnkl: cutlass.cute.typing.Tensor, group_idx: _MockObject) → cutlass.cute.typing.Tensor`
 
 Load gemm problem (m,n,k,l) for the specified group from global memory to register.
 
 #### Parameters
 
--   **problem_shape_mnkl** (*cute.Tensor*) -- Tensor in global memory with layout (group_count, 4):(4, 1)
+- **problem_shape_mnkl** (*cute.Tensor*) -- Tensor in global memory with layout (group_count, 4):(4, 1)
 
--   **group_idx** (*Int32*) -- The index of the group to load
+- **group_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The index of the group to load
 
 #### Returns
 
@@ -1148,7 +808,7 @@ cute.Tensor
 
 **Qualified name:** `cutlass.utils.GroupedGemmTileSchedulerHelper._get_cluster_tile_count_mn`
 
-**Signature:** `_get_cluster_tile_count_mn(problem_shape: cutlass.cute.typing.Tensor) → cutlass.cutlass_dsl.Int32`
+**Signature:** `_get_cluster_tile_count_mn(problem_shape: cutlass.cute.typing.Tensor) → _MockObject`
 
 Compute total cluster count.
 
@@ -1162,7 +822,7 @@ The total cluster tile count for M and N dimensions
 
 #### Return type
 
-Int32
+[Int32](../basic_data_types.md#cutlass.Int32)
 
 ### \_compute_cta_tile_coord
 
@@ -1170,7 +830,7 @@ Int32
 
 **Qualified name:** `cutlass.utils.GroupedGemmTileSchedulerHelper._compute_cta_tile_coord`
 
-**Signature:** `_compute_cta_tile_coord(cluster_tile_idx: cutlass.cutlass_dsl.Int32, cta_tile_coord_in_cluster: tuple, cluster_tile_count_m: cutlass.cutlass_dsl.Int32, cluster_tile_count_n: cutlass.cutlass_dsl.Int32) → tuple`
+**Signature:** `_compute_cta_tile_coord(cluster_tile_idx: _MockObject, cta_tile_coord_in_cluster: tuple, cluster_tile_count_m: _MockObject, cluster_tile_count_n: _MockObject) → tuple`
 
 Compute CTA tile indices along M and N dimensions based on the linear index within a group.
 
@@ -1178,13 +838,13 @@ It uses the AlongM mode to decompose the linear index onto M and N dimensions.
 
 #### Parameters
 
--   **cluster_tile_idx** (*Int32*) -- The linear index within a group
+- **cluster_tile_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The linear index within a group
 
--   **cta_tile_coord_in_cluster** (*tuple* *of* *Int32*) -- CTA indices along M and N dimensions within a cluster
+- **cta_tile_coord_in_cluster** (*tuple* *of* [*Int32*](../basic_data_types.md#cutlass.Int32)) -- CTA indices along M and N dimensions within a cluster
 
--   **cluster_tile_count_m** (*Int32*) -- The number of clusters along M dimension of the matched group
+- **cluster_tile_count_m** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The number of clusters along M dimension of the matched group
 
--   **cluster_tile_count_n** (*Int32*) -- The number of clusters along N dimension of the matched group
+- **cluster_tile_count_n** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The number of clusters along N dimension of the matched group
 
 #### Returns
 
@@ -1192,7 +852,7 @@ A tuple containing CTA tile indices along M and N dimensions
 
 #### Return type
 
-tuple of (Int32, Int32)
+tuple of ([Int32](../basic_data_types.md#cutlass.Int32), [Int32](../basic_data_types.md#cutlass.Int32))
 
 ### \_group_search
 
@@ -1200,19 +860,19 @@ tuple of (Int32, Int32)
 
 **Qualified name:** `cutlass.utils.GroupedGemmTileSchedulerHelper._group_search`
 
-**Signature:** `_group_search(linear_idx: cutlass.cutlass_dsl.Int32, problem_shape_mnkl: cutlass.cute.typing.Tensor, init_group_idx: cutlass.cutlass_dsl.Int32, init_tile_count_searched: cutlass.cutlass_dsl.Int32) → GroupedGemmGroupSearchState`
+**Signature:** `_group_search(linear_idx: _MockObject, problem_shape_mnkl: cutlass.cute.typing.Tensor, init_group_idx: _MockObject, init_tile_count_searched: _MockObject) → GroupedGemmGroupSearchState`
 
 Search which group the linear index belongs to.
 
 #### Parameters
 
--   **linear_idx** (*Int32*) -- The linear index to be decomposed
+- **linear_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The linear index to be decomposed
 
--   **problem_shape_mnkl** (*cute.Tensor*) -- Tensor containing gemm problem size (M, N, K, L) for all groups
+- **problem_shape_mnkl** (*cute.Tensor*) -- Tensor containing gemm problem size (M, N, K, L) for all groups
 
--   **init_group_idx** (*Int32*) -- The group idx to start the search with
+- **init_group_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The group idx to start the search with
 
--   **init_tile_count_searched** (*Int32*) -- The number of tiles we have searched
+- **init_tile_count_searched** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The number of tiles we have searched
 
 #### Returns
 
@@ -1228,19 +888,19 @@ The updated search state
 
 **Qualified name:** `cutlass.utils.GroupedGemmTileSchedulerHelper._group_search_and_load_problem_shape`
 
-**Signature:** `_group_search_and_load_problem_shape(linear_idx: cutlass.cutlass_dsl.Int32, problem_shape_mnkl: cutlass.cute.typing.Tensor, start_group_idx: cutlass.cutlass_dsl.Int32, tile_count_searched: cutlass.cutlass_dsl.Int32) → Tuple[cutlass.cutlass_dsl.Int32, cutlass.cute.typing.Tensor]`
+**Signature:** `_group_search_and_load_problem_shape(linear_idx: _MockObject, problem_shape_mnkl: cutlass.cute.typing.Tensor, start_group_idx: _MockObject, tile_count_searched: _MockObject) → Tuple[_MockObject, cutlass.cute.typing.Tensor]`
 
 Perform group search and load problem shape for the matched group.
 
 #### Parameters
 
--   **linear_idx** (*Int32*) -- The linear index to be decomposed
+- **linear_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The linear index to be decomposed
 
--   **problem_shape_mnkl** (*cute.Tensor*) -- Tensor containing gemm problem size (M, N, K, L) for all groups
+- **problem_shape_mnkl** (*cute.Tensor*) -- Tensor containing gemm problem size (M, N, K, L) for all groups
 
--   **start_group_idx** (*Int32*) -- The group idx to start the search with
+- **start_group_idx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The group idx to start the search with
 
--   **tile_count_searched** (*Int32*) -- The number of tiles we have searched
+- **tile_count_searched** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- The number of tiles we have searched
 
 #### Returns
 
@@ -1248,7 +908,7 @@ A tuple containing the final group index and the problem shape tensor
 
 #### Return type
 
-Tuple\[Int32, cute.Tensor\]
+Tuple\[[Int32](../basic_data_types.md#cutlass.Int32), cute.Tensor\]
 
 ## cutlass.utils.HardwareInfo
 
@@ -1282,9 +942,9 @@ When a stream from a green context is provided, the occupancy calculation will r
 
 #### Parameters
 
--   **cluster_size** (*int*) -- Number of blocks per cluster (must be between 1 and 32)
+- **cluster_size** (*int*) -- Number of blocks per cluster (must be between 1 and 32)
 
--   **stream** (*driver.CUstream,* *optional*) -- Optional CUDA stream handle. If provided (especially from a green context), the occupancy calculation reflects the stream's SM partition.
+- **stream** (*driver.CUstream,* *optional*) -- Optional CUDA stream handle. If provided (especially from a green context), the occupancy calculation reflects the stream's SM partition.
 
 #### Returns
 
@@ -1316,7 +976,7 @@ int
 
 **Qualified name:** `cutlass.utils.HardwareInfo._checkCudaErrors`
 
-**Signature:** `_checkCudaErrors(result) → None`
+**Signature:** `_checkCudaErrors(result: Any) → Any`
 
 ### \_cudaGetErrorEnum
 
@@ -1324,7 +984,7 @@ int
 
 **Qualified name:** `cutlass.utils.HardwareInfo._cudaGetErrorEnum`
 
-**Signature:** `_cudaGetErrorEnum(error) → str`
+**Signature:** `_cudaGetErrorEnum(error: Any) → str`
 
 ### \_cuda_driver_version_ge
 
@@ -1348,7 +1008,7 @@ int
 
 **Qualified name:** `cutlass.utils.HardwareInfo._empty_kernel`
 
-**Signature:** `_empty_kernel()`
+**Signature:** `_empty_kernel() → None`
 
 ### \_host_function
 
@@ -1356,7 +1016,7 @@ int
 
 **Qualified name:** `cutlass.utils.HardwareInfo._host_function`
 
-**Signature:** `_host_function()`
+**Signature:** `_host_function() → None`
 
 ### \_get_device_function
 
@@ -1404,23 +1064,23 @@ Perform TMA partition for scale tensor. This method partitions the global memory
 
 ### Parameters
 
--   **tCsS** (*cute.Tensor*) -- Input scale shared memory tensor
+- **tCsS** (*cute.Tensor*) -- Input scale shared memory tensor
 
--   **tCgS** (*cute.Tensor*) -- Input scale global memory tensor
+- **tCgS** (*cute.Tensor*) -- Input scale global memory tensor
 
--   **tma_atom_s** (*cute.CopyAtom*) -- TMA copy atom for scale tensor
+- **tma_atom_s** (*cute.CopyAtom*) -- TMA copy atom for scale tensor
 
--   **block_in_cluster_coord_vmnk** (*cute.Coord*) -- CTA coord in the cluster
+- **block_in_cluster_coord_vmnk** (*cute.Coord*) -- CTA coord in the cluster
 
--   **scale_cta_layout** (*cute.Layout*) -- Layout of CTA from the view of the scale tensor
+- **scale_cta_layout** (*cute.Layout*) -- Layout of CTA from the view of the scale tensor
 
 ### Returns
 
 A tuple containing (tSsS, tSgS) where:
 
--   tSsS: Partitioned scale tensor in shared memory
+- tSsS: Partitioned scale tensor in shared memory
 
--   tSgS: Partitioned scale tensor in global memory
+- tSgS: Partitioned scale tensor in global memory
 
 ### Return type
 
@@ -1430,37 +1090,37 @@ tuple\[cute.Tensor, cute.Tensor\]
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.transform_partition(transform_a_source: tcgen05.OperandSource, scale_mode: TransformMode, copy_atom_a_input: cute.CopyAtom, copy_atom_a_transform: cute.CopyAtom, sA_input: cute.Tensor, A_transform: cute.Tensor, transform_local_tidx: cutlass.Int32) → tuple[cute.TiledCopy | None, cute.TiledCopy | None, cute.Tensor, cute.Tensor]`
+**Signature:** `cutlass.utils.transform_partition(transform_a_source: OperandSource, scale_mode: TransformMode, copy_atom_a_input: CopyAtom, copy_atom_a_transform: CopyAtom, sA_input: cutlass.cute.typing.Tensor, A_transform: cutlass.cute.typing.Tensor, transform_local_tidx: Int32) → tuple[TiledCopy | None, TiledCopy | None, cutlass.cute.typing.Tensor, cutlass.cute.typing.Tensor]`
 
 Partition tensors for transform input and output. This method sets up the copy atoms and partitions the shared/tensor memory for the transformation of tensor A.
 
 ### Parameters
 
--   **transform_a\_source** (*tcgen05.OperandSource*) -- Where the transformed tensor A is stored (TMEM or SMEM)
+- **transform_a_source** (*tcgen05.OperandSource*) -- Where the transformed tensor A is stored (TMEM or SMEM)
 
--   **scale_mode** (*TransformMode*) -- The transform mode (ConvertOnly or ConvertScale)
+- **scale_mode** (*TransformMode*) -- The transform mode (ConvertOnly or ConvertScale)
 
--   **copy_atom_a\_input** (*cute.CopyAtom*) -- Copy atom for loading A from shared memory
+- **copy_atom_a_input** (*cute.CopyAtom*) -- Copy atom for loading A from shared memory
 
--   **copy_atom_a\_transform** (*cute.CopyAtom*) -- Copy atom for storing transformed A
+- **copy_atom_a_transform** (*cute.CopyAtom*) -- Copy atom for storing transformed A
 
--   **sA_input** (*cute.Tensor*) -- Input tensor A in shared memory
+- **sA_input** (*cute.Tensor*) -- Input tensor A in shared memory
 
--   **A_transform** (*cute.Tensor*) -- Transformed tensor A in tensor or shared memory
+- **A_transform** (*cute.Tensor*) -- Transformed tensor A in tensor or shared memory
 
--   **transform_local_tidx** (*cutlass.Int32*) -- Local thread index for transformation warps
+- **transform_local_tidx** (*cutlass.Int32*) -- Local thread index for transformation warps
 
 ### Returns
 
 A tuple containing (src_copy_a, dst_copy_a, tAsA_input, tA_transform) where:
 
--   src_copy_a: Tiled copy for source tensor
+- src_copy_a: Tiled copy for source tensor
 
--   dst_copy_a: Tiled copy for destination tensor
+- dst_copy_a: Tiled copy for destination tensor
 
--   tAsA_input: Partitioned input tensor A
+- tAsA_input: Partitioned input tensor A
 
--   tA_transform: Partitioned transformed tensor A
+- tA_transform: Partitioned transformed tensor A
 
 ### Return type
 
@@ -1470,31 +1130,31 @@ tuple\[Optional\[[cute.TiledCopy](cute.md#cutlass.cute.TiledCopy)\], Optional\[[
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.scale_partition(src_copy_a: cute.TiledCopy, tCsS: cute.Tensor, transform_local_tidx: cutlass.Int32, mma_dtype: type[cutlass.Numeric]) → tuple[cute.TiledCopy, cute.Tensor, cute.Tensor, cute.Tensor]`
+**Signature:** `cutlass.utils.scale_partition(src_copy_a: TiledCopy, tCsS: cutlass.cute.typing.Tensor, transform_local_tidx: Int32, mma_dtype: type[Numeric]) → tuple[TiledCopy, cutlass.cute.typing.Tensor, cutlass.cute.typing.Tensor, cutlass.cute.typing.Tensor]`
 
 Partition the scale tensor for transformation. This method prepares the copy atom and partitions the shared memory for the scale tensor.
 
 ### Parameters
 
--   **src_copy_a** (*cute.TiledCopy*) -- Tiled copy for the source tensor
+- **src_copy_a** (*cute.TiledCopy*) -- Tiled copy for the source tensor
 
--   **tCsS** (*cute.Tensor*) -- Scale tensor in shared memory
+- **tCsS** (*cute.Tensor*) -- Scale tensor in shared memory
 
--   **transform_local_tidx** (*cutlass.Int32*) -- Local thread index for transformation warps
+- **transform_local_tidx** (*cutlass.Int32*) -- Local thread index for transformation warps
 
--   **mma_dtype** (*type\[cutlass.Numeric\]*) -- Data type for the MMA operation
+- **mma_dtype** (*type\[cutlass.Numeric\]*) -- Data type for the MMA operation
 
 ### Returns
 
 A tuple containing (smem_thr_copy_S, tSsS_trans, tSrS_copy, tSrS) where:
 
--   smem_thr_copy_S: Tiled copy for the scale tensor
+- smem_thr_copy_S: Tiled copy for the scale tensor
 
--   tSsS_trans: Partitioned scale tensor for transformation
+- tSsS_trans: Partitioned scale tensor for transformation
 
--   tSrS_copy: Register fragment for the scale tensor
+- tSrS_copy: Register fragment for the scale tensor
 
--   tSrS: View of scale tensor used for transformation computation
+- tSrS: View of scale tensor used for transformation computation
 
 ### Return type
 
@@ -1510,7 +1170,7 @@ Get the layout of the scale tensor in global memory.
 
 ### Parameters
 
--   **scale_shape_mkl** (*tuple\[int, int, int\]*) -- The shape of the scale tensor (M, K, L).
+- **scale_shape_mkl** (*tuple\[int, int, int\]*) -- The shape of the scale tensor (M, K, L).
 
 ### Returns
 
@@ -1524,7 +1184,7 @@ cute.Layout
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.get_smem_layout_scale(mma_tiler: tuple[int, int, int], use_2cta_instrs: bool, scale_granularity_m: int, scale_granularity_k: int, scale_major_mode: tcgen05.OperandMajorMode, a_scale_dtype: type[cutlass.Numeric], num_scale_load2trans_stage: int) → tuple[tuple[int, int], cute.ComposedLayout, cute.ComposedLayout]`
+**Signature:** `cutlass.utils.get_smem_layout_scale(mma_tiler: tuple[int, int, int], use_2cta_instrs: bool, scale_granularity_m: int, scale_granularity_k: int, scale_major_mode: OperandMajorMode, a_scale_dtype: type[Numeric], num_scale_load2trans_stage: int) → tuple[tuple[int, int], cutlass.cute.typing.ComposedLayout, cutlass.cute.typing.ComposedLayout]`
 
 Get the layout of the scale tensor in shared memory.
 
@@ -1532,11 +1192,11 @@ Get the layout of the scale tensor in shared memory.
 
 A tuple containing (scale_tile_shape, smem_layout_scale_per_stage, smem_layout_scale) where:
 
--   scale_tile_shape: The tile shape
+- scale_tile_shape: The tile shape
 
--   smem_layout_scale_per_stage: Shared memory layout for scale tensor per stage
+- smem_layout_scale_per_stage: Shared memory layout for scale tensor per stage
 
--   smem_layout_scale: Shared memory layout for scale tensor
+- smem_layout_scale: Shared memory layout for scale tensor
 
 ### Return type
 
@@ -1546,39 +1206,39 @@ tuple\[tuple\[int, int\], cute.ComposedLayout, cute.ComposedLayout\]
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.compute_smem_layout(tiled_mma: cute.TiledMma, mma_tiler_mnk: tuple[int, int, int], a_dtype: type[cutlass.Numeric], b_dtype: type[cutlass.Numeric], load2trans_stage_count: int, trans2mma_stage_count: int) → tuple[cute.ComposedLayout, cute.ComposedLayout, cute.ComposedLayout]`
+**Signature:** `cutlass.utils.compute_smem_layout(tiled_mma: TiledMma, mma_tiler_mnk: tuple[int, int, int], a_dtype: type[Numeric], b_dtype: type[Numeric], load2trans_stage_count: int, trans2mma_stage_count: int) → tuple[cutlass.cute.typing.ComposedLayout, cutlass.cute.typing.ComposedLayout, cutlass.cute.typing.ComposedLayout]`
 
 Compute shared memory layouts for tensor A, transformed A and tensor B.
 
 ### Parameters
 
--   **tiled_mma** (*cute.TiledMma*) -- The tiled MMA object defining the core computation.
+- **tiled_mma** (*cute.TiledMma*) -- The tiled MMA object defining the core computation.
 
--   **mma_tiler_mnk** (*tuple\[int, int, int\]*) -- The shape (M, N, K) of the MMA tiler.
+- **mma_tiler_mnk** (*tuple\[int, int, int\]*) -- The shape (M, N, K) of the MMA tiler.
 
--   **a_dtype** (*type\[cutlass.Numeric\]*) -- Data type of operand A.
+- **a_dtype** (*type\[cutlass.Numeric\]*) -- Data type of operand A.
 
--   **b_dtype** (*type\[cutlass.Numeric\]*) -- Data type of operand B.
+- **b_dtype** (*type\[cutlass.Numeric\]*) -- Data type of operand B.
 
--   **load2trans_stage_count** (*int*) -- Number of stages for load-to-transform pipeline.
+- **load2trans_stage_count** (*int*) -- Number of stages for load-to-transform pipeline.
 
--   **trans2mma_stage_count** (*int*) -- Number of stages for transform-to-MMA pipeline.
+- **trans2mma_stage_count** (*int*) -- Number of stages for transform-to-MMA pipeline.
 
 ### Returns
 
-A tuple containing (smem_layout_a, smem_layout_a\_transform, smem_layout_b) where:
+A tuple containing (smem_layout_a, smem_layout_a_transform, smem_layout_b) where:
 
--   smem_layout_a: Shared memory layout for tensor A
+- smem_layout_a: Shared memory layout for tensor A
 
--   smem_layout_a\_transform: Shared memory layout for transformed tensor A
+- smem_layout_a_transform: Shared memory layout for transformed tensor A
 
--   smem_layout_b: Shared memory layout for tensor B
+- smem_layout_b: Shared memory layout for tensor B
 
 ### Return type
 
 tuple\[cute.ComposedLayout, cute.ComposedLayout, cute.ComposedLayout\]
 
-## cutlass.utils.get_transform_a\_source
+## cutlass.utils.get_transform_a_source
 
 **Kind:** function
 
@@ -1590,15 +1250,15 @@ Determine the operand source for transformed A tensor based on the operand major
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.get_tma_atom_kind(mcast: cutlass.Boolean, use_2cta_instrs: bool, is_b: bool) → cpasync.CopyBulkTensorTileG2SMulticastOp | cpasync.CopyBulkTensorTileG2SOp`
+**Signature:** `cutlass.utils.get_tma_atom_kind(mcast: Boolean, use_2cta_instrs: bool, is_b: bool) → CopyBulkTensorTileG2SMulticastOp | CopyBulkTensorTileG2SOp`
 
 Get the TMA atom kind based on 1) whether it's a multicast operation, 2) whether 2CTA tcgen05.mma instruction is enabled, and 3) whether it's a B tensor
 
-## cutlass.utils.get_copy_atom_a\_transform
+## cutlass.utils.get_copy_atom_a_transform
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.get_copy_atom_a_transform(mma_dtype: type[cutlass.Numeric], use_2cta_instrs: bool, transform_a_source: tcgen05.OperandSource, a_smem_shape: cute.Shape, a_dtype: type[cutlass.Numeric]) → cute.CopyAtom`
+**Signature:** `cutlass.utils.get_copy_atom_a_transform(mma_dtype: type[Numeric], use_2cta_instrs: bool, transform_a_source: OperandSource, a_smem_shape: cutlass.cute.typing.Shape, a_dtype: type[Numeric]) → CopyAtom`
 
 Determine the copy atom for transformed A tensor based on the operand source and tile size.
 
@@ -1606,7 +1266,7 @@ Determine the copy atom for transformed A tensor based on the operand source and
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.is_valid_scale_granularity(scale_granularity_m: int, scale_granularity_k: int, a_dtype: type[cutlass.Numeric], k: int, mma_tiler_k: int) → bool`
+**Signature:** `cutlass.utils.is_valid_scale_granularity(scale_granularity_m: int, scale_granularity_k: int, a_dtype: type[Numeric], k: int, mma_tiler_k: int) → bool`
 
 Check if the scale granularity settings are valid for the given data type and problem size.
 
@@ -1618,27 +1278,113 @@ Check if the scale granularity settings are valid for the given data type and pr
 
 Calculate the largest power of 2 divisibility factor for memory alignment.
 
+## cutlass.utils.cluster_shape_to_tma_atom_A
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.cluster_shape_to_tma_atom_A(cluster_shape_mnk: cutlass.cute.typing.Shape, atom_thr_id: cutlass.cute.typing.Layout) → CopyBulkTensorTileG2SMulticastOp | CopyBulkTensorTileG2SOp`
+
+Select the appropriate TMA copy atom for A based on the number of SMs and the multicast flag.
+
+### Parameters
+
+- **cluster_shape_mnk** (*cute.Shape*) -- The shape of the cluster
+
+- **atom_thr_id** (*cute.Layout*) -- The thread ID of the atom
+
+### Returns
+
+The appropriate TMA copy atom kind
+
+### Return type
+
+[cpasync.CopyBulkTensorTileG2SMulticastOp](cute_nvgpu_cpasync.md#cutlass.cute.nvgpu.cpasync.CopyBulkTensorTileG2SMulticastOp) or [cpasync.CopyBulkTensorTileG2SOp](cute_nvgpu_cpasync.md#cutlass.cute.nvgpu.cpasync.CopyBulkTensorTileG2SOp)
+
+### Raises
+
+- **ValueError** -- If the atom_sm_cnt is invalid
+
+- **ValueError** -- If the cluster shape is not divisible by the atom SM count
+
+## cutlass.utils.cluster_shape_to_tma_atom_B
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.cluster_shape_to_tma_atom_B(cluster_shape_mnk: cutlass.cute.typing.Shape, atom_thr_id: cutlass.cute.typing.Layout) → CopyBulkTensorTileG2SMulticastOp | CopyBulkTensorTileG2SOp`
+
+Select the appropriate TMA copy atom for Bbased on the number of SMs and the multicast flag.
+
+### Parameters
+
+- **cluster_shape_mnk** (*cute.Shape*) -- The shape of the cluster
+
+- **atom_thr_id** (*cute.Layout*) -- The thread ID of the atom
+
+### Returns
+
+The appropriate TMA copy atom kind
+
+### Return type
+
+[cpasync.CopyBulkTensorTileG2SMulticastOp](cute_nvgpu_cpasync.md#cutlass.cute.nvgpu.cpasync.CopyBulkTensorTileG2SMulticastOp) or [cpasync.CopyBulkTensorTileG2SOp](cute_nvgpu_cpasync.md#cutlass.cute.nvgpu.cpasync.CopyBulkTensorTileG2SOp)
+
+### Raises
+
+- **ValueError** -- If the atom_sm_cnt is invalid
+
+- **ValueError** -- If the cluster shape is not divisible by the atom SM count
+
+## cutlass.utils.cluster_shape_to_tma_atom_SFB
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.cluster_shape_to_tma_atom_SFB(cluster_shape_mnk: cutlass.cute.typing.Shape, atom_thr_id: cutlass.cute.typing.Layout) → CopyBulkTensorTileG2SMulticastOp | CopyBulkTensorTileG2SOp`
+
+Select the appropriate TMA copy atom for SFB based on the number of SMs and the multicast flag.
+
+### Parameters
+
+- **cluster_shape_mnk** (*cute.Shape*) -- The shape of the cluster
+
+- **atom_thr_id** (*cute.Layout*) -- The thread ID of the atom
+
+### Returns
+
+The appropriate TMA copy atom kind
+
+### Return type
+
+[cpasync.CopyBulkTensorTileG2SMulticastOp](cute_nvgpu_cpasync.md#cutlass.cute.nvgpu.cpasync.CopyBulkTensorTileG2SMulticastOp) or [cpasync.CopyBulkTensorTileG2SOp](cute_nvgpu_cpasync.md#cutlass.cute.nvgpu.cpasync.CopyBulkTensorTileG2SOp)
+
+### Raises
+
+- **ValueError** -- If the atom_sm_cnt is invalid
+
+- **ValueError** -- If the cluster shape is not divisible by the atom SM count
+
 ## cutlass.utils.compute_epilogue_tile_shape
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.compute_epilogue_tile_shape(cta_tile_shape: cutlass.cute.typing.Shape, use_2cta_instrs: bool, layout_d: LayoutEnum, elem_ty_d: Type[cutlass.cutlass_dsl.Numeric], *, layout_c: LayoutEnum | None = None, elem_ty_c: Type[cutlass.cutlass_dsl.Numeric] | None = None, loc = None, ip = None) → cutlass.cute.typing.Tile`
+**Signature:** `cutlass.utils.compute_epilogue_tile_shape(cta_tile_shape: cutlass.cute.typing.Shape, use_2cta_instrs: bool, layout_d: LayoutEnum, elem_ty_d: Type[_MockObject], *, layout_c: LayoutEnum | None = None, elem_ty_c: Type[_MockObject] | None = None, tmem_warp_shape_mn: Tuple[int, int] | None = None) → cutlass.cute.typing.Tile`
 
 Attempts to compute a reasonable epilogue tile based on block tile shape or allows the user to provide one.
 
 ### Parameters
 
--   **cta_tile_shape** (*cute.Shape*) -- A tuple or list representing the dimensions of the CTA tile, where cta_tile_shape\[0\] corresponds to the height (M) and cta_tile_shape\[1\] corresponds to the width (N) of the tile.
+- **cta_tile_shape** (*cute.Shape*) -- A tuple or list representing the dimensions of the CTA tile, where cta_tile_shape\[0\] corresponds to the height (M) and cta_tile_shape\[1\] corresponds to the width (N) of the tile.
 
--   **use_2cta_instrs** (*bool*) -- A flag indicating whether the configuration is for a 2SM setup.
+- **use_2cta_instrs** (*bool*) -- A flag indicating whether the configuration is for a 2SM setup.
 
--   **layout_d** ([*LayoutEnum*](#cutlass.utils.LayoutEnum)) -- The layout enum of the output tensor D.
+- **layout_d** (*LayoutEnum*) -- The layout enum of the output tensor D.
 
--   **elem_ty_d** (*Type\[Numeric\]*) -- The element type of output tensor D.
+- **elem_ty_d** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type of output tensor D.
 
--   **layout_c** ([*LayoutEnum*](#cutlass.utils.LayoutEnum)*,* *optional*) -- The layout enum of the input tensor C. Defaults to None.
+- **layout_c** (*LayoutEnum,* *optional*) -- The layout enum of the input tensor C. Defaults to None.
 
--   **elem_ty_c** (*Union\[Type\[Numeric\],* *None\],* *optional*) -- The element type for input tensor C. Defaults to None.
+- **elem_ty_c** (*Union\[Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\],* *None\],* *optional*) -- The element type for input tensor C. Defaults to None.
+
+- **tmem_warp_shape_mn** (*Tuple\[int,* *int\],* *optional*) -- Optional (warp_m, warp_n) override for the tmem subpartition layout. When omitted, the layout is derived from `cta_tile_shape` and `use_2cta_instrs`.
 
 ### Returns
 
@@ -1652,23 +1398,101 @@ cute.Tile
 
 **ValueError** -- If the computed tile cute.size does not meet minimum requirements based on CTA dimensions.
 
+## cutlass.utils.get_permutation_mnk
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.get_permutation_mnk(tile_shape_mnk: cutlass.cute.typing.Shape, sf_vec_size: int, use_mxf8f6f4: bool) → Tuple[int, int, int]`
+
+Get the permutation of M, N, K for the tiled MMA.
+
+### Parameters
+
+- **tile_shape_mnk** (*cute.Shape*) -- The shape of the tile
+
+- **sf_vec_size** (*int*) -- The vector size of the Scale Factor.
+
+- **use_mxf8f6f4** (*bool*) -- Whether to use MXF8F6F4 or MXF4NVF4.
+
+### Returns
+
+The permutation of M, N, K
+
+### Return type
+
+Tuple\[int, int, int\]
+
+### Raises
+
+**ValueError** -- If the tile shape is not divisible by the sf_vec_size
+
+## cutlass.utils.get_smem_layout_atom_ab
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.get_smem_layout_atom_ab(major_mode: OperandMajorMode, element_type: Type[_MockObject], smem_shape_mn_k: cutlass.cute.typing.Tile, sparsity: int = 1) → SmemLayoutAtomKind`
+
+Simple heuristics to select the optimal SMEM layout atom based on the majorness, the data type, and the major mode size.
+
+### Parameters
+
+- **major_mode** ([*cutlass.cute.nvgpu.OperandMajorMode*](cute_nvgpu_common.md#cutlass.cute.nvgpu.OperandMajorMode)) -- The major mode for the SMEM tensor is K major.
+
+- **element_type** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for the SMEM tensor.
+
+- **smem_shape_mn_k** (*cute.Tile*) -- The shape of the SMEM tensor.
+
+- **sparsity** (*int*) -- The sparsity factor (1 for dense, 2 for 2:4 sparse, etc.)
+
+### Returns
+
+The SMEM layout atom kind
+
+### Return type
+
+[cutlass.cute.nvgpu.tcgen05.SmemLayoutAtomKind](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.SmemLayoutAtomKind)
+
+## cutlass.utils.get_smem_layout_atom_epi
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.get_smem_layout_atom_epi(layout: LayoutEnum, element_type: Type[_MockObject], epi_tile: cutlass.cute.typing.Tile) → SmemLayoutAtomKind`
+
+Simple heuristics to select the optimal SMEM layout atom for epilog tensors.
+
+### Parameters
+
+- **layout** (*LayoutEnum*) -- The layout enum for the SMEM tensor.
+
+- **element_type** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for the SMEM tensor.
+
+- **epi_tile** (*cute.Tile*) -- The epilogue tile shape.
+
+### Returns
+
+The SMEM layout atom kind
+
+### Return type
+
+[cutlass.cute.nvgpu.tcgen05.SmemLayoutAtomKind](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.SmemLayoutAtomKind)
+
 ## cutlass.utils.get_smem_store_op
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.get_smem_store_op(layout_d: LayoutEnum, elem_ty_d: Type[cutlass.cutlass_dsl.Numeric], elem_ty_acc: Type[cutlass.cutlass_dsl.Numeric], tiled_tmem_load: TiledCopy, *, loc = None, ip = None) → CopyAtom`
+**Signature:** `cutlass.utils.get_smem_store_op(layout_d: LayoutEnum, elem_ty_d: Type[_MockObject], elem_ty_acc: Type[_MockObject], tiled_tmem_load: TiledCopy) → CopyAtom`
 
 Selects the largest vectorized smem store atom available subject to constraint of gmem layout and chosen TMEM_LOAD's thread-value ownership.
 
 ### Parameters
 
--   **layout_d** ([*LayoutEnum*](#cutlass.utils.LayoutEnum)) -- The layout enum of the output tensor D.
+- **layout_d** (*LayoutEnum*) -- The layout enum of the output tensor D.
 
--   **elem_ty_d** (*Type\[Numeric\]*) -- The element type for output tensor D.
+- **elem_ty_d** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for output tensor D.
 
--   **elem_ty_acc** (*Type\[Numeric\]*) -- The element type for accumulator.
+- **elem_ty_acc** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for accumulator.
 
--   **tiled_tmem_load** ([*cute.TiledCopy*](cute.md#cutlass.cute.TiledCopy)) -- An instance of TiledCopy that represents the tmem load operation.
+- **tiled_tmem_load** ([*cute.TiledCopy*](cute.md#cutlass.cute.TiledCopy)) -- An instance of TiledCopy that represents the tmem load operation.
 
 ### Returns
 
@@ -1682,23 +1506,23 @@ Either SmemStoreMatrix or SimtSyncCopy, based on the input parameters.
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.get_tmem_load_op(cta_tile_shape: cutlass.cute.typing.Shape, layout_d: LayoutEnum, elem_ty_d: Type[cutlass.cutlass_dsl.Numeric], elem_ty_acc: Type[cutlass.cutlass_dsl.Numeric], epi_tile: cutlass.cute.typing.Tile, use_2cta_instrs: bool, *, loc = None, ip = None) → CopyAtom`
+**Signature:** `cutlass.utils.get_tmem_load_op(cta_tile_shape: cutlass.cute.typing.Shape, layout_d: LayoutEnum, elem_ty_d: Type[_MockObject], elem_ty_acc: Type[_MockObject], epi_tile: cutlass.cute.typing.Tile, use_2cta_instrs: bool, *, tmem_warp_shape_mn: Tuple[int, int] | None = None) → CopyAtom`
 
 Finds a performant TMEM_LOAD copy op for the selected epilogue tile (epi_tile), element types, and tcgen05.mma instruction used.
 
 ### Parameters
 
--   **cta_tile_shape** (*cute.Shape*) -- A tuple or list representing the dimensions of the CTA tile.
+- **cta_tile_shape** (*cute.Shape*) -- A tuple or list representing the dimensions of the CTA tile.
 
--   **layout_d** ([*LayoutEnum*](#cutlass.utils.LayoutEnum)) -- The layout enum of the output tensor D.
+- **layout_d** (*LayoutEnum*) -- The layout enum of the output tensor D.
 
--   **elem_ty_d** (*Type\[Numeric\]*) -- The element type for output tensor D.
+- **elem_ty_d** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for output tensor D.
 
--   **elem_ty_acc** (*Type\[Numeric\]*) -- The element type for accumulation.
+- **elem_ty_acc** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for accumulation.
 
--   **epi_tile** (*cute.Tile*) -- The epilogue tile configuration.
+- **epi_tile** (*cute.Tile*) -- The epilogue tile configuration.
 
--   **use_2cta_instrs** (*bool*) -- A flag indicating whether the configuration is for 2 SMs.
+- **use_2cta_instrs** (*bool*) -- A flag indicating whether the configuration is for 2 SMs.
 
 ### Returns
 
@@ -1712,11 +1536,45 @@ An instance of Sm100TmemLoad with the computed configuration.
 
 **ValueError** -- If the function cannot handle the given combination of accumulation and dimension types, or if it cannot determine the appropriate configuration based on the input parameters.
 
+## cutlass.utils.make_smem_layout
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.make_smem_layout(leading_mode: OperandMajorMode, smem_tile_shape: cutlass.cute.typing.Tile, a_dtype: Type[_MockObject], num_stages: int) → cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout`
+
+Construct a staged SMEM layout for an operand given its major mode and tile shape.
+
+This helper:
+
+1.  Selects a SMEM layout atom using simple heuristics based on the operand's major mode, element type, and the size of the major dimension in `smem_tile_shape`.
+
+2.  Tiles the atom to `smem_tile_shape` and appends a staging dimension of length `num_stages`.
+
+3.  Orders the `(M, N, stage)` axes so the major dimension is contiguous, then coalesces.
+
+### Parameters
+
+- **leading_mode** ([*cutlass.cute.nvgpu.OperandMajorMode*](cute_nvgpu_common.md#cutlass.cute.nvgpu.OperandMajorMode)) -- Operand major mode (`MN` or `K`) of the staged operand.
+
+- **smem_tile_shape** (*cute.Tile*) -- 2D SMEM tile shape to stage (before the staging dimension is appended).
+
+- **a_dtype** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- Element type of the staged operand.
+
+- **num_stages** (*int*) -- Number of pipeline stages (depth of the staging dimension).
+
+### Returns
+
+Staged SMEM layout for the operand.
+
+### Return type
+
+Union\[cute.Layout, cute.ComposedLayout\]
+
 ## cutlass.utils.make_smem_layout_a
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.make_smem_layout_a(tiled_mma: TiledMma, mma_tiler_mnk: cutlass.cute.typing.Tile, a_dtype: Type[cutlass.cutlass_dsl.Numeric], num_stages: int, *, is_k_major = None, loc = None, ip = None) → cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout`
+**Signature:** `cutlass.utils.make_smem_layout_a(tiled_mma: TiledMma, mma_tiler_mnk: cutlass.cute.typing.Tile, a_dtype: Type[_MockObject], num_stages: int, *, is_k_major: bool | None = None) → cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout`
 
 This function helps with:
 
@@ -1730,13 +1588,13 @@ This function helps with:
 
 ### Parameters
 
--   **tiled_mma** ([*cute.TiledMma*](cute.md#cutlass.cute.TiledMma)) -- The tiled MMA used to partition tensor A
+- **tiled_mma** ([*cute.TiledMma*](cute.md#cutlass.cute.TiledMma)) -- The tiled MMA used to partition tensor A
 
--   **mma_tiler_mnk** (*cute.cute.Tile*) -- The MMA tile shape
+- **mma_tiler_mnk** (*cute.cute.Tile*) -- The MMA tile shape
 
--   **a_dtype** (*Type\[Numeric\]*) -- The element type for tensor A
+- **a_dtype** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for tensor A
 
--   **num_stages** (*int*) -- The number of pipeline stages for tensor A
+- **num_stages** (*int*) -- The number of pipeline stages for tensor A
 
 ### Returns
 
@@ -1750,7 +1608,7 @@ Union\[cute.Layout, cute.ComposedLayout\]
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.make_smem_layout_b(tiled_mma: TiledMma, mma_tiler_mnk: cutlass.cute.typing.Tile, b_dtype: Type[cutlass.cutlass_dsl.Numeric], num_stages: int, *, is_k_major = None, loc = None, ip = None) → cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout`
+**Signature:** `cutlass.utils.make_smem_layout_b(tiled_mma: TiledMma, mma_tiler_mnk: cutlass.cute.typing.Tile, b_dtype: Type[_MockObject], num_stages: int, *, is_k_major: bool | None = None) → cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout`
 
 This function helps:
 
@@ -1764,13 +1622,13 @@ This function helps:
 
 ### Parameters
 
--   **tiled_mma** ([*cute.TiledMma*](cute.md#cutlass.cute.TiledMma)) -- The tiled MMA which is used to partition the B tensor.
+- **tiled_mma** ([*cute.TiledMma*](cute.md#cutlass.cute.TiledMma)) -- The tiled MMA which is used to partition the B tensor.
 
--   **mma_tiler_mnk** (*cute.cute.Tile*) -- The MMA tile shape.
+- **mma_tiler_mnk** (*cute.cute.Tile*) -- The MMA tile shape.
 
--   **b_dtype** (*Type\[Numeric\]*) -- The element type for the B tensor.
+- **b_dtype** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for the B tensor.
 
--   **num_stages** (*int*) -- The stage of the B tensor.
+- **num_stages** (*int*) -- The stage of the B tensor.
 
 ### Returns
 
@@ -1784,7 +1642,7 @@ Union\[cute.Layout, cute.ComposedLayout\]
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.make_smem_layout_epi(epi_dtype: Type[cutlass.cutlass_dsl.Numeric], epi_layout: LayoutEnum, epi_tile: cutlass.cute.typing.Tile, epi_stage: int, *, loc = None, ip = None) → cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout`
+**Signature:** `cutlass.utils.make_smem_layout_epi(epi_dtype: Type[_MockObject], epi_layout: LayoutEnum, epi_tile: cutlass.cute.typing.Tile, epi_stage: int) → cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout`
 
 This function helps:
 
@@ -1796,13 +1654,13 @@ This function helps:
 
 ### Parameters
 
--   **epi_dtype** (*Type\[Numeric\]*) -- The element type for the epilog tensor.
+- **epi_dtype** (*Type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- The element type for the epilog tensor.
 
--   **epi_layout** ([*LayoutEnum*](#cutlass.utils.LayoutEnum)) -- The layout enum for the epilog tensor.
+- **epi_layout** (*LayoutEnum*) -- The layout enum for the epilog tensor.
 
--   **epi_tile** (*cute.cute.Tile*) -- The epilogue tile shape.
+- **epi_tile** (*cute.cute.Tile*) -- The epilogue tile shape.
 
--   **epi_stage** (*int*) -- The stage of the epilog tensor.
+- **epi_stage** (*int*) -- The stage of the epilog tensor.
 
 ### Returns
 
@@ -1816,63 +1674,93 @@ Union\[cute.Layout, cute.ComposedLayout\]
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.make_trivial_tiled_mma(ab_dtype: Type[cutlass.cutlass_dsl.Numeric], a_leading_mode: OperandMajorMode, b_leading_mode: OperandMajorMode, acc_dtype: Type[cutlass.cutlass_dsl.Numeric], cta_group: CtaGroup, mma_tiler_mn: Tuple[int, int], a_source: OperandSource = cutlass._mlir.dialects.cute.MmaFragKind.smem_desc, *, loc = None, ip = None) → TiledMma`
+**Signature:** `cutlass.utils.make_trivial_tiled_mma(*args: Any, **kwargs: Any) → TiledMma`
 
 Make a tiled MMA atom with given data type, leading dimension, cta group and mma tile shape. By default, the MMA atom is created with SMEM operand source for A.
 
-### Parameters
+Supports two calling conventions:
 
--   **ab_dtype** (*type\[Numeric\]*) -- Data type of operands A and B.
+**New (recommended):** separate `a_dtype` and `b_dtype`:
 
--   **a_leading_mode** ([*tcgen05.OperandMajorMode*](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.OperandMajorMode)) -- Leading dimension of operand A (1 for K, 0 for M/N).
+    make_trivial_tiled_mma(
+        a_dtype, b_dtype, a_leading_mode, b_leading_mode,
+        acc_dtype, cta_group, mma_tiler_mn, [a_source])
 
--   **b_leading_mode** ([*tcgen05.OperandMajorMode*](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.OperandMajorMode)) -- Leading dimension of operand B (1 for K, 0 for M/N).
+**Legacy (deprecated):** single `ab_dtype`:
 
--   **acc_dtype** (*type\[Numeric\]*) -- Data type of the accumulator.
-
--   **cta_group** ([*tcgen05.CtaGroup*](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.CtaGroup)) -- The CTA group to use.
-
--   **mma_tiler_mn** (*Tuple\[int,* *int\]*) -- The shape (M, N, K) of the MMA tiler.
-
--   **a_source** ([*cutlass.cute.nvgpu.tcgen05.OperandSource*](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.OperandSource)) -- The source of operand A (SMEM by default or TMEM).
-
-### Returns
-
-A tiled MMA atom.
-
-### Return type
-
-[cute.TiledMma](cute.md#cutlass.cute.TiledMma)
-
-### Raises
-
-**TypeError** -- If the data type is not supported.
+    make_trivial_tiled_mma(
+        ab_dtype, a_leading_mode, b_leading_mode,
+        acc_dtype, cta_group, mma_tiler_mn, [a_source])
 
 ## cutlass.utils.make_blockscaled_trivial_tiled_mma
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.make_blockscaled_trivial_tiled_mma(ab_dtype: Type[cutlass.cutlass_dsl.Numeric], a_leading_mode: OperandMajorMode, b_leading_mode: OperandMajorMode, sf_dtype: Type[cutlass.cutlass_dsl.Numeric], sf_vec_size: int, cta_group: CtaGroup, mma_tiler_mn: Tuple[int, int], a_source: OperandSource = cutlass._mlir.dialects.cute.MmaFragKind.smem_desc, *, loc = None, ip = None) → TiledMma`
+**Signature:** `cutlass.utils.make_blockscaled_trivial_tiled_mma(*args: Any, **kwargs: Any) → TiledMma`
 
 Make a BlockScaled tiled MMA atom with given data type, leading dimension, cta group and mma tile shape. By default, the MMA atom is created with SMEM operand source for A.
 
+Supports two calling conventions:
+
+**New (recommended):** separate `a_dtype` and `b_dtype`:
+
+    make_blockscaled_trivial_tiled_mma(
+        a_dtype, b_dtype, a_leading_mode, b_leading_mode,
+        sf_dtype, sf_vec_size, cta_group, mma_tiler_mn, [a_source])
+
+**Legacy (deprecated):** single `ab_dtype`:
+
+    make_blockscaled_trivial_tiled_mma(
+        ab_dtype, a_leading_mode, b_leading_mode,
+        sf_dtype, sf_vec_size, cta_group, mma_tiler_mn, [a_source])
+
+## cutlass.utils.sm90_get_smem_layout_atom
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.sm90_get_smem_layout_atom(layout: LayoutEnum, element_type: Type[_MockObject], major_mode_size: int) → Any`
+
+Select the optimal shared memory layout atom based on parameters.
+
 ### Parameters
 
--   **ab_dtype** (*type\[Numeric\]*) -- Data type of operands A and B.
+- **layout** (*LayoutEnum*) -- Layout enum of the tensor
 
--   **a_leading_mode** ([*tcgen05.OperandMajorMode*](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.OperandMajorMode)) -- Leading dimension of operand A (1 for K, 0 for M/N).
+- **element_type** (*type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- Data type of the elements
 
--   **b_leading_mode** ([*tcgen05.OperandMajorMode*](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.OperandMajorMode)) -- Leading dimension of operand B (1 for K, 0 for M/N).
+- **major_mode_size** (*int*) -- Size of the major mode dimension
 
--   **sf_dtype** (*type\[Numeric\]*) -- Data type of the Scale Factor.
+### Returns
 
--   **sf_vec_size** (*int*) -- The vector size of the Scale Factor.
+Selected shared memory layout atom kind
 
--   **cta_group** ([*tcgen05.CtaGroup*](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.CtaGroup)) -- The CTA group to use.
+### Return type
 
--   **mma_tiler_mn** (*Tuple\[int,* *int\]*) -- The shape (M, N, K) of the MMA tiler.
+[cutlass.cute.nvgpu.warpgroup.SmemLayoutAtomKind](cute_nvgpu_warpgroup.md#cutlass.cute.nvgpu.warpgroup.SmemLayoutAtomKind)
 
--   **a_source** ([*cutlass.cute.nvgpu.tcgen05.OperandSource*](cute_nvgpu_tcgen05.md#cutlass.cute.nvgpu.tcgen05.OperandSource)) -- The source of operand A (SMEM by default or TMEM).
+## cutlass.utils.sm90_make_trivial_tiled_mma
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.sm90_make_trivial_tiled_mma(a_dtype: ~typing.Type[~sphinx.ext.autodoc.mock._MockObject], b_dtype: ~typing.Type[~sphinx.ext.autodoc.mock._MockObject], a_leading_mode: ~cutlass.cute.nvgpu.common.OperandMajorMode, b_leading_mode: ~cutlass.cute.nvgpu.common.OperandMajorMode, acc_dtype: ~typing.Type[~sphinx.ext.autodoc.mock._MockObject], atom_layout_mnk: ~typing.Tuple[int, int, int], tiler_mn: ~typing.Tuple[int, int], a_source: ~cutlass.cute.nvgpu.warpgroup.mma.OperandSource = <OperandSource.RMEM>) → TiledMma`
+
+Make a tiled MMA atom with given data type, leading dimension, cta group and mma tile shape. By default, the MMA atom is created with SMEM operand source for A.
+
+### Parameters
+
+- **a_dtype** (*type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- Data type of operand A.
+
+- **b_dtype** (*type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- Data type of operand B.
+
+- **a_leading_mode** ([*cutlass.cute.nvgpu.OperandMajorMode*](cute_nvgpu_common.md#cutlass.cute.nvgpu.OperandMajorMode)) -- Leading dimension of operand A (1 for K, 0 for M/N).
+
+- **b_leading_mode** ([*cutlass.cute.nvgpu.OperandMajorMode*](cute_nvgpu_common.md#cutlass.cute.nvgpu.OperandMajorMode)) -- Leading dimension of operand B (1 for K, 0 for M/N).
+
+- **acc_dtype** (*type\[*[*Numeric*](../basic_data_types.md#cutlass.Numeric)*\]*) -- Data type of the accumulator.
+
+- **atom_layout_mnk** (*Tuple\[int,* *int,* *int\]*) -- A integer tuple describing the tiling of Atom across threads.
+
+- **tiler_mn** (*Tuple\[int,* *int\]*) -- The shape (M, N) of the cta tiler.
 
 ### Returns
 
@@ -1886,13 +1774,82 @@ A tiled MMA atom.
 
 **TypeError** -- If the data type is not supported.
 
+## cutlass.utils.block_copy
+
+**Kind:** function
+
+**Signature:** `cutlass.utils.block_copy(tiled_copy: ~cutlass.cute.atom.TiledCopy, src: cutlass.cute.typing.Tensor, dst: cutlass.cute.typing.Tensor, *, **kwargs: ~typing.Any) → None`
+
+Performs a block-level copy operation.
+
+This function adds an abstraction layer over the cute.copy usage model by allowing operands with layouts shaped like tiles to be passed directly. This removes the need to manually partition. The API is designed to support multiple copy kinds; currently TMA-based copies and S2T (SMEM to TMEM) copies are supported.
+
+**TMA copy requirements**:
+
+When using TMA-based tiled copies, the `src` and `dst` tensors must have their first mode representing the TMATile, i.e. tensors shaped as `(TMATile, Rest...)`. For a rank-2 tensor with logical layout (e.g., `(TILE_M, TILE_N)`), call `group_modes(tensor, 0, 2)` before passing it to this function.
+
+**TMA multicast support**:
+
+For TMA-based copies that enable compiler-driven multicast in a 2D cluster, pass the `tma_multicast` argument as a dict with the following keys:
+
+- `cluster_shape`: a tuple of 2 integers `(cluster_m, cluster_n)` representing the **2D cluster shape**.
+
+- `multicast_dim`: either `"M"` or `"N"` indicating which cluster dimension the multicast happens along.
+
+- `use_2cta_mma_inst` (optional): a `bool` indicating whether to use 2CTA MMA instructions when the loaded data is consumed by MMA. Defaults to `False` when omitted.
+
+**S2T (SMEM to TMEM) copy**:
+
+When using S2T copy operations (e.g., `tcgen05.Cp4x32x128bOp`), the function automatically handles the filtering, partitioning, and SMEM descriptor creation. Pass a copy atom created with `cute.make_copy_atom(tcgen05.Cp*Op(...), dtype)` along with source (SMEM) and destination (TMEM) tensors.
+
+Examples:
+
+    # 1) TMA load without compiler-driven multicast
+    #    Note: group_modes is called to make the first mode TMATile
+    block_copy(tma_atom_a, group_modes(tCgA_, 0, 2), group_modes(tCsA_, 0, 2),
+               tma_bar_ptr=tma_bar_ptr)
+
+    # 2) TMA load with compiler-driven multicast along M in a (4,2) cluster
+    block_copy(
+        tma_atom_a,
+        group_modes(tCgA_, 0, 2),
+        group_modes(tCsA_, 0, 2),
+        tma_multicast={
+            "cluster_shape": (4, 2),
+            "multicast_dim": "M",
+            "use_2cta_mma_inst": True,
+        },
+        tma_bar_ptr=tma_bar_ptr,
+    )
+
+    # 3) TMA store
+    #    Note that `tma_bar_ptr` and CTA params (`cta_coord` and `cta_layout`)
+    #    are not needed for TMA store
+    block_copy(tma_atom_c, group_modes(tCsC_, 0, 2), group_modes(tCgC_, 0, 2))
+
+    # 4) S2T copy (SMEM to TMEM)
+    copy_atom_s2t = cute.make_copy_atom(
+        tcgen05.Cp4x32x128bOp(tcgen05.CtaGroup.ONE), sf_dtype
+    )
+    block_copy(copy_atom_s2t, tCsSF, tCtSF)
+
+### Parameters
+
+- **tiled_copy** ([*TiledCopy*](cute.md#cutlass.cute.TiledCopy)) -- The tiled_copy or copy_atom of the current copy operation.
+
+- **src** (*Tensor*) -- The source tensor.
+
+- **dst** (*Tensor*) -- The destination tensor.
+
+- **tma_multicast** (*dict,* *optional*) -- Optional dict for TMA multicast configuration with keys `cluster_shape`, `multicast_dim`, and optionally `use_2cta_mma_inst`.
+
 ## cutlass.utils.ClcDynamicPersistentTileSchedulerParams
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.ClcDynamicPersistentTileSchedulerParams(problem_shape_ntile_mnl: cutlass.cute.typing.Shape, cluster_shape_mnk: cutlass.cute.typing.Shape, *, loc = None, ip = None)`
+**Signature:** `cutlass.utils.ClcDynamicPersistentTileSchedulerParams(**kwargs)`
 
-Bases: `object`
+Bases: `MixedClusterParamsMixin`
 
 A class to represent parameters for a dynamic persistent tile scheduler.
 
@@ -1908,19 +1865,49 @@ This class is designed to manage and compute the layout of clusters and tiles in
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileSchedulerParams.__init__`
 
-**Signature:** `__init__(problem_shape_ntile_mnl: cutlass.cute.typing.Shape, cluster_shape_mnk: cutlass.cute.typing.Shape, *, loc = None, ip = None)`
+**Signature:** `__init__() → None`
 
 Initializes the ClcDynamicPersistentTileSchedulerParams with the given parameters.
 
 #### Parameters
 
--   **problem_shape_ntile_mnl** (*cute.Shape*) -- The shape of the problem in terms of number of CTA (Cooperative Thread Array) in (m, n, l) dimensions.
+- **problem_shape_ntile_mnl** (*cute.Shape*) -- The shape of the problem in terms of number of CTA (Cooperative Thread Array) in (m, n, l) dimensions.
 
--   **cluster_shape_mnk** (*cute.Shape*) -- The shape of the cluster in (m, n) dimensions.
+- **cluster_shape_mnk** (*cute.Shape*) -- The shape of the cluster in (m, n) dimensions.
+
+- **swizzle_size** (*int*) -- Swizzling size in the unit of cluster. 1 means no swizzle
+
+- **raster_along_m** (*bool*) -- Rasterization order of clusters. Only used when swizzle_size \> 1. True means along M, false means along N.
+
+- **fallback_cluster_shape_mnk** (*Optional\[cute.Shape\]*) -- Optional. When provided and different from cluster_shape_mnk, the kernel runs in mixed-cluster mode.
 
 #### Raises
 
 **ValueError** -- If cluster_shape_k is not 1.
+
+### \_extract_primary_mlir_values
+
+**Kind:** method
+
+**Qualified name:** `cutlass.utils.ClcDynamicPersistentTileSchedulerParams._extract_primary_mlir_values`
+
+**Signature:** `_extract_primary_mlir_values() → list[ir.Value]`
+
+### \_primary_values_count
+
+**Kind:** property
+
+**Qualified name:** `cutlass.utils.ClcDynamicPersistentTileSchedulerParams._primary_values_count`
+
+**Signature:** `_primary_values_count: int`
+
+### \_new_primary_from_mlir_values
+
+**Kind:** method
+
+**Qualified name:** `cutlass.utils.ClcDynamicPersistentTileSchedulerParams._new_primary_from_mlir_values`
+
+**Signature:** `_new_primary_from_mlir_values(values: list[ir.Value]) → ClcDynamicPersistentTileSchedulerParams`
 
 ### get_grid_shape
 
@@ -1928,7 +1915,7 @@ Initializes the ClcDynamicPersistentTileSchedulerParams with the given parameter
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileSchedulerParams.get_grid_shape`
 
-**Signature:** `get_grid_shape(*, loc = None, ip = None) → Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer]`
+**Signature:** `get_grid_shape() → Tuple[_MockObject, _MockObject, _MockObject]`
 
 Computes the grid shape based on the problem shape and cluster shape.
 
@@ -1940,7 +1927,7 @@ the grid is the CTA numbers that has aligned with cluster shape.
 
 **Kind:** class
 
-**Signature:** `cutlass.utils.ClcDynamicPersistentTileScheduler(params: ClcDynamicPersistentTileSchedulerParams, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: cutlass.cutlass_dsl.Int32, clc_response_ptr: cutlass.cute.typing.Pointer, block_idx: Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer])`
+**Signature:** `cutlass.utils.ClcDynamicPersistentTileScheduler(**kwargs)`
 
 Bases: `object`
 
@@ -1948,11 +1935,11 @@ A scheduler for dynamic persistent tile execution in CUTLASS/CuTe kernels.
 
 ### Variables
 
--   **params** -- Tile schedule related params, including cluster shape.
+- **params** -- Tile schedule related params, including cluster shape.
 
--   **cta_id_in_cluster** -- ID of the CTA within its cluster
+- **cta_id_in_cluster** -- ID of the CTA within its cluster
 
--   **\_num_tiles_executed** -- Counter for executed tiles
+- **\_num_tiles_executed** -- Counter for executed tiles
 
 ### \_\_init\_\_
 
@@ -1960,21 +1947,23 @@ A scheduler for dynamic persistent tile execution in CUTLASS/CuTe kernels.
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler.__init__`
 
-**Signature:** `__init__(params: ClcDynamicPersistentTileSchedulerParams, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: cutlass.cutlass_dsl.Int32, clc_response_ptr: cutlass.cute.typing.Pointer, block_idx: Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer])`
+**Signature:** `__init__(params: ClcDynamicPersistentTileSchedulerParams, cta_id_in_cluster: cutlass.cute.typing.Coord, num_tiles_executed: _MockObject, clc_response_ptr: cutlass.cute.typing.Pointer, block_idx: Tuple[_MockObject, _MockObject, _MockObject], insert_fence: bool = True)`
 
 Initializes the ClcDynamicPersistentTileScheduler with the given parameters.
 
 #### Parameters
 
--   **params** ([*ClcDynamicPersistentTileSchedulerParams*](#cutlass.utils.ClcDynamicPersistentTileSchedulerParams)) -- Tile schedule related params, including cluster shape.
+- **params** ([*ClcDynamicPersistentTileSchedulerParams*](#cutlass.utils.ClcDynamicPersistentTileSchedulerParams)) -- Tile schedule related params, including cluster shape.
 
--   **cta_id_in_cluster** (*cute.Coord*) -- ID of the CTA within its cluster.
+- **cta_id_in_cluster** (*cute.Coord*) -- ID of the CTA within its cluster.
 
--   **num_tiles_executed** (*Int32*) -- Counter for executed tiles.
+- **num_tiles_executed** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Counter for executed tiles.
 
--   **clc_response_ptr** (*cute.Pointer*) -- Pointer of the clc rsponse.
+- **clc_response_ptr** (*cute.Pointer*) -- Pointer of the clc rsponse.
 
--   **block_idx** (*Tuple\[Integer,* *Integer,* *Integer\]*) -- The block index.
+- **block_idx** (*Tuple\[*[*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*\]*) -- The block index.
+
+- **insert_fence** (*bool*) -- Whether to insert a fence to ensure generic-async proxy order. CLC issue is in async proxy while loading the response from shared memory is in generic proxy. A cross-proxy fence is needed to ensure producer's next issue won't race with consumer's current loading. Therefore the scheduler inserts a fence by default after loading the response. Developers may insert the fence in pipeline acquire/release functions. In that case, the fence here can be omitted.
 
 ### create
 
@@ -1982,17 +1971,17 @@ Initializes the ClcDynamicPersistentTileScheduler with the given parameters.
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler.create`
 
-**Signature:** `create(params: ClcDynamicPersistentTileSchedulerParams, block_idx: Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer], grid_dim: Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer], clc_response_ptr: cutlass.cute.typing.Pointer, *, loc = None, ip = None)`
+**Signature:** `static create(params: ClcDynamicPersistentTileSchedulerParams, block_idx: Tuple[_MockObject, _MockObject, _MockObject], grid_dim: Tuple[_MockObject, _MockObject, _MockObject], clc_response_ptr: cutlass.cute.typing.Pointer, insert_fence: bool = True) → ClcDynamicPersistentTileScheduler`
 
 Initialize the dynamic persistent tile scheduler.
 
 #### Parameters
 
--   **params** ([*ClcDynamicPersistentTileSchedulerParams*](#cutlass.utils.ClcDynamicPersistentTileSchedulerParams)) -- Parameters for the persistent tile scheduler.
+- **params** ([*ClcDynamicPersistentTileSchedulerParams*](#cutlass.utils.ClcDynamicPersistentTileSchedulerParams)) -- Parameters for the persistent tile scheduler.
 
--   **block_idx** (*Tuple\[Integer,* *Integer,* *Integer\]*) -- The 3d block index in the format (bidx, bidy, bidz).
+- **block_idx** (*Tuple\[*[*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*\]*) -- The 3d block index in the format (bidx, bidy, bidz).
 
--   **grid_dim** (*Tuple\[Integer,* *Integer,* *Integer\]*) -- The 3d grid dimensions for kernel launch.
+- **grid_dim** (*Tuple\[*[*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*,* [*Integer*](../basic_data_types.md#cutlass.Integer)*\]*) -- The 3d grid dimensions for kernel launch.
 
 #### Returns
 
@@ -2008,7 +1997,7 @@ A ClcDynamicPersistentTileScheduler object.
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler.get_grid_shape`
 
-**Signature:** `get_grid_shape(*, loc = None, ip = None) → Tuple[cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer, cutlass.cutlass_dsl.Integer]`
+**Signature:** `get_grid_shape() → Tuple[_MockObject, _MockObject, _MockObject]`
 
 Calculates the grid shape to be launched on GPU using problem shape, threadblock shape, and active cluster size.
 
@@ -2022,7 +2011,17 @@ The calculated 3d grid shape.
 
 #### Return type
 
-Tuple\[Integer, Integer, Integer\]
+Tuple\[[Integer](../basic_data_types.md#cutlass.Integer), [Integer](../basic_data_types.md#cutlass.Integer), [Integer](../basic_data_types.md#cutlass.Integer)\]
+
+### \_swizzle_and_rasterize
+
+**Kind:** method
+
+**Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler._swizzle_and_rasterize`
+
+**Signature:** `_swizzle_and_rasterize(x_idx: _MockObject, y_idx: _MockObject, z_idx: _MockObject) → Tuple[_MockObject, _MockObject, _MockObject]`
+
+Swizzle and rasterize the given coordinates for leader CTA of the cluster. x_idx, y_idx, and z_idx must be divisible by cluster shape x, y, and z respectively. They should not be offset by the ID of the CTA in the cluster.
 
 ### work_tile_info_from_clc_response
 
@@ -2030,7 +2029,7 @@ Tuple\[Integer, Integer, Integer\]
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler.work_tile_info_from_clc_response`
 
-**Signature:** `work_tile_info_from_clc_response(result_addr: cutlass.cute.typing.Pointer, *, loc = None, ip = None) → WorkTileInfo`
+**Signature:** `work_tile_info_from_clc_response(result_addr: cutlass.cute.typing.Pointer) → WorkTileInfo`
 
 Simulates parsing CLC response data in Python. result_addr: 16-byte response data (simulating shared memory access)
 
@@ -2040,7 +2039,7 @@ Simulates parsing CLC response data in Python. result_addr: 16-byte response dat
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler.get_current_work`
 
-**Signature:** `get_current_work(*, loc = None, ip = None) → WorkTileInfo`
+**Signature:** `get_current_work() → WorkTileInfo`
 
 ### initial_work_tile_info
 
@@ -2048,7 +2047,7 @@ Simulates parsing CLC response data in Python. result_addr: 16-byte response dat
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler.initial_work_tile_info`
 
-**Signature:** `initial_work_tile_info(*, loc = None, ip = None) → WorkTileInfo`
+**Signature:** `initial_work_tile_info() → WorkTileInfo`
 
 ### advance_to_next_work
 
@@ -2056,7 +2055,7 @@ Simulates parsing CLC response data in Python. result_addr: 16-byte response dat
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler.advance_to_next_work`
 
-**Signature:** `advance_to_next_work(mbarrier_addr, loc = None, ip = None)`
+**Signature:** `advance_to_next_work(mbarrier_addr: cutlass.cute.typing.Pointer) → None`
 
 ### num_tiles_executed
 
@@ -2064,37 +2063,47 @@ Simulates parsing CLC response data in Python. result_addr: 16-byte response dat
 
 **Qualified name:** `cutlass.utils.ClcDynamicPersistentTileScheduler.num_tiles_executed`
 
-**Signature:** `num_tiles_executed: cutlass.cutlass_dsl.Int32`
+**Signature:** `num_tiles_executed: _MockObject`
 
 ## cutlass.utils.print_latex
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.print_latex(x: cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout, *, color: ~typing.Callable = <function tikz_color_bwx8>)`
+**Signature:** `cutlass.utils.print_latex(x: cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout, *, color: ~typing.Callable = <function tikz_color_bwx8>, render_func: ~typing.Callable[[str], None] | None = None) → None`
 
 Prints a layout.
 
 ### Parameters
 
--   **x** (*Union\[Layout, ComposedLayout\]*) -- A layout
+- **x** (*Union\[Layout,* *ComposedLayout\]*) -- A layout
 
--   **color** (*Callable*) -- A function that returns TiKZ colors
+- **color** (*Callable*) -- A function that returns TiKZ colors
+
+- **render_func** (*Callable\[\[str\],* *None\]* *\|* *None*) -- Optional callback fed the `{tikzpicture}` body (without the standalone-document wrapper) in a single call, instead of printing a full LaTeX document to stdout.
 
 ## cutlass.utils.print_latex_tv
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.print_latex_tv(layout_tv: cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout, tile_mn: cutlass.cute.typing.IntTuple | cutlass.cute.typing.Layout, *, color: ~typing.Callable = <function tikz_color_tv>)`
+**Signature:** `cutlass.utils.print_latex_tv(layout_tv: cutlass.cute.typing.Layout | cutlass.cute.typing.ComposedLayout, tile_mn: cutlass.cute.typing.IntTuple | cutlass.cute.typing.Layout, *, color: ~typing.Callable = <function tikz_color_tv>, palette: str | ~typing.Callable | None = None, title: str | None = None, axis_labels: bool = False, render_func: ~typing.Callable[[str], None] | None = None) → None`
 
 Prints a tv layout for a tile M N. Everything must be static.
 
 ### Parameters
 
--   **layout_tv** (*Union\[Layout, ComposedLayout\]*) -- A static thread value layout
+- **layout_tv** (*Union\[Layout,* *ComposedLayout\]*) -- A static thread value layout
 
--   **tile_mn** (*Union\[IntTuple, Layout\]*) -- A static M N tile
+- **tile_mn** (*Union\[IntTuple,* *Layout\]*) -- A static M N tile
 
--   **color** (*Callable*) -- A function that returns TiKZ colors
+- **color** (*Callable*) -- A function `color(tid, vid) -> str` returning a TikZ fill color for the cell owned by thread `tid` value `vid`. Used when `palette` is `None`; ignored otherwise.
+
+- **palette** (*Optional\[Union\[str,* *Callable\]\]*) -- Optional richer cell coloring that supersedes `color`. Either the name of a built-in palette (a key of `PALETTES`: the color `"pastel"`, `"rainbow"`, `"rainbow_dual"` or the monochrome `"white"`, `"bw"`, `"bw_dual"`) or a factory `palette(num_tid, num_vid) -> cell` where `cell(tid, vid)` returns either a TikZ fill string (one fill spanning the cell) or a list of ``` Band``s `` (stacked horizontal fills).``  ``The factory form lets a palette capture the thread / value counts -- needed to spread hues evenly over the wheel -- without widening the per-cell  (tid, `` vid)` contract.
+
+- **title** (*Optional\[str\]*) -- Optional title drawn above the figure, one line per `\n`-separated segment (e.g. the operator / function / tensor that produced this layout). LaTeX specials are escaped.
+
+- **axis_labels** (*bool*) -- When `True`, annotate the M (row, downward) and N (column, rightward) axis directions. The picture's coordinate basis runs M down and N right; these labels make that orientation explicit so a reader can tell whether a thread's values are contiguous along the memory-major axis.
+
+- **render_func** (*Callable\[\[str\],* *None\]* *\|* *None*) -- Optional callback fed the `{tikzpicture}` body (without the standalone-document wrapper) in a single call, instead of printing a full LaTeX document to stdout.
 
 ## cutlass.utils.is_fp8_dtype
 
@@ -2106,7 +2115,7 @@ Check if dtype is a float8 type that doesn't support dlpack.
 
 ### Parameters
 
--   **dtype** (*Type\[cutlass.Numeric\]*) -- The cutlass numeric type to check
+- **dtype** (*Type\[cutlass.Numeric\]*) -- The cutlass numeric type to check
 
 ### Returns
 
@@ -2116,21 +2125,25 @@ True if the dtype is Float8E5M2 or Float8E4M3FN, False otherwise
 
 **Kind:** function
 
-**Signature:** `cutlass.utils.create_cute_tensor_for_fp8(storage_tensor, dtype: Type[cutlass.cute.typing.Numeric], leading_dim: int, source_f32_tensor = None)`
+**Signature:** `cutlass.utils.create_cute_tensor_for_fp8(storage_tensor: Any, dtype: Type[cutlass.cute.typing.Numeric], leading_dim: int, source_f32_tensor: Any | None = None, assumed_align: int = 16, mark_dynamic_layout: bool = True) → cutlass.cute.typing.Tensor`
 
 Create cute tensor, handling float8 types that don't support dlpack.
 
-For float8 types, the storage_tensor should be uint8 (for DLPack compatibility). The source_f32_tensor provides the actual float32 values to convert to fp8.
+For float8 types, the storage_tensor should use byte storage (for DLPack compatibility). The source_f32_tensor provides the actual float32 values to convert to fp8.
 
 ### Parameters
 
--   **storage_tensor** -- Tensor for DLPack (uint8 for fp8, otherwise the actual dtype)
+- **storage_tensor** -- Tensor for DLPack (byte storage for fp8, otherwise the actual dtype)
 
--   **dtype** -- Target cutlass dtype
+- **dtype** -- Target cutlass dtype
 
--   **leading_dim** -- Leading dimension for dynamic layout
+- **leading_dim** -- Leading dimension for dynamic layout
 
--   **source_f32_tensor** -- Float32 source data for fp8 conversion (required for fp8)
+- **source_f32_tensor** -- Float32 source data for fp8 conversion (required for fp8)
+
+- **assumed_align** -- Assumed alignment for the DLPack tensor
+
+- **mark_dynamic_layout** -- Whether to mark the resulting tensor layout dynamic
 
 ### Returns
 

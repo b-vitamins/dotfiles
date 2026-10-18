@@ -1,9 +1,9 @@
 ---
 title: "Control Flow"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_control_flow.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # Control Flow
@@ -12,9 +12,9 @@ last_updated: "Mar 05, 2026"
 
 CuTe DSL walks Python's AST and converts each control-flow construct it finds into structured intermediate representation (IR). You can therefore write ordinary Python loops and branches while the compiler decides---statement by statement---whether to
 
--   **evaluate at compile time** if it's a native Python control flow, or
+- **evaluate at compile time** if it's a native Python control flow, or
 
--   **emit intermediate representation (IR)** when the control flow is marked as dynamic.
+- **emit intermediate representation (IR)** when the control flow is marked as dynamic.
 
 Passing intermediate representation (IR) values to a native Python control flow will result in an error.
 
@@ -24,11 +24,11 @@ For a high-level discussion of the overall pipeline, see [the code-generation ov
 
 CuTe DSL recognises three kinds of ranges for `for` loops:
 
--   `range` -- the Python built-in, always lowered to intermediate representation (IR)
+- `range` -- the Python built-in, always lowered to intermediate representation (IR)
 
--   `cutlass.range` - Same as Python built-in `range`, but supports advanced unrolling and pipelining control
+- `cutlass.range` - Same as Python built-in `range`, but supports advanced unrolling and pipelining control
 
--   `cutlass.range_constexpr` -- unrolled at compile time
+- `cutlass.range_constexpr` -- unrolled at compile time
 
 ### range(...)/cutlass.range(...)
 
@@ -93,19 +93,26 @@ This can be tedious to write and tune. CuTe DSL provides a loop attribute to ask
     @cute.jit
     def example():
         ...
-        # build a circular buffer
+        # build a circular buffer and an mbarrier for the TMA copy
         buffer = ...
+        mbar_ptr = ...
 
         for i in cutlass.range(bound, prefetch_stages=prefetch_stages):
             # Compiler automatically handles the pipelining:
             # - Generates prefetch loop for initial stages
             # - In main loop, prefetches future data while using current data
-            cute.copy(atom, gmem[i], buffer[i % total_stages], ...)
+            cute.copy(tma_atom, gmem[i], buffer[i % total_stages],
+                      tma_bar_ptr=mbar_ptr)
+            # ... wait on the mbarrier the TMA copy signals ...
             use(buffer[i % total_stages])  # Uses data from previous iterations
 
         ...
 
 Compiler will automatically generate the prefetch loop with prefetch_stages iterations and a corresponding main loop.
+
+> **Note.**
+>
+> The compiler recognizes two split points. A TMA bulk copy: at least one `cute.copy(tma_atom, ..., tma_bar_ptr=...)` paired with an mbarrier wait on the same barrier. Or a cp.async group: copies with a cp.async atom followed by `cute.arch.cp_async_commit_group()` and `cute.arch.cp_async_wait_group(0)`, in a canonical loop (start 0, step 1) whose circular-buffer slot is indexed as `i % stages`. Loops with neither split point --- or outside these shapes --- get a warning ("software pipelining ('prefetch_stages') skipped") and are compiled without pipelining.
 
 This feature is experimental and only supported on sm90 and above.
 
@@ -113,9 +120,9 @@ This feature is experimental and only supported on sm90 and above.
 
 Standard Python `if / elif / else` is supported.
 
--   **Predicate without annotation** → lowered to intermediate representation (IR).
+- **Predicate without annotation** → lowered to intermediate representation (IR).
 
--   **Predicate annotated with \`cutlass.const_expr\`** → evaluated at compile time.
+- **Predicate annotated with \`cutlass.const_expr\`** → evaluated at compile time.
 
 **Example:**
 
@@ -141,9 +148,9 @@ Standard Python `if / elif / else` is supported.
 
 Standard Python `while` is supported.
 
--   **Condition without annotation** → lowered to intermediate representation (IR).
+- **Condition without annotation** → lowered to intermediate representation (IR).
 
--   **Condition annotated with \`cutlass.const_expr\`** → evaluated at compile time.
+- **Condition annotated with \`cutlass.const_expr\`** → evaluated at compile time.
 
 **Example:**
 
@@ -194,13 +201,13 @@ Mix compile-time constructs with normal CuTe DSL code to generate specialised ke
 
 ### Limitations of Dynamic Control Flow
 
--   Early-exit `break`, `continue`, `pass` or raising exception from control flow body are not yet supported.
+- Early-exit `break`, `continue`, `pass` or raising exception from control flow body are not yet supported.
 
--   Operations in the control flow body are traced only when tracing is active in that region.
+- Operations in the control flow body are traced only when tracing is active in that region.
 
--   Values originating in control flow body are not available outside the control flow.
+- Values originating in control flow body are not available outside the control flow.
 
--   Changing type of a variable in control flow body is not allowed.
+- Changing type of a variable in control flow body is not allowed.
 
 **Example:**
 

@@ -1,9 +1,9 @@
 ---
 title: "cutlass.pipeline"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_api/pipeline.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # cutlass.pipeline
@@ -28,13 +28,21 @@ Agent indicates what is participating in the pipeline synchronization.
 
 **Signature:** `Thread = 1`
 
+### Warp
+
+**Kind:** attribute
+
+**Qualified name:** `cutlass.pipeline.Agent.Warp`
+
+**Signature:** `Warp = 2`
+
 ### ThreadBlock
 
 **Kind:** attribute
 
 **Qualified name:** `cutlass.pipeline.Agent.ThreadBlock`
 
-**Signature:** `ThreadBlock = 2`
+**Signature:** `ThreadBlock = 3`
 
 ### ThreadBlockCluster
 
@@ -42,7 +50,7 @@ Agent indicates what is participating in the pipeline synchronization.
 
 **Qualified name:** `cutlass.pipeline.Agent.ThreadBlockCluster`
 
-**Signature:** `ThreadBlockCluster = 3`
+**Signature:** `ThreadBlockCluster = 4`
 
 ## CooperativeGroup
 
@@ -50,11 +58,11 @@ Agent indicates what is participating in the pipeline synchronization.
 
 **Qualified name:** `cutlass.pipeline.CooperativeGroup`
 
-**Signature:** `CooperativeGroup(agent: Agent, size: int = 1, alignment = None)`
+**Signature:** `CooperativeGroup(agent: Agent, size: int | _MockObject = 1, alignment: int | None = None)`
 
 Bases: `object`
 
-CooperativeGroup contains size and alignment restrictions for an Agent.
+CooperativeGroup contains size restrictions for an Agent.
 
 ### \_\_init\_\_
 
@@ -62,7 +70,7 @@ CooperativeGroup contains size and alignment restrictions for an Agent.
 
 **Qualified name:** `cutlass.pipeline.CooperativeGroup.__init__`
 
-**Signature:** `__init__(agent: Agent, size: int = 1, alignment = None)`
+**Signature:** `__init__(agent: Agent, size: int | _MockObject = 1, alignment: int | None = None)`
 
 ## PipelineOp
 
@@ -152,7 +160,7 @@ This class defines the interface for different types of hardware synchronization
 
 **Qualified name:** `cutlass.pipeline.SyncObject.arrive`
 
-**Signature:** `abstract arrive() → None`
+**Signature:** `abstract arrive(*args: Any, **kwargs: Any) → None`
 
 ### wait
 
@@ -160,7 +168,7 @@ This class defines the interface for different types of hardware synchronization
 
 **Qualified name:** `cutlass.pipeline.SyncObject.wait`
 
-**Signature:** `abstract wait() → None`
+**Signature:** `abstract wait(*args: Any, **kwargs: Any) → None`
 
 ### arrive_and_wait
 
@@ -202,6 +210,26 @@ This class defines the interface for different types of hardware synchronization
 
 **Signature:** `_abc_impl = <_abc._abc_data object>`
 
+## MbarrierLayout
+
+**Kind:** class
+
+**Qualified name:** `cutlass.pipeline.MbarrierLayout`
+
+**Signature:** `MbarrierLayout(value)`
+
+Bases: `Enum`
+
+Layout of mbarrier used for synchronization.
+
+### V0
+
+**Kind:** attribute
+
+**Qualified name:** `cutlass.pipeline.MbarrierLayout.V0`
+
+**Signature:** `V0 = 1`
+
 ## MbarrierArray
 
 **Kind:** class
@@ -220,7 +248,7 @@ MbarrierArray implements an abstraction for an array of smem barriers.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.__init__`
 
-**Signature:** `__init__(barrier_storage: cutlass.cute.typing.Pointer, num_stages: int, agent: tuple[PipelineOp, CooperativeGroup], tx_count: int = 0, *, loc = None, ip = None) → None`
+**Signature:** `__init__() → None`
 
 ### recast_to_new_op_type
 
@@ -232,13 +260,30 @@ MbarrierArray implements an abstraction for an array of smem barriers.
 
 Creates a copy of MbarrierArray with a different op_type without re-initializing barriers
 
+### \_mbar_scope
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.MbarrierArray._mbar_scope`
+
+**Signature:** `_mbar_scope(op: str) → Any`
+
+Return a Scope context manager for barrier identification.
+
+Format: `name:op` (e.g. `smem_kv:wait`, `tmem_sp0:arrive`). Profiling tools group by the `name` prefix and classify by the `op` suffix.
+
+Usage:
+
+    with self._mbar_scope("wait"):
+        cute.arch.mbarrier_wait(...)
+
 ### mbarrier_init
 
 **Kind:** method
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.mbarrier_init`
 
-**Signature:** `mbarrier_init(*, loc = None, ip = None) → None`
+**Signature:** `mbarrier_init() → None`
 
 Initializes an array of mbarriers using warp 0.
 
@@ -248,17 +293,17 @@ Initializes an array of mbarriers using warp 0.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.arrive`
 
-**Signature:** `arrive(index: int, dst: int, cta_group: CtaGroup | None = None, *, loc = None, ip = None) → None`
+**Signature:** `arrive(index: int, dst: int, cta_group: CtaGroup | None = None) → None`
 
 Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 #### Parameters
 
--   **index** (*int*) -- Index of the mbarrier in the array to arrive on
+- **index** (*int*) -- Index of the mbarrier in the array to arrive on
 
--   **dst** (*int* *\|* *None*) -- Destination parameter for selective arrival, which can be either a mask or destination cta rank. When None, both `TCGen05Mma` and `AsyncThread` will arrive on their local mbarrier. - For `TCGen05Mma`, `dst` serves as a multicast mask (e.g., 0b1011 allows arrive signal to be multicast to CTAs in the cluster with rank = 0, 1, and 3). - For `AsyncThread`, `dst` serves as a destination cta rank (e.g., 3 means threads will arrive on the mbarrier with rank = 3 in the cluster).
+- **dst** (*int* *\|* *None*) -- Destination parameter for selective arrival, which can be either a mask or destination cta rank. When None, both `TCGen05Mma` and `AsyncThread` will arrive on their local mbarrier. - For `TCGen05Mma`, `dst` serves as a multicast mask (e.g., 0b1011 allows arrive signal to be multicast to CTAs in the cluster with rank = 0, 1, and 3). - For `AsyncThread`, `dst` serves as a destination cta rank (e.g., 3 means threads will arrive on the mbarrier with rank = 3 in the cluster).
 
--   **cta_group** (`cute.nvgpu.tcgen05.CtaGroup`, optional) -- CTA group for `TCGen05Mma`, defaults to None for other op types
+- **cta_group** (`cute.nvgpu.tcgen05.CtaGroup`, optional) -- CTA group for `TCGen05Mma`, defaults to None for other op types
 
 ### arrive_mbarrier
 
@@ -266,7 +311,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.arrive_mbarrier`
 
-**Signature:** `arrive_mbarrier(index: int, dst_rank: int | None = None, *, loc = None, ip = None) → None`
+**Signature:** `arrive_mbarrier(index: int, dst_rank: int | None = None) → None`
 
 ### arrive_cp_async_mbarrier
 
@@ -274,7 +319,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.arrive_cp_async_mbarrier`
 
-**Signature:** `arrive_cp_async_mbarrier(index: int, *, loc = None, ip = None)`
+**Signature:** `arrive_cp_async_mbarrier(index: int) → None`
 
 ### arrive_tcgen05mma
 
@@ -282,7 +327,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.arrive_tcgen05mma`
 
-**Signature:** `arrive_tcgen05mma(index: int, mask: int | None, cta_group: CtaGroup, *, loc = None, ip = None) → None`
+**Signature:** `arrive_tcgen05mma(index: int, mask: int | None, cta_group: CtaGroup) → None`
 
 ### arrive_and_expect_tx
 
@@ -290,7 +335,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.arrive_and_expect_tx`
 
-**Signature:** `arrive_and_expect_tx(index: int, tx_count: int, *, loc = None, ip = None) → None`
+**Signature:** `arrive_and_expect_tx(index: int, tx_count: int) → None`
 
 ### arrive_and_expect_tx_with_dst
 
@@ -298,7 +343,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.arrive_and_expect_tx_with_dst`
 
-**Signature:** `arrive_and_expect_tx_with_dst(index: int, tx_count: int, dst: int | None = None, *, loc = None, ip = None) → None`
+**Signature:** `arrive_and_expect_tx_with_dst(index: int, tx_count: int, dst: int | None = None) → None`
 
 ### try_wait
 
@@ -306,7 +351,15 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.try_wait`
 
-**Signature:** `try_wait(index: int, phase: int, *, loc = None, ip = None) → cutlass.cutlass_dsl.Boolean`
+**Signature:** `try_wait(index: int, phase: int) → _MockObject`
+
+### test_wait
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.MbarrierArray.test_wait`
+
+**Signature:** `test_wait(index: int, phase: int) → _MockObject`
 
 ### wait
 
@@ -314,7 +367,15 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.wait`
 
-**Signature:** `wait(index: int, phase: int, *, loc = None, ip = None) → None`
+**Signature:** `wait(index: int, phase: int) → None`
+
+Wait on mbarrier.
+
+#### Parameters
+
+- **index** -- Index of the mbarrier in the array
+
+- **phase** -- Phase/parity to wait for (0 or 1)
 
 ### arrive_and_wait
 
@@ -322,7 +383,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.arrive_and_wait`
 
-**Signature:** `arrive_and_wait(index: int, phase: int, dst: int, cta_group: CtaGroup | None = None, *, loc = None, ip = None) → None`
+**Signature:** `arrive_and_wait(index: int, phase: int, dst: int, cta_group: CtaGroup | None = None) → None`
 
 ### arrive_and_drop
 
@@ -330,7 +391,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.arrive_and_drop`
 
-**Signature:** `arrive_and_drop(*, loc = None, ip = None) → None`
+**Signature:** `arrive_and_drop() → None`
 
 ### get_barrier
 
@@ -338,7 +399,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.MbarrierArray.get_barrier`
 
-**Signature:** `get_barrier(index: int, *, loc = None, ip = None) → cutlass.cute.typing.Pointer`
+**Signature:** `get_barrier(index: int) → cutlass.cute.typing.Pointer`
 
 ### max
 
@@ -362,7 +423,7 @@ Select the arrive corresponding to this MbarrierArray's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier`
 
-**Signature:** `NamedBarrier(barrier_id: int, num_threads: int)`
+**Signature:** `NamedBarrier(barrier_id: int | _MockObject, num_threads: int | _MockObject)`
 
 Bases: [`SyncObject`](#cutlass.pipeline.SyncObject)
 
@@ -376,7 +437,7 @@ See the [PTX documentation](https://https://docs.nvidia.com/cuda/parallel-thread
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.barrier_id`
 
-**Signature:** `barrier_id: int`
+**Signature:** `barrier_id: int | _MockObject`
 
 ### num_threads
 
@@ -384,7 +445,7 @@ See the [PTX documentation](https://https://docs.nvidia.com/cuda/parallel-thread
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.num_threads`
 
-**Signature:** `num_threads: int`
+**Signature:** `num_threads: int | _MockObject`
 
 ### arrive
 
@@ -392,7 +453,7 @@ See the [PTX documentation](https://https://docs.nvidia.com/cuda/parallel-thread
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.arrive`
 
-**Signature:** `arrive(*, loc = None, ip = None) → None`
+**Signature:** `arrive() → None`
 
 The aligned flavor of arrive is used when all threads in the CTA will execute the same instruction. See PTX documentation.
 
@@ -402,7 +463,7 @@ The aligned flavor of arrive is used when all threads in the CTA will execute th
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.arrive_unaligned`
 
-**Signature:** `arrive_unaligned(*, loc = None, ip = None) → None`
+**Signature:** `arrive_unaligned() → None`
 
 The unaligned flavor of arrive can be used with an arbitrary number of threads in the CTA.
 
@@ -412,7 +473,7 @@ The unaligned flavor of arrive can be used with an arbitrary number of threads i
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.wait`
 
-**Signature:** `wait(*, loc = None, ip = None) → None`
+**Signature:** `wait() → None`
 
 NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_wait. If synchronizing two warps in a producer/consumer pairing, the arrive count would be 32 using mbarriers but 64 using NamedBarriers. Only threads from either the producer or consumer are counted for mbarriers, while all threads participating in the sync are counted for NamedBarriers.
 
@@ -422,7 +483,7 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.wait_unaligned`
 
-**Signature:** `wait_unaligned(*, loc = None, ip = None) → None`
+**Signature:** `wait_unaligned() → None`
 
 ### arrive_and_wait
 
@@ -430,7 +491,7 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.arrive_and_wait`
 
-**Signature:** `arrive_and_wait(*, loc = None, ip = None) → None`
+**Signature:** `arrive_and_wait() → None`
 
 ### arrive_and_drop
 
@@ -438,7 +499,7 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.arrive_and_drop`
 
-**Signature:** `arrive_and_drop(*, loc = None, ip = None) → None`
+**Signature:** `arrive_and_drop() → None`
 
 ### sync
 
@@ -446,7 +507,7 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.sync`
 
-**Signature:** `sync(*, loc = None, ip = None) → None`
+**Signature:** `sync() → None`
 
 ### get_barrier
 
@@ -454,7 +515,7 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.get_barrier`
 
-**Signature:** `get_barrier(*, loc = None, ip = None) → int`
+**Signature:** `get_barrier() → int | _MockObject`
 
 ### max
 
@@ -470,7 +531,7 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.NamedBarrier.__init__`
 
-**Signature:** `__init__(barrier_id: int, num_threads: int) → None`
+**Signature:** `__init__(barrier_id: int | _MockObject, num_threads: int | _MockObject) → None`
 
 ### \_abc_impl
 
@@ -496,13 +557,13 @@ This class implements a pipeline ordering mechanism where work is divided into g
 
 The pipeline ordering works as follows:
 
--   The pipeline is divided into 'length' number of groups
+- The pipeline is divided into 'length' number of groups
 
--   Each group has 'depth' number of stages
+- Each group has 'depth' number of stages
 
--   Groups execute in a specific order with synchronization barriers
+- Groups execute in a specific order with synchronization barriers
 
--   Each group waits for the previous group to complete before proceeding
+- Each group waits for the previous group to complete before proceeding
 
 **Example:**
 
@@ -567,7 +628,7 @@ The pipeline ordering works as follows:
 
 **Qualified name:** `cutlass.pipeline.PipelineOrder.create`
 
-**Signature:** `static create(barrier_storage: cutlass.cute.typing.Pointer, depth: int, length: int, group_id: int, producer_group: CooperativeGroup, defer_sync: bool = False)`
+**Signature:** `static create(*, depth: int, length: int, group_id: int, producer_group: CooperativeGroup, barrier_storage: cutlass.cute.typing.Pointer | None = None, defer_sync: bool = False, name: str = '') → PipelineOrder`
 
 ### get_barrier_for_current_stage_idx
 
@@ -575,7 +636,7 @@ The pipeline ordering works as follows:
 
 **Qualified name:** `cutlass.pipeline.PipelineOrder.get_barrier_for_current_stage_idx`
 
-**Signature:** `get_barrier_for_current_stage_idx(group_id)`
+**Signature:** `get_barrier_for_current_stage_idx(group_id: int, state: PipelineState | None = None) → _MockObject`
 
 ### arrive
 
@@ -583,7 +644,7 @@ The pipeline ordering works as follows:
 
 **Qualified name:** `cutlass.pipeline.PipelineOrder.arrive`
 
-**Signature:** `arrive(*, loc = None, ip = None)`
+**Signature:** `arrive(state: PipelineState | None = None) → PipelineState | None`
 
 ### wait
 
@@ -591,7 +652,7 @@ The pipeline ordering works as follows:
 
 **Qualified name:** `cutlass.pipeline.PipelineOrder.wait`
 
-**Signature:** `wait(*, loc = None, ip = None)`
+**Signature:** `wait(state: PipelineState | None = None) → None`
 
 ### \_\_init\_\_
 
@@ -627,7 +688,7 @@ TmaStoreFence is used for a multi-stage epilogue buffer.
 
 **Qualified name:** `cutlass.pipeline.TmaStoreFence.arrive`
 
-**Signature:** `arrive(*, loc = None, ip = None) → None`
+**Signature:** `arrive() → None`
 
 ### wait
 
@@ -635,7 +696,7 @@ TmaStoreFence is used for a multi-stage epilogue buffer.
 
 **Qualified name:** `cutlass.pipeline.TmaStoreFence.wait`
 
-**Signature:** `wait(*, loc = None, ip = None) → None`
+**Signature:** `wait() → None`
 
 ### arrive_and_wait
 
@@ -643,7 +704,7 @@ TmaStoreFence is used for a multi-stage epilogue buffer.
 
 **Qualified name:** `cutlass.pipeline.TmaStoreFence.arrive_and_wait`
 
-**Signature:** `arrive_and_wait(*, loc = None, ip = None) → None`
+**Signature:** `arrive_and_wait() → None`
 
 ### arrive_and_drop
 
@@ -651,7 +712,7 @@ TmaStoreFence is used for a multi-stage epilogue buffer.
 
 **Qualified name:** `cutlass.pipeline.TmaStoreFence.arrive_and_drop`
 
-**Signature:** `arrive_and_drop(*, loc = None, ip = None) → None`
+**Signature:** `arrive_and_drop() → None`
 
 ### get_barrier
 
@@ -659,7 +720,7 @@ TmaStoreFence is used for a multi-stage epilogue buffer.
 
 **Qualified name:** `cutlass.pipeline.TmaStoreFence.get_barrier`
 
-**Signature:** `get_barrier(*, loc = None, ip = None) → None`
+**Signature:** `get_barrier() → None`
 
 ### max
 
@@ -675,7 +736,7 @@ TmaStoreFence is used for a multi-stage epilogue buffer.
 
 **Qualified name:** `cutlass.pipeline.TmaStoreFence.tail`
 
-**Signature:** `tail(*, loc = None, ip = None) → None`
+**Signature:** `tail() → None`
 
 ### \_abc_impl
 
@@ -727,7 +788,7 @@ An enumeration.
 
 **Qualified name:** `cutlass.pipeline.PipelineState`
 
-**Signature:** `PipelineState(stages: int, count, index, phase)`
+**Signature:** `PipelineState(stages: int, count: _MockObject, index: _MockObject, phase: _MockObject)`
 
 Bases: `object`
 
@@ -739,7 +800,7 @@ Pipeline state contains an index and phase bit corresponding to the current posi
 
 **Qualified name:** `cutlass.pipeline.PipelineState.__init__`
 
-**Signature:** `__init__(stages: int, count, index, phase)`
+**Signature:** `__init__(stages: int, count: _MockObject, index: _MockObject, phase: _MockObject)`
 
 ### clone
 
@@ -755,7 +816,7 @@ Pipeline state contains an index and phase bit corresponding to the current posi
 
 **Qualified name:** `cutlass.pipeline.PipelineState.index`
 
-**Signature:** `index: cutlass.cutlass_dsl.Int32`
+**Signature:** `index: _MockObject`
 
 ### count
 
@@ -763,7 +824,7 @@ Pipeline state contains an index and phase bit corresponding to the current posi
 
 **Qualified name:** `cutlass.pipeline.PipelineState.count`
 
-**Signature:** `count: cutlass.cutlass_dsl.Int32`
+**Signature:** `count: _MockObject`
 
 ### stages
 
@@ -779,7 +840,7 @@ Pipeline state contains an index and phase bit corresponding to the current posi
 
 **Qualified name:** `cutlass.pipeline.PipelineState.phase`
 
-**Signature:** `phase: cutlass.cutlass_dsl.Int32`
+**Signature:** `phase: _MockObject`
 
 ### reset_count
 
@@ -787,7 +848,7 @@ Pipeline state contains an index and phase bit corresponding to the current posi
 
 **Qualified name:** `cutlass.pipeline.PipelineState.reset_count`
 
-**Signature:** `reset_count(*, loc = None, ip = None)`
+**Signature:** `reset_count() → None`
 
 ### advance
 
@@ -795,7 +856,7 @@ Pipeline state contains an index and phase bit corresponding to the current posi
 
 **Qualified name:** `cutlass.pipeline.PipelineState.advance`
 
-**Signature:** `advance(*, loc = None, ip = None) → None`
+**Signature:** `advance(count: int | _MockObject = 1) → None`
 
 ### reverse
 
@@ -803,7 +864,7 @@ Pipeline state contains an index and phase bit corresponding to the current posi
 
 **Qualified name:** `cutlass.pipeline.PipelineState.reverse`
 
-**Signature:** `reverse(*, loc = None, ip = None)`
+**Signature:** `reverse() → None`
 
 ## PipelineAsync
 
@@ -811,7 +872,7 @@ Pipeline state contains an index and phase bit corresponding to the current posi
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync`
 
-**Signature:** `PipelineAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None)`
+**Signature:** `PipelineAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None)`
 
 Bases: `object`
 
@@ -833,15 +894,17 @@ The pipeline state transitions of one pipeline entry(mbarrier) can be represente
 | full_bar  | full      | n/a        | -         | \<Return\> | n/a       |
 +-----------+-----------+------------+-----------+------------+-----------+
 
-: Table 2 Pipeline State Transitions
+: Table 7 Pipeline State Transitions {#id1}
 
 Where:
 
--   p: producer
+- p: producer
 
--   c: consumer
+- c: consumer
 
--   \<Block\>: This action is blocked until transition to a state allow it to proceed by other side - e.g. `p.acquire()` is blocked until `empty_bar` transition to `empty` state by `c.release()`
+- \<Block\>: This action is blocked until transition to a state allow it to proceed by other side - e.g. `p.acquire()` is blocked until `empty_bar` transition to `empty` state by `c.release()`
+
+<!-- -->
 
     Array of mbarriers as circular buffer:
 
@@ -859,13 +922,13 @@ Where:
 
 Where:
 
--   X: Empty buffer (initial state)
+- X: Empty buffer (initial state)
 
--   W: Producer writing (producer is waiting for buffer to be empty)
+- W: Producer writing (producer is waiting for buffer to be empty)
 
--   D: Data ready (producer has written data to buffer)
+- D: Data ready (producer has written data to buffer)
 
--   R: Consumer reading (consumer is consuming data from buffer)
+- R: Consumer reading (consumer is consuming data from buffer)
 
 **Example:**
 
@@ -920,7 +983,7 @@ Where:
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.producer_mask`
 
-**Signature:** `producer_mask: cutlass.cutlass_dsl.Int32 | None`
+**Signature:** `producer_mask: _MockObject | None`
 
 ### consumer_mask
 
@@ -928,7 +991,7 @@ Where:
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.consumer_mask`
 
-**Signature:** `consumer_mask: cutlass.cutlass_dsl.Int32 | None`
+**Signature:** `consumer_mask: _MockObject | None`
 
 ### \_make_sync_object
 
@@ -936,7 +999,7 @@ Where:
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync._make_sync_object`
 
-**Signature:** `static _make_sync_object(barrier_storage: cutlass.cute.typing.Pointer, num_stages: int, agent: tuple[PipelineOp, CooperativeGroup], tx_count: int = 0) → SyncObject`
+**Signature:** `static _make_sync_object(barrier_storage: cutlass.cute.typing.Pointer, num_stages: int, agent: tuple[PipelineOp, CooperativeGroup], tx_count: int = 0, name: str = '', phase: Literal['', 'full', 'empty'] = '') → SyncObject`
 
 Returns a SyncObject corresponding to an agent's PipelineOp.
 
@@ -946,7 +1009,7 @@ Returns a SyncObject corresponding to an agent's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.create`
 
-**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, barrier_storage: cutlass.cute.typing.Pointer | None = None, producer_mask: cutlass.cutlass_dsl.Int32 | None = None, consumer_mask: cutlass.cutlass_dsl.Int32 | None = None, defer_sync: bool = False)`
+**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, barrier_storage: cutlass.cute.typing.Pointer | None = None, producer_mask: _MockObject | None = None, consumer_mask: _MockObject | None = None, defer_sync: bool = False, name: str = '') → PipelineAsync`
 
 Creates and initializes a new PipelineAsync instance.
 
@@ -954,17 +1017,17 @@ This helper function computes necessary attributes and returns an instance of Pi
 
 #### Parameters
 
--   **barrier_storage** (*cute.Pointer*) -- Pointer to the shared memory address for this pipeline's mbarriers
+- **barrier_storage** (*cute.Pointer*) -- Pointer to the shared memory address for this pipeline's mbarriers
 
--   **num_stages** (*int*) -- Number of buffer stages for this pipeline
+- **num_stages** (*int*) -- Number of buffer stages for this pipeline
 
--   **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
+- **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
 
--   **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the consumer agent
+- **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the consumer agent
 
--   **producer_mask** (*Int32,* *optional*) -- Mask for signaling arrives for the producer agent
+- **producer_mask** ([*Int32*](../basic_data_types.md#cutlass.Int32)*,* *optional*) -- Mask for signaling arrives for the producer agent
 
--   **consumer_mask** (*Int32,* *optional*) -- Mask for signaling arrives for the consumer agent
+- **consumer_mask** ([*Int32*](../basic_data_types.md#cutlass.Int32)*,* *optional*) -- Mask for signaling arrives for the consumer agent
 
 #### Raises
 
@@ -984,7 +1047,7 @@ A new `PipelineAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.producer_acquire`
 
-**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None)`
+**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: _MockObject | None = None) → None`
 
 ### producer_try_acquire
 
@@ -992,7 +1055,7 @@ A new `PipelineAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.producer_try_acquire`
 
-**Signature:** `producer_try_acquire(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `producer_try_acquire(state: PipelineState) → _MockObject`
 
 ### producer_commit
 
@@ -1000,7 +1063,7 @@ A new `PipelineAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.producer_commit`
 
-**Signature:** `producer_commit(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `producer_commit(state: PipelineState) → None`
 
 ### consumer_wait
 
@@ -1008,7 +1071,7 @@ A new `PipelineAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.consumer_wait`
 
-**Signature:** `consumer_wait(state: PipelineState, try_wait_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None)`
+**Signature:** `consumer_wait(state: PipelineState, try_wait_token: _MockObject | None = None) → None`
 
 ### consumer_try_wait
 
@@ -1016,7 +1079,7 @@ A new `PipelineAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.consumer_try_wait`
 
-**Signature:** `consumer_try_wait(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `consumer_try_wait(state: PipelineState) → _MockObject`
 
 ### consumer_release
 
@@ -1024,7 +1087,15 @@ A new `PipelineAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.consumer_release`
 
-**Signature:** `consumer_release(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `consumer_release(state: PipelineState) → None`
+
+### consumer_get_barrier
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.PipelineAsync.consumer_get_barrier`
+
+**Signature:** `consumer_get_barrier(state: PipelineState) → cutlass.cute.typing.Pointer`
 
 ### producer_get_barrier
 
@@ -1032,7 +1103,7 @@ A new `PipelineAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.producer_get_barrier`
 
-**Signature:** `producer_get_barrier(state: PipelineState, *, loc = None, ip = None) → cutlass.cute.typing.Pointer`
+**Signature:** `producer_get_barrier(state: PipelineState) → cutlass.cute.typing.Pointer`
 
 ### producer_tail
 
@@ -1040,7 +1111,7 @@ A new `PipelineAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.producer_tail`
 
-**Signature:** `producer_tail(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `producer_tail(state: PipelineState) → None`
 
 Make sure the last used buffer empty signal is visible to producer. Producer tail is usually executed by producer before exit, to avoid dangling mbarrier arrive signals after kernel exit.
 
@@ -1054,7 +1125,7 @@ Make sure the last used buffer empty signal is visible to producer. Producer tai
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.make_producer`
 
-**Signature:** `make_producer(*, loc = None, ip = None)`
+**Signature:** `make_producer() → PipelineProducer`
 
 ### make_consumer
 
@@ -1062,7 +1133,7 @@ Make sure the last used buffer empty signal is visible to producer. Producer tai
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.make_consumer`
 
-**Signature:** `make_consumer(*, loc = None, ip = None)`
+**Signature:** `make_consumer() → PipelineConsumer`
 
 ### make_participants
 
@@ -1070,7 +1141,7 @@ Make sure the last used buffer empty signal is visible to producer. Producer tai
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.make_participants`
 
-**Signature:** `make_participants(*, loc = None, ip = None)`
+**Signature:** `make_participants() → tuple[PipelineProducer, PipelineConsumer]`
 
 ### \_\_init\_\_
 
@@ -1078,7 +1149,7 @@ Make sure the last used buffer empty signal is visible to producer. Producer tai
 
 **Qualified name:** `cutlass.pipeline.PipelineAsync.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None) → None`
 
 ## PipelineCpAsync
 
@@ -1086,11 +1157,11 @@ Make sure the last used buffer empty signal is visible to producer. Producer tai
 
 **Qualified name:** `cutlass.pipeline.PipelineCpAsync`
 
-**Signature:** `PipelineCpAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None)`
+**Signature:** `PipelineCpAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None)`
 
 Bases: [`PipelineAsync`](#cutlass.pipeline.PipelineAsync)
 
-PipelineCpAsync is used for CpAsync producers and AsyncThread consumers
+PipelineCpAsync is used for CpAsync producers and AsyncThread consumers (e.g. Hopper load mainloops).
 
 ### create
 
@@ -1098,23 +1169,23 @@ PipelineCpAsync is used for CpAsync producers and AsyncThread consumers
 
 **Qualified name:** `cutlass.pipeline.PipelineCpAsync.create`
 
-**Signature:** `static create(barrier_storage: cutlass.cute.typing.Pointer, num_stages: cutlass.cutlass_dsl.Int32, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, producer_mask: cutlass.cutlass_dsl.Int32 | None = None, consumer_mask: cutlass.cutlass_dsl.Int32 | None = None, defer_sync: bool = False)`
+**Signature:** `static create(*, barrier_storage: cutlass.cute.typing.Pointer, num_stages: _MockObject, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, producer_mask: _MockObject | None = None, consumer_mask: _MockObject | None = None, defer_sync: bool = False, name: str = '') → PipelineCpAsync`
 
 Helper function that computes necessary attributes and returns a `PipelineCpAsync` instance.
 
 #### Parameters
 
--   **barrier_storage** (*cute.Pointer*) -- Pointer to the shared memory address for this pipeline's mbarriers
+- **barrier_storage** (*cute.Pointer*) -- Pointer to the shared memory address for this pipeline's mbarriers
 
--   **num_stages** (*Int32*) -- Number of buffer stages for this pipeline
+- **num_stages** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Number of buffer stages for this pipeline
 
--   **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
+- **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
 
--   **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the consumer agent
+- **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the consumer agent
 
--   **producer_mask** (*Int32,* *optional*) -- Mask for signaling arrives for the producer agent, defaults to None
+- **producer_mask** ([*Int32*](../basic_data_types.md#cutlass.Int32)*,* *optional*) -- Mask for signaling arrives for the producer agent, defaults to None
 
--   **consumer_mask** (*Int32,* *optional*) -- Mask for signaling arrives for the consumer agent, defaults to None
+- **consumer_mask** ([*Int32*](../basic_data_types.md#cutlass.Int32)*,* *optional*) -- Mask for signaling arrives for the consumer agent, defaults to None
 
 #### Returns
 
@@ -1130,7 +1201,7 @@ A new `PipelineCpAsync` instance configured with the provided parameters
 
 **Qualified name:** `cutlass.pipeline.PipelineCpAsync.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None) → None`
 
 ## PipelineTmaAsync
 
@@ -1138,19 +1209,19 @@ A new `PipelineCpAsync` instance configured with the provided parameters
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaAsync`
 
-**Signature:** `PipelineTmaAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, is_signalling_thread: cutlass.cutlass_dsl.Boolean)`
+**Signature:** `PipelineTmaAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, is_signaling_thread: _MockObject)`
 
 Bases: [`PipelineAsync`](#cutlass.pipeline.PipelineAsync)
 
 PipelineTmaAsync is used for TMA producers and AsyncThread consumers (e.g. Hopper mainloops).
 
-### is_signalling_thread
+### is_signaling_thread
 
 **Kind:** attribute
 
-**Qualified name:** `cutlass.pipeline.PipelineTmaAsync.is_signalling_thread`
+**Qualified name:** `cutlass.pipeline.PipelineTmaAsync.is_signaling_thread`
 
-**Signature:** `is_signalling_thread: cutlass.cutlass_dsl.Boolean`
+**Signature:** `is_signaling_thread: _MockObject`
 
 ### init_empty_barrier_arrive_signal
 
@@ -1158,7 +1229,7 @@ PipelineTmaAsync is used for TMA producers and AsyncThread consumers (e.g. Hoppe
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaAsync.init_empty_barrier_arrive_signal`
 
-**Signature:** `static init_empty_barrier_arrive_signal(cta_layout_vmnk: cutlass.cute.typing.Layout, tidx: cutlass.cutlass_dsl.Int32, mcast_mode_mn: tuple[int, int] = (1, 1))`
+**Signature:** `static init_empty_barrier_arrive_signal(cta_layout_vmnk: cutlass.cute.typing.Layout, tidx: _MockObject, mcast_mode_mn: tuple[int, int] = (1, 1)) → tuple[_MockObject, _MockObject]`
 
 Initialize the empty barrier arrive signal.
 
@@ -1166,11 +1237,11 @@ This function determines which threads should signal empty barrier arrives based
 
 #### Parameters
 
--   **cta_layout_vmnk** (*cute.Layout*) -- Layout describing the cluster shape and CTA arrangement
+- **cta_layout_vmnk** (*cute.Layout*) -- Layout describing the cluster shape and CTA arrangement
 
--   **tidx** (*Int32*) -- Thread index within the warp
+- **tidx** ([*Int32*](../basic_data_types.md#cutlass.Int32)) -- Thread index within the warp
 
--   **mcast_mode_mn** (*tuple\[int,* *int\]*) -- Tuple specifying multicast modes for m and n dimensions (each 0 or 1), defaults to (1,1)
+- **mcast_mode_mn** (*tuple\[int,* *int\]*) -- Tuple specifying multicast modes for m and n dimensions (each 0 or 1), defaults to (1,1)
 
 #### Raises
 
@@ -1182,7 +1253,7 @@ Tuple containing destination CTA rank and boolean indicating if current thread s
 
 #### Return type
 
-tuple\[Int32, Boolean\]
+tuple\[[Int32](../basic_data_types.md#cutlass.Int32), [Boolean](../basic_data_types.md#cutlass.Boolean)\]
 
 ### create
 
@@ -1190,27 +1261,31 @@ tuple\[Int32, Boolean\]
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaAsync.create`
 
-**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, tx_count: int, barrier_storage: cutlass.cute.typing.Pointer | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, tidx: cutlass.cutlass_dsl.Int32 | None = None, mcast_mode_mn: tuple[int, int] = (1, 1), defer_sync: bool = False)`
+**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, tx_count: int, barrier_storage: cutlass.cute.typing.Pointer | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, tidx: _MockObject | None = None, mcast_mode_mn: tuple[int, int] = (1, 1), enable_multicast_signaling: bool = False, defer_sync: bool = False, name: str = '') → PipelineTmaAsync`
 
 Create a new `PipelineTmaAsync` instance.
 
 #### Parameters
 
--   **num_stages** (*int*) -- Number of buffer stages for this pipeline
+- **num_stages** (*int*) -- Number of buffer stages for this pipeline
 
--   **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
+- **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
 
--   **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the consumer agent
+- **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the consumer agent
 
--   **tx_count** (*int*) -- Number of bytes expected to be written to the transaction barrier for one stage
+- **tx_count** (*int*) -- Number of bytes expected to be written to the transaction barrier for one stage
 
--   **barrier_storage** (*cute.Pointer,* *optional*) -- Pointer to the shared memory address for this pipeline's mbarriers, defaults to None
+- **barrier_storage** (*cute.Pointer,* *optional*) -- Pointer to the shared memory address for this pipeline's mbarriers, defaults to None
 
--   **cta_layout_vmnk** (*cute.Layout,* *optional*) -- Layout of the cluster shape, defaults to None
+- **cta_layout_vmnk** (*cute.Layout,* *optional*) -- Layout of the cluster shape, defaults to None
 
--   **tidx** (*Int32,* *optional*) -- Thread index to consumer async threads, defaults to None
+- **tidx** ([*Int32*](../basic_data_types.md#cutlass.Int32)*,* *optional*) -- Thread index to consumer async threads, defaults to None
 
--   **mcast_mode_mn** (*tuple\[int,* *int\],* *optional*) -- Tuple specifying multicast modes for m and n dimensions (each 0 or 1), defaults to (1,1)
+- **mcast_mode_mn** (*tuple\[int,* *int\],* *optional*) -- Tuple specifying multicast modes for m and n dimensions (each 0 or 1), defaults to (1,1)
+
+- **enable_multicast_signaling** (*bool,* *optional*) -- When `True`, the CooperativeGroup is expected to represent the number of threads in a CTA calling consumer_wait/consumer_release, and the actual arrive count is recomputed internally. Multicast is handled automatically based on cta_layout_vmnk and mcast_mode_mn. Defaults to `False`, which skips this logic and uses the consumer arrive count specified by the user.
+
+- **defer_sync** (*bool,* *optional*) -- Bool specifying whether or not to skip the built-in mbarrier fence and sync for performance, defaults to False
 
 #### Raises
 
@@ -1230,7 +1305,7 @@ New `PipelineTmaAsync` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaAsync.producer_acquire`
 
-**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None)`
+**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: _MockObject | None = None) → None`
 
 TMA producer commit conditionally waits on buffer empty and sets the transaction barrier.
 
@@ -1240,7 +1315,7 @@ TMA producer commit conditionally waits on buffer empty and sets the transaction
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaAsync.producer_commit`
 
-**Signature:** `producer_commit(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `producer_commit(state: PipelineState) → None`
 
 TMA producer commit is a noop since TMA instruction itself updates the transaction count.
 
@@ -1250,7 +1325,7 @@ TMA producer commit is a noop since TMA instruction itself updates the transacti
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaAsync.consumer_release`
 
-**Signature:** `consumer_release(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `consumer_release(state: PipelineState) → None`
 
 TMA consumer release conditionally signals the empty buffer to the producer.
 
@@ -1260,7 +1335,7 @@ TMA consumer release conditionally signals the empty buffer to the producer.
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaAsync.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, is_signalling_thread: cutlass.cutlass_dsl.Boolean) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, is_signaling_thread: _MockObject) → None`
 
 ## PipelineTmaUmma
 
@@ -1268,7 +1343,7 @@ TMA consumer release conditionally signals the empty buffer to the producer.
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma`
 
-**Signature:** `PipelineTmaUmma(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, is_leader_cta: bool, cta_group: CtaGroup)`
+**Signature:** `PipelineTmaUmma(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, is_leader_cta: bool, cta_group: CtaGroup)`
 
 Bases: [`PipelineAsync`](#cutlass.pipeline.PipelineAsync)
 
@@ -1296,7 +1371,7 @@ PipelineTmaUmma is used for TMA producers and UMMA consumers (e.g. Blackwell mai
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma._make_sync_object`
 
-**Signature:** `_make_sync_object(barrier_storage: cutlass.cute.typing.Pointer, num_stages: int, agent: tuple[PipelineOp, CooperativeGroup], tx_count: int = 0, *, loc = None, ip = None) → SyncObject`
+**Signature:** `static _make_sync_object(barrier_storage: cutlass.cute.typing.Pointer, num_stages: int, agent: tuple[PipelineOp, CooperativeGroup], tx_count: int = 0, mbarrier_layout: MbarrierLayout = MbarrierLayout.V0, name: str = '', phase: Literal['', 'full', 'empty'] = '') → SyncObject`
 
 Returns a SyncObject corresponding to an agent's PipelineOp.
 
@@ -1306,7 +1381,7 @@ Returns a SyncObject corresponding to an agent's PipelineOp.
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma._compute_mcast_arrival_mask`
 
-**Signature:** `_compute_mcast_arrival_mask(cta_layout_vmnk: cutlass.cute.typing.Layout, mcast_mode_mn: tuple[int, int], *, loc = None, ip = None)`
+**Signature:** `static _compute_mcast_arrival_mask(cta_layout_vmnk: cutlass.cute.typing.Layout, mcast_mode_mn: tuple[int, int]) → _MockObject`
 
 Computes a mask for signaling arrivals to multicasting threadblocks.
 
@@ -1316,7 +1391,7 @@ Computes a mask for signaling arrivals to multicasting threadblocks.
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma._compute_is_leader_cta`
 
-**Signature:** `_compute_is_leader_cta(cta_layout_vmnk: cutlass.cute.typing.Layout, *, loc = None, ip = None)`
+**Signature:** `static _compute_is_leader_cta(cta_layout_vmnk: cutlass.cute.typing.Layout) → _MockObject`
 
 Computes leader threadblocks for 2CTA kernels. For 1CTA, all threadblocks are leaders.
 
@@ -1326,25 +1401,29 @@ Computes leader threadblocks for 2CTA kernels. For 1CTA, all threadblocks are le
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma.create`
 
-**Signature:** `create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, tx_count: int, barrier_storage: cutlass.cute.typing.Pointer = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, mcast_mode_mn: tuple[int, int] = (1, 1), defer_sync: bool = False, loc = None, ip = None)`
+**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, tx_count: int, barrier_storage: cutlass.cute.typing.Pointer | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, mcast_mode_mn: tuple[int, int] = (1, 1), enable_multicast_signaling: bool = False, defer_sync: bool = False, name: str = '') → PipelineTmaUmma`
 
 Creates and initializes a new PipelineTmaUmma instance.
 
 #### Parameters
 
--   **num_stages** (*int*) -- Number of buffer stages for this pipeline
+- **num_stages** (*int*) -- Number of buffer stages for this pipeline
 
--   **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- CooperativeGroup for the producer agent
+- **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- CooperativeGroup for the producer agent
 
--   **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- CooperativeGroup for the consumer agent
+- **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- CooperativeGroup for the consumer agent
 
--   **tx_count** (*int*) -- Number of bytes expected to be written to the transaction barrier for one stage
+- **tx_count** (*int*) -- Number of bytes expected to be written to the transaction barrier for one stage
 
--   **barrier_storage** (*cute.Pointer,* *optional*) -- Pointer to the shared memory address for this pipeline's mbarriers
+- **barrier_storage** (*cute.Pointer,* *optional*) -- Pointer to the shared memory address for this pipeline's mbarriers
 
--   **cta_layout_vmnk** (*cute.Layout,* *optional*) -- Layout of the cluster shape
+- **cta_layout_vmnk** (*cute.Layout,* *optional*) -- Layout of the cluster shape
 
--   **mcast_mode_mn** (*tuple\[int,* *int\],* *optional*) -- Tuple specifying multicast modes for m and n dimensions (each 0 or 1)
+- **mcast_mode_mn** (*tuple\[int,* *int\],* *optional*) -- Tuple specifying multicast modes for m and n dimensions (each 0 or 1)
+
+- **enable_multicast_signaling** (*bool,* *optional*) -- See docstring in PipelineTmaAsync.create() for details
+
+- **defer_sync** (*bool,* *optional*) -- Bool specifying whether or not to skip the built-in mbarrier fence and sync for performance, defaults to False
 
 #### Raises
 
@@ -1364,7 +1443,7 @@ A new PipelineTmaUmma instance configured with the provided parameters
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma.consumer_release`
 
-**Signature:** `consumer_release(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `consumer_release(state: PipelineState) → None`
 
 UMMA consumer release buffer empty, cta_group needs to be provided.
 
@@ -1374,9 +1453,13 @@ UMMA consumer release buffer empty, cta_group needs to be provided.
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma.producer_acquire`
 
-**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None)`
+**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: _MockObject | None = None, *, expected_tx: _MockObject | None = None) → None`
 
-TMA producer commit conditionally waits on buffer empty and sets the transaction barrier for leader threadblocks.
+TMA producer conditionally waits on buffer empty and sets the transaction barrier for leader threadblocks.
+
+#### Parameters
+
+**expected_tx** -- Override the expected transaction byte count for this acquire. When `None` (default), uses the `tx_count` from barrier init. Pass a dynamic value for workloads where the byte count varies per iteration (e.g. sparse GEMM with conditional metadata loading).
 
 ### producer_commit
 
@@ -1384,7 +1467,7 @@ TMA producer commit conditionally waits on buffer empty and sets the transaction
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma.producer_commit`
 
-**Signature:** `producer_commit(state: PipelineState)`
+**Signature:** `producer_commit(state: PipelineState) → None`
 
 TMA producer commit is a noop since TMA instruction itself updates the transaction count.
 
@@ -1394,7 +1477,7 @@ TMA producer commit is a noop since TMA instruction itself updates the transacti
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaUmma.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, is_leader_cta: bool, cta_group: CtaGroup) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, is_leader_cta: bool, cta_group: CtaGroup) → None`
 
 ## PipelineAsyncUmma
 
@@ -1402,7 +1485,7 @@ TMA producer commit is a noop since TMA instruction itself updates the transacti
 
 **Qualified name:** `cutlass.pipeline.PipelineAsyncUmma`
 
-**Signature:** `PipelineAsyncUmma(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, cta_group: CtaGroup)`
+**Signature:** `PipelineAsyncUmma(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, cta_group: CtaGroup)`
 
 Bases: [`PipelineAsync`](#cutlass.pipeline.PipelineAsync)
 
@@ -1422,7 +1505,7 @@ PipelineAsyncUmma is used for AsyncThread producers and UMMA consumers (e.g. Bla
 
 **Qualified name:** `cutlass.pipeline.PipelineAsyncUmma._compute_leading_cta_rank`
 
-**Signature:** `_compute_leading_cta_rank(cta_v_size, *, loc = None, ip = None)`
+**Signature:** `static _compute_leading_cta_rank(cta_v_size: int) → _MockObject`
 
 Computes the leading CTA rank.
 
@@ -1432,7 +1515,7 @@ Computes the leading CTA rank.
 
 **Qualified name:** `cutlass.pipeline.PipelineAsyncUmma._compute_is_leader_cta`
 
-**Signature:** `_compute_is_leader_cta(cta_layout_vmnk: cutlass.cute.typing.Layout, *, loc = None, ip = None)`
+**Signature:** `static _compute_is_leader_cta(cta_layout_vmnk: cutlass.cute.typing.Layout) → _MockObject`
 
 Computes leader threadblocks for 2CTA kernels. For 1CTA, all threadblocks are leaders.
 
@@ -1442,7 +1525,7 @@ Computes leader threadblocks for 2CTA kernels. For 1CTA, all threadblocks are le
 
 **Qualified name:** `cutlass.pipeline.PipelineAsyncUmma._compute_peer_cta_mask`
 
-**Signature:** `_compute_peer_cta_mask(cta_layout_vmnk: cutlass.cute.typing.Layout, *, loc = None, ip = None)`
+**Signature:** `static _compute_peer_cta_mask(cta_layout_vmnk: cutlass.cute.typing.Layout) → _MockObject`
 
 Computes a mask for signaling arrivals to multicasting threadblocks.
 
@@ -1452,21 +1535,21 @@ Computes a mask for signaling arrivals to multicasting threadblocks.
 
 **Qualified name:** `cutlass.pipeline.PipelineAsyncUmma.create`
 
-**Signature:** `create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, barrier_storage: cutlass.cute.typing.Pointer = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, defer_sync: bool = False, loc = None, ip = None)`
+**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, barrier_storage: cutlass.cute.typing.Pointer | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, defer_sync: bool = False, name: str = '') → PipelineAsyncUmma`
 
 Creates and initializes a new PipelineAsyncUmma instance.
 
 #### Parameters
 
--   **num_stages** (*int*) -- Number of buffer stages for this pipeline
+- **num_stages** (*int*) -- Number of buffer stages for this pipeline
 
--   **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- CooperativeGroup for the producer agent
+- **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- CooperativeGroup for the producer agent
 
--   **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- CooperativeGroup for the consumer agent
+- **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- CooperativeGroup for the consumer agent
 
--   **barrier_storage** (*cute.Pointer,* *optional*) -- Pointer to the shared memory address for this pipeline's mbarriers
+- **barrier_storage** (*cute.Pointer,* *optional*) -- Pointer to the shared memory address for this pipeline's mbarriers
 
--   **cta_layout_vmnk** (*cute.Layout,* *optional*) -- Layout of the cluster shape
+- **cta_layout_vmnk** (*cute.Layout,* *optional*) -- Layout of the cluster shape
 
 #### Raises
 
@@ -1486,7 +1569,7 @@ A new PipelineAsyncUmma instance configured with the provided parameters
 
 **Qualified name:** `cutlass.pipeline.PipelineAsyncUmma.consumer_release`
 
-**Signature:** `consumer_release(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `consumer_release(state: PipelineState) → None`
 
 UMMA consumer release buffer empty, cta_group needs to be provided.
 
@@ -1496,7 +1579,7 @@ UMMA consumer release buffer empty, cta_group needs to be provided.
 
 **Qualified name:** `cutlass.pipeline.PipelineAsyncUmma.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, cta_group: CtaGroup) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, cta_group: CtaGroup) → None`
 
 ## PipelineUmmaAsync
 
@@ -1504,7 +1587,7 @@ UMMA consumer release buffer empty, cta_group needs to be provided.
 
 **Qualified name:** `cutlass.pipeline.PipelineUmmaAsync`
 
-**Signature:** `PipelineUmmaAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, cta_group: CtaGroup)`
+**Signature:** `PipelineUmmaAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, cta_group: CtaGroup)`
 
 Bases: [`PipelineAsync`](#cutlass.pipeline.PipelineAsync)
 
@@ -1524,7 +1607,7 @@ PipelineUmmaAsync is used for UMMA producers and AsyncThread consumers (e.g. Bla
 
 **Qualified name:** `cutlass.pipeline.PipelineUmmaAsync._compute_tmem_sync_mask`
 
-**Signature:** `_compute_tmem_sync_mask(cta_layout_vmnk: cutlass.cute.typing.Layout, *, loc = None, ip = None)`
+**Signature:** `static _compute_tmem_sync_mask(cta_layout_vmnk: cutlass.cute.typing.Layout) → _MockObject`
 
 Computes a mask to signal completion of tmem buffers for 2CTA kernels.
 
@@ -1534,7 +1617,7 @@ Computes a mask to signal completion of tmem buffers for 2CTA kernels.
 
 **Qualified name:** `cutlass.pipeline.PipelineUmmaAsync._compute_peer_cta_rank`
 
-**Signature:** `_compute_peer_cta_rank(*, loc = None, ip = None)`
+**Signature:** `static _compute_peer_cta_rank() → _MockObject`
 
 Computes a mask to signal release of tmem buffers for 2CTA kernels.
 
@@ -1544,21 +1627,21 @@ Computes a mask to signal release of tmem buffers for 2CTA kernels.
 
 **Qualified name:** `cutlass.pipeline.PipelineUmmaAsync.create`
 
-**Signature:** `create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, barrier_storage: cutlass.cute.typing.Pointer = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, defer_sync: bool = False, loc = None, ip = None)`
+**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, barrier_storage: cutlass.cute.typing.Pointer | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, defer_sync: bool = False, name: str = '') → PipelineUmmaAsync`
 
 Creates an instance of PipelineUmmaAsync with computed attributes.
 
 #### Parameters
 
--   **num_stages** (*int*) -- Number of buffer stages for this pipeline
+- **num_stages** (*int*) -- Number of buffer stages for this pipeline
 
--   **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
+- **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
 
--   **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the consumer agent
+- **consumer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the consumer agent
 
--   **barrier_storage** (*cute.Pointer,* *optional*) -- Pointer to the shared memory address for this pipeline's mbarriers
+- **barrier_storage** (*cute.Pointer,* *optional*) -- Pointer to the shared memory address for this pipeline's mbarriers
 
--   **cta_layout_vmnk** (*cute.Layout,* *optional*) -- Layout of the cluster shape
+- **cta_layout_vmnk** (*cute.Layout,* *optional*) -- Layout of the cluster shape
 
 #### Raises
 
@@ -1578,9 +1661,23 @@ New instance of `PipelineUmmaAsync`
 
 **Qualified name:** `cutlass.pipeline.PipelineUmmaAsync.producer_commit`
 
-**Signature:** `producer_commit(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `producer_commit(state: PipelineState) → None`
 
 UMMA producer commit buffer full, cta_group needs to be provided.
+
+### producer_tail
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.PipelineUmmaAsync.producer_tail`
+
+**Signature:** `producer_tail(state: PipelineState) → None`
+
+Make sure the last used buffer empty signal is visible to producer. Producer tail is usually executed by producer before exit, to avoid dangling mbarrier arrive signals after kernel exit.
+
+#### Parameters
+
+**state** ([*PipelineState*](#cutlass.pipeline.PipelineState)) -- The pipeline state that points to next useful buffer
 
 ### \_\_init\_\_
 
@@ -1588,7 +1685,7 @@ UMMA producer commit buffer full, cta_group needs to be provided.
 
 **Qualified name:** `cutlass.pipeline.PipelineUmmaAsync.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, cta_group: CtaGroup) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, cta_group: CtaGroup) → None`
 
 ## PipelineClcFetchAsync
 
@@ -1596,15 +1693,15 @@ UMMA producer commit buffer full, cta_group needs to be provided.
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync`
 
-**Signature:** `PipelineClcFetchAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, is_signalling_thread: cutlass.cutlass_dsl.Boolean)`
+**Signature:** `PipelineClcFetchAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, is_signaling_thread: _MockObject)`
 
-Bases: `object`
+Bases: [`PipelineAsync`](#cutlass.pipeline.PipelineAsync)
 
 PipelineClcFetchAsync implements a producer-consumer pipeline for Cluster Launch Control based dynamic scheduling. Both producer and consumer operate asynchronously using barrier synchronization to coordinate across pipeline stages and cluster CTAs.
 
--   Producer: waits for empty buffer, signals full barrier with transection bytes across all CTAs in cluster, hardware autosignals each CTA's mbarrier when transaction bytes are written, then the satte advance to next buffer slot.
+- Producer: waits for empty buffer, signals full barrier with transection bytes across all CTAs in cluster, hardware autosignals each CTA's mbarrier when transaction bytes are written, then the satte advance to next buffer slot.
 
--   Consumer: waits for full barrier, then load respinse from local SMEM, then sigals CTA 0's empty barrier to allow buffer reuse.
+- Consumer: waits for full barrier, then load respinse from local SMEM, then sigals CTA 0's empty barrier to allow buffer reuse.
 
 ### sync_object_full
 
@@ -1636,7 +1733,7 @@ PipelineClcFetchAsync implements a producer-consumer pipeline for Cluster Launch
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.producer_mask`
 
-**Signature:** `producer_mask: cutlass.cutlass_dsl.Int32 | None`
+**Signature:** `producer_mask: _MockObject | None`
 
 ### consumer_mask
 
@@ -1644,15 +1741,15 @@ PipelineClcFetchAsync implements a producer-consumer pipeline for Cluster Launch
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.consumer_mask`
 
-**Signature:** `consumer_mask: cutlass.cutlass_dsl.Int32 | None`
+**Signature:** `consumer_mask: _MockObject | None`
 
-### is_signalling_thread
+### is_signaling_thread
 
 **Kind:** attribute
 
-**Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.is_signalling_thread`
+**Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.is_signaling_thread`
 
-**Signature:** `is_signalling_thread: cutlass.cutlass_dsl.Boolean`
+**Signature:** `is_signaling_thread: _MockObject`
 
 ### \_init_full_barrier_arrive_signal
 
@@ -1660,15 +1757,15 @@ PipelineClcFetchAsync implements a producer-consumer pipeline for Cluster Launch
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync._init_full_barrier_arrive_signal`
 
-**Signature:** `static _init_full_barrier_arrive_signal(cta_layout_vmnk: cutlass.cute.typing.Layout, tidx: cutlass.cutlass_dsl.Int32)`
+**Signature:** `static _init_full_barrier_arrive_signal(cta_layout_vmnk: cutlass.cute.typing.Layout, tidx: _MockObject) → tuple[_MockObject, _MockObject]`
 
 Computes producer barrier signaling parameters, returns destination CTA rank (0 to cluster_size-1) based on thread ID, and a boolean flag indicating if this thread participates in signaling.
 
 #### Parameters
 
--   **cta_layout_vmnk** -- Cluster layout defining CTA count
+- **cta_layout_vmnk** -- Cluster layout defining CTA count
 
--   **tidx** -- Thread ID within the CTA
+- **tidx** -- Thread ID within the CTA
 
 ### create
 
@@ -1676,25 +1773,25 @@ Computes producer barrier signaling parameters, returns destination CTA rank (0 
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.create`
 
-**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, tx_count: int, barrier_storage: cutlass.cute.typing.Pointer | None = None, producer_mask: cutlass.cutlass_dsl.Int32 | None = None, consumer_mask: cutlass.cutlass_dsl.Int32 | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, defer_sync: bool = False)`
+**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group: CooperativeGroup, tx_count: int, barrier_storage: cutlass.cute.typing.Pointer | None = None, producer_mask: _MockObject | None = None, consumer_mask: _MockObject | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, defer_sync: bool = False, name: str = '') → PipelineClcFetchAsync`
 
 This helper function computes any necessary attributes and returns an instance of PipelineClcFetchAsync.
 
 #### Parameters
 
--   **barrier_storage** (*cute.Pointer*) -- Pointer to the shared memory address for this pipeline's mbarriers
+- **barrier_storage** (*cute.Pointer*) -- Pointer to the shared memory address for this pipeline's mbarriers
 
--   **num_stages** (*int*) -- Number of buffer stages for this pipeline
+- **num_stages** (*int*) -- Number of buffer stages for this pipeline
 
--   **producer_group** (*CooperativeGroup*) -- CooperativeGroup for the producer agent
+- **producer_group** (*CooperativeGroup*) -- CooperativeGroup for the producer agent
 
--   **consumer_group** (*CooperativeGroup*) -- CooperativeGroup for the consumer agent
+- **consumer_group** (*CooperativeGroup*) -- CooperativeGroup for the consumer agent
 
--   **tx_count** (*int*) -- Number of bytes expected to be written to the transaction barrier for one stage
+- **tx_count** (*int*) -- Number of bytes expected to be written to the transaction barrier for one stage
 
--   **producer_mask** (*Int32, optional*) -- Mask for signaling arrives for the producer agent, defaults to None
+- **producer_mask** (*Int32, optional*) -- Mask for signaling arrives for the producer agent, defaults to None
 
--   **consumer_mask** (*Int32, optional*) -- Mask for signaling arrives for the consumer agent, defaults to None
+- **consumer_mask** (*Int32, optional*) -- Mask for signaling arrives for the consumer agent, defaults to None
 
 ### producer_acquire
 
@@ -1702,15 +1799,15 @@ This helper function computes any necessary attributes and returns an instance o
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.producer_acquire`
 
-**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None)`
+**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: _MockObject | None = None) → None`
 
 Producer acquire waits for empty buffer and sets transaction expectation on full barrier.
 
 #### Parameters
 
--   **state** -- Pipeline state pointing to the current buffer stage
+- **state** -- Pipeline state pointing to the current buffer stage
 
--   **try_acquire_token** -- Optional token to skip the empty barrier wait
+- **try_acquire_token** -- Optional token to skip the empty barrier wait
 
 ### consumer_wait
 
@@ -1718,15 +1815,15 @@ Producer acquire waits for empty buffer and sets transaction expectation on full
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.consumer_wait`
 
-**Signature:** `consumer_wait(state: PipelineState, try_wait_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None)`
+**Signature:** `consumer_wait(state: PipelineState, try_wait_token: _MockObject | None = None) → None`
 
 Consumer waits for full barrier to be signaled by hardware multicast.
 
 #### Parameters
 
--   **state** -- Pipeline state pointing to the current buffer stage
+- **state** -- Pipeline state pointing to the current buffer stage
 
--   **try_wait_token** -- Optional token to skip the full barrier wait
+- **try_wait_token** -- Optional token to skip the full barrier wait
 
 ### consumer_release
 
@@ -1734,7 +1831,7 @@ Consumer waits for full barrier to be signaled by hardware multicast.
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.consumer_release`
 
-**Signature:** `consumer_release(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `consumer_release(state: PipelineState) → None`
 
 ### producer_get_barrier
 
@@ -1742,23 +1839,15 @@ Consumer waits for full barrier to be signaled by hardware multicast.
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.producer_get_barrier`
 
-**Signature:** `producer_get_barrier(state: PipelineState, *, loc = None, ip = None) → cutlass.cute.typing.Pointer`
+**Signature:** `producer_get_barrier(state: PipelineState) → cutlass.cute.typing.Pointer`
 
-### producer_tail
+### consumer_get_barrier
 
 **Kind:** method
 
-**Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.producer_tail`
+**Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.consumer_get_barrier`
 
-**Signature:** `producer_tail(state: PipelineState, try_acquire_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None)`
-
-Ensures all in-flight buffers are released before producer exits.
-
-#### Parameters
-
--   **state** -- Pipeline state with current position in the buffer
-
--   **try_acquire_token** -- Optional token to skip the empty barrier waits
+**Signature:** `consumer_get_barrier(state: PipelineState) → cutlass.cute.typing.Pointer`
 
 ### \_\_init\_\_
 
@@ -1766,7 +1855,7 @@ Ensures all in-flight buffers are released before producer exits.
 
 **Qualified name:** `cutlass.pipeline.PipelineClcFetchAsync.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, is_signalling_thread: cutlass.cutlass_dsl.Boolean) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, is_signaling_thread: _MockObject) → None`
 
 ## PipelineTmaMultiConsumersAsync
 
@@ -1774,7 +1863,7 @@ Ensures all in-flight buffers are released before producer exits.
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync`
 
-**Signature:** `PipelineTmaMultiConsumersAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, is_leader_cta: bool, sync_object_empty_umma: SyncObject, sync_object_empty_async: SyncObject, cta_group: CtaGroup)`
+**Signature:** `PipelineTmaMultiConsumersAsync(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, is_leader_cta: bool, sync_object_empty_umma: SyncObject, sync_object_empty_async: SyncObject, cta_group: CtaGroup, consumer_dst_rank_async: _MockObject | None = None, is_signaling_thread: _MockObject = True)`
 
 Bases: [`PipelineAsync`](#cutlass.pipeline.PipelineAsync)
 
@@ -1812,31 +1901,65 @@ PipelineTmaMultiConsumersAsync is used for TMA producers and UMMA+Async consumer
 
 **Signature:** `cta_group: CtaGroup`
 
+### consumer_dst_rank_async
+
+**Kind:** attribute
+
+**Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.consumer_dst_rank_async`
+
+**Signature:** `consumer_dst_rank_async: _MockObject | None = None`
+
+### is_signaling_thread
+
+**Kind:** attribute
+
+**Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.is_signaling_thread`
+
+**Signature:** `is_signaling_thread: _MockObject = True`
+
 ### create
 
 **Kind:** method
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.create`
 
-**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group_umma: CooperativeGroup, consumer_group_async: CooperativeGroup, tx_count: int, barrier_storage: cutlass.cute.typing.Pointer | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, defer_sync: bool = False)`
+**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup, consumer_group_umma: CooperativeGroup, consumer_group_async: CooperativeGroup, tx_count: int, barrier_storage: cutlass.cute.typing.Pointer | None = None, cta_layout_vmnk: cutlass.cute.typing.Layout | None = None, mcast_mode_mn: tuple[int, int] = (1, 1), tidx: _MockObject | None = None, enable_multicast_signaling: bool = False, defer_sync: bool = False, force_deprecated_per_lane_signaling: bool | None = None, name: str = '') → PipelineTmaMultiConsumersAsync`
 
 This helper function computes any necessary attributes and returns an instance of PipelineTmaMultiConsumersAsync.
 
 #### Parameters
 
--   **barrier_storage** (*cute.Pointer*) -- Pointer to the smem address for this pipeline's mbarriers
+- **barrier_storage** (*cute.Pointer*) -- Pointer to the smem address for this pipeline's mbarriers
 
--   **num_stages** (*Int32*) -- Number of buffer stages for this pipeline
+- **num_stages** (*Int32*) -- Number of buffer stages for this pipeline
 
--   **producer_group** (*CooperativeGroup*) -- CooperativeGroup for the producer agent
+- **producer_group** (*CooperativeGroup*) -- CooperativeGroup for the producer agent
 
--   **consumer_group_umma** (*CooperativeGroup*) -- CooperativeGroup for the UMMA consumer agent
+- **consumer_group_umma** (*CooperativeGroup*) -- CooperativeGroup for the UMMA consumer agent
 
--   **consumer_group_async** (*CooperativeGroup*) -- CooperativeGroup for the AsyncThread consumer agent
+- **consumer_group_async** (*CooperativeGroup*) -- CooperativeGroup for the AsyncThread consumer agent
 
--   **tx_count** (*int*) -- Number of bytes expected to be written to the transaction barrier for one stage
+- **tx_count** (*int*) -- Number of bytes expected to be written to the transaction barrier for one stage
 
--   **cta_layout_vmnk** (*cute.Layout \| None*) -- Layout of the cluster shape
+- **cta_layout_vmnk** (*cute.Layout \| None*) -- Layout of the cluster shape
+
+- **mcast_mode_mn** (*tuple\[int, int\]*) -- Tuple specifying multicast modes for m and n dimensions (each 0 or 1)
+
+- **tidx** (*Int32 \| None*) -- Thread index for computing AsyncThread consumer signaling, defaults to thread_idx()\[0\]
+
+- **enable_multicast_signaling** (*bool, optional*) -- See docstring in PipelineTmaAsync.create() for details
+
+- **force_deprecated_per_lane_signaling** (*bool \| None*) -- Deprecated. Set False if your arrive count is a multiple of WARP_SIZE and you do not want the legacy fallback. Leave unset otherwise.
+
+### \_init_empty_barrier_arrive_signal_2sm
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync._init_empty_barrier_arrive_signal_2sm`
+
+**Signature:** `static _init_empty_barrier_arrive_signal_2sm(cta_layout_vmnk: cutlass.cute.typing.Layout, tidx: _MockObject, mcast_mode_mn: tuple[int, int] = (1, 1)) → tuple[_MockObject, _MockObject]`
+
+Identical to sm90.py PipelineTmaAsync.init_empty_barrier_arrive_signal except that CTAs in the multicast will also signal CTAs with a different V-coordinate (i.e. leader/follower CTA pairs).
 
 ### producer_acquire
 
@@ -1844,7 +1967,7 @@ This helper function computes any necessary attributes and returns an instance o
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.producer_acquire`
 
-**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None)`
+**Signature:** `producer_acquire(state: PipelineState, try_acquire_token: _MockObject | None = None) → None`
 
 TMA producer acquire waits on buffer empty and sets the transaction barrier for leader threadblocks.
 
@@ -1854,9 +1977,29 @@ TMA producer acquire waits on buffer empty and sets the transaction barrier for 
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.producer_commit`
 
-**Signature:** `producer_commit(state: PipelineState, *, loc = None, ip = None)`
+**Signature:** `producer_commit(state: PipelineState) → None`
 
 TMA producer commit is a noop since TMA instruction itself updates the transaction count.
+
+### consumer_wait
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.consumer_wait`
+
+**Signature:** `consumer_wait(state: PipelineState, try_wait_token: _MockObject | None = None) → None`
+
+Consumer waits for full barrier to be signaled.
+
+### consumer_try_wait
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.consumer_try_wait`
+
+**Signature:** `consumer_try_wait(state: PipelineState) → _MockObject`
+
+Non-blocking check if data is ready.
 
 ### consumer_release
 
@@ -1864,7 +2007,17 @@ TMA producer commit is a noop since TMA instruction itself updates the transacti
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.consumer_release`
 
-**Signature:** `consumer_release(state: PipelineState, op_type: PipelineOp, *, loc = None, ip = None)`
+**Signature:** `consumer_release(state: PipelineState, op_type: PipelineOp = PipelineOp.TCGen05Mma) → None`
+
+### make_participants
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.make_participants`
+
+**Signature:** `make_participants() → tuple[PipelineProducer, PipelineConsumer, None]`
+
+Returns (producer, umma_consumer, None).
 
 ### \_\_init\_\_
 
@@ -1872,7 +2025,7 @@ TMA producer commit is a noop since TMA instruction itself updates the transacti
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaMultiConsumersAsync.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None, is_leader_cta: bool, sync_object_empty_umma: SyncObject, sync_object_empty_async: SyncObject, cta_group: CtaGroup) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None, is_leader_cta: bool, sync_object_empty_umma: SyncObject, sync_object_empty_async: SyncObject, cta_group: CtaGroup, consumer_dst_rank_async: _MockObject | None = None, is_signaling_thread: _MockObject = True) → None`
 
 ## PipelineTmaStore
 
@@ -1880,7 +2033,7 @@ TMA producer commit is a noop since TMA instruction itself updates the transacti
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaStore`
 
-**Signature:** `PipelineTmaStore(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None)`
+**Signature:** `PipelineTmaStore(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None)`
 
 Bases: [`PipelineAsync`](#cutlass.pipeline.PipelineAsync)
 
@@ -1892,15 +2045,15 @@ PipelineTmaStore is used for synchronizing TMA stores in the epilogue. It does n
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaStore.create`
 
-**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup)`
+**Signature:** `static create(*, num_stages: int, producer_group: CooperativeGroup) → PipelineTmaStore`
 
 This helper function computes any necessary attributes and returns an instance of `PipelineTmaStore`.
 
 #### Parameters
 
--   **num_stages** (*int*) -- Number of buffer stages for this pipeline
+- **num_stages** (*int*) -- Number of buffer stages for this pipeline
 
--   **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
+- **producer_group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- `CooperativeGroup` for the producer agent
 
 #### Returns
 
@@ -1916,7 +2069,7 @@ A new `PipelineTmaStore` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaStore.producer_acquire`
 
-**Signature:** `producer_acquire(*, loc = None, ip = None)`
+**Signature:** `producer_acquire() → None`
 
 ### producer_commit
 
@@ -1924,7 +2077,7 @@ A new `PipelineTmaStore` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaStore.producer_commit`
 
-**Signature:** `producer_commit(*, loc = None, ip = None)`
+**Signature:** `producer_commit() → None`
 
 ### consumer_wait
 
@@ -1932,7 +2085,7 @@ A new `PipelineTmaStore` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaStore.consumer_wait`
 
-**Signature:** `consumer_wait(*, loc = None, ip = None)`
+**Signature:** `consumer_wait() → None`
 
 ### consumer_release
 
@@ -1940,7 +2093,7 @@ A new `PipelineTmaStore` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaStore.consumer_release`
 
-**Signature:** `consumer_release(*, loc = None, ip = None)`
+**Signature:** `consumer_release() → None`
 
 ### producer_tail
 
@@ -1948,7 +2101,13 @@ A new `PipelineTmaStore` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaStore.producer_tail`
 
-**Signature:** `producer_tail(*, loc = None, ip = None)`
+**Signature:** `producer_tail() → None`
+
+Make sure the last used buffer empty signal is visible to producer. Producer tail is usually executed by producer before exit, to avoid dangling mbarrier arrive signals after kernel exit.
+
+#### Parameters
+
+**state** ([*PipelineState*](#cutlass.pipeline.PipelineState)) -- The pipeline state that points to next useful buffer
 
 ### \_\_init\_\_
 
@@ -1956,7 +2115,7 @@ A new `PipelineTmaStore` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineTmaStore.__init__`
 
-**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: cutlass.cutlass_dsl.Int32 | None, consumer_mask: cutlass.cutlass_dsl.Int32 | None) → None`
+**Signature:** `__init__(sync_object_full: SyncObject, sync_object_empty: SyncObject, num_stages: int, producer_mask: _MockObject | None, consumer_mask: _MockObject | None) → None`
 
 ## PipelineProducer
 
@@ -1964,7 +2123,7 @@ A new `PipelineTmaStore` instance
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer`
 
-**Signature:** `PipelineProducer(pipeline, state, group: CooperativeGroup)`
+**Signature:** `PipelineProducer(pipeline: PipelineAsync, state: PipelineState, group: CooperativeGroup)`
 
 Bases: `object`
 
@@ -1974,11 +2133,11 @@ This class manages the producer side of an asynchronous pipeline, handling synch
 
 ### Variables
 
--   **\_\_pipeline** -- The asynchronous pipeline this producer belongs to
+- **\_\_pipeline** -- The asynchronous pipeline this producer belongs to
 
--   **\_\_state** -- The current state of the producer in the pipeline
+- **\_\_state** -- The current state of the producer in the pipeline
 
--   **\_\_group** -- The cooperative group this producer operates in
+- **\_\_group** -- The cooperative group this producer operates in
 
 **Examples:**
 
@@ -2015,7 +2174,7 @@ Bases: `ImmutableResourceHandle`
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.ImmutableResourceHandle.barrier`
 
-**Signature:** `barrier`
+**Signature:** `barrier: cutlass.cute.typing.Pointer`
 
 Get the barrier pointer for the current pipeline stage.
 
@@ -2033,7 +2192,7 @@ cute.Pointer
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.ImmutableResourceHandle.commit`
 
-**Signature:** `commit(*, loc = None, ip = None)`
+**Signature:** `commit() → None`
 
 Signal that data production is complete for the current stage.
 
@@ -2053,17 +2212,17 @@ This allows consumers to start processing the data.
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.__init__`
 
-**Signature:** `__init__(pipeline, state, group: CooperativeGroup)`
+**Signature:** `__init__(pipeline: PipelineAsync, state: PipelineState, group: CooperativeGroup) → None`
 
 Initialize a new Producer instance.
 
 #### Parameters
 
--   **pipeline** ([*PipelineAsync*](#cutlass.pipeline.PipelineAsync)) -- The pipeline this producer belongs to
+- **pipeline** ([*PipelineAsync*](#cutlass.pipeline.PipelineAsync)) -- The pipeline this producer belongs to
 
--   **state** ([*PipelineState*](#cutlass.pipeline.PipelineState)) -- Initial pipeline state
+- **state** ([*PipelineState*](#cutlass.pipeline.PipelineState)) -- Initial pipeline state
 
--   **group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- The cooperative group for synchronization
+- **group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- The cooperative group for synchronization
 
 ### \_\_pipeline
 
@@ -2095,7 +2254,7 @@ Initialize a new Producer instance.
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.clone`
 
-**Signature:** `clone()`
+**Signature:** `clone() → PipelineProducer`
 
 Create a new Producer instance with the same state.
 
@@ -2105,9 +2264,19 @@ Create a new Producer instance with the same state.
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.reset`
 
-**Signature:** `reset(*, loc = None, ip = None)`
+**Signature:** `reset() → None`
 
 Reset the count of how many handles this producer has committed.
+
+### current_handle
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.PipelineProducer.current_handle`
+
+**Signature:** `current_handle() → ImmutableResourceHandle`
+
+Get the current immutable handle for the producer.
 
 ### acquire
 
@@ -2115,13 +2284,13 @@ Reset the count of how many handles this producer has committed.
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.acquire`
 
-**Signature:** `acquire(try_acquire_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None) → ImmutableResourceHandle`
+**Signature:** `acquire(try_acquire_token: ~sphinx.ext.autodoc.mock._MockObject | None = None, *, **kwargs: ~typing.Any) → ImmutableResourceHandle`
 
 Wait for the current buffer to be empty before producing data. This is a blocking operation.
 
 #### Parameters
 
-**try_acquire_token** (*Optional\[Boolean\]*) -- Optional token to try to acquire the buffer
+**try_acquire_token** (*Optional\[*[*Boolean*](../basic_data_types.md#cutlass.Boolean)*\]*) -- Optional token to try to acquire the buffer
 
 #### Returns
 
@@ -2137,7 +2306,7 @@ A handle to the producer for committing the data
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.advance`
 
-**Signature:** `advance(*, loc = None, ip = None)`
+**Signature:** `advance(count: int | _MockObject = 1) → None`
 
 Move to the next pipeline stage.
 
@@ -2147,7 +2316,7 @@ Move to the next pipeline stage.
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.acquire_and_advance`
 
-**Signature:** `acquire_and_advance(try_acquire_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None) → ImmutableResourceHandle`
+**Signature:** `acquire_and_advance(try_acquire_token: ~sphinx.ext.autodoc.mock._MockObject | None = None, *, **kwargs: ~typing.Any) → ImmutableResourceHandle`
 
 Acquire the current buffer and advance to the next pipeline stage.
 
@@ -2155,7 +2324,7 @@ This method combines the acquire() and advance() operations into a single call. 
 
 #### Parameters
 
-**try_acquire_token** (*Optional\[Boolean\]*) -- Token indicating whether to try non-blocking acquire. If True, returns immediately without waiting. If False or None, blocks until buffer is empty.
+**try_acquire_token** (*Optional\[*[*Boolean*](../basic_data_types.md#cutlass.Boolean)*\]*) -- Token indicating whether to try non-blocking acquire. If True, returns immediately without waiting. If False or None, blocks until buffer is empty.
 
 #### Returns
 
@@ -2171,7 +2340,7 @@ A handle to the producer that can be used to commit data to the acquired buffer 
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.try_acquire`
 
-**Signature:** `try_acquire(*, loc = None, ip = None) → cutlass.cutlass_dsl.Boolean`
+**Signature:** `try_acquire() → _MockObject`
 
 Attempt to acquire the current buffer without blocking.
 
@@ -2183,7 +2352,7 @@ A boolean token indicating whether the buffer was successfully acquired
 
 #### Return type
 
-Boolean
+[Boolean](../basic_data_types.md#cutlass.Boolean)
 
 ### commit
 
@@ -2191,7 +2360,7 @@ Boolean
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.commit`
 
-**Signature:** `commit(handle: ImmutableResourceHandle | None = None, *, loc = None, ip = None)`
+**Signature:** `commit(handle: ImmutableResourceHandle | None = None) → None`
 
 Signal that data production is complete for the current stage.
 
@@ -2211,7 +2380,7 @@ This allows consumers to start processing the data.
 
 **Qualified name:** `cutlass.pipeline.PipelineProducer.tail`
 
-**Signature:** `tail(*, loc = None, ip = None)`
+**Signature:** `tail() → None`
 
 Ensure all used buffers are properly synchronized before producer exit.
 
@@ -2223,7 +2392,7 @@ This should be called before the producer finishes to avoid dangling signals.
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer`
 
-**Signature:** `PipelineConsumer(pipeline, state: PipelineState, group: CooperativeGroup)`
+**Signature:** `PipelineConsumer(pipeline: PipelineAsync, state: PipelineState, group: CooperativeGroup)`
 
 Bases: `object`
 
@@ -2233,11 +2402,11 @@ The Consumer class manages the consumer side of an asynchronous pipeline, handli
 
 ### Variables
 
--   **\_\_pipeline** -- The asynchronous pipeline this consumer belongs to
+- **\_\_pipeline** -- The asynchronous pipeline this consumer belongs to
 
--   **\_\_state** -- The current state of the consumer in the pipeline
+- **\_\_state** -- The current state of the consumer in the pipeline
 
--   **\_\_group** -- The cooperative group this consumer operates in
+- **\_\_group** -- The cooperative group this consumer operates in
 
 **Examples:**
 
@@ -2271,13 +2440,31 @@ The Consumer class manages the consumer side of an asynchronous pipeline, handli
 
 Bases: `ImmutableResourceHandle`
 
+#### barrier
+
+**Kind:** property
+
+**Qualified name:** `cutlass.pipeline.PipelineConsumer.ImmutableResourceHandle.barrier`
+
+**Signature:** `barrier: cutlass.cute.typing.Pointer`
+
+Get the barrier pointer for the current pipeline stage.
+
+##### Returns
+
+Pointer to the barrier for the current stage
+
+##### Return type
+
+cute.Pointer
+
 #### release
 
 **Kind:** method
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.ImmutableResourceHandle.release`
 
-**Signature:** `release(*, loc = None, ip = None)`
+**Signature:** `release() → None`
 
 Signal that data production is complete for the current stage. This allows consumers to start processing the data.
 
@@ -2295,17 +2482,17 @@ Signal that data production is complete for the current stage. This allows consu
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.__init__`
 
-**Signature:** `__init__(pipeline, state: PipelineState, group: CooperativeGroup)`
+**Signature:** `__init__(pipeline: PipelineAsync, state: PipelineState, group: CooperativeGroup) → None`
 
 Initialize a new Consumer instance.
 
 #### Parameters
 
--   **pipeline** ([*PipelineAsync*](#cutlass.pipeline.PipelineAsync)) -- The pipeline this consumer belongs to
+- **pipeline** ([*PipelineAsync*](#cutlass.pipeline.PipelineAsync)) -- The pipeline this consumer belongs to
 
--   **state** ([*PipelineState*](#cutlass.pipeline.PipelineState)) -- Initial pipeline state
+- **state** ([*PipelineState*](#cutlass.pipeline.PipelineState)) -- Initial pipeline state
 
--   **group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- The cooperative group for synchronization
+- **group** ([*CooperativeGroup*](#cutlass.pipeline.CooperativeGroup)) -- The cooperative group for synchronization
 
 ### \_\_pipeline
 
@@ -2337,7 +2524,7 @@ Initialize a new Consumer instance.
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.clone`
 
-**Signature:** `clone()`
+**Signature:** `clone() → PipelineConsumer`
 
 Create a new Consumer instance with the same state.
 
@@ -2347,9 +2534,19 @@ Create a new Consumer instance with the same state.
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.reset`
 
-**Signature:** `reset(*, loc = None, ip = None)`
+**Signature:** `reset() → None`
 
 Reset the count of how many handles this consumer has consumed.
+
+### current_handle
+
+**Kind:** method
+
+**Qualified name:** `cutlass.pipeline.PipelineConsumer.current_handle`
+
+**Signature:** `current_handle() → ImmutableResourceHandle`
+
+Get the current immutable handle for the consumer.
 
 ### wait
 
@@ -2357,13 +2554,13 @@ Reset the count of how many handles this consumer has consumed.
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.wait`
 
-**Signature:** `wait(try_wait_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None) → ImmutableResourceHandle`
+**Signature:** `wait(try_wait_token: _MockObject | None = None) → ImmutableResourceHandle`
 
 Wait for data to be ready in the current buffer. This is a blocking operation that will not return until data is available.
 
 #### Parameters
 
-**try_wait_token** (*Optional\[Boolean\]*) -- Token used to attempt a non-blocking wait for the buffer. If provided and True, returns immediately if buffer is not ready.
+**try_wait_token** (*Optional\[*[*Boolean*](../basic_data_types.md#cutlass.Boolean)*\]*) -- Token used to attempt a non-blocking wait for the buffer. If provided and True, returns immediately if buffer is not ready.
 
 #### Returns
 
@@ -2379,7 +2576,7 @@ An immutable handle to the consumer that can be used to release the buffer once 
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.advance`
 
-**Signature:** `advance(*, loc = None, ip = None)`
+**Signature:** `advance(count: int | _MockObject = 1) → None`
 
 Advance the consumer to the next pipeline stage.
 
@@ -2391,7 +2588,7 @@ This updates the internal state to point to the next buffer in the pipeline. Sho
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.wait_and_advance`
 
-**Signature:** `wait_and_advance(try_wait_token: cutlass.cutlass_dsl.Boolean | None = None, *, loc = None, ip = None) → ImmutableResourceHandle`
+**Signature:** `wait_and_advance(try_wait_token: _MockObject | None = None) → ImmutableResourceHandle`
 
 Atomically wait for data and advance to next pipeline stage.
 
@@ -2399,7 +2596,7 @@ This is a convenience method that combines wait() and advance() into a single at
 
 #### Parameters
 
-**try_wait_token** (*Optional\[Boolean\]*) -- Token used to attempt a non-blocking wait for the buffer. If provided and True, returns immediately if buffer is not ready.
+**try_wait_token** (*Optional\[*[*Boolean*](../basic_data_types.md#cutlass.Boolean)*\]*) -- Token used to attempt a non-blocking wait for the buffer. If provided and True, returns immediately if buffer is not ready.
 
 #### Returns
 
@@ -2415,7 +2612,7 @@ An immutable handle to the consumer that can be used to release the buffer once 
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.try_wait`
 
-**Signature:** `try_wait(*, loc = None, ip = None) → cutlass.cutlass_dsl.Boolean`
+**Signature:** `try_wait() → _MockObject`
 
 Non-blocking check if data is ready in the current buffer.
 
@@ -2427,7 +2624,7 @@ True if data is ready to be consumed, False if the buffer is not yet ready
 
 #### Return type
 
-Boolean
+[Boolean](../basic_data_types.md#cutlass.Boolean)
 
 ### release
 
@@ -2435,7 +2632,7 @@ Boolean
 
 **Qualified name:** `cutlass.pipeline.PipelineConsumer.release`
 
-**Signature:** `release(handle: ImmutableResourceHandle | None = None, *, loc = None, ip = None)`
+**Signature:** `release(handle: ImmutableResourceHandle | None = None) → None`
 
 Signal that data consumption is complete for the current stage. This allows producers to start producing new data.
 
@@ -2445,9 +2642,33 @@ Signal that data consumption is complete for the current stage. This allows prod
 
 **Qualified name:** `cutlass.pipeline.make_pipeline_state`
 
-**Signature:** `make_pipeline_state(type: PipelineUserType, stages: int, *, loc = None, ip = None)`
+**Signature:** `make_pipeline_state(type: PipelineUserType, stages: int) → PipelineState`
 
 Creates a pipeline state. Producers are assumed to start with an empty buffer and have a flipped phase bit of 1.
+
+## compute_k_tile
+
+**Kind:** function
+
+**Qualified name:** `cutlass.pipeline.compute_k_tile`
+
+**Signature:** `compute_k_tile(stage_idx: _MockObject, stage_count: _MockObject, stage_offset: _MockObject, num_stages: int) → _MockObject`
+
+Compute which k_tile the given stage is processing.
+
+### Parameters
+
+- **stage_idx** -- Current stage index
+
+- **stage_count** -- Rounds completed for this stage
+
+- **stage_offset** -- Which stage k_tile 0 maps to (for this work tile)
+
+- **num_stages** -- Total number of stage buffers
+
+### Returns
+
+k_tile index this stage is processing
 
 ## pipeline_init_arrive
 
@@ -2455,7 +2676,7 @@ Creates a pipeline state. Producers are assumed to start with an empty buffer an
 
 **Qualified name:** `cutlass.pipeline.pipeline_init_arrive`
 
-**Signature:** `pipeline_init_arrive(cluster_shape_mn: cutlass.cute.typing.Layout | None = None, is_relaxed: bool = False, *, loc = None, ip = None)`
+**Signature:** `pipeline_init_arrive(cluster_shape_mn: cutlass.cute.typing.Layout | None = None, is_relaxed: bool = False) → None`
 
 Fences the mbarrier_init and sends an arrive if using clusters.
 
@@ -2465,7 +2686,7 @@ Fences the mbarrier_init and sends an arrive if using clusters.
 
 **Qualified name:** `cutlass.pipeline.pipeline_init_wait`
 
-**Signature:** `pipeline_init_wait(cluster_shape_mn: cutlass.cute.typing.Layout | None = None, *, loc = None, ip = None)`
+**Signature:** `pipeline_init_wait(cluster_shape_mn: cutlass.cute.typing.Layout | None = None) → None`
 
 Syncs the threadblock or cluster
 
@@ -2475,7 +2696,7 @@ Syncs the threadblock or cluster
 
 **Qualified name:** `cutlass.pipeline.agent_sync`
 
-**Signature:** `agent_sync(group: Agent, is_relaxed: bool = False, *, loc = None, ip = None)`
+**Signature:** `agent_sync(group: Agent, is_relaxed: bool = False) → None`
 
 Syncs all threads within an agent.
 
@@ -2485,7 +2706,7 @@ Syncs all threads within an agent.
 
 **Qualified name:** `cutlass.pipeline.arrive`
 
-**Signature:** `arrive(barrier_id: int, num_threads: int, *, loc = None, ip = None)`
+**Signature:** `arrive(barrier_id: int, num_threads: int) → None`
 
 The aligned flavor of arrive is used when all threads in the CTA will execute the same instruction. See PTX documentation.
 
@@ -2495,7 +2716,7 @@ The aligned flavor of arrive is used when all threads in the CTA will execute th
 
 **Qualified name:** `cutlass.pipeline.arrive_unaligned`
 
-**Signature:** `arrive_unaligned(barrier_id: int, num_threads: int, *, loc = None, ip = None)`
+**Signature:** `arrive_unaligned(barrier_id: int, num_threads: int) → None`
 
 The unaligned flavor of arrive can be used with an arbitrary number of threads in the CTA.
 
@@ -2505,7 +2726,7 @@ The unaligned flavor of arrive can be used with an arbitrary number of threads i
 
 **Qualified name:** `cutlass.pipeline.wait`
 
-**Signature:** `wait(*, loc = None, ip = None)`
+**Signature:** `wait() → None`
 
 NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_wait. If synchronizing two warps in a producer/consumer pairing, the arrive count would be 32 using mbarriers but 64 using NamedBarriers. Only threads from either the producer or consumer are counted for mbarriers, while all threads participating in the sync are counted for NamedBarriers.
 
@@ -2515,7 +2736,7 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.wait_unaligned`
 
-**Signature:** `wait_unaligned(barrier_id: int, num_threads: int, *, loc = None, ip = None)`
+**Signature:** `wait_unaligned(barrier_id: int, num_threads: int) → None`
 
 ## arrive_and_wait
 
@@ -2523,7 +2744,7 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.arrive_and_wait`
 
-**Signature:** `arrive_and_wait(barrier_id: int, num_threads: int, *, loc = None, ip = None)`
+**Signature:** `arrive_and_wait(barrier_id: int, num_threads: int) → None`
 
 ## sync
 
@@ -2531,4 +2752,4 @@ NamedBarriers do not have a standalone wait like mbarriers, only an arrive_and_w
 
 **Qualified name:** `cutlass.pipeline.sync`
 
-**Signature:** `sync(barrier_id: int = 0, *, loc = None, ip = None)`
+**Signature:** `sync(barrier_id: int = 0) → None`

@@ -1,9 +1,9 @@
 ---
 title: "JIT Function Argument Generation"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_jit_arg_generation.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # JIT Function Argument Generation
@@ -14,13 +14,13 @@ When using the `@jit` or `@kernel` decorators to define a JIT-compiled function,
 
 Specifically, CuTe DSL honors following when generating the JIT function's arguments:
 
--   JIT function arguments are assumed to be **dynamic arguments** by default.
+- JIT function arguments are assumed to be **dynamic arguments** by default.
 
--   If an argument is explicitly type annotated with `cutlass.Constexpr`, it is treated as a **compile-time constant**.
+- If an argument is explicitly type annotated with `cutlass.Constexpr`, it is treated as a **compile-time constant**.
 
--   If type annotation is provided, CuTe DSL validates the argument type at compile time for **type safety**.
+- If type annotation is provided, CuTe DSL validates the argument type at compile time for **type safety**.
 
--   CuTe DSL provides **runtime checkable protocols** (`JitArgument` and `DynamicExpression`) for generating JIT function arguments for customized types.
+- CuTe DSL provides **runtime checkable protocols** (`JitArgument` and `DynamicExpression`) for generating JIT function arguments for customized types.
 
 More details below for each of the above.
 
@@ -81,6 +81,10 @@ In this example, `epilogue_op` is a static argument in the JIT kernel where the 
 
 Refer to the [Blackwell dense GEMM example](https://github.com/NVIDIA/cutlass/tree/main/examples/python/CuTeDSL/blackwell/dense_gemm_persistent.py) for a complete example.
 
+> **Note.**
+>
+> For the per-thread/partition naming convention used above (`tTR_rAcc`, `tTR_rC`, and related tokens such as `tAgA`, `bSG_sC`, `tQgQ_qdl`, ...), see the [CuTe DSL Naming Conventions](naming_conventions.md#cute-dsl-naming-conventions).
+
 ## Type safety
 
 CuTe DSL makes good use of type annotation in JIT function signature and validates the JIT function argument types at compile time for **type safety**.
@@ -109,21 +113,21 @@ CuTe DSL supports customized types for JIT function arguments by providing two r
 
 -
 
-    `JitArgument` which is used for host JIT functions to be called from Python.
+  `JitArgument` which is used for host JIT functions to be called from Python.
 
-    :   -   `__c_pointers__`: Generate a list of ctypes pointers for the current object.
+  :   - `__c_pointers__`: Generate a list of ctypes pointers for the current object.
 
-        -   `__get_mlir_types__`: Generate a list of MLIR types for the current object.
+      - `__get_mlir_types__`: Generate a list of MLIR types for the current object.
 
-        -   `__new_from_mlir_values__`: Create a new object from MLIR values.
+      - `__new_from_mlir_values__`: Create a new object from MLIR values.
 
 -
 
-    `DynamicExpression` which is used for device JIT functions to be called from the host JIT functions.
+  `DynamicExpression` which is used for device JIT functions to be called from the host JIT functions.
 
-    :   -   `__extract_mlir_values__`: Generate a dynamic expression for the current object.
+  :   - `__extract_mlir_values__`: Generate a dynamic expression for the current object.
 
-        -   `__new_from_mlir_values__`: Create a new object from MLIR values.
+      - `__new_from_mlir_values__`: Create a new object from MLIR values.
 
 Refer to [typing.py](https://github.com/NVIDIA/cutlass/tree/main/python/CuTeDSL/base_dsl/typing.py) for more details on these protocol APIs.
 

@@ -1,9 +1,9 @@
 ---
 title: "Static vs Dynamic layouts"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_dynamic_layout.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # Static vs Dynamic layouts
@@ -89,7 +89,7 @@ In the example above, a single compilation of the JIT function `foo` is reused f
 
 Alternatively, for compact layout, `cute.mark_compact_shape_dynamic` can be called for a finer-grained control to specify the mode of the layout for dynamic and the divisibility constraint for the dynamic dimension.
 
-Refer to [Integration with Frameworks](framework_integration.md) for more details on `from_dlpack`, `mark_layout_dynamic`, and `mark_compact_shape_dynamic`.
+Refer to [Integration with Frameworks](../guides/framework_integration.md) for more details on `from_dlpack`, `mark_layout_dynamic`, and `mark_compact_shape_dynamic`.
 
 ## Static Layout vs. Dynamic Layout
 

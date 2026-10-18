@@ -1,9 +1,9 @@
 ---
 title: "Deprecation Policy"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/deprecation.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # Deprecation Policy {#deprecation-policy}
@@ -32,17 +32,19 @@ If no valid use cases remain, the deprecated feature will be removed in the foll
 
 All deprecations are announced through:
 
--   This page
+- This page
 
--   In-code warning messages
+- In-code warning messages
 
 ## Soft Deprecations
 
 **Version 4.2.1**
 
--   `cute.arch.warpgroup_reg_alloc` and `cute.arch.warpgroup_reg_dealloc` → Scheduled for deprecation. Use `cute.arch.setmaxregister_increase` and `cute.arch.setmaxregister_decrease` instead.
+- `cute.arch.warpgroup_reg_alloc` and `cute.arch.warpgroup_reg_dealloc` → Scheduled for deprecation. Use `cute.arch.setmaxregister_increase` and `cute.arch.setmaxregister_decrease` instead.
 
--   `alignment` argument in `CooperativeGroup` constructor → Scheduled for deprecation. It was unused; no replacement is suggested.
+- `alignment` argument in `CooperativeGroup` constructor → Scheduled for deprecation. It was unused; no replacement is suggested.
+
+- `cute.AddressSpace` → Supported today as a quiet compatibility alias. It is scheduled for deprecation in a later release, where accesses will start emitting a deprecation warning. Use `cutlass.AddressSpace` for new code. The lowercase address-space members such as `gmem`, `smem`, `rmem`, `tmem`, and `dsmem` keep the same spelling.
 
 ## Deprecated Features
 

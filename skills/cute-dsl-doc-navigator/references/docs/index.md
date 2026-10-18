@@ -1,25 +1,27 @@
-# CuTe DSL docs snapshot (4.4.1)
+# CuTe DSL docs snapshot (4.8.0)
 
-- Generated: `2026-03-07T11:33:21+00:00`
+- Generated: `2026-10-13T17:05:03+00:00`
 - Source root: `https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/`
 
 ## Core pages
 
+- [API Reference](apis.md)
+- [Basic Data Types](basic_data_types.md)
+- [CUDA (Jittable)](cuda.md)
 - [Deprecation Policy](deprecation.md)
 - [FAQs](faqs.md)
-- [Functionality](functionality.md)
+- [Guides](guides.md)
 - [Software License Agreement](license.md)
 - [Limitations](limitations.md)
 - [Overview](overview.md)
+- [Primitives](primitives.md)
 - [Quick Start Guide](quick_start.md)
+- [Task Scheduling (TS)](ts.md)
+- [Task Scheduling (TS) API](ts_api.md)
 
 ## CuTe DSL guide
 
-- [CuTe DSL](cute_dsl/index.md)
-- [Guidance for Auto-Tuning](guide/autotuning_gemm.md)
-- [Compile with TVM FFI](guide/compile_with_tvm_ffi.md)
-- [Debugging](guide/debugging.md)
-- [Ahead-of-Time (AOT) Compilation](guide/dsl_ahead_of_time_compilation.md)
+- [DSL Programming Model](cute_dsl/index.md)
 - [End-to-End Code Generation](guide/dsl_code_generation.md)
 - [Control Flow](guide/dsl_control_flow.md)
 - [Static vs Dynamic layouts](guide/dsl_dynamic_layout.md)
@@ -27,24 +29,26 @@
 - [JIT Function Argument Generation](guide/dsl_jit_arg_generation.md)
 - [JIT Caching](guide/dsl_jit_caching.md)
 - [JIT Compilation Options](guide/dsl_jit_compilation_options.md)
-- [Integration with Frameworks](guide/framework_integration.md)
-- [Educational Notebooks](guide/notebooks.md)
+- [Struct-like JIT Arguments](guide/dsl_struct_types.md)
+- [CuTe DSL Naming Conventions](guide/naming_conventions.md)
 - [Talks and Presentations](guide/resources.md)
 
 ## API reference
 
 - [Changelog for CuTe DSL API changes](api/changelog.md)
-- [cutlass.cute](api/cute.md)
+- [Core](api/cute.md)
 - [arch](api/cute_arch.md)
-- [cutlass.cute.nvgpu](api/cute_nvgpu.md)
-- [Common](api/cute_nvgpu_common.md)
-- [cpasync submodule](api/cute_nvgpu_cpasync.md)
-- [tcgen05 submodule](api/cute_nvgpu_tcgen05.md)
-- [warp submodule](api/cute_nvgpu_warp.md)
-- [warpgroup submodule](api/cute_nvgpu_warpgroup.md)
+- [Math](api/cute_math.md)
+- [nvgpu](api/cute_nvgpu.md)
+- [nvgpu.common](api/cute_nvgpu_common.md)
+- [nvgpu.cpasync](api/cute_nvgpu_cpasync.md)
+- [nvgpu.tcgen05](api/cute_nvgpu_tcgen05.md)
+- [nvgpu.warp](api/cute_nvgpu_warp.md)
+- [nvgpu.warpgroup](api/cute_nvgpu_warpgroup.md)
 - [Runtime](api/cute_runtime.md)
-- [CuTe DSL API](api/index.md)
+- [GPU Operations](api/gpu_operations.md)
+- [CuTe](api/index.md)
 - [cutlass.pipeline](api/pipeline.md)
-- [cutlass.utils](api/utils.md)
-- [Utilities for SM100](api/utils_sm100.md)
-- [Utilities for SM90](api/utils_sm90.md)
+- [Utilities](api/utils.md)
+- [Blackwell (SM100)](api/utils_sm100.md)
+- [Hopper (SM90)](api/utils_sm90.md)

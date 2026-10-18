@@ -1,9 +1,9 @@
 ---
 title: "JIT Compilation Options"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_jit_compilation_options.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # JIT Compilation Options {#jit-compilation-options}
@@ -14,9 +14,9 @@ When compiling a JIT function using CuTe DSL, you may want to control various as
 
 Compilation options allow you to customize how your JIT-compiled functions are built and executed. This can be useful for:
 
--   Enabling or disabling specific compiler optimizations
+- Enabling or disabling specific compiler optimizations
 
--   Generating debug information for troubleshooting
+- Generating debug information for troubleshooting
 
 These options can be passed as keyword arguments to `cute.compile` or set globally for all JIT compilations. The available options and their effects are described in the following sections, along with usage examples to help you get started.
 
@@ -24,18 +24,21 @@ The CuTe DSL provides multiple ways to specify compilation options - either by s
 
 ## `cute.compile` Compilation Options as strings
 
-You can provide additional compilation options as a string when calling `cute.compile`. The CuTe DSL uses `argparse` to parse these options and will raise an error if any invalid options are specified.
+You can provide additional compilation options as a string when calling `cute.compile`. The CuTe DSL uses `argparse` to parse the documented driver options below and will raise an error if any invalid options are specified.
 
-  **Option**             **Description**                                                                                                                   **Default**                         **Type**
-  ---------------------- --------------------------------------------------------------------------------------------------------------------------------- ----------------------------------- ----------
-  `opt-level`            Optimization level of compilation. The higher the level, the more optimizations are applied. The valid value range is \[0, 3\].   3 (highest level of optimization)   int
-  `enable-assertions`    Enable host and device code assertions.                                                                                           False                               bool
-  `keep-cubin`           Keep the generated CUBIN file.                                                                                                    False                               bool
-  `keep-ptx`             Keep the generated PTX file.                                                                                                      False                               bool
-  `ptxas-options`        The options to pass to the PTX Compiler library.                                                                                  ""                                  str
-  `generate-line-info`   Generate line information for debugging.                                                                                          False                               bool
-  `gpu-arch`             The GPU architecture to compile for.                                                                                              ""                                  str
-  `enable-tvm-ffi`       Enable Apache TVM FFI.                                                                                                            False                               bool
+  **Option**             **Description**                                                                                                                                                                                                                                                                                                                                                                                                                              **Default**                         **Type**
+  ---------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------------- ----------
+  `opt-level`            Optimization level of compilation. The higher the level, the more optimizations are applied. The valid value range is \[0, 3\].                                                                                                                                                                                                                                                                                                              3 (highest level of optimization)   int
+  `enable-assertions`    Enable host and device code assertions.                                                                                                                                                                                                                                                                                                                                                                                                      False                               bool
+  `keep-cubin`           Keep the generated CUBIN file.                                                                                                                                                                                                                                                                                                                                                                                                               False                               bool
+  `keep-ptx`             Keep the generated PTX file.                                                                                                                                                                                                                                                                                                                                                                                                                 False                               bool
+  `keep-sass`            Keep the generated SASS disassembly file.                                                                                                                                                                                                                                                                                                                                                                                                    False                               bool
+  `nvdisasm-options`     Flags passed to `nvdisasm` when disassembling the CUBIN to SASS.                                                                                                                                                                                                                                                                                                                                                                             "-g -c"                             str
+  `ptxas-options`        The options to pass to the PTX Compiler library.                                                                                                                                                                                                                                                                                                                                                                                             ""                                  str
+  `generate-line-info`   Generate line information for debugging.                                                                                                                                                                                                                                                                                                                                                                                                     False                               bool
+  `gpu-arch`             The GPU architecture to compile for.                                                                                                                                                                                                                                                                                                                                                                                                         ""                                  str
+  `host-target`          Target spec for AOT host cross-compilation. Empty targets the build host (native). A non-empty value cross-compiles the exported AOT host object for the requested target (AArch64 only). Accepts a preset tag (`linux-aarch64`) or the long form `llvm -mtriple=<triple> [-mcpu=<cpu>] [-mattr=<features>]`. See [Host Cross-Compilation for AArch64](../guides/ahead_of_time_compilation.md#dsl-aot-host-cross-compilation).   ""                                  str
+  `enable-tvm-ffi`       Enable Apache TVM FFI.                                                                                                                                                                                                                                                                                                                                                                                                                       False                               bool
 
 You can use the following code to specify compilation options:
 
@@ -44,13 +47,24 @@ You can use the following code to specify compilation options:
     jit_executor_with_enable_assertions = cute.compile(add, 1, 2, options="--enable-assertions")
     jit_executor_with_keep_cubin = cute.compile(add, 1, 2, options="--keep-cubin")
     jit_executor_with_keep_ptx = cute.compile(add, 1, 2, options="--keep-ptx")
+    jit_executor_with_keep_sass = cute.compile(add, 1, 2, options="--keep-sass")
+    jit_executor_with_nvdisasm_options = cute.compile(add, 1, 2, options="--keep-sass --nvdisasm-options '-c'")
     jit_executor_with_ptxas_options = cute.compile(add, 1, 2, options="--ptxas-options '--opt-level=2'")
 
 ## `cute.compile` Compilation Options as separate Python types
 
 Alternatively, you can also use a more Pythonic way to specify compilation options with separate Python types. Compilation options can be programmatically composed using tuple and passed to `cute.compile` separately.
 
-    from cutlass.cute import OptLevel, EnableAssertions, GenerateLineInfo, KeepCUBIN, KeepPTX
+    from cutlass.cute import (
+      OptLevel,
+      EnableAssertions,
+      GenerateLineInfo,
+      KeepCUBIN,
+      KeepPTX,
+      KeepSASS,
+      NvdisasmOptions,
+      PtxasOptions,
+    )
 
     my_debugging_options = (OptLevel(1), EnableAssertions, GenerateLineInfo, KeepCUBIN, KeepPTX)
     compiled_kernel_1 = cute.compile[my_debugging_options](my_kernel_1, ...)
@@ -63,4 +77,6 @@ This approach causes invalid options to raise errors immediately, making it much
     jit_executor_with_enable_assertions = cute.compile[EnableAssertions](add, 1, 2)
     jit_executor_with_keep_cubin = cute.compile[KeepCUBIN](add, 1, 2)
     jit_executor_with_keep_ptx = cute.compile[KeepPTX](add, 1, 2)
+    jit_executor_with_keep_sass = cute.compile[KeepSASS](add, 1, 2)
+    jit_executor_with_nvdisasm_options = cute.compile[KeepSASS, NvdisasmOptions("-c")](add, 1, 2)
     jit_executor_with_ptxas_options = cute.compile[PtxasOptions("--opt-level=2")](add, 1, 2)

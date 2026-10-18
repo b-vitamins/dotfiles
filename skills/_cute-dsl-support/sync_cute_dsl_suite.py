@@ -45,6 +45,19 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 exec guix shell -m "$ROOT/manifest.scm" -- "$@"
 """
 
+DOCS_MANIFEST_TEXT = """(specifications->manifest '("bash"
+                            "coreutils"
+                            "findutils"
+                            "git"
+                            "grep"
+                            "sed"
+                            "ripgrep"
+                            "python"
+                            "python-pyyaml"
+                            "pandoc"
+                            "nss-certs"))
+"""
+
 ALL = "__all__"
 
 SKILL_COVERAGE = {
@@ -236,13 +249,19 @@ def list_files(root: Path) -> list[str]:
     )
 
 
-def copy_file(src_root: Path, dst_root: Path, relpath: str) -> None:
+def copy_file(
+    src_root: Path,
+    dst_root: Path,
+    relpath: str,
+    *,
+    normalize_markdown: bool = True,
+) -> None:
     src = src_root / relpath
     dst = dst_root / relpath
     if not src.exists():
         raise FileNotFoundError(f"Missing source file: {src}")
     dst.parent.mkdir(parents=True, exist_ok=True)
-    if src.suffix.lower() == ".md":
+    if normalize_markdown and src.suffix.lower() == ".md":
         text = src.read_text(encoding="utf-8")
         normalized = "\n".join(line.rstrip() for line in text.splitlines())
         if text.endswith("\n"):
@@ -293,7 +312,9 @@ def build_catalog(
         f"# {skill_name} coverage",
         "",
         f"- Generated from `{docs_root}` and `{examples_root}`.",
-        "- All commands in this skill must run through `scripts/guix-run`.",
+        ("- Native host tools are supported; the documentation-only Guix wrapper is optional."
+         if skill_name == "cute-dsl-doc-navigator"
+         else "- All commands in this skill must run through `scripts/guix-run`."),
         "",
         "## Docs",
         "",
@@ -313,7 +334,8 @@ def sync_skill(skill_dir: Path, docs_root: Path, examples_root: Path) -> dict[st
 
     clean_generated_tree(skill_dir)
 
-    (skill_dir / "manifest.scm").write_text(MANIFEST_TEXT, encoding="utf-8")
+    manifest = DOCS_MANIFEST_TEXT if skill_name == "cute-dsl-doc-navigator" else MANIFEST_TEXT
+    (skill_dir / "manifest.scm").write_text(manifest, encoding="utf-8")
     guix_run = skill_dir / "scripts" / "guix-run"
     guix_run.parent.mkdir(parents=True, exist_ok=True)
     guix_run.write_text(GUIX_RUN_TEXT, encoding="utf-8")
@@ -327,7 +349,7 @@ def sync_skill(skill_dir: Path, docs_root: Path, examples_root: Path) -> dict[st
 
     examples_dst = skill_dir / "references" / "examples"
     for relpath in examples:
-        copy_file(examples_root, examples_dst, relpath)
+        copy_file(examples_root, examples_dst, relpath, normalize_markdown=False)
 
     catalog = build_catalog(skill_name, docs, examples, docs_root, examples_root)
     (skill_dir / "references" / "catalog.md").write_text(catalog, encoding="utf-8")
@@ -359,6 +381,12 @@ def parse_args() -> argparse.Namespace:
         default=Path("/home/b/projects/cute-docs/examples"),
         help="Local CuTe examples root.",
     )
+    parser.add_argument(
+        "--skill",
+        action="append",
+        choices=sorted(SKILL_COVERAGE),
+        help="Sync only this skill; repeat to select several. Defaults to the full suite.",
+    )
     return parser.parse_args()
 
 
@@ -369,13 +397,14 @@ def main() -> None:
     skills_root = args.skills_root.resolve()
 
     coverage_report: list[dict[str, object]] = []
-    for skill_name in sorted(SKILL_COVERAGE):
+    for skill_name in sorted(set(args.skill or SKILL_COVERAGE)):
         skill_dir = skills_root / skill_name
         if not skill_dir.exists():
             raise FileNotFoundError(f"Skill directory not found: {skill_dir}")
         coverage_report.append(sync_skill(skill_dir, docs_root, examples_root))
 
-    report_path = Path(__file__).resolve().parent / "suite-coverage.json"
+    report_name = "suite-coverage.json" if not args.skill else "selected-coverage.json"
+    report_path = Path(__file__).resolve().parent / report_name
     report_path.write_text(
         json.dumps(
             {

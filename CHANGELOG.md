@@ -66,6 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `setup.sh` queue bootstrap when the USB printer is connected.
 - OpenClaw home service autostart for mileva.
 ### Changed
+- Refreshed the CuTe DSL doc navigator to the 4.8.0 documentation and
+  release-pinned example corpus, added Hopper WGMMA/TMA reading paths, and
+  separated documentation tooling from the broken GPU Guix environment.
 - Moved agent skills from `codex/skills/` to a tool-neutral `skills/` directory.
 - Simplified the Emacs Org setup around a single `~/org/main.org` file,
   removing the multi-file inbox/project/metrics/deadline machinery, dynamic

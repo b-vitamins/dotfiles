@@ -1,9 +1,9 @@
 ---
 title: "Limitations"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/limitations.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # Limitations {#limitations}
@@ -16,11 +16,13 @@ This section documents the current limitations of the CuTe DSL. While some of th
 
 ## Notable unsupported features
 
--   convolutions
+- convolutions
 
--   preferred clusters
+- preferred clusters
 
--   Windows support
+- Windows support
+
+- Task Scheduling support for existing CuTe DSL and extension (`cute_ext`) kernels
 
 ## Programming Model
 
@@ -34,35 +36,37 @@ This section documents the current limitations of the CuTe DSL. While some of th
 
     -
 
-        **Static Values:**
+      **Static Values:**
 
-        :   -   Evaluated during JIT compilation phase
+      :   - Evaluated during JIT compilation phase
 
-            -   Immutable after compilation completes
+          - Immutable after compilation completes
 
-            -   Most Python native types (lists, tuples, dictionaries) are processed as static values
+          - Most Python native types (lists, tuples, dictionaries) are processed as static values
 
-            -   Primarily utilized for "meta-programming" and configuration purposes
+          - Primarily utilized for "meta-programming" and configuration purposes
 
-            -   Example: Lists can contain dynamic values but their structure cannot be modified during kernel execution
+          - Example: Lists can contain dynamic values but their structure cannot be modified during kernel execution
 
     -
 
-        **Dynamic Values:**
+      **Dynamic Values:**
 
-        :   -   Evaluated during runtime execution
+      :   - Evaluated during runtime execution
 
-            -   Modifiable during execution of JIT-compiled functions
+          - Modifiable during execution of JIT-compiled functions
 
-            -   Only a specific subset of Python types are supported as dynamic values
+          - Only a specific subset of Python types are supported as dynamic values
 
-            -   Primitive types are automatically converted when passed as function arguments:
+          - Primitive types are automatically converted when passed as function arguments:
 
-                -   `int` → `Int32` (may be updated to `Int64` in future releases)
+            - `int` → `Int32` (may be updated to `Int64` in future releases)
 
-                -   `bool` → `Bool`
+            - `bool` → `Bool`
 
-                -   `float` → `Float32` (may be updated to `Float64` in future releases)
+            - `float` → `Float32` (may be updated to `Float64` in future releases)
+
+          This is *implicit conversion*; it differs from explicitly constructing a type (`Int32(x)`), which narrows and can silently truncate. See **Numeric Type Conversion** below.
 
     The JIT compiler processes Python native types analogously to C++ template parameters. The compiled code cannot manipulate dynamic values of composite types such as lists, tuples, or dictionaries.
 
@@ -83,6 +87,42 @@ This section documents the current limitations of the CuTe DSL. While some of th
                 # This only append one element to the list at compile-time
                 # as loop doesn't unroll at compile-time
                 xs.append(Float32(1.0))
+
+**Numeric Type Conversion**
+
+:   A Python `int / float` scalar becomes a DSL `Numeric` value in two distinct ways, and they follow *opposite* rules. Knowing which one applies is the difference between a value that is preserved and one that is silently lost.
+
+    *Implicit conversion* --- mixing a Python scalar with a DSL value in an expression, or passing it as a JIT argument. Here the DSL chooses a result type that can **hold** the value, widening/promoting as needed, so no magnitude is lost:
+
+        @cute.jit
+        def foo():
+            x = (1 << 34) + cutlass.Int32(3)  # promotes to Int64 -> value kept
+            y = 1.5 + cutlass.Int32(2)        # promotes to Float32
+            z = cutlass.Int8(1) + (1 << 34)   # promotes to Int64
+
+    The default type of a converted JIT *argument* and the promotion rules for mixed-type expressions are covered under **Python Native Data Types** (`int` → `Int32`, `bool` → `Bool`, `float` → `Float32`) and **Expression or Statement with Dependent Type** below.
+
+    *Explicit construction* --- calling a type constructor such as `Int32(...)` or `Float32(...)`. Here the value is **narrowed to the named type regardless of fit**, so a value out of range is *silently* mangled rather than promoted or rejected:
+
+    - An `int` outside the type's range **wraps**, dropping the high bits. For example, `Int32(1 << 34)` yields `0` and `Int32(2**31)` yields `-2147483648`.
+
+    - A `float` narrowed to an **integer** type truncates toward zero, and a value the type cannot hold is then narrowed by the **host CPU's own float-to-integer conversion** --- the same cast NumPy performs for that value on that machine. That result is architecture-defined: `Int32(1e40)` yields `-2147483648` on x86-64 and `2147483647` on AArch64. Treat it as unspecified and clamp before converting.
+
+    - A `float` narrowed to a **float** type whose magnitude is too large **overflows to** `±inf`, and one too small **underflows to** `0`. For example, `Float32(1e40)` yields `inf` and `Float32(1e-50)` yields `0.0`.
+
+    Note the contrast: `(1 << 34) + Int32(3)` promotes to `Int64` and keeps the value, whereas the explicit `Int32(1 << 34)` wraps to `0`.
+
+    To surface this loss, the DSL emits a compiler **warning** for these catastrophic construction cases (`TYPE_INT_LITERAL_OUT_OF_RANGE`, `TYPE_FLOAT_TO_INT_OUT_OF_RANGE`, `TYPE_FLOAT_LITERAL_OVERFLOW`, `TYPE_FLOAT_LITERAL_UNDERFLOW`), pointing at the exact source location and suggesting a wider type. Note that ordinary precision/rounding loss is *not* flagged, since it is inherent to every float literal and would be too noisy. For example, `Float32(0.1)` is silent even though it rounds to `0.10000000149...`. Precision loss in later arithmetic (for example, `big + Float32(0.1)`) is outside these literal-range warnings.
+
+        @cute.jit
+        def foo():
+            a = cutlass.Int32(1 << 34)    # warns: wraps to 0
+            b = cutlass.Float32(1e40)     # warns: overflows to inf
+            c = cutlass.Float32(1e-50)    # warns: underflows to 0.0
+            d = cutlass.Float32(0.1)      # no warning: ordinary rounding
+            e = cutlass.Int32(1e40)       # warns: host-defined narrowing
+
+    Prefer a wider type (e.g. `Int64` / `Float64`) when the value does not fit the constructor's type, or mask an `int` to the type width to make an intentional wrap explicit. Masking has no float spelling, so clamp a float to `[min, max]` instead.
 
 **Python Function**
 
@@ -122,6 +162,8 @@ This section documents the current limitations of the CuTe DSL. While some of th
         def foo(a: Int32, b: Float32, res: cute.Tensor):
             res[0] = max(a, b)  # Type is automatically promoted to Float32
 
+    This promotion is the *implicit conversion* path --- it widens to a type that can hold the result, unlike an explicit constructor which narrows. See **Numeric Type Conversion** above.
+
     Following code using inlined if-else expression with dependent types is not supported in CuTe DSL:
 
         @cute.jit
@@ -132,11 +174,11 @@ This section documents the current limitations of the CuTe DSL. While some of th
 
 :   The DSL transforms Python control flow statements (`if`, `for`, `while`) during Abstract Syntax Tree (AST) processing into structured control flow in MLIR which has the same constraints as dependent types. For instance, changing type of a variable in loop body is not allowed.
 
-    -   Variables must be defined prior to the control flow statement
+    - Variables must be defined prior to the control flow statement
 
-    -   Type consistency must be maintained throughout the control flow statement
+    - Type consistency must be maintained throughout the control flow statement
 
-    -   Don't support early exit or return from if-else statements
+    - Don't support early exit or return from if-else statements
 
     Example illustrating functionality in Python that is not supported in the DSL:
 
@@ -199,17 +241,64 @@ This section documents the current limitations of the CuTe DSL. While some of th
 
     Additionally, there exists a restricted set of data types that can be passed as arguments to JIT-compiled functions, which further constrains their usage in native Python contexts. Only following CuTe algebra types are supported as JIT function arguments: `Tensor`, `Pointer`, `Shape`, `Stride`, `Coord` and `IntTuple`. For `Stride`, we don't support `ScacledBasis` from native Python Context. Unfortunately, in the first release, we don't support passing `Layout` under native Python Context.
 
+**Block-level Utilities (block_copy)**
+
+:   The block-level utility `block_copy` provides a high-level abstraction for common copy patterns, but has the following limitations:
+
+    **block_copy limitations:**
+
+    - **Limited copy op support**: Currently only `TmaCopyOp`-based tiled copies (TMA loads/stores) and S2T copies (SMEM to TMEM, e.g., `tcgen05.Cp*Op`) are supported. Other `TiledCopy` ops will raise `NotImplementedError`. Support for additional copy ops may be added in future releases.
+
+**Task Scheduling (TS) and FrontendNext**
+
+:   Task Scheduling uses the FrontendNext compile selector (`cute.compile[FrontendNext]`), which traces kernels with the staged Python frontend. This frontend is required for TS examples and is still being expanded to cover the wider CuTe DSL ecosystem.
+
+    Task Scheduling support with FrontendNext is currently validated for newly written Primitives-only kernels.
+
+    Existing CuTe DSL and extension (`cute_ext`) kernels are not supported with FrontendNext compile flow in this release.
+
+**Global variables**
+
+:   CuTe DSL does not support global variables. It is not allowed to use `global` in the DSL. The following example illustrates functionality in Python that is not supported in the DSL:
+
+        @cute.jit
+        def foo():
+            global x
+            x = 1
+
+        foo()
+
+    The example above fails to compile because `global x` is not supported in the DSL.
+
+**Nonlocal variables**
+
+:   The use of the `nonlocal` keyword is restricted in CuTe DSL. CuTe DSL does not support capturing variables from an outer (enclosing) scope that is outside of the JIT-compiled function. If you try to use `nonlocal` to refer to a variable defined in Python code that is not tracked by current JIT context, a runtime error will be raised.
+
+        def outer():
+            x = 1
+
+            @cute.jit
+            def inner():
+                nonlocal x  # Not supported
+                x = 2
+
+            inner()
+
+    The above code will fail with a runtime error because `x` is defined in a scope not managed by the CuTe DSL's JIT compilation. Nonlocal variables must be managed within the same JIT context; otherwise, a runtime error will be raised.
+
 ### Suggestions
 
 For reliable and predictable results:
 
--   Avoid dependent types in your code
+- Avoid dependent types in your code
 
--   Implement explicit type conversion for dynamic values
+- Implement explicit type conversion for dynamic values
 
--   Clearly distinguish between static (compile-time) and dynamic (runtime) values
+- Clearly distinguish between static (compile-time) and dynamic (runtime) values
 
--   Use type annotations as much as possible to help JIT compiler to identify type to avoid ambiguity
+- Use type annotations as much as possible to help JIT compiler to identify type to avoid ambiguity
+
+<!-- -->
 
     # Example demonstrating explicit typing
     alpha = 1.0  # Explicitly defined as float using `1.0` instead of `1`
@@ -233,19 +322,19 @@ For reliable and predictable results:
 
 The CuTe DSL development team is actively addressing these limitations. Upcoming releases will aim to:
 
--   Implement support for return values from JIT compiled functions
+- Implement support for return values from JIT compiled functions
 
--   Improve support for built-in operators to handle more cases without dependent types
+- Improve support for built-in operators to handle more cases without dependent types
 
--   Enhance debugging capabilities and tools
+- Enhance debugging capabilities and tools
 
--   Improve error messages with precise diagnostic information
+- Improve error messages with precise diagnostic information
 
--   Extend support for additional numeric data types
+- Extend support for additional numeric data types
 
--   Improve performance of converting framework tensor to `cute.Tensor` with native support for different frameworks
+- Improve performance of converting framework tensor to `cute.Tensor` with native support for different frameworks
 
--   Offer more user friendly benchmarking methodology
+- Offer more user friendly benchmarking methodology
 
 ## Design Limitations Likely to Remain
 
@@ -253,8 +342,8 @@ The primary objective of CuTe DSL is to provide a domain-specific language for e
 
 The following limitations will likely remain by design:
 
--   **Complex Data Structures as Dynamic Values**: Lists, tuples, and dictionaries will continue to function as static containers. While they can store dynamic values, their structure (adding/removing elements) cannot be modified during execution of JIT-compiled functions.
+- **Complex Data Structures as Dynamic Values**: Lists, tuples, and dictionaries will continue to function as static containers. While they can store dynamic values, their structure (adding/removing elements) cannot be modified during execution of JIT-compiled functions.
 
--   **Dependent Types**: Supporting dependent types would introduce substantial complexity and adversely affect the performance characteristics of generated code.
+- **Dependent Types**: Supporting dependent types would introduce substantial complexity and adversely affect the performance characteristics of generated code.
 
--   **CuTe Layout Algebra**: We don't have plan to extend the support of CuTe Layout Algebra under native Python Context. We are planning to extend support for data types and allow JIT function to interoperate with native Python code.
+- **CuTe Layout Algebra**: We don't have plan to extend the support of CuTe Layout Algebra under native Python Context. We are planning to extend support for data types and allow JIT function to interoperate with native Python code.

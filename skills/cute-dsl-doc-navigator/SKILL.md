@@ -5,14 +5,23 @@ description: Navigate and explain NVIDIA CuTe DSL documentation, API surface, no
 
 # CuTe DSL Doc Navigator
 
-Resolve CuTe DSL questions against the local mirrored docs and examples before guessing.
+Resolve CuTe DSL questions against the local NVIDIA CUTLASS **4.8.0** documentation
+and release-pinned examples before guessing. Check the installed package version
+separately: documentation availability does not establish runtime support.
 
 ## Required Rules
 
-- Run every command through `scripts/guix-run`. Do not insert `bash -lc` or any other intermediate shell after `guix shell --`.
+- Use native host tools for documentation work; the user authorized bypassing the
+  broken Guix GPU environment. `scripts/guix-run` is optional and now uses a
+  documentation-only manifest. Never block documentation work on a GPU build.
 - Prefer the local copies in `references/docs/` and `references/examples/` over remote browsing.
 - Use `references/catalog.md` first when you need to see the skill's full coverage.
 - Cite exact local file paths when handing off to the user or another skill.
+- Use `references/examples/cutlass-4.8.0/` for current examples. The unversioned
+  examples are preserved historical material, not the 4.8.0 API authority.
+- Read `references/version-4.8.0.md` for version provenance, architecture boundaries,
+  and Hopper optimization entrypoints. Do not infer Hopper support from a
+  Blackwell/Rubin example or treat experimental APIs as stable.
 
 ## Workflow
 
@@ -29,16 +38,28 @@ Resolve CuTe DSL questions against the local mirrored docs and examples before g
 ## Reading Paths
 
 - First CuTe exposure:
-  Read `references/docs/overview.md`, `references/docs/quick_start.md`, `references/docs/guide/notebooks.md`, then `references/examples/hello_world.ipynb`.
+  Read `references/docs/overview.md`, `references/docs/quick_start.md`, `references/docs/guides/notebooks.md`, then `references/examples/cutlass-4.8.0/notebooks/1_dsl_features/01_hello_world.ipynb`.
 - Layout and tensor reasoning:
-  Read `references/docs/guide/dsl_dynamic_layout.md`, `references/docs/api/cute.md`, `references/docs/api/utils.md`, then `references/examples/tensor.ipynb`, `references/examples/tensorssa.ipynb`, and `references/examples/cute_layout_algebra.ipynb`.
+  Read `references/docs/guide/dsl_dynamic_layout.md`, `references/docs/api/cute.md`, `references/docs/api/utils.md`, then `references/examples/cutlass-4.8.0/cute/notebooks/cute_layout_algebra.ipynb` and `references/examples/cutlass-4.8.0/cute/notebooks/composed_layout.ipynb`.
 - Kernel authoring:
-  Read `references/docs/guide/dsl_introduction.md`, `references/docs/guide/dsl_control_flow.md`, `references/docs/guide/dsl_jit_arg_generation.md`, then `references/examples/elementwise_add.py`.
+  Read `references/docs/guide/dsl_introduction.md`, `references/docs/guide/dsl_control_flow.md`, `references/docs/guide/dsl_jit_arg_generation.md`, then `references/examples/cutlass-4.8.0/cute/ampere/kernel/elementwise/elementwise_add.py`.
 - Performance work:
-  Read `references/docs/guide/autotuning_gemm.md`, `references/docs/api/pipeline.md`, `references/docs/api/cute_nvgpu_cpasync.md`, then `references/examples/sgemm.py`, `references/examples/tensorop_gemm.py`, and `references/examples/flash_attention_v2.py`.
+  Read `references/docs/guides/autotuning_gemm.md`, `references/docs/guides/iket_profiling.md`, `references/docs/api/pipeline.md`, and `references/docs/api/cute_nvgpu_cpasync.md`. Use architecture-matched GEMM and attention examples under `references/examples/cutlass-4.8.0/cute/`.
+- Hopper specialization:
+  Read `references/docs/guides/mma/wgmma_programming.md`, `references/docs/api/cute_nvgpu_warpgroup.md`, `references/docs/api/utils_sm90.md`, then the Hopper persistent GEMM and FMHA examples identified in `references/version-4.8.0.md`.
+- Lower-level and scheduling APIs:
+  Read `references/docs/primitives.md`, `references/docs/ts_general/ts_introduction.md`, and `references/docs/ts_general/ts_validation.md`. Confirm target support before adopting an experimental example.
 
 ## Corpus
 
-- `references/docs/` contains the complete local CuTe DSL markdown snapshot.
-- `references/examples/` contains the complete local example corpus copied from `/home/b/projects/cute-docs/examples`.
+- `references/docs/` contains the published 4.8.0 CuTe DSL Markdown snapshot;
+  `manifest.json` records source pages and any missing upstream assets.
+- `references/examples/cutlass-4.8.0/` contains the full CuTe DSL example tree from
+  NVIDIA CUTLASS tag `v4.8.0`, with commit and per-file hashes in `manifest.json`.
 - `references/catalog.md` lists the exact mirrored files.
+
+Refresh through `/home/b/projects/cute-docs/scripts/update_cute_dsl_docs.py
+--expected-version 4.8.0` and `scripts/update_cute_dsl_examples.py --version 4.8.0`,
+then `scripts/sync_to_dotfiles.py --skill cute-dsl-doc-navigator` from that repo.
+Snapshots are immutable by default; use the docs updater's `--force` only for an
+intentional refresh. Keep the canonical corpus and downstream mirror consistent.

@@ -1,9 +1,9 @@
 ---
 title: "End-to-End Code Generation"
 source_url: "https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl_general/dsl_code_generation.html"
-cutlass_docs_version: "4.4.1"
-generated_at: "2026-03-07T11:33:21+00:00"
-last_updated: "Mar 05, 2026"
+cutlass_docs_version: "4.8.0"
+generated_at: "2026-10-13T17:05:03+00:00"
+last_updated: "Sep 21, 2026"
 ---
 
 # End-to-End Code Generation
@@ -12,9 +12,9 @@ last_updated: "Mar 05, 2026"
 
 CuTe DSL is a **hybrid DSL** that combines two compilation techniques: *AST rewrite* and *tracing*. This combination gives you the best of both worlds:
 
--   **Program structure is preserved** --- control flow (loops, branches) is captured via AST rewrite, compiling to proper structured code instead of flattened traces.
+- **Program structure is preserved** --- control flow (loops, branches) is captured via AST rewrite, compiling to proper structured code instead of flattened traces.
 
--   **Python stays Python** --- arithmetic and tensor operations are captured via tracing, so dynamic shapes, metaprogramming, and Python's rich expression language work naturally.
+- **Python stays Python** --- arithmetic and tensor operations are captured via tracing, so dynamic shapes, metaprogramming, and Python's rich expression language work naturally.
 
 To understand why this matters, let's look at each technique.
 
@@ -24,13 +24,13 @@ The function's abstract-syntax tree is analysed **before** execution. Python con
 
 *Advantages*
 
--   Sees the entire program, so every branch and loop is preserved.
+- Sees the entire program, so every branch and loop is preserved.
 
--   Keeps loop structure intact for optimization such as tiling, vectorisation or GPU thread mapping.
+- Keeps loop structure intact for optimization such as tiling, vectorisation or GPU thread mapping.
 
 *Disadvantages*
 
--   Requires a well-defined Python subset that the rewriter understands.
+- Requires a well-defined Python subset that the rewriter understands.
 
 ### 1.2 Tracing
 
@@ -38,17 +38,17 @@ The decorated function is executed once with *proxy* arguments; overloaded opera
 
 *Advantages*
 
--   Near-zero compile latency, ideal for straight-line arithmetic.
+- Near-zero compile latency, ideal for straight-line arithmetic.
 
--   No need to parse Python source, so it supports many dynamic Python features, and Python has many features.
+- No need to parse Python source, so it supports many dynamic Python features, and Python has many features.
 
 *Disadvantages*
 
--   Untaken branches vanish, so the generated kernel may be wrong for other inputs.
+- Untaken branches vanish, so the generated kernel may be wrong for other inputs.
 
--   Loops are flattened to the iteration count observed during tracing.
+- Loops are flattened to the iteration count observed during tracing.
 
--   Data-dependent control-flow freezes to a single execution path.
+- Data-dependent control-flow freezes to a single execution path.
 
 ### 1.3 The Hybrid Solution
 
@@ -68,19 +68,22 @@ The hybrid approach resolves this tension by evaluating Python abstractions at c
 
 The result:
 
--   Loops compile to real loops, not unrolled traces.
+- Loops compile to real loops, not unrolled traces.
 
--   All branches are preserved, even if not taken during tracing.
+- All branches are preserved, even if not taken during tracing.
 
--   Dynamic shapes, metaprogramming, and Python idioms work naturally.
+- Dynamic shapes, metaprogramming, and Python idioms work naturally.
 
--   The rewriter only needs to understand control flow, not all of Python.
+- The rewriter only needs to understand control flow, not all of Python.
 
 ## 2. CuTe DSL Compilation Flow: Meta-Stage to Object-Stage
 
 CuTe DSL bridges Python and GPU hardware through a three-stage pipeline.
 
-![Figure 1 *Left*: tracing mode records only the path that executed. *Right*: preprocessor mode emits structured intermediate representation (IR) for every branch and loop before tracing the arithmetic. ¶ The default CuTe DSL compilation pipeline (mode 2): Python source flows through AST preprocessing and interpreter-driven tracing to produce intermediate representation (IR), which is then lowered and compiled to device code.](../assets/upstream/_images/dsl_modes.png)
+<figure id="id1">
+<a href="../assets/upstream/_images/dsl_compilation.png"><img src="../assets/upstream/_images/dsl_compilation.png" alt="../../../../_images/dsl_compilation.png" /></a>
+<figcaption><p>Figure 1 The CuTe DSL compilation pipeline: Python source flows through AST preprocessing and interpreter-driven tracing to produce intermediate representation (IR), which is then lowered and compiled to device code.</p></figcaption>
+</figure>
 
 **Stage 1: Pre-Staging (Python AST)**
 
@@ -90,11 +93,11 @@ Before any code executes, the AST preprocessor rewrites the decorated function. 
 
 The rewritten function runs in the Python interpreter with proxy tensor arguments. As execution proceeds:
 
--   Callbacks fire at control-flow boundaries, emitting structured intermediate representation (IR) (loops, branches, etc.).
+- Callbacks fire at control-flow boundaries, emitting structured intermediate representation (IR) (loops, branches, etc.).
 
--   Tensor operations are traced: each operator invocation records the corresponding operation.
+- Tensor operations are traced: each operator invocation records the corresponding operation.
 
--   Compile-time constants are *partially evaluated*---values known at JIT time fold directly into the intermediate representation (IR), enabling aggressive specialization.
+- Compile-time constants are *partially evaluated*---values known at JIT time fold directly into the intermediate representation (IR), enabling aggressive specialization.
 
 The result is a complete representation of the kernel, with both high-level structure and low-level arithmetic intact.
 
@@ -124,9 +127,9 @@ This distinction determines what you can observe and when.
 
 CuTe DSL provides two ways to print values, each operating at a different stage:
 
--   **Python's** `print()` --- executes during the **meta-stage** (compilation). Use it to inspect what the compiler sees.
+- **Python's** `print()` --- executes during the **meta-stage** (compilation). Use it to inspect what the compiler sees.
 
--   `cute.printf()` --- compiles into the kernel and executes at **runtime** on the GPU. Use it to observe actual tensor values during execution.
+- `cute.printf()` --- compiles into the kernel and executes at **runtime** on the GPU. Use it to observe actual tensor values during execution.
 
 The following examples demonstrate how the same `result` variable appears differently depending on when and how you print it.
 
@@ -183,16 +186,21 @@ The constant `b = 5.0` is folded in, but since `a` is dynamic, the result remain
 
 ### Practical Implications
 
--   **Use** `print()` **to debug your meta-program** --- inspect shapes, strides, tile sizes, and compile-time decisions.
+- **Use** `print()` **to debug your meta-program** --- inspect shapes, strides, tile sizes, and compile-time decisions.
 
--   **Constexpr parameters enable specialization** --- the compiler can generate tighter code when values are known at JIT time.
+- **Constexpr parameters enable specialization** --- the compiler can generate tighter code when values are known at JIT time.
 
--   **Dynamic parameters preserve generality** --- a single compiled kernel can handle varying input sizes without recompilation.
+- **Dynamic parameters preserve generality** --- a single compiled kernel can handle varying input sizes without recompilation.
 
 ## 4. CuTe DSL Code-Generation Modes
 
-CuTe's Python front-end combines the techniques above into **two mutually exclusive modes** (see [Left: tracing mode records only the path that executed. Right: preprocessor mode emits structured intermediate representation (IR) for every branch and loop before tracing the arithmetic.](#fig-dsl-modes)), selectable with the `preprocessor` flag of the `@jit` decorator:
+CuTe's Python front-end combines the techniques above into **two mutually exclusive modes**, selectable with the `preprocessor` flag of the `@jit` decorator:
 
 1\. Tracing mode `@jit(preprocess=False)` -- tracing only. This results in the fastest compilation path and is recommended only for kernels that are guaranteed to be straight-line arithmetic. It suffers from all tracing limitations listed in the previous section.
 
 2\. Preprocessor mode (**default**) `@jit(preprocess=True)` -- **AST rewrite + tracing**. The AST pass captures every loop and branch, eliminating the correctness and optimisation problems of pure tracing; tracing then fills in the arithmetic. This hybrid "preprocessor" pipeline is unique to CuTe DSL and was designed specifically to overcome the disadvantages identified above.
+
+<figure id="id2">
+<a href="../assets/upstream/_images/dsl_modes.png"><img src="../assets/upstream/_images/dsl_modes.png" alt="../../../../_images/dsl_modes.png" /></a>
+<figcaption><p>Figure 2 <em>Left</em>: tracing mode records only the path that executed. <em>Right</em>: preprocessor mode emits structured intermediate representation (IR) for every branch and loop before tracing the arithmetic.</p></figcaption>
+</figure>
