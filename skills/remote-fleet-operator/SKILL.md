@@ -7,6 +7,17 @@ description: Operate remote machines, pools, and project-bound compute environme
 
 Use `fleetctl` as the control plane for remote work.
 
+## Prerequisites
+
+- `fleetctl` on `PATH`. It ships in the same dotfiles repository as this skill
+  (`bin/fleetctl`, a Python 3 script that drives the system `ssh`), and that
+  repository's `setup.sh` links it into `~/.local/bin`.
+- A rendered fleet inventory under `~/.config/fleet/` (`fleetctl doctor` reports
+  what is missing).
+
+If `fleetctl` is unavailable or has no inventory, stop and tell the user instead
+of improvising hosts or raw `ssh` commands.
+
 ## Goals
 
 - Keep host and login data out of version-controlled repos.

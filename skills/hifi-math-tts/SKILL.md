@@ -9,6 +9,10 @@ Generate spoken scripts for technical material by keeping language generation ag
 
 This skill is for source-to-script transformation, not audio rendering. The default goal is a script that is pleasant for TTS and faithful to the source before any audio is generated.
 
+Paths: `scripts/`, `references/`, and `assets/` below are relative to `<skill-dir>`, the
+directory containing this file. Run bundled scripts by that path (for example
+`python3 <skill-dir>/scripts/...`) from the working directory that should receive the outputs.
+
 Default numeric policy:
 
 - Spell out numbers everywhere in the final spoken script.

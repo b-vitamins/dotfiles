@@ -7,6 +7,10 @@ description: High-fidelity manual transcription from PDFs or rendered page image
 
 Execute a deterministic pipeline for manual transcription or verification-repair with strict quality rules, explicit manager-side gates, and multi-agent scaling.
 
+Paths: `scripts/`, `references/`, and `assets/` below are relative to `<skill-dir>`, the
+directory containing this file. Run bundled scripts by that path (for example
+`python3 <skill-dir>/scripts/...`) from the working directory that should receive the outputs.
+
 ## Inputs
 
 - Source PDF path.
@@ -56,7 +60,7 @@ Always render images before any transcription work. Use `pdftoppm` via Guix Popp
 Use:
 
 ```bash
-scripts/render-pages.sh --pdf /path/to/book.pdf --outdir pages --dpi 600
+<skill-dir>/scripts/render-pages.sh --pdf /path/to/book.pdf --outdir pages --dpi 600
 ```
 
 This script runs:

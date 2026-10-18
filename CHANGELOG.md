@@ -66,6 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `setup.sh` queue bootstrap when the USB printer is connected.
 - OpenClaw home service autostart for mileva.
 ### Changed
+- Documented that skill scripts resolve against the skill directory while
+  outputs land in the caller's working directory, and stated the `fleetctl`
+  prerequisites of `remote-fleet-operator`.
 - Refreshed the CuTe DSL doc navigator to the 4.8.0 documentation and
   release-pinned example corpus, added Hopper WGMMA/TMA reading paths, and
   separated documentation tooling from the broken GPU Guix environment.

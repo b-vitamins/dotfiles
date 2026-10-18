@@ -9,6 +9,10 @@ Produce reader-notes, not a summary. Preserve the facts, assumptions, equations,
 procedures, claims, limitations, and exact wording that a careful expert would
 keep after reading the full paper from source.
 
+Paths: `scripts/`, `references/`, and `assets/` below are relative to `<skill-dir>`, the
+directory containing this file. Run bundled scripts by that path (for example
+`python3 <skill-dir>/scripts/...`) from the working directory that should receive the outputs.
+
 The non-negotiable foundation is:
 
 **Read the complete paper from TeX source, line by line, start to finish.**
