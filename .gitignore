@@ -119,6 +119,8 @@ go.work
 # Logs
 *.log
 logs/
+/clam-report-*/
+/clam-report-latest
 
 # Secrets and credentials
 .env

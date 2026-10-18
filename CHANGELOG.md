@@ -271,6 +271,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   starts the daemon without a display environment. Its wrapper, shell, timer
   and daemon are declared store dependencies, independent of manually copied
   helpers or the runtime executable search path.
+- Made `scripts/fast-clamscan.sh` usable for full system scans: preserve worker
+  arguments, report failed/incomplete jobs, expose scan-limit alerts, deduplicate
+  targets, exclude current reports, and repair nested report symlinks. Added
+  user-local FreshClam updates, database age checks, two-worker defaults,
+  regression coverage, a compact infected-only report, and a usage guide.
 - Sanitized BV modeline/header-line dynamic fields so `display-time-string` and
   other mode-line fragments cannot leak package backgrounds into the header.
 - Made BV Emacs theme audit and regression commands load discoverable DSL

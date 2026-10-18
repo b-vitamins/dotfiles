@@ -56,6 +56,9 @@ activate       # Source venv/bin/activate
 ### Research Tools
 - [`harvester`](docs/bin/harvester.md) - Download and organize ArXiv papers
 
+### Security
+- [`fast-clamscan`](docs/bin/fast-clamscan.md) - Update ClamAV definitions and scan the system with reports of detections and incomplete scans
+
 ### Remote Operations
 - [`fleetctl`](docs/bin/fleetctl.md) - Private fleet inventory and reliable remote execution/sync
 
