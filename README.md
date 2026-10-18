@@ -140,6 +140,33 @@ to provision the required `root:root` `0600` OCI credential files under
 `/root/` from `pass`, bootstraps the default SSH identity when needed, and then
 prints an action report for anything still manual.
 
+### GNOME Shortcuts
+
+Apply the shortcuts from `gnome/keybindings/` in your desktop session:
+
+```bash
+sh scripts/gnome-keybindings.sh --keybindings-only
+```
+
+This sets Ctrl+Alt+T to Alacritty and Ctrl+Alt+E to
+`emacsclient -c -a emacs`, along with the window, workspace, tiling, browser,
+home-folder, lock-screen and screenshot shortcuts in the dconf files.
+Omit `--keybindings-only` to also apply the script's theme, power and default
+application settings. Run it as your desktop user, without `sudo`.
+
+The mileva and sparck Guix home configurations override the MediaKeys autostart
+entry with `scripts/gnome-media-keys.sh`. It preserves an existing display
+environment and, when the Guix GNOME session has provided none, waits for a
+single Wayland socket before starting the shortcut daemon. This lets GUI
+applications launched by shortcuts connect to the desktop after login.
+
+Guix generates this entry with store paths for the wrapper, shell, timer and
+daemon, and manages the autostart symlink through Guix Home. The declared fix
+needs no manually copied helper, cached display name or checkout at runtime;
+the wrapper only reads the current session's sockets and sets its child's
+environment. It rejects ambiguous displays. The shortcut assignments themselves
+remain user dconf settings applied by the command above.
+
 ### Emacs Operations
 
 ```bash

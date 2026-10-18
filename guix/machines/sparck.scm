@@ -231,7 +231,31 @@
       ;; XDG configuration files
       (simple-service 'sparck-xdg-config
                       home-xdg-configuration-files-service-type
-                      `(("alacritty/alacritty.toml" ,(local-file
+                      `(("autostart/org.gnome.SettingsDaemon.MediaKeys.desktop" ,
+                         (mixed-text-file "gnome-media-keys.desktop"
+                          "[Desktop Entry]
+Type=Application
+Name=GNOME keyboard shortcuts
+Exec="
+                          (file-append coreutils "/bin/env")
+                          " GNOME_MEDIA_KEYS_SLEEP="
+                          (file-append coreutils "/bin/sleep")
+                          " "
+                          (file-append bash-minimal "/bin/sh")
+                          " "
+                          (local-file "../../scripts/gnome-media-keys.sh"
+                                      "gnome-media-keys.sh"
+                                      #:recursive? #f)
+                          " "
+                          (file-append gnome-settings-daemon
+                                       "/libexec/gsd-media-keys")
+                          "\nOnlyShowIn=GNOME;\nNoDisplay=true\n"
+                          "X-GNOME-Autostart-Phase=Initialization\n"
+                          "X-GNOME-Autostart-Notify=true
+X-GNOME-AutoRestart=true
+"
+                          "X-GNOME-HiddenUnderSystemd=false\n"))
+                        ("alacritty/alacritty.toml" ,(local-file
                                                       "../../alacritty/alacritty.toml"
                                                       "alacritty.toml"
                                                       #:recursive? #f))

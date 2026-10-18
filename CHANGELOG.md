@@ -263,6 +263,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Defined BV semantic/header faces before theme compilation so in-house faces
   receive generated theme styling on first load.
 ### Fixed
+- Corrected the GNOME custom shortcut import path and registered both Alacritty
+  and Emacs shortcuts; the setup script now fails on import errors and supports
+  applying keybindings without changing theme, power or default applications.
+- Added a display-aware MediaKeys autostart wrapper to the mileva and sparck
+  Guix home configurations so app-launch shortcuts work when the GNOME session
+  starts the daemon without a display environment. Its wrapper, shell, timer
+  and daemon are declared store dependencies, independent of manually copied
+  helpers or the runtime executable search path.
 - Sanitized BV modeline/header-line dynamic fields so `display-time-string` and
   other mode-line fragments cannot leak package backgrounds into the header.
 - Made BV Emacs theme audit and regression commands load discoverable DSL
