@@ -687,7 +687,9 @@ allow-preset-passphrase")))
                                        (host "::1" "sparck.local"
                                              '("dev.local"))))
 
-                 ;; Environment variables for Wayland preference
+                 ;; Environment variables for Wayland preference.  Leave
+                 ;; GDK_BACKEND unset; forcing it disables
+                 ;; xdg-desktop-portal-gnome dialogs.
                  (simple-service 'wayland-environment
                                  session-environment-service-type
                                  '(("MOZ_ENABLE_WAYLAND" . "1") ;Firefox Wayland
@@ -696,8 +698,7 @@ allow-preset-passphrase")))
                                    ("QT_QPA_PLATFORM" . "wayland;xcb") ;Qt apps prefer Wayland
                                    ("CLUTTER_BACKEND" . "wayland") ;Clutter/GTK
                                    ("SDL_VIDEODRIVER" . "wayland") ;SDL applications
-                                   ("_JAVA_AWT_WM_NONREPARENTING" . "1") ;Java apps
-                                   ("GDK_BACKEND" . "wayland,x11"))))
+                                   ("_JAVA_AWT_WM_NONREPARENTING" . "1"))))
            (modify-services %my-desktop-services
              (elogind-service-type config =>
                                    (elogind-configuration (inherit config)
