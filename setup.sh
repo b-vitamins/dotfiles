@@ -174,7 +174,7 @@ ${BOLD}OPTIONS${RESET}
     --exclude-agents PATTERN
         Exclude agents matching pattern (e.g., "typescript-*")
     --status [component]
-        Show status of installed configs (all, claude, emacs, guix)
+        Show status of installed configs (all, claude, skills, emacs, guix)
     --no-backup
         Don't create backups when overwriting files
     --provision-root-secrets
@@ -204,8 +204,9 @@ ${BOLD}SUPPORTED CONFIGURATIONS${RESET}
     Managed by this script:
     - Emacs (init files, lisp modules, templates)
     - Guix System (channels.scm only)
-    - Codex managed instructions/rules + skills (keeps ~/.codex/config.toml local)
+    - Codex managed instructions/rules (keeps ~/.codex/config.toml local)
     - Claude Code (settings, agents, hooks, instructions, output styles, project templates)
+    - Agent skills from skills/ for Codex (~/.agents/skills) and Claude Code (~/.claude/skills)
     - qBittorrent configuration (if present)
     - Automatic bootstrap of default SSH identity and machine-specific root credentials when available
     - Automatic Brother HL-T4000DW CUPS queue bootstrap when that USB printer is connected
@@ -389,6 +390,13 @@ show_status() {
 		;;
 	esac
 	case "$component" in
+	skills | all)
+		show_skills_status
+		[[ "$component" == "skills" ]] && return
+		echo
+		;;
+	esac
+	case "$component" in
 	emacs | all)
 		show_emacs_status
 		[[ "$component" == "emacs" ]] && return
@@ -400,9 +408,15 @@ show_status() {
 		show_guix_status
 		;;
 	*)
-		die "Unknown component: $component (valid: all, claude, emacs, guix)"
+		die "Unknown component: $component (valid: all, claude, skills, emacs, guix)"
 		;;
 	esac
+}
+show_skills_status() {
+	log INFO "Agent Skills Status"
+	echo "==================="
+	# --check reports pending changes and exits 1 when anything has drifted.
+	"$DOTFILES_DIR/scripts/link-agent-skills.sh" --check || true
 }
 show_claude_status() {
 	log INFO "Claude Code Configuration Status"
@@ -727,9 +741,9 @@ define_links() {
 		if [[ -d "$DOTFILES_DIR/bin" ]]; then
 			setup_user_bin
 		fi
-		# Setup Codex managed files + skills from dotfiles repo
+		# Setup Codex managed files, then skills shared by Codex and Claude Code
 		setup_codex_config
-		setup_codex_skills
+		setup_agent_skills
 	fi
 	# Guix configuration (always included unless machine not found)
 	if [[ -d "$DOTFILES_DIR/guix" ]]; then
@@ -857,43 +871,21 @@ setup_codex_config() {
 	fi
 }
 # -----------------------------------------------------------------------------
-# Codex skills setup
+# Agent skills setup (Codex and Claude Code)
 # -----------------------------------------------------------------------------
-setup_codex_skills() {
-	local source_skills_dir="$DOTFILES_DIR/skills"
-	local target_skills_dir="$HOME/.codex/skills"
-	local queued=0
-	local skill_dir
-	if [[ ! -d "$source_skills_dir" ]]; then
-		debug "No Codex skills directory found at: $source_skills_dir"
+setup_agent_skills() {
+	local linker="$DOTFILES_DIR/scripts/link-agent-skills.sh"
+	local args=()
+	if [[ ! -x "$linker" ]]; then
+		log WARNING "Agent skill linker not found: $linker"
 		return 0
 	fi
-	for skill_dir in "$source_skills_dir"/*; do
-		[[ -d "$skill_dir" ]] || continue
-		[[ -f "$skill_dir/SKILL.md" ]] || {
-			debug "Skipping non-skill directory: $(basename "$skill_dir")"
-			continue
-		}
-		local skill_name
-		local target_link
-		skill_name="$(basename "$skill_dir")"
-		target_link="$target_skills_dir/$skill_name"
-		if [[ -L "$target_link" ]] && [[ "$(readlink -f "$target_link")" == "$(readlink -f "$skill_dir")" ]]; then
-			debug "Codex skill already linked: $skill_name"
-			continue
-		fi
-		# Only auto-install missing skill links. Keep any existing target untouched.
-		if [[ -e "$target_link" || -L "$target_link" ]]; then
-			log WARNING "Codex skill target exists, skipping: $target_link"
-			continue
-		fi
-		LINKS["$skill_dir"]="$target_link"
-		queued=$((queued + 1))
-	done
-	if [[ $queued -gt 0 ]]; then
-		log INFO "Queued $queued Codex skill symlink(s) for installation"
-	else
-		debug "No new Codex skill symlinks needed"
+	# Each skill is linked into several runtimes, which the source-keyed LINKS
+	# table cannot express, so the linker applies its own idempotent changes.
+	[[ "$DRY_RUN" == true ]] && args+=(--dry-run)
+	log INFO "Linking agent skills for Codex and Claude Code..."
+	if ! "$linker" "${args[@]}"; then
+		log WARNING "Agent skill linking was incomplete"
 	fi
 }
 # -----------------------------------------------------------------------------

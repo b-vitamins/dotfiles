@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Shared agent skills for Codex and Claude Code: `scripts/link-agent-skills.sh`
+  (POSIX `sh`, run by `setup.sh` and checked by `setup.sh --status skills`) links
+  every skill in `skills/` into `~/.agents/skills` and `~/.claude/skills`, repoints
+  or prunes only its own links, and removes the old `~/.codex/skills` links.
+  `skills/README.md` documents deployment and platform-neutral authoring rules.
 - `fleetctl`, a private XDG-based fleet inventory and remote execution helper with host-level target workdirs, project bindings, SSH alias import, env migration, sync, script, submit, and doctor flows
 - Global Codex fleet instructions and a `remote-fleet-operator` skill for routing remote work through `fleetctl`
 - Emacs daemon service configuration for mileva and sparck machines

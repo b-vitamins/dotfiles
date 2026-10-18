@@ -1,0 +1,55 @@
+# Agent Skills
+
+Skills shared by Codex and Claude Code. Each skill is a directory containing
+`SKILL.md` (YAML frontmatter with `name` and `description`, then instructions)
+plus optional `scripts/`, `references/`, and `assets/`, following the
+[Agent Skills](https://agentskills.io) format that both runtimes read.
+
+## Deployment
+
+`scripts/link-agent-skills.sh` symlinks every skill into each runtime's
+user-level skill directory:
+
+| Runtime | Directory |
+|---|---|
+| Codex | `~/.agents/skills` |
+| Claude Code | `~/.claude/skills` (`$CLAUDE_CONFIG_DIR/skills` when set) |
+
+`./setup.sh` runs it, and `./setup.sh --status skills` reports drift. Run it
+directly after adding, renaming, or removing a skill:
+
+```bash
+scripts/link-agent-skills.sh            # apply
+scripts/link-agent-skills.sh --check    # report pending changes; exit 1 if any
+```
+
+The links point back into this repository, so edits take effect without
+reinstalling. The script is plain POSIX `sh` and touches only symlinks that point
+into `skills/`. It leaves everything else alone, including Claude Code's
+`synced/` directory and Codex's bundled `.system/` skills, and it removes the
+links that earlier versions of this repository created in `~/.codex/skills`.
+
+## Authoring rules
+
+These keep every skill usable from either runtime on any machine:
+
+- `name` must match the directory name: lowercase letters, digits, and hyphens,
+  at most 64 characters. Keep `description` under 1024 characters and keep the
+  frontmatter to `name` and `description`.
+- Directories starting with `_` hold maintainer tooling and are not deployed.
+- Refer to bundled files relative to the skill (`scripts/...`), and to the skill
+  itself as `<skill-dir>`. Scripts run from the user's working directory, so
+  commands should call them as `<skill-dir>/scripts/...`.
+- Assume no particular OS distribution, package manager, home directory, or
+  host. State what a skill needs (tools, versions, hardware) and how to check
+  it, use whatever environment the project already provides, and ask before
+  installing anything. Recipes for specific package managers belong in
+  `references/` or `assets/` as options, not in required steps.
+- Put scratch output in the system temporary directory (`tempfile.gettempdir()`
+  in Python) or a directory the user names, never a hardcoded `/tmp`.
+- When a step needs runtime features such as sub-agents, describe the capability
+  and give the Codex and Claude Code mechanisms side by side.
+- Runtime-specific metadata goes in sidecar files the other runtime ignores,
+  such as `agents/openai.yaml` for Codex UI metadata.
+- Shell scripts should run on Linux and macOS: POSIX `sh`, or bash without
+  bash-4-only features (`mapfile`, associative arrays) or GNU-only flags.

@@ -76,7 +76,8 @@ See [documentation](docs/) for detailed guides.
 - **Tools**: Modern CLI replacements (eza, bat, ripgrep, fd, delta)
 - **Security**: GPG for SSH auth, git commit signing, encrypted backups
 - **Containers**: Docker + OCI services for databases and ML tools
-- **Codex**: Local runtime `~/.codex/config.toml`, managed `instructions.md`, local skills, and a global `fleetctl`-based remote workflow for stable host access without repo-local machine secrets
+- **Codex**: Local runtime `~/.codex/config.toml`, managed `instructions.md`, and a global `fleetctl`-based remote workflow for stable host access without repo-local machine secrets
+- **Agent skills**: One set of platform-neutral skills in `skills/`, deployed to both Codex and Claude Code by `scripts/link-agent-skills.sh`
 
 ## Directory Structure
 
@@ -102,6 +103,7 @@ dotfiles/
 - [Emacs Configuration](docs/emacs/) - Modular Emacs setup with 40+ custom modules
 - [Guix System](docs/guix/) - Machine configurations and custom services
 - [Shell Environment](docs/shell/zsh.md) - Zsh configuration and productivity tools
+- [Agent Skills](skills/README.md) - Shared Codex and Claude Code skills, deployment, and authoring rules
 
 ## Common Tasks
 
