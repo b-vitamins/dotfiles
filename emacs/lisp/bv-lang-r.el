@@ -32,11 +32,11 @@
 (declare-function ess-eval-line "ess-inf" (&optional vis))
 (declare-function ess-eval-paragraph "ess-inf" (&optional vis))
 (declare-function ess-eval-linewise "ess-inf" (text-withtabs &optional invisibly eob even-empty wait-last-prompt))
-(declare-function ess-display-help-on-object "ess-help" (&optional object))
+(declare-function ess-display-help-on-object "ess-help" (object &optional command))
 (declare-function ess-describe-object-at-point "ess-help" ())
 (declare-function ess-rdired "ess-rdired" ())
-(declare-function ess-debug-flag-for-debugging "ess-r-mode" ())
-(declare-function ess-debug-unflag-for-debugging "ess-r-mode" ())
+(declare-function ess-debug-flag-for-debugging "ess-tracebug" ())
+(declare-function ess-debug-unflag-for-debugging "ess-tracebug" ())
 (declare-function ess-show-traceback "ess-tracebug" ())
 
 ;; Optional package loading
@@ -46,14 +46,17 @@
 (autoload 'ess-eval-region "ess-inf" nil t)
 
 ;; Enable tree-sitter for R when available
-(when (treesit-language-available-p 'r)
+(when (and (fboundp 'r-ts-mode)
+           (treesit-language-available-p 'r))
   (add-to-list 'major-mode-remap-alist '(ess-r-mode . r-ts-mode)))
 
 ;; File associations
 (add-to-list 'auto-mode-alist '("\\.R\\'" . R-mode))
 (add-to-list 'auto-mode-alist '("\\.r\\'" . R-mode))
-(add-to-list 'auto-mode-alist '("\\.Rmd\\'" . poly-markdown+r-mode))
-(add-to-list 'auto-mode-alist '("\\.Rnw\\'" . poly-noweb+r-mode))
+(when (locate-library "poly-markdown")
+  (add-to-list 'auto-mode-alist '("\\.Rmd\\'" . poly-markdown+r-mode)))
+(when (locate-library "poly-noweb")
+  (add-to-list 'auto-mode-alist '("\\.Rnw\\'" . poly-noweb+r-mode)))
 
 ;; ESS settings
 (setq ess-indent-level 2)
@@ -128,12 +131,12 @@
 
 ;; Package management
 (defun bv-r-install-package (package)
-  "Install R package."
+  "Install R package PACKAGE."
   (interactive "sPackage: ")
   (ess-eval-linewise (format "install.packages(\"%s\")" package)))
 
 (defun bv-r-load-package (package)
-  "Load R package."
+  "Load R package PACKAGE."
   (interactive "sPackage: ")
   (ess-eval-linewise (format "library(%s)" package)))
 
@@ -202,7 +205,7 @@
 (defun bv-r-help ()
   "Show R help for object at point."
   (interactive)
-  (ess-display-help-on-object))
+  (call-interactively #'ess-display-help-on-object))
 
 (defun bv-r-describe-at-point ()
   "Describe object at point."
@@ -216,7 +219,7 @@
 
 ;; Plotting
 (defun bv-r-save-plot (filename)
-  "Save current plot."
+  "Save current plot to FILENAME."
   (interactive "sSave plot as: ")
   (ess-eval-linewise (format "ggsave(\"%s\")" filename)))
 

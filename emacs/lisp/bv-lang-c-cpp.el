@@ -30,10 +30,10 @@
 (autoload 'cmake-mode "cmake-mode" nil t)
 (autoload 'cmakelang-format-buffer "cmakelang" nil t)
 
-;; Remap to tree-sitter modes
+;; Remap to tree-sitter modes.  Since Emacs 31, `c-or-c++-mode' dispatches
+;; through these remaps itself, so it needs no entry of its own.
 (add-to-list 'major-mode-remap-alist '(c-mode . c-ts-mode))
 (add-to-list 'major-mode-remap-alist '(c++-mode . c++-ts-mode))
-(add-to-list 'major-mode-remap-alist '(c-or-c++-mode . c-or-c++-ts-mode))
 
 ;; File associations
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-ts-mode)) ; Assume .h files are C++

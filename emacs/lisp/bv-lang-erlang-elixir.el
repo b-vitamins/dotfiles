@@ -26,33 +26,20 @@
 ;; External functions
 (declare-function erlang-compile-display "erlang" ())
 (declare-function run-elixir "inf-elixir" ())
-(declare-function erlang-man-function "erlang" (function))
-(declare-function bv-elixir-mix-compile "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-mix-test "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-mix-test-file "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-mix-test-at-point "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-mix-format "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-mix-deps-get "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-mix-clean "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-mix-credo "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-mix-dialyzer "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-phoenix-server "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-phoenix-routes "bv-lang-erlang-elixir" ())
-(declare-function bv-elixir-phoenix-migrate "bv-lang-erlang-elixir" ())
-(declare-function bv-erlang-man-at-point "bv-lang-erlang-elixir" ())
+(declare-function alchemist-mode "alchemist" (&optional arg))
+(declare-function erlang-man-function "erlang" (&optional name))
 
 ;; Optional package loading
 (autoload 'erlang-mode "erlang" nil t)
 (autoload 'erlang-shell "erlang" nil t)
 (autoload 'elixir-mode "elixir-mode" nil t)
-(autoload 'alchemist-mode "alchemist" nil t)
 
 ;; Enable tree-sitter when available
-(when (treesit-language-available-p 'erlang)
+(when (and (fboundp 'erlang-ts-mode)
+           (treesit-language-available-p 'erlang))
   (add-to-list 'major-mode-remap-alist '(erlang-mode . erlang-ts-mode)))
 (when (treesit-language-available-p 'elixir)
-  (add-to-list 'major-mode-remap-alist '(elixir-mode . elixir-ts-mode))
-  (add-to-list 'major-mode-remap-alist '(elixir-ts-mode . heex-ts-mode)))
+  (add-to-list 'major-mode-remap-alist '(elixir-mode . elixir-ts-mode)))
 
 ;; File associations
 (add-to-list 'auto-mode-alist '("\\.erl\\'" . erlang-mode))
@@ -64,6 +51,9 @@
 (add-to-list 'auto-mode-alist '("\\.eex\\'" . elixir-mode))
 (add-to-list 'auto-mode-alist '("\\.heex\\'" . elixir-mode))
 (add-to-list 'auto-mode-alist '("\\.leex\\'" . elixir-mode))
+(when (and (treesit-language-available-p 'heex)
+           (treesit-language-available-p 'elixir))
+  (add-to-list 'auto-mode-alist '("\\.heex\\'" . heex-ts-mode)))
 
 ;; Erlang settings
 (setq erlang-indent-level 4)
@@ -102,8 +92,8 @@
 
 ;; Enable alchemist for Elixir if available
 (defun bv-elixir-maybe-enable-alchemist ()
-  "Enable alchemist-mode if available."
-  (when (fboundp 'alchemist-mode)
+  "Enable `alchemist-mode' if alchemist is installed."
+  (when (require 'alchemist nil t)
     (alchemist-mode 1)))
 
 (add-hook 'elixir-mode-hook #'bv-elixir-maybe-enable-alchemist)
@@ -141,9 +131,10 @@
   (interactive)
   (if (fboundp 'alchemist-iex-project-run)
       (alchemist-iex-project-run)
-    (let ((default-directory (locate-dominating-file default-directory "mix.exs")))
+    (let ((default-directory (or (locate-dominating-file default-directory "mix.exs")
+                                 default-directory)))
       (when (fboundp 'run-elixir)
-        (run-elixir))))
+        (run-elixir)))))
 
 ;; Mix commands
 (defun bv-elixir-mix-compile ()
@@ -213,7 +204,7 @@
   "Show Erlang man page for symbol at point."
   (interactive)
   (when (fboundp 'erlang-man-function)
-    (erlang-man-function (thing-at-point 'symbol)))))
+    (erlang-man-function (thing-at-point 'symbol))))
 
 (defun bv-elixir-help-at-point ()
   "Show Elixir help for symbol at point."

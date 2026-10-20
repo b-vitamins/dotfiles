@@ -38,15 +38,22 @@
 (autoload 'dune-mode "dune" nil t)
 
 ;; Enable tree-sitter for OCaml when available
-(when (treesit-language-available-p 'ocaml)
+(defconst bv-ocaml--ts-p
+  (and (fboundp 'ocaml-ts-mode)
+       (treesit-language-available-p 'ocaml))
+  "Non-nil when `ocaml-ts-mode' and its grammar are usable.")
+
+(when bv-ocaml--ts-p
   (add-to-list 'major-mode-remap-alist '(tuareg-mode . ocaml-ts-mode)))
 
-;; File associations
-(add-to-list 'auto-mode-alist '("\\.ml[ily]?\\'" . tuareg-mode))
-(add-to-list 'auto-mode-alist '("\\.topml\\'" . tuareg-mode))
-(add-to-list 'auto-mode-alist '("\\.ocamlinit\\'" . tuareg-mode))
-(add-to-list 'auto-mode-alist '("dune\\(?:\\.inc\\)?\\'" . dune-mode))
-(add-to-list 'auto-mode-alist '("dune-project\\'" . dune-mode))
+;; File associations, only when some OCaml major mode can be activated
+(when (or bv-ocaml--ts-p (locate-library "tuareg"))
+  (add-to-list 'auto-mode-alist '("\\.ml[ily]?\\'" . tuareg-mode))
+  (add-to-list 'auto-mode-alist '("\\.topml\\'" . tuareg-mode))
+  (add-to-list 'auto-mode-alist '("\\.ocamlinit\\'" . tuareg-mode)))
+(when (locate-library "dune")
+  (add-to-list 'auto-mode-alist '("dune\\(?:\\.inc\\)?\\'" . dune-mode))
+  (add-to-list 'auto-mode-alist '("dune-project\\'" . dune-mode)))
 
 ;; OCaml settings
 (setq tuareg-indent-align-with-first-arg t)
@@ -70,17 +77,22 @@
 
 ;; Enable merlin if available
 (defun bv-ocaml-maybe-enable-merlin ()
-  "Enable merlin-mode if available."
-  (when (fboundp 'merlin-mode)
+  "Enable `merlin-mode' if merlin is installed."
+  (when (locate-library "merlin")
     (merlin-mode 1)))
 
 (add-hook 'tuareg-mode-hook #'bv-ocaml-maybe-enable-merlin)
 (add-hook 'reason-mode-hook #'bv-ocaml-maybe-enable-merlin)
 
 ;; UTop integration
-(add-hook 'tuareg-mode-hook #'utop-minor-mode)
+(defun bv-ocaml-maybe-enable-utop ()
+  "Enable `utop-minor-mode' if utop is installed."
+  (when (locate-library "utop")
+    (utop-minor-mode 1)))
+
+(add-hook 'tuareg-mode-hook #'bv-ocaml-maybe-enable-utop)
 (when (fboundp 'ocaml-ts-mode)
-  (add-hook 'ocaml-ts-mode-hook #'utop-minor-mode))
+  (add-hook 'ocaml-ts-mode-hook #'bv-ocaml-maybe-enable-utop))
 
 ;; REPL interaction
 (defun bv-ocaml-utop ()
@@ -141,7 +153,7 @@
   (compile (format "opam install %s" package)))
 
 (defun bv-ocaml-opam-switch (switch)
-  "Switch to OPAM switch."
+  "Switch to OPAM switch SWITCH."
   (interactive "sSwitch: ")
   (shell-command (format "opam switch %s" switch))
   (setenv "OPAM_SWITCH_PREFIX"

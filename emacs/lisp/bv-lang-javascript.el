@@ -32,6 +32,21 @@
 (autoload 'prettier-js "prettier" nil t)
 (autoload 'eslint-fix "eslint-fix" nil t)
 
+;; Emacs 31.1 `js-ts-mode' compiles its jsdoc font-lock rules even when the
+;; optional jsdoc grammar is missing, which signals during mode setup.
+(declare-function treesit-font-lock-setting-language "treesit" (setting))
+
+(defun bv-javascript--drop-unavailable-jsdoc (settings)
+  "Remove jsdoc rules from font-lock SETTINGS when its grammar is missing."
+  (if (treesit-language-available-p 'jsdoc)
+      settings
+    (seq-remove (lambda (setting)
+                  (eq (treesit-font-lock-setting-language setting) 'jsdoc))
+                settings)))
+
+(advice-add 'js--treesit-font-lock-settings :filter-return
+            #'bv-javascript--drop-unavailable-jsdoc)
+
 ;; Remap to tree-sitter modes
 (add-to-list 'major-mode-remap-alist '(javascript-mode . js-ts-mode))
 (add-to-list 'major-mode-remap-alist '(js-mode . js-ts-mode))
@@ -112,11 +127,15 @@
       (revert-buffer t t))))
 
 ;; Flymake ESLint integration
-(with-eval-after-load 'flymake
-  (when (fboundp 'flymake-eslint-enable)
-    (add-hook 'js-ts-mode-hook #'flymake-eslint-enable)
-    (add-hook 'typescript-ts-mode-hook #'flymake-eslint-enable)
-    (add-hook 'tsx-ts-mode-hook #'flymake-eslint-enable)))
+(defun bv-javascript-maybe-enable-flymake-eslint ()
+  "Enable the ESLint Flymake backend when an eslint executable exists."
+  (when (and (fboundp 'flymake-eslint-enable)
+             (executable-find "eslint"))
+    (flymake-eslint-enable)))
+
+(add-hook 'js-ts-mode-hook #'bv-javascript-maybe-enable-flymake-eslint)
+(add-hook 'typescript-ts-mode-hook #'bv-javascript-maybe-enable-flymake-eslint)
+(add-hook 'tsx-ts-mode-hook #'bv-javascript-maybe-enable-flymake-eslint)
 
 ;; Node.js REPL
 (defun bv-javascript-node-repl ()
@@ -242,13 +261,12 @@
     map)
   "Keymap for JavaScript/TypeScript mode commands.")
 
-(with-eval-after-load 'js-ts-mode
+(with-eval-after-load 'js
   (define-key js-ts-mode-map (kbd "C-c C-c") bv-javascript-mode-map))
 
+;; `typescript-ts-mode' also defines `tsx-ts-mode-map'.
 (with-eval-after-load 'typescript-ts-mode
-  (define-key typescript-ts-mode-map (kbd "C-c C-c") bv-javascript-mode-map))
-
-(with-eval-after-load 'tsx-ts-mode
+  (define-key typescript-ts-mode-map (kbd "C-c C-c") bv-javascript-mode-map)
   (define-key tsx-ts-mode-map (kbd "C-c C-c") bv-javascript-mode-map))
 
 ;; JSON mode keybindings

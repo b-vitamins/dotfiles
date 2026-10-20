@@ -27,11 +27,10 @@
 (autoload 'ielm "ielm" nil t)
 
 ;; External functions declarations
-(declare-function update-file-autoloads "autoload" (file &optional save-after outfile))
+(declare-function loaddefs-generate "loaddefs-gen"
+                  (dirs output-file &optional excluded-files extra-data
+                        include-package-version generate-full))
 (declare-function ielm-return "ielm" ())
-
-;; External variables
-(defvar generated-autoload-file)
 
 ;; Enhanced flymake for Elisp
 (defun bv-elisp-setup-flymake ()
@@ -45,7 +44,7 @@
 
 ;; Enable lispy when available
 (defun bv-elisp-maybe-enable-lispy ()
-  "Enable lispy-mode if available."
+  "Enable `lispy-mode' if available."
   (when (fboundp 'lispy-mode)
     (lispy-mode 1)))
 
@@ -54,7 +53,7 @@
 
 ;; Enable eros (inline results) when available
 (defun bv-elisp-maybe-enable-eros ()
-  "Enable eros-mode if available."
+  "Enable `eros-mode' if available."
   (when (fboundp 'eros-mode)
     (eros-mode 1)))
 
@@ -112,13 +111,17 @@
 
 ;; Package development helpers
 (defun bv-elisp-generate-autoloads ()
-  "Generate autoloads for current buffer."
+  "Generate autoloads for the current file into FILE-autoloads.el."
   (interactive)
-  (if (fboundp 'update-file-autoloads)
-      (let ((generated-autoload-file (concat (file-name-sans-extension buffer-file-name) "-autoloads.el")))
-        (update-file-autoloads buffer-file-name t)
-        (message "Generated autoloads in %s" generated-autoload-file))
-    (message "Autoload generation not available")))
+  (unless buffer-file-name
+    (user-error "Buffer is not visiting a file"))
+  (require 'loaddefs-gen)
+  (let* ((file buffer-file-name)
+         (dir (file-name-directory file))
+         (output (concat (file-name-sans-extension file) "-autoloads.el")))
+    (loaddefs-generate dir output
+                       (remove file (directory-files dir t "\\.el\\'")))
+    (message "Generated autoloads in %s" output)))
 
 (defun bv-elisp-byte-compile-and-load ()
   "Byte compile and load current file."

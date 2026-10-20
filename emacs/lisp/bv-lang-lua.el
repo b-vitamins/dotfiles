@@ -23,14 +23,19 @@
 (defvar lua-ts-mode-map)
 
 ;; External functions
-(declare-function lua-start-process "lua-mode" (&optional name program startfile switches))
+(declare-function lua-start-process "lua-mode" (&optional name program startfile &rest switches))
 (declare-function lua-send-region "lua-mode" (start end))
 (declare-function lua-send-buffer "lua-mode" ())
-(declare-function lua-send-defun "lua-mode" (&optional arg))
+(declare-function lua-send-defun "lua-mode" (pos))
 (declare-function lua-send-current-line "lua-mode" ())
 
 ;; Optional package loading
 (autoload 'lua-mode "lua-mode" nil t)
+(autoload 'lua-start-process "lua-mode")
+(autoload 'lua-send-region "lua-mode" nil t)
+(autoload 'lua-send-buffer "lua-mode" nil t)
+(autoload 'lua-send-defun "lua-mode" nil t)
+(autoload 'lua-send-current-line "lua-mode" nil t)
 
 ;; Enable tree-sitter for Lua when available
 (when (treesit-language-available-p 'lua)
@@ -84,7 +89,7 @@
 (defun bv-lua-send-defun ()
   "Send current function to Lua REPL."
   (interactive)
-  (lua-send-defun))
+  (lua-send-defun (point)))
 
 (defun bv-lua-send-line ()
   "Send current line to Lua REPL."

@@ -38,10 +38,13 @@
 (autoload 'inf-ruby "inf-ruby" nil t)
 (autoload 'robe-mode "robe" nil t)
 
-;; Remap to enhanced ruby mode and tree-sitter
-(add-to-list 'major-mode-remap-alist '(ruby-mode . enh-ruby-mode))
-(when (treesit-language-available-p 'ruby)
-  (add-to-list 'major-mode-remap-alist '(enh-ruby-mode . ruby-ts-mode)))
+;; Prefer tree-sitter, then enhanced ruby mode, else built-in `ruby-mode'.
+;; `major-mode-remap-alist' is not followed transitively, so remap directly.
+(cond
+ ((treesit-language-available-p 'ruby)
+  (add-to-list 'major-mode-remap-alist '(ruby-mode . ruby-ts-mode)))
+ ((locate-library "enh-ruby-mode")
+  (add-to-list 'major-mode-remap-alist '(ruby-mode . enh-ruby-mode))))
 
 ;; File associations
 (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
@@ -88,34 +91,49 @@
 (add-hook 'ruby-ts-mode-hook #'bv-ruby-eglot-config)
 
 ;; Enable inf-ruby
-(add-hook 'ruby-mode-hook #'inf-ruby-minor-mode)
-(add-hook 'enh-ruby-mode-hook #'inf-ruby-minor-mode)
-(add-hook 'ruby-ts-mode-hook #'inf-ruby-minor-mode)
+(defun bv-ruby-maybe-enable-inf-ruby ()
+  "Enable `inf-ruby-minor-mode' if inf-ruby is installed."
+  (when (require 'inf-ruby nil t)
+    (inf-ruby-minor-mode 1)))
+
+(add-hook 'ruby-mode-hook #'bv-ruby-maybe-enable-inf-ruby)
+(add-hook 'enh-ruby-mode-hook #'bv-ruby-maybe-enable-inf-ruby)
+(add-hook 'ruby-ts-mode-hook #'bv-ruby-maybe-enable-inf-ruby)
 
 ;; REPL interaction
+(defun bv-ruby--require-inf-ruby ()
+  "Load inf-ruby or signal a `user-error'."
+  (unless (require 'inf-ruby nil t)
+    (user-error "The inf-ruby package is not installed")))
+
 (defun bv-ruby-console ()
   "Start Ruby REPL."
   (interactive)
+  (bv-ruby--require-inf-ruby)
   (inf-ruby))
 
 (defun bv-ruby-rails-console ()
   "Start Rails console."
   (interactive)
+  (bv-ruby--require-inf-ruby)
   (inf-ruby "rails console"))
 
 (defun bv-ruby-send-region ()
   "Send region to Ruby REPL."
   (interactive)
+  (bv-ruby--require-inf-ruby)
   (ruby-send-region (region-beginning) (region-end)))
 
 (defun bv-ruby-send-buffer ()
   "Send buffer to Ruby REPL."
   (interactive)
+  (bv-ruby--require-inf-ruby)
   (ruby-send-buffer))
 
 (defun bv-ruby-send-block ()
   "Send current block to Ruby REPL."
   (interactive)
+  (bv-ruby--require-inf-ruby)
   (ruby-send-block))
 
 ;; Formatting
@@ -208,7 +226,7 @@
   (compile "rails server"))
 
 (defun bv-ruby-rails-generate (generator)
-  "Run Rails generator."
+  "Run Rails GENERATOR."
   (interactive "sGenerator: ")
   (compile (format "rails generate %s" generator)))
 
@@ -224,7 +242,7 @@
 
 ;; Documentation
 (defun bv-ruby-ri (query)
-  "Look up Ruby documentation."
+  "Look up Ruby documentation for QUERY."
   (interactive "sRI query: ")
   (compile (format "ri %s" query)))
 
@@ -237,8 +255,8 @@
 
 ;; Code navigation with robe
 (defun bv-ruby-maybe-enable-robe ()
-  "Enable robe-mode if available."
-  (when (fboundp 'robe-mode)
+  "Enable `robe-mode' if robe is installed."
+  (when (require 'robe nil t)
     (robe-mode 1)))
 
 (add-hook 'ruby-mode-hook #'bv-ruby-maybe-enable-robe)

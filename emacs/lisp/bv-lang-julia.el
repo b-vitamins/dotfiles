@@ -63,7 +63,12 @@
 (with-eval-after-load 'julia-repl
   (julia-repl-set-terminal-backend 'vterm))
 
-(add-hook 'julia-mode-hook #'julia-repl-mode)
+(defun bv-julia-maybe-enable-repl ()
+  "Enable `julia-repl-mode' if julia-repl is installed."
+  (when (locate-library "julia-repl")
+    (julia-repl-mode 1)))
+
+(add-hook 'julia-mode-hook #'bv-julia-maybe-enable-repl)
 
 ;; Jupyter integration
 (defun bv-julia-jupyter-repl ()

@@ -28,21 +28,19 @@
 (defvar haskell-mode-map)
 
 ;; External functions
-(declare-function haskell-process-cabal-repl "haskell-mode" ())
-(declare-function haskell-process-stack-ghci "haskell-mode" ())
-(declare-function haskell-process-load-file "haskell-mode" ())
-(declare-function haskell-process-reload "haskell-mode" ())
-(declare-function haskell-process-send-region "haskell-mode" (start end))
-(declare-function haskell-mode-show-type-at "haskell-mode" ())
-(declare-function haskell-process-do-info "haskell-mode" ())
+(declare-function haskell-interactive-bring "haskell" ())
+(declare-function haskell-process-load-file "haskell" ())
+(declare-function haskell-process-reload "haskell" ())
+(declare-function haskell-interactive-mode-run-expr "haskell-repl" (expr))
+(declare-function haskell-mode-show-type-at "haskell-commands" (&optional insert-value))
+(declare-function haskell-process-do-info "haskell-commands" (&optional prompt-value))
 (declare-function url-encode-url "url-util" (url))
-(declare-function haskell-sort-imports "haskell-mode" ())
-(declare-function haskell-align-imports "haskell-mode" ())
-(declare-function haskell-mode-goto-loc "haskell-mode" ())
+(declare-function haskell-sort-imports "haskell-sort-imports" ())
+(declare-function haskell-align-imports "haskell-align-imports" ())
+(declare-function haskell-mode-goto-loc "haskell-commands" ())
 
 ;; Optional package loading
 (autoload 'haskell-mode "haskell-mode" nil t)
-(autoload 'interactive-haskell-mode "haskell-mode" nil t)
 (autoload 'haskell-cabal-mode "haskell-cabal" nil t)
 
 ;; Enable tree-sitter for Haskell when available
@@ -124,7 +122,9 @@
 (defun bv-haskell-cabal-repl ()
   "Start Cabal REPL."
   (interactive)
-  (haskell-process-cabal-repl))
+  (require 'haskell)
+  (let ((haskell-process-type 'cabal-repl))
+    (haskell-interactive-bring)))
 
 (defun bv-haskell-cabal-clean ()
   "Clean Cabal project."
@@ -150,7 +150,9 @@
 (defun bv-haskell-stack-repl ()
   "Start Stack REPL."
   (interactive)
-  (haskell-process-stack-ghci))
+  (require 'haskell)
+  (let ((haskell-process-type 'stack-ghci))
+    (haskell-interactive-bring)))
 
 ;; GHCi interaction
 (defun bv-haskell-load-file ()
@@ -166,7 +168,9 @@
 (defun bv-haskell-send-region ()
   "Send region to GHCi."
   (interactive)
-  (haskell-process-send-region (region-beginning) (region-end)))
+  (require 'haskell)
+  (haskell-interactive-mode-run-expr
+   (buffer-substring-no-properties (region-beginning) (region-end))))
 
 ;; Type information
 (defun bv-haskell-type-at-point ()
@@ -226,9 +230,10 @@
               (cond
                ((file-exists-p "stack.yaml") "stack build")
                ((file-exists-p "cabal.project") "cabal build")
-               ((file-exists-p (concat (file-name-base buffer-file-name) ".cabal"))
+               ((and buffer-file-name
+                     (file-exists-p (concat (file-name-base buffer-file-name) ".cabal")))
                 "cabal build")
-               (t "ghc -Wall -O2 " (buffer-file-name)))))
+               (t (concat "ghc -Wall -O2 " (buffer-file-name))))))
 
 (add-hook 'haskell-mode-hook #'bv-haskell-setup-compilation)
 

@@ -38,23 +38,19 @@
 (defvar preview-auto-cache-preamble)
 (defvar preview-scale-function)
 (defvar auctex-latexmk-inherit-TeX-PDF-mode)
-(defvar completion-at-point-functions)
 (defvar ispell-parser)
 
 ;; External functions
-(declare-function TeX-command "tex-buf" (name file))
-(declare-function TeX-command-sequence "tex-buf" (commands file))
+(declare-function TeX-command "tex" (name file-fn &optional override-confirm))
+(declare-function TeX-command-sequence "tex" (command &optional reset file-fn))
 (declare-function TeX-pdf-tools-sync-view "tex" ())
 (declare-function TeX-revert-document-buffer "tex" (file))
-(declare-function TeX-next-error "tex-buf" (&optional arg))
-(declare-function TeX-previous-error "tex-buf" (&optional arg))
-(declare-function LaTeX-environment "latex" (&optional arg))
-(declare-function LaTeX-section "latex" (&optional arg))
+(declare-function TeX-next-error "tex" (&optional arg reparse))
+(declare-function TeX-previous-error "tex" (arg))
+(declare-function LaTeX-environment "latex" (arg))
+(declare-function LaTeX-section "latex" (arg))
 (declare-function LaTeX-fill-paragraph "latex" (&optional justify))
 (declare-function LaTeX-fill-region "latex" (from to &optional justify what))
-(declare-function LaTeX-arguments-completion-at-point "latex" ())
-(declare-function LaTeX-environment-completion-at-point "latex" ())
-(declare-function LaTeX-macro-completion-at-point "latex" ())
 (declare-function turn-on-reftex "reftex" ())
 (declare-function reftex-citation "reftex-cite" (&optional no-insert format-key))
 (declare-function reftex-reference "reftex-ref" (&optional type no-insert cut))
@@ -62,7 +58,7 @@
 (declare-function preview-at-point "preview" ())
 (declare-function preview-environment "preview" (count))
 (declare-function preview-section "preview" ())
-(declare-function preview-clearout "preview" (&optional start end keep-dir))
+(declare-function preview-clearout "preview" (&optional start end timestamp exception))
 (declare-function preview-scale-from-face "preview" ())
 (declare-function auctex-latexmk-setup "auctex-latexmk" ())
 (declare-function flyspell-mode "flyspell" (&optional arg))
@@ -134,7 +130,7 @@
 (defun bv-latex-compile-and-view ()
   "Compile LaTeX document and view result."
   (interactive)
-  (TeX-command-sequence '("LaTeX" "View") 'TeX-master-file))
+  (TeX-command-sequence '("LaTeX" "View") t #'TeX-master-file))
 
 (defun bv-latex-bibtex ()
   "Run BibTeX."
@@ -195,7 +191,7 @@
 (defun bv-latex-insert-environment ()
   "Insert LaTeX environment."
   (interactive)
-  (LaTeX-environment))
+  (LaTeX-environment nil))
 
 (defun bv-latex-change-environment ()
   "Change current environment."
@@ -226,17 +222,6 @@
 (setq TeX-source-correlate-mode t)
 (setq TeX-source-correlate-method 'synctex)
 (setq TeX-source-correlate-start-server t)
-
-;; LaTeX-specific completions
-(defun bv-latex-setup-completion ()
-  "Setup completion for LaTeX."
-  (setq-local completion-at-point-functions
-              (append '(LaTeX-arguments-completion-at-point
-                       LaTeX-environment-completion-at-point
-                       LaTeX-macro-completion-at-point)
-                      completion-at-point-functions)))
-
-(add-hook 'LaTeX-mode-hook #'bv-latex-setup-completion)
 
 ;; Error navigation
 (defun bv-latex-next-error ()

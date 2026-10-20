@@ -30,12 +30,21 @@
 (autoload 'nix-repl "nix-mode" nil t)
 
 ;; Enable tree-sitter for Nix when available
-(when (treesit-language-available-p 'nix)
+(defconst bv-nix--ts-p
+  (and (fboundp 'nix-ts-mode)
+       (treesit-language-available-p 'nix))
+  "Non-nil when `nix-ts-mode' and its grammar are usable.")
+
+(when bv-nix--ts-p
   (add-to-list 'major-mode-remap-alist '(nix-mode . nix-ts-mode)))
 
-;; File associations
-(add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode))
-(add-to-list 'auto-mode-alist '("\\.drv\\'" . nix-drv-mode))
+;; File associations, only when some Nix major mode can be activated.
+;; `.drv' files also include Guix derivations, so never point them at a
+;; missing mode.
+(when (or bv-nix--ts-p (locate-library "nix-mode"))
+  (add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode)))
+(when (locate-library "nix-mode")
+  (add-to-list 'auto-mode-alist '("\\.drv\\'" . nix-drv-mode)))
 
 ;; Nix settings
 (setq nix-indent-function 'nix-indent-line)
@@ -73,7 +82,7 @@
   (compile (format "nix-build %s" (buffer-file-name))))
 
 (defun bv-nix-build-attribute (attr)
-  "Build specific attribute."
+  "Build attribute ATTR."
   (interactive "sAttribute: ")
   (compile (format "nix-build %s -A %s" (buffer-file-name) attr)))
 
@@ -88,7 +97,7 @@
   (compile (format "nix eval -f %s" (buffer-file-name))))
 
 (defun bv-nix-eval-expression (expr)
-  "Evaluate Nix expression."
+  "Evaluate Nix expression EXPR."
   (interactive "sExpression: ")
   (compile (format "nix eval --expr '%s'" expr)))
 
@@ -164,35 +173,35 @@
 
 ;; Documentation
 (defun bv-nix-doc-search (query)
-  "Search Nix documentation."
+  "Search Nix documentation for QUERY."
   (interactive "sSearch query: ")
   (browse-url (format "https://search.nixos.org/packages?query=%s" query)))
 
 (defun bv-nix-option-search (query)
-  "Search NixOS options."
+  "Search NixOS options matching QUERY."
   (interactive "sOption: ")
   (browse-url (format "https://search.nixos.org/options?query=%s" query)))
 
 ;; Package management
 (defun bv-nix-search (package)
-  "Search for Nix package."
+  "Search for Nix package PACKAGE."
   (interactive "sPackage: ")
   (compile (format "nix search nixpkgs %s" package)))
 
 (defun bv-nix-info (package)
-  "Show info about Nix package."
+  "Show info about Nix package PACKAGE."
   (interactive "sPackage: ")
   (compile (format "nix-env -qa --description '*%s*'" package)))
 
 ;; NixOS specific
 (defun bv-nixos-rebuild (command)
-  "Run nixos-rebuild command."
+  "Run nixos-rebuild with COMMAND."
   (interactive (list (completing-read "Command: "
                                      '("switch" "boot" "test" "build" "dry-build"))))
   (compile (format "sudo nixos-rebuild %s" command)))
 
 (defun bv-nixos-option (option)
-  "Query NixOS option."
+  "Query NixOS option OPTION."
   (interactive "sOption: ")
   (compile (format "nixos-option %s" option)))
 

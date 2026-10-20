@@ -145,8 +145,9 @@
 (defun bv-scheme-setup-guix-dev ()
   "Setup Guix development features for Scheme buffers."
   (when (and (fboundp 'guix-devel-mode)
-             (or (string-match-p "/guix/" (buffer-file-name))
-                 (string-match-p "\\.scm\\'" (buffer-file-name))))
+             buffer-file-name
+             (or (string-match-p "/guix/" buffer-file-name)
+                 (string-match-p "\\.scm\\'" buffer-file-name)))
     (guix-devel-mode 1)
     (when (fboundp 'guix-prettify-mode)
       (guix-prettify-mode 1))))

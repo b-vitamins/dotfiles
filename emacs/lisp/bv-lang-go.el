@@ -25,8 +25,9 @@
 
 ;; File associations
 (add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode))
-(add-to-list 'auto-mode-alist '("go\\.mod\\'" . go-mod-ts-mode))
-(add-to-list 'auto-mode-alist '("go\\.sum\\'" . go-mod-ts-mode))
+(when (treesit-language-available-p 'gomod)
+  (add-to-list 'auto-mode-alist '("go\\.mod\\'" . go-mod-ts-mode))
+  (add-to-list 'auto-mode-alist '("go\\.sum\\'" . go-mod-ts-mode)))
 
 ;; Go settings
 (setq gofmt-command "gofmt")

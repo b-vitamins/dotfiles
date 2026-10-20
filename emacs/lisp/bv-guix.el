@@ -8,18 +8,10 @@
 ;;; Code:
 
 
-(declare-function guix "guix")
 (declare-function global-guix-prettify-mode "guix-prettify")
-(declare-function guix-prettify-mode "guix-prettify")
-(declare-function guix-devel-mode "guix-devel")
 (declare-function guix-devel-build-package-definition "guix-devel")
 (declare-function guix-devel-lint-package "guix-devel")
 (declare-function info-lookup-add-help "info-look")
-(declare-function guix-packages-by-name "guix")
-(declare-function guix-installed-packages "guix")
-(declare-function guix-installed-user-packages "guix")
-(declare-function guix-generations "guix")
-(declare-function guix-services-from-system-config "guix")
 
 ;; External variables
 (defvar guix-directory)
@@ -49,9 +41,6 @@
 
 (with-eval-after-load 'guix
   (global-guix-prettify-mode 1))
-
-(with-eval-after-load 'scheme-mode
-  (add-hook 'scheme-mode-hook 'guix-devel-mode))
 
 (defun bv-guix-format-buffer ()
   "Format Guix Scheme buffer."

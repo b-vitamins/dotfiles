@@ -58,17 +58,27 @@
 (autoload 'cider-connect "cider" nil t)
 (autoload 'cider-mode "cider" nil t)
 
-;; Enable tree-sitter for Clojure when available
-(when (treesit-language-available-p 'clojure)
-  (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode)))
+;; Enable tree-sitter for Clojure when available.  `clojure-ts-mode' needs
+;; the clojure grammar; `clojure-mode' needs its package.  Only associate
+;; files with a mode that can actually be activated.
+(defconst bv-clojure--ts-p
+  (and (fboundp 'clojure-ts-mode)
+       (treesit-language-available-p 'clojure))
+  "Non-nil when `clojure-ts-mode' and its grammar are usable.")
+
+(when bv-clojure--ts-p
+  (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
+  (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojurescript-ts-mode))
+  (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojurec-ts-mode)))
 
 ;; File associations
-(add-to-list 'auto-mode-alist '("\\.clj\\'" . clojure-mode))
-(add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojurescript-mode))
-(add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojurec-mode))
-(add-to-list 'auto-mode-alist '("\\.edn\\'" . clojure-mode))
-(add-to-list 'auto-mode-alist '("\\.boot\\'" . clojure-mode))
-(add-to-list 'auto-mode-alist '("lein-env" . clojure-mode))
+(when (or bv-clojure--ts-p (locate-library "clojure-mode"))
+  (add-to-list 'auto-mode-alist '("\\.clj\\'" . clojure-mode))
+  (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojurescript-mode))
+  (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojurec-mode))
+  (add-to-list 'auto-mode-alist '("\\.edn\\'" . clojure-mode))
+  (add-to-list 'auto-mode-alist '("\\.boot\\'" . clojure-mode))
+  (add-to-list 'auto-mode-alist '("lein-env" . clojure-mode)))
 
 ;; Clojure settings
 (setq clojure-indent-style 'align-arguments)
@@ -105,8 +115,13 @@
   (setq cider-eldoc-display-context-dependent-info t))
 
 ;; Enable CIDER in Clojure buffers
-(add-hook 'clojure-mode-hook #'cider-mode)
-(add-hook 'clojure-ts-mode-hook #'cider-mode)
+(defun bv-clojure-maybe-enable-cider ()
+  "Enable `cider-mode' if CIDER is installed."
+  (when (locate-library "cider")
+    (cider-mode 1)))
+
+(add-hook 'clojure-mode-hook #'bv-clojure-maybe-enable-cider)
+(add-hook 'clojure-ts-mode-hook #'bv-clojure-maybe-enable-cider)
 
 ;; REPL interaction
 (defun bv-clojure-jack-in ()
