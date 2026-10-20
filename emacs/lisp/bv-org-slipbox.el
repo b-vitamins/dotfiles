@@ -308,7 +308,7 @@
 
 (defun bv-org-slipbox-node-insert-immediate (&optional initial-input filter-fn)
   "Insert a slipbox node immediately.
-INITIAL-INPUT seeds the minibuffer. FILTER-FN filters indexed nodes."
+INITIAL-INPUT seeds the minibuffer.  FILTER-FN filters indexed nodes."
   (interactive)
   (org-slipbox-node-insert-immediate initial-input filter-fn))
 
@@ -320,7 +320,7 @@ INITIAL-INPUT seeds the minibuffer. FILTER-FN filters indexed nodes."
     (call-interactively #'org-slipbox-capture)))
 
 (defun bv-org-slipbox-quick-capture (&optional title)
-  "Capture a new slipbox note and finalize it immediately."
+  "Capture a new slipbox note titled TITLE and finalize it immediately."
   (interactive)
   (let ((org-slipbox-capture-templates
          (mapcar #'bv-org-slipbox--template-with-immediate-finish
@@ -345,7 +345,7 @@ With OTHER-WINDOW, visit the node in another window."
   "Return ordinary `consult-buffer' candidates as proper buffer pairs.
 `consult-org-slipbox' separates slipbox buffers into its own source; the
 default buffer source should still preserve Consult's native
-(NAME . BUFFER) shape."
+\(NAME . BUFFER) shape."
   (consult--buffer-query
    :sort 'visibility
    :as #'consult--buffer-pair

@@ -100,7 +100,7 @@
 
 ;;; GPTel transient menu
 (transient-define-prefix bv-gptel-transient-menu ()
-  "AI Assistant"
+  "AI Assistant."
   ["Chat"
    ("c" "New chat" bv-gptel-chat)
    ("s" "Send region" bv-gptel-send-region)
@@ -111,7 +111,7 @@
 
 ;;; Guix transient menu
 (transient-define-prefix bv-guix-transient-menu ()
-  "GNU Guix"
+  "GNU Guix."
   [["Packages"
     ("p" "Search packages" guix-packages-by-name)
     ("i" "Installed packages" guix-installed-packages)
@@ -126,7 +126,7 @@
 
 ;;; Geiser transient menu
 (transient-define-prefix bv-geiser-transient-menu ()
-  "Scheme Development"
+  "Scheme Development."
   ["Evaluation"
    ("e" "Eval definition" geiser-eval-definition)
    ("r" "Eval region" geiser-eval-region)
@@ -142,7 +142,7 @@
 
 ;;; EMMS transient menu
 (transient-define-prefix bv-emms-transient-menu ()
-  "Music Player"
+  "Music Player."
   ["Playback"
    ("p" "Play/Pause" bv-emms-toggle)
    ("n" "Next" emms-next)
@@ -159,7 +159,7 @@
 
 ;;; Ellama transient menu
 (transient-define-prefix bv-ellama-transient-menu ()
-  "Local LLM"
+  "Local LLM."
   ["Chat"
    ("c" "Chat" ellama-chat)
    ("l" "Local chat" bv-ellama-chat-local)
@@ -174,7 +174,7 @@
 ;;; EBDB transient menu
 ;;;###autoload (autoload 'bv-ebdb-transient-menu "bv-transient" nil t)
 (transient-define-prefix bv-ebdb-transient-menu ()
-  "EBDB Contact Database"
+  "EBDB Contact Database."
   ["Display"
    ("a" "All contacts" ebdb-display-all-records)
    ("s" "Search by name" bv-ebdb-search-name)
@@ -185,7 +185,7 @@
 
 ;;; EDNC transient menu
 (transient-define-prefix bv-ednc-transient-menu ()
-  "Desktop Notifications"
+  "Desktop Notifications."
   ["Actions"
    ("l" "Show log" bv-ednc-show-notification-log)
    ("d" "Dismiss last" bv-ednc-dismiss-last)
@@ -194,7 +194,7 @@
 
 ;;; Power menu transient
 (transient-define-prefix bv-power-transient-menu ()
-  "Power Management"
+  "Power Management."
   ["Session"
    ("l" "Lock" bv-power-lock)
    ("o" "Logout" (lambda () (interactive)
@@ -215,7 +215,7 @@
 
 ;;; Audio control transient
 (transient-define-prefix bv-audio-transient-menu ()
-  "Audio Control"
+  "Audio Control."
   ["Volume"
    ("+" "Increase" bv-audio-increase-volume :transient t)
    ("-" "Decrease" bv-audio-decrease-volume :transient t)
@@ -226,7 +226,7 @@
 
 ;;; Webpaste transient menu
 (transient-define-prefix bv-webpaste-transient-menu ()
-  "Web Paste"
+  "Web Paste."
   ["Paste"
    ("p" "Buffer/region" bv-webpaste-paste-dwim)
    ("b" "Buffer" webpaste-paste-buffer)
@@ -235,7 +235,7 @@
 
 ;;; Ytdl transient menu
 (transient-define-prefix bv-ytdl-transient-menu ()
-  "Media Downloader"
+  "Media Downloader."
   ["Download"
    ("u" "From URL" bv-ytdl-download-url)
    ("a" "Audio only" bv-ytdl-download-audio)

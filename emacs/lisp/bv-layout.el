@@ -395,7 +395,7 @@ are resolved when rules are installed."
   :group 'bv-layout)
 
 (defvar bv-layout--installed-display-buffer-rules nil
-  "Resolved display-buffer rules currently installed by `bv-layout'.")
+  "Resolved `display-buffer' rules currently installed by `bv-layout'.")
 
 (defun bv-layout--resolve-display-buffer-rule (rule)
   "Resolve variable-valued layout RULE entries."

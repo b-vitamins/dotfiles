@@ -92,7 +92,7 @@ This should truncate cleanly when horizontal space is tight."
          (message-log-max nil)
          (broken (list :name "Broken"
                        :category 'buffer
-                       :items (lambda () (error "boom"))))
+                       :items (lambda () (error "Boom"))))
          (source (car (bv-consult--safe-buffer-sources (list broken)))))
     (should source)
     (should-not (funcall (plist-get source :items)))))

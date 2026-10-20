@@ -247,7 +247,7 @@ PROPERTIES is a plist overriding rendering metadata."
        (* (string-width separator) (1- (length segments))))))
 
 (defun bv-modeline--segments-required-min-width (segments separator)
-  "Return minimum width needed by required SEGMENTS."
+  "Return minimum width needed by required SEGMENTS joined by SEPARATOR."
   (let ((segments (cl-remove-if-not
                    (lambda (segment)
                      (plist-get segment :required))
@@ -406,7 +406,7 @@ When FACE is non-nil, use it for the separator."
         (t "RW")))
 
 (defun bv-modeline--status-face (status &optional selected)
-  "Return the header face used for STATUS."
+  "Return the header face used for STATUS in a SELECTED or inactive window."
   (bv-modeline--window-face
    (cond ((string= status "**") 'bv-ui-header-critical)
          ((string= status "RO") 'bv-ui-header-default)
@@ -432,7 +432,7 @@ When FACE is non-nil, use it for the separator."
    "\n"))
 
 (defun bv-modeline--status-block (status &optional selected)
-  "Render STATUS as the left status block."
+  "Render STATUS as the left status block for a SELECTED or inactive window."
   (let* ((status (bv-modeline--clean status))
          (status (if (> (string-width status) 2)
                      (bv-modeline--truncate-string status 2)
@@ -446,7 +446,8 @@ When FACE is non-nil, use it for the separator."
     block))
 
 (defun bv-modeline--status-gutter (&optional selected)
-  "Return the neutral gutter after the status accent block."
+  "Return the neutral gutter after the status accent block.
+SELECTED chooses the active or inactive face."
   (propertize bv-modeline--status-gutter
               'face (bv-modeline--window-face
                      'bv-ui-header-default
@@ -454,9 +455,10 @@ When FACE is non-nil, use it for the separator."
 
 (defun bv-modeline--edge-pad (&optional drop selected)
   "Return a one-column edge pad that contributes vertical header metrics.
-When DROP is non-nil, lower the pad instead of raising it.  The visible text
-size stays unchanged; the paired pads restore the header band's previous
-breathing room after the renderer rewrite."
+When DROP is non-nil, lower the pad instead of raising it.  SELECTED chooses
+the active or inactive face.  The visible text size stays unchanged; the
+paired pads restore the header band's previous breathing room after the
+renderer rewrite."
   (propertize " " 'face (bv-modeline--window-face
                          'bv-ui-header-default
                          selected)
@@ -599,7 +601,8 @@ breathing room after the renderer rewrite."
 
 (defun bv-modeline--segments-comfort-width
     (segments separator threshold)
-  "Return natural width for SEGMENTS with priority at least THRESHOLD."
+  "Return natural width for SEGMENTS with priority at least THRESHOLD.
+SEPARATOR is the string placed between segments."
   (bv-modeline--segments-natural-width
    (cl-remove-if-not
     (lambda (segment)
@@ -615,7 +618,8 @@ breathing room after the renderer rewrite."
 
 (defun bv-modeline--right-render-budget
     (content-width left-segments right-segments separator)
-  "Return width budget for RIGHT-SEGMENTS.
+  "Return width budget for RIGHT-SEGMENTS within CONTENT-WIDTH.
+LEFT-SEGMENTS are rendered first; SEPARATOR joins the right segments.
 The default policy preserves left identity first.  Optional right-side data
 appears when the whole line can breathe, or when detail level is `full'."
   (let* ((right-natural (bv-modeline--segments-natural-width

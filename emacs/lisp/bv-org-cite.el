@@ -92,14 +92,16 @@ When the directory does not exist, Org's bundled CSL fallback remains active."
      exclude-paths)))
 
 (defun bv-org-cite--visible-directory-p (directory exclude-paths)
-  "Return non-nil when DIRECTORY should be scanned."
+  "Return non-nil when DIRECTORY should be scanned.
+Directories matching EXCLUDE-PATHS are skipped."
   (and (file-directory-p directory)
        (not (file-symlink-p directory))
        (not (string-prefix-p "." (file-name-nondirectory directory)))
        (not (bv-org-cite--path-excluded-p directory exclude-paths))))
 
 (defun bv-org-cite--directory-bibliography-files (directory exclude-paths)
-  "Return bibliography files under DIRECTORY, skipping hidden directories."
+  "Return bibliography files under DIRECTORY, skipping hidden directories.
+Directories matching EXCLUDE-PATHS are skipped as well."
   (let (files)
     (dolist (entry (directory-files directory t directory-files-no-dot-files-regexp))
       (cond

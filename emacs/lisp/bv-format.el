@@ -38,7 +38,7 @@
     (prog-mode . (eglot)))
   "Formatter backends to try per major mode.
 
-Each entry is (MODE . BACKENDS). MODE is matched using `derived-mode-p'
+Each entry is (MODE . BACKENDS).  MODE is matched using `derived-mode-p'
 in the current buffer, so you can use parent modes such as `prog-mode'."
   :type '(repeat (cons (symbol :tag "Mode")
                        (repeat (symbol :tag "Backend"))))
@@ -108,7 +108,7 @@ Returns non-nil on success."
        nil))))
 
 (defun bv-format--clang-format ()
-  "Format using clang-format."
+  "Format using `clang-format'."
   (cond
    ((fboundp 'clang-format-buffer)
     (clang-format-buffer)

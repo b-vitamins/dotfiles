@@ -34,8 +34,8 @@ When nil, languages are inferred from `major-mode-remap-alist'."
   :group 'bv-treesit)
 
 (defcustom bv-treesit-audit-include-sources nil
-  "Whether `bv-treesit-audit' should include all entries from
-`treesit-language-source-alist'."
+  "Non-nil means `bv-treesit-audit' includes all known grammar sources.
+The sources are the entries of `treesit-language-source-alist'."
   :type 'boolean
   :group 'bv-treesit)
 

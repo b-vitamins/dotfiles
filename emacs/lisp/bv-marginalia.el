@@ -223,7 +223,7 @@
   (max 0 (- (bv-completion-window-width) (string-width cand) 4)))
 
 (defun bv-marginalia--inline-command-field (text width face)
-  "Return TEXT as an inline command annotation field within WIDTH."
+  "Return TEXT as an inline command annotation field within WIDTH using FACE."
   (when (and text (> width 4))
     (propertize
      (bv-completion-truncate text width bv-completion-truncation-marker)

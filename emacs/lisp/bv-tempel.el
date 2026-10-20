@@ -43,7 +43,7 @@
   (setq tempel-complete-annotation 30))
 
 (defun bv-tempel-setup-capf ()
-  "Add tempel to completion-at-point."
+  "Add tempel to `completion-at-point'."
   (setq-local completion-at-point-functions
               (cons #'tempel-complete
                     (cons #'tempel-expand

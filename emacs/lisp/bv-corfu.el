@@ -228,7 +228,7 @@
   (bv-corfu-apply-profile 'prog))
 
 (defun bv-corfu-text-settings ()
-  "Apply text-mode Corfu settings."
+  "Apply `text-mode' Corfu settings."
   (bv-corfu-apply-profile 'text))
 
 (defun bv-corfu-manual-settings ()

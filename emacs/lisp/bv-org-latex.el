@@ -449,7 +449,8 @@ When BUFFER is nil, operate on the current buffer."
          buffer frame)))
 
 (defun bv-org-latex-monitor-change-hook (&optional frame)
-  "Handle monitor configuration changes for Org LaTeX previews."
+  "Handle monitor configuration changes for Org LaTeX previews in FRAME.
+FRAME defaults to the selected frame."
   (let ((frame (or frame (selected-frame))))
     (when (and (frame-live-p frame) (display-graphic-p frame))
       (let* ((sig (bv-org-latex--frame-monitor-signature frame))
@@ -495,7 +496,8 @@ When BUFFER is nil, operate on the current buffer."
 
 ;; Surface preview failures with cache hint
 (defun bv-org-latex--report-preview-failure (orig-fun &rest args)
-  "Wrap `org-create-formula-image' to report failures with cache hints."
+  "Call ORIG-FUN with ARGS, reporting preview failures with cache hints.
+Used as `:around' advice on `org-create-formula-image'."
   (condition-case err
       (apply orig-fun args)
     (error

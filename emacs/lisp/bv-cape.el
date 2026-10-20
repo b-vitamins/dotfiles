@@ -241,7 +241,7 @@
    (cape-capf-inside-string #'cape-file)))
 
 (defun bv-cape-setup-text-mode ()
-  "Install text-mode CAPFs."
+  "Install `text-mode' CAPFs."
   (apply #'bv-cape--set-capfs bv-cape--text-capfs))
 
 (defun bv-cape-setup-git-commit-mode ()

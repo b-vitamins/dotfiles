@@ -77,7 +77,7 @@
 
 (defcustom bv-consult-auto-narrow-modes
   '((consult-imenu . ((prog-mode . ?f))))
-  "Auto-narrowing configuration per command and selected-window mode."
+  "Auto-narrowing configuration per command and selected window's mode."
   :type '(alist :key-type symbol
                 :value-type (alist :key-type symbol :value-type character))
   :group 'bv-consult)
@@ -196,7 +196,7 @@
     (consult--default-regexp-compiler input type)))
 
 (defun bv-consult--with-orderless (orig-fun &rest args)
-  "Run ORIG-FUN with an Orderless Consult regexp compiler."
+  "Run ORIG-FUN with ARGS using an Orderless Consult regexp compiler."
   (if (require 'orderless nil t)
       (minibuffer-with-setup-hook
           (lambda ()
@@ -419,7 +419,8 @@
        nil))))
 
 (defun bv-consult--safe-state (source-name state)
-  "Return STATE wrapped so preview failures do not break Vertico."
+  "Return STATE wrapped so preview failures do not break Vertico.
+Failures are reported in the echo area under SOURCE-NAME."
   (lambda ()
     (let ((state-fn
            (condition-case err

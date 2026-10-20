@@ -95,7 +95,7 @@
 
 Commands that read minibuffer input can leave the prompted text inside
 `this-command-keys-vector'.  This recovers the actual invocation prefix, such as
-`C-x C-f', before any prompted path, query, or dispatch key."
+\\[find-file], before any prompted path, query, or dispatch key."
   (catch 'found
     (dotimes (index (length keys))
       (let* ((prefix (seq-subseq keys 0 (1+ index)))

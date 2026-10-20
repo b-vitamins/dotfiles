@@ -50,7 +50,7 @@
 ;;; ansi-term fallback
 
 (defun bv-eat--term-sentinel (orig-fun proc msg)
-  "Kill ansi-term buffers when their process exits.
+  "Kill `ansi-term' buffers when their process exits.
 ORIG-FUN is the original sentinel, PROC is the terminal process, and MSG is
 the process message."
   (funcall orig-fun proc msg)

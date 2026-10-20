@@ -271,7 +271,7 @@ ICON is passed to FUNCTION and FACE colors the resulting glyph."
     (refbox-org-slipbox-mode 1)))
 
 (defun bv-refbox--setup-capf ()
-  "Install Refbox completion-at-point hooks."
+  "Install Refbox `completion-at-point' hooks."
   (add-hook 'org-mode-hook #'refbox-org-setup-capf 90)
   (add-hook 'LaTeX-mode-hook #'refbox-latex-setup-capf 90)
   (add-hook 'latex-mode-hook #'refbox-latex-setup-capf 90)

@@ -52,8 +52,8 @@
     "JetBrains Mono"
     "Fira Code"
     "DejaVu Sans Mono")
-  "Fallback monospace font families used when
-`bv-fonts-default-family' is unavailable."
+  "Fallback monospace font families.
+Used when `bv-fonts-default-family' is unavailable."
   :type '(repeat string)
   :group 'bv-fonts)
 
@@ -85,8 +85,8 @@
     "Noto Sans"
     "Cantarell"
     "DejaVu Sans")
-  "Fallback proportional font families used when
-`bv-fonts-variable-family' is unavailable."
+  "Fallback proportional font families.
+Used when `bv-fonts-variable-family' is unavailable."
   :type '(repeat string)
   :group 'bv-fonts)
 
@@ -102,8 +102,8 @@
     "Noto Serif"
     "TeX Gyre Termes"
     "DejaVu Serif")
-  "Fallback serif font families used when
-`bv-fonts-serif-family' is unavailable."
+  "Fallback serif font families.
+Used when `bv-fonts-serif-family' is unavailable."
   :type '(repeat string)
   :group 'bv-fonts)
 
@@ -441,7 +441,8 @@ ROLE is used for diagnostics.  QUIET suppresses missing-font bookkeeping."
      (t nil))))
 
 (defun bv-fonts--resolve-role (role &optional quiet)
-  "Return the resolved font family for typography ROLE."
+  "Return the resolved font family for typography ROLE.
+QUIET suppresses missing-font bookkeeping."
   (bv-fonts--resolve-family
    (bv-fonts--role-family role)
    (bv-fonts--role-fallbacks role)

@@ -187,7 +187,8 @@ With FORCE, update even if the theme shouldn't change."
     (message "Circadian theme switching enabled")))
 
 (defun bv-circadian-stop (&optional quiet)
-  "Stop automatic theme switching."
+  "Stop automatic theme switching.
+When QUIET is non-nil, do not report the change in the echo area."
   (interactive)
   (when bv-circadian--timer
     (cancel-timer bv-circadian--timer)
