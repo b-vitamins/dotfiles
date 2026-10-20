@@ -527,14 +527,15 @@ When STRICT is non-nil, signal an error on hard failures."
   "Audit the current BV theme."
   (interactive)
   (unless (fboundp 'bv-themes-current)
-    (error "bv-themes is not loaded"))
+    (error "The bv-themes library is not loaded"))
   (let ((theme (bv-themes-current)))
     (unless theme
       (error "No BV theme is active"))
     (bv-themes-audit theme current-prefix-arg)))
 
 (defun bv-themes-audit--insert-list (title items &optional formatter)
-  "Insert TITLE and ITEMS into current buffer."
+  "Insert TITLE and ITEMS into current buffer.
+Each item is rendered with FORMATTER when it is non-nil."
   (insert (format "* %s (%d)\n" title (length items)))
   (if items
       (dolist (item items)

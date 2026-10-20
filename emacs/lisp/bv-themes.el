@@ -115,7 +115,7 @@
   "Registered BV theme metadata for gallery and inspection commands.")
 
 (defvar bv-themes--inhibit-load-theme-advice nil
-  "Non-nil while BV load-theme advice is delegating to the original loader.")
+  "Non-nil while BV `load-theme' advice delegates to the original loader.")
 
 (defun bv-themes--cache-key (theme)
   "Return cache key for THEME and active options."
@@ -368,7 +368,8 @@
 
 (defun bv-themes--validate-attribute-plist
     (theme block name plist &optional extra-keys)
-  "Validate THEME BLOCK NAME attribute PLIST."
+  "Validate THEME BLOCK NAME attribute PLIST.
+EXTRA-KEYS lists additional keywords accepted in PLIST."
   (unless (or (null plist) (keywordp (car plist)))
     (error "BV theme %S %S entry %S must use keyword attributes: %S"
            theme block name plist))
@@ -597,7 +598,7 @@
   (plist-put profile key (append (plist-get profile key) values)))
 
 (defun bv-themes--normalize-theme-definition (theme blocks)
-  "Return compiler profile plist from theme DSL BLOCKS."
+  "Return compiler profile plist for THEME from theme DSL BLOCKS."
   (let (profile token-overrides)
     (dolist (block blocks)
       (pcase block
@@ -1051,7 +1052,7 @@ FN, NO-CONFIRM, and NO-ENABLE match `load-theme'."
      nil)))
 
 (defun bv-themes-preview-colors (&optional theme)
-  "Alias for `bv-themes-list-colors' for quick token inspection."
+  "Show THEME colors via `bv-themes-list-colors' for quick token inspection."
   (interactive)
   (bv-themes-list-colors theme))
 

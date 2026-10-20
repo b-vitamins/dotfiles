@@ -120,8 +120,9 @@ When nil, use all registered BV theme profiles.")
 
 (defun bv-themes-regression--text-runs
     (tokens x y runs &optional size family)
-  "Return SVG text RUNS starting at X Y.
-Each run has the form (TEXT TOKEN :weight WEIGHT)."
+  "Return SVG text RUNS starting at X Y, resolving colors from TOKENS.
+Each run has the form (TEXT TOKEN :weight WEIGHT).  SIZE and FAMILY
+override the default font size and family."
   (let ((cursor x)
         (font-size (or size 15))
         (svg ""))
@@ -153,7 +154,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--rect-token
     (tokens x y width height token &optional stroke-token radius)
-  "Return SVG rect using color TOKEN and optional STROKE-TOKEN."
+  "Return SVG rect at X Y of WIDTH and HEIGHT using color TOKEN.
+Colors are resolved from TOKENS.  STROKE-TOKEN and RADIUS are optional."
   (bv-themes-regression--rect
    x y width height
    (bv-themes-regression--token tokens token)
@@ -163,7 +165,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--line
     (x1 y1 x2 y2 color &optional width dasharray)
-  "Return SVG line from X1 Y1 to X2 Y2."
+  "Return SVG line from X1 Y1 to X2 Y2 drawn in COLOR.
+WIDTH defaults to 1; DASHARRAY, when non-nil, dashes the stroke."
   (format (concat "<line x1='%d' y1='%d' x2='%d' y2='%d' "
                   "stroke='%s' stroke-width='%d'%s/>\n")
           x1 y1 x2 y2 color (or width 1)
@@ -172,7 +175,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
             "")))
 
 (defun bv-themes-regression--wave (x y width color)
-  "Return a deterministic SVG wave underline at X Y."
+  "Return a deterministic SVG wave underline at X Y.
+The wave spans WIDTH pixels and is drawn in COLOR."
   (let ((cursor x)
         (target (+ x width))
         (high nil)
@@ -191,7 +195,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--section
     (tokens id title x y width height body)
-  "Return a section group with ID, TITLE, bounds, and BODY."
+  "Return a section group with ID, TITLE, bounds, and BODY.
+X, Y, WIDTH and HEIGHT give the bounds; colors come from TOKENS."
   (let ((fg (bv-themes-regression--token tokens 'fg-main))
         (border (bv-themes-regression--token tokens 'border-subtle)))
     (concat
@@ -217,7 +222,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--modeline-header-section
     (theme artifact tokens)
-  "Return the modeline/header SVG section for THEME and ARTIFACT."
+  "Return the modeline/header SVG section for THEME and ARTIFACT.
+Colors are resolved from TOKENS."
   (let ((fg-header (bv-themes-regression--token tokens 'fg-header))
         (fg-muted (bv-themes-regression--token tokens 'fg-header-muted))
         (fg-modeline (bv-themes-regression--token tokens 'modeline-fg-active))
@@ -371,7 +377,9 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--code-line
     (tokens x y width number runs &optional current)
-  "Return a code line at X Y with NUMBER and syntax RUNS."
+  "Return a code line at X Y with NUMBER and syntax RUNS.
+The row spans WIDTH and uses TOKENS for colors.  CURRENT marks the
+current line."
   (concat
    (when current
      (bv-themes-regression--rect-token
@@ -445,7 +453,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--diff-row
     (tokens x y width bg-token runs)
-  "Return a diff row at X Y with WIDTH, BG-TOKEN, and text RUNS."
+  "Return a diff row at X Y with WIDTH, BG-TOKEN, and text RUNS.
+Colors are resolved from TOKENS."
   (concat
    (bv-themes-regression--rect-token
     tokens x y width 28 bg-token)
@@ -508,7 +517,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--completion-row
     (tokens x y width bg-token runs &optional annotation)
-  "Return a completion candidate row."
+  "Return a completion candidate row at X Y spanning WIDTH.
+BG-TOKEN and text RUNS are resolved from TOKENS; ANNOTATION is optional."
   (concat
    (bv-themes-regression--rect-token
     tokens x y width 34 bg-token)
@@ -561,7 +571,9 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--diagnostic-row
     (tokens x y width severity fg-token bg-token message location)
-  "Return a diagnostic row."
+  "Return a diagnostic row at X Y spanning WIDTH.
+SEVERITY, MESSAGE and LOCATION are rendered with FG-TOKEN on BG-TOKEN,
+both resolved from TOKENS."
   (let ((fg (bv-themes-regression--token tokens fg-token)))
     (concat
      (bv-themes-regression--rect-token
@@ -605,7 +617,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--dired-row
     (tokens x y width bg-token runs &optional marked)
-  "Return a Dired-like file listing row."
+  "Return a Dired-like file listing row at X Y spanning WIDTH.
+BG-TOKEN and RUNS are resolved from TOKENS; MARKED flags the row."
   (concat
    (bv-themes-regression--rect-token
     tokens x y width 32 bg-token)
@@ -662,7 +675,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--terminal-swatch
     (tokens x y label token)
-  "Return one terminal color swatch."
+  "Return one terminal color swatch at X Y with LABEL.
+The swatch color is TOKEN resolved from TOKENS."
   (concat
    (bv-themes-regression--rect
     x y 56 30
@@ -727,7 +741,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--calendar-cell
     (tokens x y day column selected)
-  "Return one calendar DAY cell at X Y for COLUMN."
+  "Return one calendar DAY cell at X Y for COLUMN.
+SELECTED highlights the cell; colors come from TOKENS."
   (let* ((empty (string-empty-p day))
          (holiday (member day '("25")))
          (today (string= day "6"))
@@ -795,7 +810,9 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--feed-row
     (tokens x y width bg-token state state-token title source age tags)
-  "Return one Elfeed-like feed row."
+  "Return one Elfeed-like feed row at X Y spanning WIDTH.
+BG-TOKEN, STATE, STATE-TOKEN, TITLE, SOURCE, AGE and TAGS describe the
+row; colors come from TOKENS."
   (concat
    (bv-themes-regression--rect-token
     tokens x y width 62 bg-token 'border-subtle 4)
@@ -860,7 +877,8 @@ Each run has the form (TEXT TOKEN :weight WEIGHT)."
 
 (defun bv-themes-regression--icon-role-cell
     (tokens x y role label token family-label)
-  "Return one icon ROLE cell at X Y."
+  "Return one icon ROLE cell at X Y with LABEL.
+TOKEN and FAMILY-LABEL describe the icon; colors come from TOKENS."
   (let ((border (bv-themes-regression--token tokens 'border-subtle)))
     (concat
      (bv-themes-regression--rect-token

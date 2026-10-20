@@ -292,7 +292,9 @@
 
 (defun bv-themes-compile-face-specs
     (tokens &optional roles additions replacements)
-  "Compile face specs for TOKENS using ROLES and adapter changes."
+  "Compile face specs for TOKENS using ROLES and adapter changes.
+ADDITIONS and REPLACEMENTS are passed to
+`bv-themes-compile--face-adapter-specs'."
   (let* ((adapters
           (bv-themes-compile--face-adapter-specs additions replacements))
          (duplicates (bv-themes-compile--duplicate-faces adapters)))

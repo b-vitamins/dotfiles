@@ -49,7 +49,8 @@
      anzu-match-2 anzu-match-3 anzu-replace-to anzu-replace-highlight)
     (diagnostics
      flymake-error flymake-warning flymake-note
-     flymake-end-of-line-diagnostics-face flycheck-error flycheck-warning
+     flymake-inline-annotation-face flymake-error-inline
+     flymake-warning-inline flymake-note-inline flycheck-error flycheck-warning
      flycheck-info flycheck-fringe-error flycheck-fringe-warning
      flycheck-fringe-info flyspell-duplicate flyspell-incorrect)
     (completion-ui

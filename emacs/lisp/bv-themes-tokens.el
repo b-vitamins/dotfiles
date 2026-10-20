@@ -162,7 +162,7 @@
 
 (defun bv-themes-tokens--validate-oklch
     (theme context l chroma hue)
-  "Validate THEME OKLCH values for CONTEXT."
+  "Validate THEME OKLCH values L, CHROMA and HUE for CONTEXT."
   (unless (and (numberp l)
                (<= 0.0 l)
                (<= l 1.0)
