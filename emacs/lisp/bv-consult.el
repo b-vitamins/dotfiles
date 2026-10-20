@@ -126,7 +126,7 @@
   "Return KEYS ordered by `bv-consult-narrow-cycle-order'."
   (let (result)
     (dolist (key bv-consult-narrow-cycle-order)
-      (when-let ((pair (assq key keys)))
+      (when-let* ((pair (assq key keys)))
         (push pair result)))
     (setq result (nreverse result))
     (dolist (pair keys)
@@ -154,14 +154,14 @@
 
 (defun bv-consult-initial-narrow ()
   "Apply context-sensitive Consult initial narrowing."
-  (when-let ((key (bv-consult--get-narrow-key)))
+  (when-let* ((key (bv-consult--get-narrow-key)))
     (when (bv-consult--narrow-key-valid-p key)
       (consult-narrow key))))
 
 (defun bv-consult-narrow-cycle-forward ()
   "Cycle forward through Consult narrowing keys."
   (interactive)
-  (when-let ((keys (plist-get consult--narrow-config :keys)))
+  (when-let* ((keys (plist-get consult--narrow-config :keys)))
     (setq keys (bv-consult--narrow-keys-ordered keys))
     (consult-narrow
      (if consult--narrow
@@ -172,7 +172,7 @@
 (defun bv-consult-narrow-cycle-backward ()
   "Cycle backward through Consult narrowing keys."
   (interactive)
-  (when-let ((keys (plist-get consult--narrow-config :keys)))
+  (when-let* ((keys (plist-get consult--narrow-config :keys)))
     (setq keys (bv-consult--narrow-keys-ordered keys))
     (consult-narrow
      (if consult--narrow
@@ -228,7 +228,7 @@
   "Return a hash table of live buffer file names."
   (let ((ht (make-hash-table :test #'equal)))
     (dolist (buffer (buffer-list))
-      (when-let ((file (buffer-file-name buffer)))
+      (when-let* ((file (buffer-file-name buffer)))
         (puthash (expand-file-name file) t ht)))
     ht))
 
@@ -439,7 +439,7 @@
 
 (defun bv-consult--safe-buffer-source (source)
   "Return a defensive copy of Consult buffer SOURCE."
-  (when-let ((source-plist (bv-consult--resolve-source source)))
+  (when-let* ((source-plist (bv-consult--resolve-source source)))
     (if (not (and (listp source-plist)
                   (zerop (mod (length source-plist) 2))))
         (progn
@@ -611,7 +611,7 @@ PROMPT, DIR, MUSTMATCH, INITIAL and PRED follow `read-file-name-function'."
                 "--hidden --glob !.git/ --glob !node_modules/")
         consult-project-function
         (lambda (may-prompt)
-          (when-let ((project (project-current may-prompt)))
+          (when-let* ((project (project-current may-prompt)))
             (project-root project)))
         xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)

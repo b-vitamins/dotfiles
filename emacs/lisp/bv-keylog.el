@@ -123,7 +123,7 @@ Commands that read minibuffer input can leave the prompted text inside
 
 (defun bv-keylog--safe-key-description (command)
   "Return the current COMMAND key sequence without textual payload."
-  (when-let ((keys (ignore-errors (this-command-keys-vector))))
+  (when-let* ((keys (ignore-errors (this-command-keys-vector))))
     (condition-case nil
         (bv-keylog--safe-key-description-from-vector keys command)
       (error "<unavailable>"))))

@@ -42,16 +42,16 @@
 
 (defun bv-project-custom-root (dir)
   "Find project root from DIR using dominating files."
-  (when-let ((root (seq-find
-                    (lambda (file)
-                      (locate-dominating-file dir file))
-                    bv-project-dominating-files)))
+  (when-let* ((root (seq-find
+                     (lambda (file)
+                       (locate-dominating-file dir file))
+                     bv-project-dominating-files)))
     (cons 'explicit (locate-dominating-file dir root))))
 
 (defun bv-project-org-capture ()
   "Run `org-capture' in project root."
   (interactive)
-  (when-let ((default-dir (project-root (project-current t))))
+  (when-let* ((default-dir (project-root (project-current t))))
     (dir-locals-read-from-dir default-dir)
     (org-capture)))
 
@@ -184,7 +184,7 @@ With prefix argument PROMPT, edit the suggested command."
     (when (boundp 'consult-project-root-function)
       (setq consult-project-root-function
             (lambda ()
-              (when-let (project (project-current))
+              (when-let* ((project (project-current)))
                 (project-root project)))))))
 
   (when (boundp 'project-prefix-map)

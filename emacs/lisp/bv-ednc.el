@@ -43,14 +43,14 @@
 (defun bv-ednc-show-notification-log ()
   "Display notification log."
   (interactive)
-  (if-let ((buffer (get-buffer "*ednc-log*")))
+  (if-let* ((buffer (get-buffer "*ednc-log*")))
       (pop-to-buffer buffer)
     (message "No notifications")))
 
 (defun bv-ednc-dismiss-last ()
   "Dismiss most recent notification."
   (interactive)
-  (when-let ((notification (car (ednc-notifications))))
+  (when-let* ((notification (car (ednc-notifications))))
     (ednc-dismiss-notification notification)
     (message "Notification dismissed")))
 

@@ -98,7 +98,7 @@
                        (mapcar #'car (yas--all-templates (yas--get-snippet-tables)))
                        bv-cape--snippet-cache)
               (puthash mode (float-time) bv-cape--snippet-cache-time)))
-          (when-let ((snippets (gethash mode bv-cape--snippet-cache)))
+          (when-let* ((snippets (gethash mode bv-cape--snippet-cache)))
             `(,start ,end
               ,snippets
               :annotation-function ,(lambda (_)
@@ -112,13 +112,13 @@
                  (when (and (eq status 'finished)
                             (fboundp 'yas-expand-snippet)
                             (fboundp 'yas-lookup-snippet))
-                   (when-let ((snippet (yas-lookup-snippet str)))
+                   (when-let* ((snippet (yas-lookup-snippet str)))
                      (yas-expand-snippet snippet)))))))
       (error nil))))
 
 (defun bv-cape-project-file ()
   "Project file completion with bounded cache."
-  (when-let ((project (and (fboundp 'project-current) (project-current))))
+  (when-let* ((project (and (fboundp 'project-current) (project-current))))
     (condition-case nil
         (let* ((root (project-root project))
                (bounds (or (bounds-of-thing-at-point 'filename)

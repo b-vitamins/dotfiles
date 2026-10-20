@@ -148,7 +148,7 @@
 
 (defun bv-corfu--candidate-kind (metadata candidate)
   "Return kind for CANDIDATE using completion METADATA."
-  (or (when-let ((kind-fn (completion-metadata-get metadata 'company-kind)))
+  (or (when-let* ((kind-fn (completion-metadata-get metadata 'company-kind)))
         (ignore-errors (funcall kind-fn candidate)))
       (completion-metadata-get metadata 'category)
       t))
@@ -216,7 +216,7 @@
 (defun bv-corfu-move-to-minibuffer ()
   "Move the current in-buffer completion session to Consult."
   (interactive)
-  (when-let ((data completion-in-region--data))
+  (when-let* ((data completion-in-region--data))
     (pcase-let ((`(,beg ,end ,table ,pred ,extras) data))
       (let ((completion-extra-properties extras))
         (consult-completion-in-region beg end table pred)))))

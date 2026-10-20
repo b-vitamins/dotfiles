@@ -55,8 +55,8 @@
 
 (defun bv-tramp--parse-ssh-config ()
   "Parse SSH config for host entries with metadata."
-  (when-let ((file (expand-file-name bv-tramp-ssh-config-file))
-             ((file-exists-p file)))
+  (when-let* ((file (expand-file-name bv-tramp-ssh-config-file))
+              ((file-exists-p file)))
     (with-temp-buffer
       (insert-file-contents file)
       (let ((hosts '())

@@ -55,7 +55,7 @@ ORIG-FUN is the original sentinel, PROC is the terminal process, and MSG is
 the process message."
   (funcall orig-fun proc msg)
   (when (memq (process-status proc) '(signal exit))
-    (when-let ((buffer (process-buffer proc)))
+    (when-let* ((buffer (process-buffer proc)))
       (when (buffer-live-p buffer)
         (kill-buffer buffer)))))
 

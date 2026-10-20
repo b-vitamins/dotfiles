@@ -354,8 +354,8 @@ When FACE is non-nil, use it for the separator."
 
 (defun bv-modeline--remote-info ()
   "Return remote metadata for `default-directory', or nil."
-  (when-let ((remote (and default-directory
-                          (ignore-errors (file-remote-p default-directory)))))
+  (when-let* ((remote (and default-directory
+                           (ignore-errors (file-remote-p default-directory)))))
     (list :name remote
           :method (ignore-errors (file-remote-p default-directory 'method))
           :user (ignore-errors (file-remote-p default-directory 'user))
@@ -381,18 +381,18 @@ When FACE is non-nil, use it for the separator."
 
 (defun bv-modeline--remote-help (&optional remote)
   "Return hover help for REMOTE or `default-directory'."
-  (when-let ((remote (or remote (bv-modeline--remote-info))))
+  (when-let* ((remote (or remote (bv-modeline--remote-info))))
     (string-join
      (delq nil
            (list
             (format "Remote: %s" (plist-get remote :name))
-            (when-let ((method (plist-get remote :method)))
+            (when-let* ((method (plist-get remote :method)))
               (format "Method: %s" method))
-            (when-let ((user (plist-get remote :user)))
+            (when-let* ((user (plist-get remote :user)))
               (format "User: %s" user))
-            (when-let ((host (plist-get remote :host)))
+            (when-let* ((host (plist-get remote :host)))
               (format "Host: %s" host))
-            (when-let ((local (plist-get remote :localname)))
+            (when-let* ((local (plist-get remote :localname)))
               (format "Path: %s" local))))
      "\n")))
 
@@ -573,7 +573,7 @@ breathing room after the renderer rewrite."
       (unless (equal directory bv-modeline--cached-project-directory)
         (setq bv-modeline--cached-project-directory directory
               bv-modeline--cached-project-info
-              (when-let ((project (ignore-errors (project-current nil))))
+              (when-let* ((project (ignore-errors (project-current nil))))
                 (let ((root (project-root project)))
                   (list :name (bv-modeline--canonical-project-name
                                project root)
@@ -679,7 +679,7 @@ appears when the whole line can breathe, or when detail level is `full'."
   (string-join
    (delq nil
          (list
-          (when-let ((org-title (bv-modeline--org-title)))
+          (when-let* ((org-title (bv-modeline--org-title)))
             (format "Title: %s" org-title))
           (format "Buffer: %s" (buffer-name))
           (when buffer-file-name
@@ -727,9 +727,9 @@ appears when the whole line can breathe, or when detail level is `full'."
                                  (when branch
                                    (format "Branch: %s%s"
                                            branch
-                                           (if-let ((backend
-                                                     (plist-get branch-info
-                                                                :backend)))
+                                           (if-let* ((backend
+                                                      (plist-get branch-info
+                                                                 :backend)))
                                                (format "\nBackend: %s" backend)
                                              ""))))
            (bv-modeline--segment 'mode mode 'bv-ui-header-muted
@@ -823,9 +823,9 @@ appears when the whole line can breathe, or when detail level is `full'."
                   (plist-get summary :infos))
           (when (plist-get summary :checking)
             "Flymake is checking")
-          (when-let ((eglot (plist-get summary :eglot)))
+          (when-let* ((eglot (plist-get summary :eglot)))
             (format "LSP: %s" eglot))
-          (when-let ((sample (plist-get summary :sample)))
+          (when-let* ((sample (plist-get summary :sample)))
             (format "First diagnostic: %s" sample))))
    "\n"))
 
@@ -908,7 +908,7 @@ appears when the whole line can breathe, or when detail level is `full'."
       (push (list :label "NAR" :face 'bv-ui-header-warning
                   :help "Buffer is narrowed")
             items))
-    (when-let ((region (bv-modeline--region-state)))
+    (when-let* ((region (bv-modeline--region-state)))
       (push (plist-put region :face 'bv-ui-header-info) items))
     (when remote
       (push (list :label (or (bv-modeline--remote-label remote) "TRAMP")
@@ -927,7 +927,7 @@ appears when the whole line can breathe, or when detail level is `full'."
       (push (list :label "COMP" :face 'bv-ui-header-info
                   :help "Compilation is running")
             items))
-    (when-let ((envrc (bv-modeline--envrc-state)))
+    (when-let* ((envrc (bv-modeline--envrc-state)))
       (push envrc items))
     (nreverse items)))
 
@@ -945,7 +945,7 @@ appears when the whole line can breathe, or when detail level is `full'."
 
 (defun bv-modeline--task-state-segment ()
   "Return compact active task/state segment."
-  (when-let ((items (bv-modeline--task-state-items)))
+  (when-let* ((items (bv-modeline--task-state-items)))
     (bv-modeline--segment
      'state
      (string-join (mapcar (lambda (item)

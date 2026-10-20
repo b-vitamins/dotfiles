@@ -222,14 +222,14 @@ COUNT is passed to `vertico-directory-delete-word'."
 (defun bv-vertico-next-from-outside ()
   "Move to the next Vertico candidate from outside the minibuffer."
   (interactive)
-  (when-let ((win (active-minibuffer-window)))
+  (when-let* ((win (active-minibuffer-window)))
     (with-selected-window win
       (vertico-next))))
 
 (defun bv-vertico-previous-from-outside ()
   "Move to the previous Vertico candidate from outside the minibuffer."
   (interactive)
-  (when-let ((win (active-minibuffer-window)))
+  (when-let* ((win (active-minibuffer-window)))
     (with-selected-window win
       (vertico-previous))))
 

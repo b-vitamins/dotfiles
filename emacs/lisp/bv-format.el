@@ -74,7 +74,7 @@ Failures are reported via `message' and the save continues."
   "Format current buffer by piping it through PROGRAM with ARGS.
 
 Returns non-nil on success."
-  (when-let ((exe (executable-find program)))
+  (when-let* ((exe (executable-find program)))
     (let ((stderr (generate-new-buffer " *bv-format stderr*"))
           (stdout (generate-new-buffer " *bv-format stdout*")))
       (unwind-protect
@@ -133,7 +133,7 @@ Returns non-nil on success."
 
 (defun bv-format--rust-edition ()
   "Return the Rust edition for the current project, or nil."
-  (when-let ((root (locate-dominating-file default-directory "Cargo.toml")))
+  (when-let* ((root (locate-dominating-file default-directory "Cargo.toml")))
     (with-temp-buffer
       (insert-file-contents (expand-file-name "Cargo.toml" root))
       (when (re-search-forward "^[[:space:]]*edition[[:space:]]*=[[:space:]]*\"\\([0-9]+\\)\""

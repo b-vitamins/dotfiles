@@ -96,7 +96,7 @@
   "Return live face coverage data for ARTIFACT.
 When LIVE-FACES is non-nil, use it instead of `face-list'."
   (let* ((artifact (or artifact
-                       (if-let ((theme (caar bv-themes-token-profiles)))
+                       (if-let* ((theme (caar bv-themes-token-profiles)))
                            (bv-themes-compile theme)
                          (error "No BV theme profile is registered"))))
          (covered (bv-themes-inventory--covered-faces artifact))

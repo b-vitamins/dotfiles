@@ -119,7 +119,7 @@
 
 (defun bv-marginalia--annotation (&rest fields)
   "Build a Marginalia annotation from FIELDS with an alignment marker."
-  (when-let ((body (string-join (delq nil fields) marginalia-separator)))
+  (when-let* ((body (string-join (delq nil fields) marginalia-separator)))
     (unless (string-empty-p body)
       (concat (propertize " " 'marginalia--align t) body))))
 
@@ -138,8 +138,8 @@
 
 (defun bv-marginalia--buffer-path (buffer width)
   "Return BUFFER path context truncated to WIDTH."
-  (when-let ((file (or (buffer-file-name buffer)
-                       (buffer-local-value 'default-directory buffer))))
+  (when-let* ((file (or (buffer-file-name buffer)
+                        (buffer-local-value 'default-directory buffer))))
     (let ((path (abbreviate-file-name file)))
       (if (eq (bv-completion-width-class) 'wide)
           (bv-completion-truncate path width)
@@ -149,7 +149,7 @@
 
 (defun bv-marginalia-annotate-buffer (cand)
   "Width-aware buffer annotation for CAND."
-  (when-let ((buffer (bv-marginalia--buffer-for-candidate cand)))
+  (when-let* ((buffer (bv-marginalia--buffer-for-candidate cand)))
     (when (buffer-live-p buffer)
       (let* ((width (bv-completion-annotation-width))
              (class (bv-completion-width-class))
@@ -182,7 +182,7 @@
 
 (defun bv-marginalia-annotate-symbol (cand)
   "Symbol annotation for CAND with theme-friendly emphasis."
-  (when-let ((base (marginalia-annotate-symbol cand)))
+  (when-let* ((base (marginalia-annotate-symbol cand)))
     (if (string-match "\\`[[:space:]]*\\([^[:space:]]+\\)" base)
         (progn
           (add-face-text-property (match-beginning 1) (match-end 1)
@@ -212,7 +212,7 @@
 
 (defun bv-marginalia--command-doc (symbol)
   "Return a one-line documentation summary for command SYMBOL."
-  (when-let ((doc (documentation symbol t)))
+  (when-let* ((doc (documentation symbol t)))
     (let* ((line (car (split-string (string-trim doc) "\n")))
            (line (replace-regexp-in-string "[[:space:]]+" " " line)))
       (unless (string-empty-p line)
@@ -234,7 +234,7 @@
 Command docs are rendered inline instead of right-aligned.  The row receives a
 simple width budget derived from the visible candidate and completion window;
 anything that does not fit is truncated with a continuation marker."
-  (when-let ((symbol (intern-soft cand)))
+  (when-let* ((symbol (intern-soft cand)))
     (let* ((budget (bv-marginalia--command-row-budget cand))
            (key (bv-marginalia--command-key symbol))
            (key-field (and key (format "(%s)" key)))
@@ -257,7 +257,7 @@ anything that does not fit is truncated with a continuation marker."
 
 (defun bv-marginalia--prepend-annotator (category function)
   "Add FUNCTION as the first annotator for CATEGORY."
-  (when-let ((entry (assq category marginalia-annotators)))
+  (when-let* ((entry (assq category marginalia-annotators)))
     (setcdr entry
             (cl-remove-duplicates
              (cons function (cdr entry))

@@ -96,8 +96,8 @@
   "Validate THEME ANCHORS."
   (unless (listp anchors)
     (error "BV theme profile %S has invalid :anchors: %S" theme anchors))
-  (when-let ((duplicates
-              (bv-themes-tokens--duplicates (mapcar #'car anchors))))
+  (when-let* ((duplicates
+               (bv-themes-tokens--duplicates (mapcar #'car anchors))))
     (error "BV theme profile %S has duplicate anchors: %S"
            theme duplicates))
   (dolist (required bv-themes-tokens-required-anchor-names)
@@ -129,8 +129,8 @@
     (unless (listp values)
       (error "BV theme profile %S has invalid %S: %S"
              theme key values))
-    (when-let ((duplicates
-                (bv-themes-tokens--duplicates (mapcar #'car values))))
+    (when-let* ((duplicates
+                 (bv-themes-tokens--duplicates (mapcar #'car values))))
       (error "BV theme profile %S has duplicate %S keys: %S"
              theme key duplicates))
     (dolist (entry values)
@@ -229,8 +229,8 @@
 
 (defun bv-themes-tokens--validate-overrides (theme overrides)
   "Validate THEME token OVERRIDES."
-  (when-let ((duplicates
-              (bv-themes-tokens--duplicates (mapcar #'car overrides))))
+  (when-let* ((duplicates
+               (bv-themes-tokens--duplicates (mapcar #'car overrides))))
     (error "BV theme profile %S has duplicate token overrides: %S"
            theme duplicates))
   (dolist (override overrides)

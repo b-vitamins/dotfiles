@@ -161,7 +161,7 @@
   "Return the BV theme specification search path."
   (let (paths)
     (dolist (entry bv-themes-theme-directories)
-      (when-let ((path (bv-themes--theme-path-entry entry)))
+      (when-let* ((path (bv-themes--theme-path-entry entry)))
         (when (file-directory-p path)
           (push path paths))))
     (delete-dups (nreverse paths))))
@@ -210,7 +210,7 @@
 (defun bv-themes--load-theme-definition (theme)
   "Load THEME specification without enabling it."
   (unless (bv-themes--profile-registered-p theme)
-    (if-let ((file (bv-themes--theme-file theme)))
+    (if-let* ((file (bv-themes--theme-file theme)))
         (load file nil t)
       (error "Unknown BV theme specification: %S" theme)))
   (unless (bv-themes--profile-registered-p theme)
@@ -715,13 +715,13 @@
          (roles (bv-themes-roles-build role-overrides))
          (adapters (plist-get profile :face-adapters))
          (replacements (plist-get profile :face-adapter-replacements)))
-    (when-let ((duplicates (bv-themes--duplicate-cars role-overrides)))
+    (when-let* ((duplicates (bv-themes--duplicate-cars role-overrides)))
       (error "BV theme %S has duplicate role definitions: %S"
              theme duplicates))
-    (when-let ((duplicates (bv-themes--duplicate-cars adapters)))
+    (when-let* ((duplicates (bv-themes--duplicate-cars adapters)))
       (error "BV theme %S has duplicate face adapters: %S"
              theme duplicates))
-    (when-let ((duplicates (bv-themes--duplicate-cars replacements)))
+    (when-let* ((duplicates (bv-themes--duplicate-cars replacements)))
       (error "BV theme %S has duplicate replacement face adapters: %S"
              theme duplicates))
     (bv-themes--validate-face-adapters theme roles adapters)
@@ -802,7 +802,7 @@ This declares THEME, installs generated faces, and provides it to Custom."
 (defun bv-themes-current-artifact ()
   "Return the compiled artifact for the current BV theme."
   (or bv-themes--current-artifact
-      (when-let ((theme (bv-themes-current)))
+      (when-let* ((theme (bv-themes-current)))
         (bv-themes--compiled theme))))
 
 (defun bv-themes-current-tokens ()
@@ -826,7 +826,7 @@ This declares THEME, installs generated faces, and provides it to Custom."
 
 (defun bv-themes-variant ()
   "Return `light' or `dark' for the current BV theme."
-  (when-let ((theme (bv-themes-current)))
+  (when-let* ((theme (bv-themes-current)))
     (plist-get (bv-themes--compiled theme) :variant)))
 
 (defun bv-themes--activate (theme)
@@ -992,15 +992,15 @@ FN, NO-CONFIRM, and NO-ENABLE match `load-theme'."
                  (gallery (plist-get profile :gallery)))
             (insert (format "## %s\n" (plist-get profile :display-name)))
             (insert (format "- symbol: %S\n" theme))
-            (when-let ((summary (plist-get profile :summary)))
+            (when-let* ((summary (plist-get profile :summary)))
               (insert (format "- summary: %s\n" summary)))
-            (when-let ((tags (plist-get profile :tags)))
+            (when-let* ((tags (plist-get profile :tags)))
               (insert (format "- tags: %s\n"
                               (string-join
                                (mapcar (lambda (tag)
                                          (format "%s" tag))
                                        tags)
-                                           ", "))))
+                               ", "))))
             (when gallery
               (insert (format "- gallery: %S\n" gallery)))
             (insert "\n")))

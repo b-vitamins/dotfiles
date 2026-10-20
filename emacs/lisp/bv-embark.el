@@ -175,7 +175,7 @@
 
 (defun bv-embark-target-sexp-at-point ()
   "Return an expression target for the sexp at point."
-  (when-let ((bounds (ignore-errors (bounds-of-thing-at-point 'sexp))))
+  (when-let* ((bounds (ignore-errors (bounds-of-thing-at-point 'sexp))))
     (let ((text (buffer-substring-no-properties (car bounds) (cdr bounds))))
       `(expression ,text ,(car bounds) . ,(cdr bounds)))))
 

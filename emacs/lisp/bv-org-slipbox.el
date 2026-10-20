@@ -159,7 +159,7 @@
   "Build the initial org-slipbox index when notes exist but the DB is empty."
   (unless (or bv-org-slipbox--initial-index-ready
               bv-org-slipbox--initial-sync-running)
-    (when-let ((files (bv-org-slipbox--eligible-files)))
+    (when-let* ((files (bv-org-slipbox--eligible-files)))
       (condition-case err
           (if (bv-org-slipbox--index-populated-p)
               (setq bv-org-slipbox--initial-index-ready t)
@@ -271,7 +271,7 @@
 
 (defun bv-org-slipbox--node-backlinks (node)
   "Return NODE backlink count formatted for the completion table."
-  (when-let ((count (plist-get node :backlink_count)))
+  (when-let* ((count (plist-get node :backlink_count)))
     (format "<- %s" count)))
 
 (defun bv-org-slipbox--node-main-column (node)
