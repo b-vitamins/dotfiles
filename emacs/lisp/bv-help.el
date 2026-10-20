@@ -12,11 +12,12 @@
 
 (require 'help)
 (defvar bv-help-map)
+(defvar help-enable-variable-value-editing)
 
 ;; Better help defaults
 (when (boundp 'help-window-select)
   (setq help-window-select t))
-(when (boundp 'help-enable-variable-value-editing)
+(with-eval-after-load 'help-fns
   (setq help-enable-variable-value-editing t))
 
 ;; Quick help message

@@ -19,6 +19,9 @@
 (declare-function ansi-color-filter-apply "ansi-color")
 (defvar user-emacs-directory)
 (defvar eshell-hist-mode-map)
+(defvar eshell-banner-message)
+(defvar eshell-highlight-prompt)
+(defvar eshell-prompt-regexp)
 (defvar bv-terminal-map)
 
 (defun bv-eshell-project (&optional arg)
@@ -61,12 +64,11 @@ With prefix ARG, prompt for project selection."
   (when (boundp 'eshell-last-dir-ring-file-name)
     (setq eshell-last-dir-ring-file-name (expand-file-name "lastdir" eshell-cache))))
 
-(when (boundp 'eshell-banner-message)
+(with-eval-after-load 'em-banner
   (setq eshell-banner-message ""))
-(when (boundp 'eshell-highlight-prompt)
-  (setq eshell-highlight-prompt nil))
-(when (boundp 'eshell-prompt-regexp)
-  (setq eshell-prompt-regexp "^[^#$\n]* [#$] "))
+(with-eval-after-load 'em-prompt
+  (setq eshell-highlight-prompt nil
+        eshell-prompt-regexp "^[^#$\n]* [#$] "))
 
 (add-hook 'eshell-hist-mode-hook
           (lambda ()
