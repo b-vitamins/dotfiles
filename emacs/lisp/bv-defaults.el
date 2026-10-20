@@ -87,7 +87,7 @@
 (defvar set-mark-command-repeat-pop)
 (defvar shell-file-name)
 (defvar tab-width)
-(defvar uniquify-after-kill-buffer-p)
+(defvar uniquify-after-kill-buffer-flag)
 (defvar uniquify-buffer-name-style)
 (defvar uniquify-ignore-buffers-re)
 (defvar uniquify-separator)
@@ -322,7 +322,7 @@ look like it came from a different editor."
   (require 'uniquify)
   (setq uniquify-buffer-name-style 'reverse
         uniquify-separator " • "
-        uniquify-after-kill-buffer-p t
+        uniquify-after-kill-buffer-flag t
         uniquify-ignore-buffers-re "^\\*"))
 
 (defun bv-defaults-setup-shell ()

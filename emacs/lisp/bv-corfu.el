@@ -198,18 +198,11 @@
             corfu-popupinfo-hide nil)
       (corfu-popupinfo-mode 1))))
 
-(defun bv-corfu-setup-terminal (&optional frame)
-  "Enable terminal Corfu support for FRAME when available."
-  (with-selected-frame (or frame (selected-frame))
-    (when (and (not (display-graphic-p))
-               (require 'corfu-terminal nil t)
-               (fboundp 'corfu-terminal-mode))
-      (corfu-terminal-mode 1))))
-
 (defun bv-corfu-configure-frame (&optional frame)
-  "Configure Corfu helpers for FRAME."
-  (bv-corfu-setup-popupinfo frame)
-  (bv-corfu-setup-terminal frame))
+  "Configure Corfu helpers for FRAME.
+Terminal frames need no extra package: Emacs 31 provides tty child frames,
+which Corfu uses directly."
+  (bv-corfu-setup-popupinfo frame))
 
 ;;; Commands
 

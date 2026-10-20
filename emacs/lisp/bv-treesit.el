@@ -19,6 +19,7 @@
 ;; External variables to avoid warnings
 (defvar major-mode-remap-alist)
 (defvar treesit-extra-load-path)
+(defvar treesit-auto-install-grammar)
 (defvar treesit-language-source-alist)
 
 (defgroup bv-treesit nil
@@ -64,6 +65,9 @@ The sources are the entries of `treesit-language-source-alist'."
   (when (bv-treesit--available-p)
     (require 'treesit)
     (setq treesit-extra-load-path bv-treesit-extra-load-paths)
+    ;; Grammars come from Guix profiles; never prompt to build them from git
+    ;; when an optional grammar (e.g. jsdoc for `js-ts-mode') is missing.
+    (setq treesit-auto-install-grammar 'never)
     (when (boundp 'treesit-font-lock-level)
       (setq treesit-font-lock-level 4))
     ;; Prefer *-ts-mode variants when the grammar is available.

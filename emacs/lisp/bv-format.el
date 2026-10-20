@@ -67,7 +67,7 @@ Failures are reported via `message' and the save continues."
             (insert text)
             (goto-char (point-min)))
           (let ((inhibit-read-only t))
-            (replace-buffer-contents tmp)))
+            (replace-region-contents (point-min) (point-max) tmp)))
       (kill-buffer tmp))))
 
 (defun bv-format--apply-stdin-formatter (program args)

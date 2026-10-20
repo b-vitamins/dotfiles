@@ -28,6 +28,8 @@ as a variable.")
 
 (declare-function magit-add-section-hook "magit" (hook function &optional at append local))
 (defvar bv-git-map)
+(defvar git-gutter:lighter)
+(declare-function git-gutter:update-all-windows "git-gutter")
 (defvar bv-toggle-map)
 
 (defcustom bv-git-magit-section-fringe-width 16
@@ -137,13 +139,18 @@ leading space so collapsed-section ellipses do not touch heading text."
   (when (boundp 'magit-clone-default-directory)
     (setq magit-clone-default-directory 'bv-get-local-repo-path-from-url)))
 
-(when (boundp 'git-gutter:lighter)
-  (setq git-gutter:lighter " GG"))
+(defun bv-git--refresh-gutter-on-focus ()
+  "Refresh `git-gutter' indicators when an Emacs frame regains focus."
+  (when (and (fboundp 'git-gutter:update-all-windows)
+             (seq-some (lambda (frame) (eq (frame-focus-state frame) t))
+                       (frame-list)))
+    (git-gutter:update-all-windows)))
 
 (with-eval-after-load 'git-gutter
   (require 'git-gutter-fringe)
-  (when (boundp 'git-gutter:update-hooks)
-    (add-to-list 'git-gutter:update-hooks 'focus-in-hook))
+  (setq git-gutter:lighter " GG")
+  (add-function :after after-focus-change-function
+                #'bv-git--refresh-gutter-on-focus)
   (when (boundp 'git-gutter:update-commands)
     (add-to-list 'git-gutter:update-commands 'other-window))
   (add-hook 'magit-post-stage-hook 'git-gutter:update-all-windows)
