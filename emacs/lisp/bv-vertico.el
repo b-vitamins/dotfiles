@@ -41,7 +41,7 @@
 (defvar vertico-multiform-map)
 
 (declare-function completion--in-region "minibuffer" (start end collection predicate))
-(declare-function consult-completion-in-region "consult" (start end collection &optional predicate))
+(declare-function consult-completion-in-region "consult" (start end collection predicate))
 (declare-function vertico--candidate "vertico" (&optional n))
 (declare-function vertico--format-candidate "vertico")
 (declare-function vertico--metadata-get "vertico" (key))

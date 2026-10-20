@@ -43,9 +43,9 @@
 (declare-function eglot-format-buffer "eglot")
 (declare-function eglot "eglot")
 (declare-function eglot-shutdown "eglot")
-(declare-function xref-find-definitions "xref" (&optional identifier))
-(declare-function xref-find-definitions-other-window "xref" (&optional identifier))
-(declare-function xref-find-references "xref" (&optional identifier))
+(declare-function xref-find-definitions "xref" (identifier))
+(declare-function xref-find-definitions-other-window "xref" (identifier))
+(declare-function xref-find-references "xref" (identifier))
 (declare-function eldoc-doc-buffer "eldoc" (&optional interactive))
 
 (defun bv-eglot-peek-definition ()

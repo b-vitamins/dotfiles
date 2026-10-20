@@ -22,7 +22,7 @@
 (defvar bv-window-map)
 
 ;; Declare external functions
-(declare-function ace-window "ace-window" (&optional arg))
+(declare-function ace-window "ace-window" (arg))
 
 (when (boundp 'aw-keys)
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))

@@ -42,7 +42,7 @@
 (defvar savehist-additional-variables)
 (defvar vertico--input)
 
-(declare-function consult-completion-in-region "consult" (start end collection &optional predicate))
+(declare-function consult-completion-in-region "consult" (start end collection predicate))
 (declare-function corfu-info-documentation "corfu-info" ())
 (declare-function corfu-info-location "corfu-info" ())
 (declare-function corfu-insert-separator "corfu" ())

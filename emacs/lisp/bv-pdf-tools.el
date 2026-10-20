@@ -40,8 +40,8 @@
 (declare-function bv-themes-variant "bv-themes")
 (declare-function bv-circadian--should-use-dark-theme-p "bv-circadian")
 (declare-function pdf-view-current-page "pdf-view")
-(declare-function pdf-view-goto-page "pdf-view" (page))
-(declare-function pdf-view-rotate "pdf-view" (&optional degree))
+(declare-function pdf-view-goto-page "pdf-view" (page &optional window))
+(declare-function pdf-view-rotate "pdf-view" (angle))
 
 (defun bv-pdf-view-mode ()
   "Enter `pdf-view-mode' after loading the full pdf-tools package."

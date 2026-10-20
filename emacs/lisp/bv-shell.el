@@ -15,7 +15,7 @@
 ;; Declare external functions
 (declare-function project-root "project" (project))
 (declare-function project-current "project" (&optional may-prompt dir))
-(declare-function consult-history "consult" (&rest args))
+(declare-function consult-history "consult" (&optional history index bol))
 (defvar bv-terminal-map)
 
 (when (featurep 'sh-script)

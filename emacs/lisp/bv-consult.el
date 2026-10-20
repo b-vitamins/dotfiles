@@ -42,15 +42,15 @@
 
 (declare-function bv-flymake-quickfix "bv-flymake" (&optional project))
 (declare-function consult--convert-regexp "consult" (regexp type))
-(declare-function consult--default-regexp-compiler "consult" (input type &optional ignore-case))
+(declare-function consult--default-regexp-compiler "consult" (input type ignore-case))
 (declare-function consult--file-action "consult" (file))
 (declare-function consult--file-state "consult" ())
 (declare-function consult--read "consult" (table &rest args))
-(declare-function consult-completion-in-region "consult" (start end collection &optional predicate))
+(declare-function consult-completion-in-region "consult" (start end collection predicate))
 (declare-function consult-flymake "consult-flymake" (&optional project))
-(declare-function consult-imenu "consult-imenu" (&optional options))
-(declare-function consult-imenu-multi "consult-imenu" (&optional options))
-(declare-function consult-line-multi "consult" (&optional initial))
+(declare-function consult-imenu "consult-imenu" ())
+(declare-function consult-imenu-multi "consult-imenu" (&optional query))
+(declare-function consult-line-multi "consult" (query &optional initial))
 (declare-function consult-xref "consult-xref" (fetcher &optional alist))
 (declare-function consult--file-preview "consult" ())
 (declare-function consult-narrow "consult" (&optional narrow))
@@ -182,8 +182,9 @@
 
 ;;; Orderless Search Integration
 
-(defun bv-consult--orderless-regexp-compiler (input type &rest _config)
-  "Compile Consult async INPUT using Orderless for regexp TYPE."
+(defun bv-consult--orderless-regexp-compiler (input type ignore-case)
+  "Compile Consult async INPUT using Orderless for regexp TYPE.
+IGNORE-CASE is forwarded to the default compiler on fallback."
   (if (require 'orderless nil t)
       (condition-case nil
           (let ((regexps (cdr (orderless-compile input))))
@@ -192,8 +193,8 @@
                        (consult--convert-regexp regexp type))
                      regexps)
              (lambda (str) (orderless--highlight regexps t str))))
-        (error (consult--default-regexp-compiler input type)))
-    (consult--default-regexp-compiler input type)))
+        (error (consult--default-regexp-compiler input type ignore-case)))
+    (consult--default-regexp-compiler input type ignore-case)))
 
 (defun bv-consult--with-orderless (orig-fun &rest args)
   "Run ORIG-FUN with ARGS using an Orderless Consult regexp compiler."
@@ -525,7 +526,7 @@ Failures are reported in the echo area under SOURCE-NAME."
       (save-buffer))
     (consult-ripgrep default-directory))
    (t
-    (consult-line-multi))))
+    (consult-line-multi nil))))
 
 (defun bv-consult-line-symbol-at-point ()
   "Search the current buffer for the symbol at point."
