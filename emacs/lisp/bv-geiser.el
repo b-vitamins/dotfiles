@@ -29,6 +29,7 @@
 (defvar org-structure-template-alist)
 (defvar org-babel-default-header-args:scheme)
 (defvar scheme-mode-map)
+(defvar bv-scheme-repl-backend)
 
 (defgroup bv-geiser nil
   "Scheme development settings."
@@ -55,8 +56,19 @@
       geiser-repl-history-filename (expand-file-name "emacs/geiser-history" (or (getenv "XDG_CACHE_HOME") "~/.cache"))
       geiser-repl-add-project-paths nil)
 
+(defun bv-geiser-maybe-enable ()
+  "Enable `geiser-mode' when Geiser is the selected Scheme REPL backend.
+The backend is `bv-scheme-repl-backend'; Geiser is assumed when it is unset."
+  (when (and (eq (if (boundp 'bv-scheme-repl-backend)
+                     bv-scheme-repl-backend
+                   'geiser)
+                 'geiser)
+             (fboundp 'geiser-mode))
+    (geiser-mode 1)))
+
+(add-hook 'scheme-mode-hook #'bv-geiser-maybe-enable)
+
 (with-eval-after-load 'geiser-mode
-  (add-hook 'scheme-mode-hook 'geiser-mode)
   (add-hook 'geiser-mode-hook 'geiser-eros-mode))
 
 (defun bv-geiser-eval-buffer ()

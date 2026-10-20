@@ -40,7 +40,8 @@
 ;; Guile-specific settings
 (setq scheme-program-name "guile")
 
-;; Disable geiser auto-mode to prevent interference with Arei
+;; Disable Geiser's own auto-activation; `bv-geiser-maybe-enable' turns on
+;; `geiser-mode' only when `bv-scheme-repl-backend' is `geiser'.
 (setq geiser-mode-auto-p nil)
 
 ;; Indentation settings
@@ -151,12 +152,6 @@
       (guix-prettify-mode 1))))
 
 (add-hook 'scheme-mode-hook #'bv-scheme-setup-guix-dev)
-
-;; Integration with bv-geiser (if loaded)
-(with-eval-after-load 'bv-geiser
-  ;; Geiser provides excellent Scheme support
-  ;; This ensures our custom functions work well with it
-  (setq geiser-mode-auto-p t))
 
 ;; Setup Arei mode for Scheme buffers
 (defun bv-scheme-setup-arei ()
