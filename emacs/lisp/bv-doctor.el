@@ -26,6 +26,15 @@
 
 (require 'cl-lib)
 
+(defvar bv-themes-toggle-themes)
+(defvar bv-themes-default-theme)
+
+(declare-function bv-themes-load-gallery "bv-themes")
+(declare-function bv-themes-known-themes "bv-themes")
+(declare-function bv-themes-audit "bv-themes-audit")
+(declare-function bv-themes-compile "bv-themes-compile")
+(declare-function bv-themes-inventory-scan "bv-themes-inventory")
+(declare-function bv-themes-inventory-assert "bv-themes-inventory")
 (declare-function bv-themes-regression-run "bv-themes-regression" (&optional directory))
 (declare-function bv-themes-workloads-assert "bv-themes-workloads" (&optional theme report))
 (declare-function ert-run-tests-batch "ert" (selector))

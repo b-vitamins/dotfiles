@@ -22,25 +22,35 @@
 
 (setq calendar-week-start-day 1
       calendar-date-style 'iso)
+
+(defgroup bv-calendar nil
+  "Calendar enhancements."
+  :group 'calendar)
+
 (defface bv-calendar-header
   '((t :inherit bv-face-strong :weight bold))
-  "Face for calendar headers.")
+  "Face for calendar headers."
+  :group 'bv-calendar)
 
 (defface bv-calendar-today
   '((t :inherit bv-face-info :weight bold))
-  "Face for today.")
+  "Face for today."
+  :group 'bv-calendar)
 
 (defface bv-calendar-current
   '((t :inherit region :weight medium))
-  "Face for current selected date.")
+  "Face for current selected date."
+  :group 'bv-calendar)
 
 (defface bv-calendar-weekend
   '((t :inherit bv-face-dim))
-  "Face for weekends.")
+  "Face for weekends."
+  :group 'bv-calendar)
 
 (defface bv-calendar-holiday
   '((t :inherit bv-face-warning))
-  "Face for holidays.")
+  "Face for holidays."
+  :group 'bv-calendar)
 
 (defconst bv-calendar-month-width 23
   "Width of a single month display.")
