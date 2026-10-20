@@ -14,7 +14,6 @@
 (declare-function ellama-ask-about "ellama")
 (declare-function ellama-code-review "ellama")
 (declare-function ellama-code-improve "ellama")
-(declare-function ellama-code-explain "ellama")
 (declare-function auth-source-pick-first-password "auth-source")
 
 (defvar ellama-keymap-prefix)

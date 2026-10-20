@@ -60,7 +60,7 @@
         (eglot (styles orderless basic))
         (bookmark (styles orderless substring basic))))
 
-(setq orderless-component-separator #'orderless-escapable-split-on-space
+(setq orderless-component-separator #'orderless-escapable-split
       orderless-matching-styles '(orderless-literal orderless-regexp)
       orderless-smart-case t
       orderless-style-dispatchers
@@ -93,6 +93,9 @@
   (message "Orderless literal matching for this completion session"))
 
 ;;; Integration
+
+(defvar corfu-preview-current)
+(defvar consult-async-min-input)
 
 (with-eval-after-load 'corfu
   ;; Corfu should not ghost-insert the current candidate while Orderless input

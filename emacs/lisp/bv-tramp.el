@@ -23,8 +23,6 @@
 (defvar tramp-use-ssh-controlmaster-options)
 (defvar embark-keymap-alist)
 (declare-function consult--read "consult")
-(declare-function consult--directory-prompt "consult")
-(declare-function consult--file-prompt "consult")
 (declare-function vterm "vterm")
 (defvar bv-remote-map)
 
@@ -143,15 +141,11 @@
          (default-directory
            (pcase type
              (:directory
-              (if (fboundp 'consult--directory-prompt)
-                  (consult--directory-prompt remote-path nil)
-                (read-directory-name
-                 (format "Directory (%s): " host) remote-path)))
+              (read-directory-name
+               (format "Directory (%s): " host) remote-path))
              (:file
-              (if (fboundp 'consult--file-prompt)
-                  (consult--file-prompt remote-path nil)
-                (read-file-name
-                 (format "File (%s): " host) remote-path)))
+              (read-file-name
+               (format "File (%s): " host) remote-path))
              (_ remote-path))))
     (funcall command default-directory)))
 

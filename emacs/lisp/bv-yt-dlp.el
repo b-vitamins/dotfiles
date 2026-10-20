@@ -10,9 +10,6 @@
 
 (declare-function ytdl-show-list "ytdl")
 (declare-function ytdl-download "ytdl")
-(declare-function ytdl-download-audio "ytdl")
-(declare-function ytdl-download-video "ytdl")
-(declare-function ytdl-download-delete "ytdl")
 
 ;; External variables from ytdl package
 (defvar ytdl-command)
@@ -20,6 +17,7 @@
 (defvar ytdl-music-folder)
 (defvar ytdl-video-folder)
 (defvar ytdl-mode-line)
+(defvar ytdl-download-types)
 (defvar ytdl--dl-list-mode-map)
 
 (defgroup bv-ytdl nil
@@ -47,7 +45,7 @@
   :group 'bv-ytdl)
 
 ;; Load ytdl after idle delay
-(run-with-idle-timer bv-ytdl-idle-delay t
+(run-with-idle-timer bv-ytdl-idle-delay nil
                      (lambda ()
                        (require 'ytdl nil t)))
 
@@ -57,28 +55,34 @@
       ytdl-video-folder bv-ytdl-video-dir
       ytdl-mode-line nil)
 
+(defun bv-ytdl--download-as (type-name)
+  "Run `ytdl-download' offering only the download type TYPE-NAME."
+  (require 'ytdl)
+  (let ((ytdl-download-types
+         (or (seq-filter (lambda (type) (equal (car type) type-name))
+                         ytdl-download-types)
+             ytdl-download-types)))
+    (call-interactively #'ytdl-download)))
+
 (defun bv-ytdl-download-url ()
-  "Download media from URL."
+  "Download media from a URL, prompting for the destination type."
   (interactive)
-  (let ((url (read-string "URL: ")))
-    (ytdl-download url)))
+  (require 'ytdl)
+  (call-interactively #'ytdl-download))
 
 (defun bv-ytdl-download-audio ()
-  "Download audio from URL."
+  "Download audio from a URL into the music folder."
   (interactive)
-  (let ((url (read-string "Audio URL: ")))
-    (ytdl-download-audio url)))
+  (bv-ytdl--download-as "Music"))
 
 (defun bv-ytdl-download-video ()
-  "Download video from URL."
+  "Download video from a URL into the video folder."
   (interactive)
-  (let ((url (read-string "Video URL: ")))
-    (ytdl-download-video url)))
+  (bv-ytdl--download-as "Videos"))
 
 (with-eval-after-load 'ytdl
   (define-key ytdl--dl-list-mode-map "q" 'quit-window)
-  (define-key ytdl--dl-list-mode-map "a" 'ytdl-download)
-  (define-key ytdl--dl-list-mode-map "d" 'ytdl-download-delete))
+  (define-key ytdl--dl-list-mode-map "a" 'ytdl-download))
 
 
 (provide 'bv-yt-dlp)

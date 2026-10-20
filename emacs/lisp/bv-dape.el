@@ -21,10 +21,8 @@
     (setq dape-buffer-window-arrangement 'right))
   (when (boundp 'dape-stepping-granularity)
     (setq dape-stepping-granularity 'line))
-  (when (boundp 'dape-on-start-hooks)
-    (setq dape-on-start-hooks '(dape-repl)))
-  (when (boundp 'dape-hide-info-mode-line)
-    (setq dape-hide-info-mode-line nil))
+  (when (boundp 'dape-start-hook)
+    (setq dape-start-hook '(dape-repl)))
   (when (boundp 'dape-info-hide-mode-line)
     (setq dape-info-hide-mode-line nil)))
 

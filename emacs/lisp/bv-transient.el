@@ -22,7 +22,7 @@
 (declare-function guix-installed-packages "guix")
 (declare-function guix-installed-user-packages "guix")
 (declare-function guix-generations "guix")
-(declare-function guix-services-from-system-config "guix")
+(declare-function guix-services-from-system-config-file "guix-ui-service")
 (declare-function bv-guix-build-package "bv-guix")
 (declare-function bv-guix-lint-package "bv-guix")
 (declare-function bv-guix-format-buffer "bv-guix")
@@ -53,7 +53,6 @@
 (declare-function ellama-ask-about "ellama")
 (declare-function ellama-code-review "ellama")
 (declare-function ellama-code-improve "ellama")
-(declare-function ellama-code-explain "ellama")
 (declare-function bv-ellama-switch-provider "bv-ellama")
 
 (declare-function ebdb-display-all-records "ebdb")
@@ -122,7 +121,7 @@
     ("f" "Format buffer" bv-guix-format-buffer)]
    ["System"
     ("g" "Generations" guix-generations)
-    ("s" "Services" guix-services-from-system-config)]])
+    ("s" "Services" guix-services-from-system-config-file)]])
 
 ;;; Geiser transient menu
 (transient-define-prefix bv-geiser-transient-menu ()
@@ -166,8 +165,7 @@
    ("a" "Ask about" ellama-ask-about)]
   ["Code"
    ("r" "Review" ellama-code-review)
-   ("i" "Improve" ellama-code-improve)
-   ("e" "Explain" ellama-code-explain)]
+   ("i" "Improve" ellama-code-improve)]
   ["Settings"
    ("s" "Switch provider" bv-ellama-switch-provider)])
 

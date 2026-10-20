@@ -20,9 +20,9 @@
 
 (declare-function ebdb-display-all-records "ebdb")
 (declare-function ebdb-create-record-extended "ebdb")
-(declare-function ebdb-search "ebdb")
 (declare-function ebdb-mail "ebdb")
-(declare-function ebdb-prompt-for-string "ebdb")
+(declare-function ebdb-search-name "ebdb-com")
+(declare-function ebdb-search-mail "ebdb-com")
 
 (defgroup bv-ebdb nil
   "Contact database settings."
@@ -62,12 +62,12 @@
 (defun bv-ebdb-search-name ()
   "Search contacts by name."
   (interactive)
-  (ebdb-search (ebdb-prompt-for-string "Name: ") nil))
+  (call-interactively #'ebdb-search-name))
 
 (defun bv-ebdb-search-email ()
   "Search contacts by email."
   (interactive)
-  (ebdb-search nil (ebdb-prompt-for-string "Email: ")))
+  (call-interactively #'ebdb-search-mail))
 
 (defun bv-ebdb-add-from-mail ()
   "Add sender of current email to contacts."

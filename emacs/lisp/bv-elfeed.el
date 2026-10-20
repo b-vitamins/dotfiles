@@ -95,7 +95,6 @@
 (defvar elfeed-score-score-default)
 
 ;; External function declarations
-(declare-function elfeed-db-get-all-entries "elfeed-db")
 (declare-function arxiv-get-pdf-add-bibtex-entry "org-ref-arxiv")
 (declare-function elfeed-db-compact "elfeed-db")
 (declare-function elfeed-score-load-score-file "elfeed-score")
@@ -103,7 +102,6 @@
 (declare-function elfeed-score-scoring-score-entry "elfeed-score")
 (declare-function elfeed-score-scoring-get-score-from-entry "elfeed-score")
 (declare-function elfeed-make-tagger "elfeed")
-(declare-function with-elfeed-db-visit "elfeed-db" (entry feed &rest body) t)
 
 (defgroup bv-elfeed nil
   "Advanced RSS feed reader settings."
@@ -449,7 +447,7 @@
   (save-excursion
     (goto-char (point-min))
     (push-mark (point-max) nil t))
-  (elfeed-search-untag-all-unread))
+  (elfeed-search-untag-unread))
 
 (defun bv-elfeed-toggle-star ()
   "Toggle starred status of entry at point."
@@ -523,27 +521,26 @@
 (defun bv-elfeed-db-cleanup ()
   "Clean up old entries from database."
   (interactive)
-  (if (not (fboundp 'elfeed-db-get-all-entries))
-      (message "elfeed-db-get-all-entries not available")
-    (let ((cutoff-time (- (float-time) (* 90 86400))) ; 90 days ago
-          (removed 0))
-      (dolist (entry (elfeed-db-get-all-entries))
-        (when (and (< (elfeed-entry-date entry) cutoff-time)
-                   (not (or (elfeed-tagged-p 'star entry)
-                           (elfeed-tagged-p 'downloaded entry))))
-          ;; Mark as read and remove from unread
-          (elfeed-untag entry 'unread)
-          (cl-incf removed)))
-      (elfeed-db-save)
-      (when (fboundp 'elfeed-db-compact)
-        (elfeed-db-compact))
-      (message "Cleaned %d old entries (marked as read)" removed))))
+  (let ((cutoff-time (- (float-time) (* 90 86400))) ; 90 days ago
+        (removed 0))
+    (elfeed-db-visit (entry)
+      (when (and (< (elfeed-entry-date entry) cutoff-time)
+                 (elfeed-tagged-p 'unread entry)
+                 (not (or (elfeed-tagged-p 'star entry)
+                          (elfeed-tagged-p 'downloaded entry))))
+        ;; Mark as read and remove from unread
+        (elfeed-untag entry 'unread)
+        (cl-incf removed)))
+    (elfeed-db-save)
+    (when (fboundp 'elfeed-db-compact)
+      (elfeed-db-compact))
+    (message "Cleaned %d old entries (marked as read)" removed)))
 
 (defun bv-elfeed-remove-feed-entries (feed-url-substring)
   "Remove all entries from feeds matching FEED-URL-SUBSTRING."
   (interactive "sRemove entries from feed containing: ")
   (let ((removed 0))
-    (with-elfeed-db-visit (entry feed)
+    (elfeed-db-visit (entry feed)
       (let ((feed-url (when feed (elfeed-feed-url feed))))
         (when (and feed-url (string-match-p feed-url-substring feed-url))
           (elfeed-untag entry 'unread)
@@ -561,7 +558,7 @@
         (downloaded-entries 0)
         (feeds-count (hash-table-count elfeed-db-feeds)))
 
-    (with-elfeed-db-visit (entry _feed)
+    (elfeed-db-visit (entry _feed)
       (cl-incf total-entries)
       (when (elfeed-tagged-p 'unread entry)
         (cl-incf unread-entries))
@@ -594,7 +591,7 @@
   (if (not (featurep 'elfeed-score))
       (message "elfeed-score not loaded")
     (let ((count 0))
-      (with-elfeed-db-visit (entry _feed)
+      (elfeed-db-visit (entry _feed)
         (when (fboundp 'elfeed-score-scoring-score-entry)
           (elfeed-score-scoring-score-entry entry)
           (cl-incf count)))
@@ -709,7 +706,7 @@
 (define-key elfeed-search-mode-map "m" 'bv-elfeed-toggle-star)
 (define-key elfeed-search-mode-map "d" 'bv-elfeed-entry-to-arxiv)
 (define-key elfeed-search-mode-map "M" 'bv-elfeed-mark-all-read)
-(define-key elfeed-search-mode-map "u" 'elfeed-search-tag-all-unread)
+(define-key elfeed-search-mode-map "u" 'elfeed-search-tag-unread)
 (define-key elfeed-search-mode-map "g" 'elfeed-update)
 (define-key elfeed-search-mode-map "G" 'elfeed-search-fetch)
 (define-key elfeed-search-mode-map "C" 'bv-elfeed-db-cleanup)

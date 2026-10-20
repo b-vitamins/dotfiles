@@ -10,8 +10,8 @@
 
 (declare-function pulseaudio-control-default-sink-mode "pulseaudio-control")
 (declare-function pulseaudio-control-default-source-mode "pulseaudio-control")
-(declare-function pulseaudio-control-increase-volume "pulseaudio-control")
-(declare-function pulseaudio-control-decrease-volume "pulseaudio-control")
+(declare-function pulseaudio-control-increase-sink-volume "pulseaudio-control")
+(declare-function pulseaudio-control-decrease-sink-volume "pulseaudio-control")
 (declare-function pulseaudio-control-toggle-current-sink-mute "pulseaudio-control")
 
 (defvar pulseaudio-control-pactl-path)
@@ -55,12 +55,12 @@
 (defun bv-audio-increase-volume ()
   "Increase system volume."
   (interactive)
-  (pulseaudio-control-increase-volume))
+  (pulseaudio-control-increase-sink-volume))
 
 (defun bv-audio-decrease-volume ()
   "Decrease system volume."
   (interactive)
-  (pulseaudio-control-decrease-volume))
+  (pulseaudio-control-decrease-sink-volume))
 
 (defun bv-audio-toggle-mute ()
   "Toggle audio mute."
